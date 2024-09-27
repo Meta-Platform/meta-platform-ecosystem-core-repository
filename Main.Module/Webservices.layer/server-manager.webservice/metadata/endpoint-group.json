@@ -1,0 +1,19 @@
+{
+    "bound-params":["serverServiceForController", "serverService"],
+    "endpoints": [
+    {
+        "url": "/server-manager",
+        "type": "controller",
+        "params": {
+            "api-template": "APIs/HTTPServers.api.json",
+            "controller": "Controllers/HTTPServers.controller"
+        },
+        "bound-params": {
+            "controller-params": {
+                "httpServerService":"serverServiceForController"
+             },
+            "serverService":"serverService"
+        }
+    }
+]
+}

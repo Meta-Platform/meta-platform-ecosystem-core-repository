@@ -1,0 +1,9 @@
+{
+    "namespace": "@/platform-executor.cli",
+    "executables": [
+        {
+            "executableName": "myexec",
+            "commands": "ExecutableDefinitions/myexec.commandGroup.json"
+        }
+    ]
+}

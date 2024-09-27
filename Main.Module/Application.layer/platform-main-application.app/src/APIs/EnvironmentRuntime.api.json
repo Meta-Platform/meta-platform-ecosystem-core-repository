@@ -1,0 +1,52 @@
+{
+	"name": "EnvironmentRuntime",
+	"endpoints": [
+		{
+			"summary": "ExecuteEnvironment",
+			"method": "POST",
+			"path": "/execute-environment",
+			"parameters": [
+				{
+					"name": "environmentPath",
+					"in": "body",
+					"type": "string",
+					"required": true
+				}
+			]
+		},
+		{
+            "summary": "ListRunningEnvironments",
+            "method": "GET",
+            "path": "/environments/in-execution"
+        },
+		{
+			"summary": "ExecutionStatusChange",
+			"method": "WS",
+			"path": "/execution-status-change/:executionId",
+			"parameters": [
+				{
+					"name": "executionId",
+					"in": "path",
+					"type": "number",
+					"required": true
+				}
+			]
+		},
+		{
+			"summary": "StopExecution",
+			"method": "POST",
+			"path": "/stop-execution",
+			"parameters": [
+				{
+					"name": "executionId",
+					"in": "body",
+					"type": "number",
+					"required": true
+				}
+			]
+			
+		}
+
+		
+	]
+}

@@ -1,0 +1,16 @@
+[
+    {
+        "namespace": "StandardTaskExecutorMachineService",
+        "path": "Services/StandardTaskExecutorMachine.service",
+        "bound-params": [
+            "applicationInstanceLib",
+            "installNodejsPackageDependenciesLib",
+            "nodejsPackageLib",
+            "serviceInstanceLib",
+            "endpointInstanceLib",
+            "commandApplicationLib",
+            "taskExecutorLib",
+            "utilitiesLib"
+        ]
+    }
+]

@@ -1,0 +1,11 @@
+{
+  "name": "repository-manager.cli",
+  "version": "0.0.4",
+  "description": "aplicação para administração de repositórios da Meta platform",
+  "author": "Kaio Cezar <kadisk.shark@gmail.com>",
+  "dependencies": {
+    "colors": "^1.4.0",
+    "node-fetch": "^2.7.0",
+    "ws": "^8.18.0"
+  }
+}

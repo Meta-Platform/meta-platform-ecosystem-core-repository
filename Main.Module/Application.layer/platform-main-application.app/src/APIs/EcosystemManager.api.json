@@ -1,0 +1,34 @@
+{
+	"name": "EcosystemManager",
+	"endpoints": [
+		{
+			"summary": "ListPackages",
+			"method": "GET",
+			"path": "/list-packages"
+		},
+		{
+			"summary": "PackageList",
+			"method": "WS",
+			"path": "/package-list"
+		},
+		{
+			"summary": "RunPackage",
+			"method": "POST",
+			"path": "/run-package",
+			"parameters": [
+				{
+					"name": "packagePath",
+					"in": "body",
+					"type": "string",
+					"required": true
+				},
+				{
+					"name": "startupParams",
+					"in": "body",
+					"type": "json",
+					"required": false
+				}
+			]
+		}
+	]
+}

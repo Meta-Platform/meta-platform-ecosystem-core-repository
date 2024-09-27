@@ -1,0 +1,84 @@
+const Table = require("cli-table3")
+const { basename } = require("path")
+const colors = require("colors")
+const CommandExecutor = require("../Utils/CommandExecutor")
+const GetColorLogByStatus = require("../Utils/GetColorLogByStatus")
+
+const MountTaskTable = async (taskList) => {
+
+    const table = new Table({
+        head: [
+            'TID', 
+            'PTID', 
+            'Loader Type', 
+            'Status', 
+            'Namespace / Tag', 
+            'Path / API & Controller',
+            'Environment'
+        ],
+        colWidths: [5, 6, 14, 12, 30, 30, 30]
+    })
+
+    taskList.forEach(task => {
+        const {
+            taskId,
+            pTaskId,
+            objectLoaderType,
+            status,
+            staticParameters: {
+                namespace,
+                tag,
+                path,
+                type,
+                url,
+                apiTemplate,
+                controller,
+                serverEndpointStatus,
+                serverName,
+                rootPath,
+                executionData: { environmentPath }
+            }
+        } = task
+        table.push([
+            taskId,
+            pTaskId,
+            objectLoaderType,
+            colors[GetColorLogByStatus(status)](status),
+            namespace || tag || url && (`${type} -> ${url}`),
+            path && basename(path) || apiTemplate && `${apiTemplate}\n${controller}` || serverName && `${serverName}\n${serverEndpointStatus}` || rootPath,
+            basename(environmentPath)
+        ])
+    })
+
+    return table
+}
+
+const ListTasksCommand = async (startupParams) => {
+
+    const {
+        PLATFORM_APPLICATION_SOCKET_PATH,
+        HTTP_SERVER_MANAGER_ENDPOINT
+    } = startupParams
+    
+    const CommandFunction = async ({ APIs }) => {
+        const API = APIs
+            .PlatformMainApplicationInstance
+            .TaskExecutorMachine
+
+        try{
+            const taskList = await API.ListTasks()
+            const table = await MountTaskTable(taskList)
+            console.log(table.toString())
+        } catch(e){
+            console.log(e)
+        }
+    }
+
+	await CommandExecutor({
+        serverResourceEndpointPath: HTTP_SERVER_MANAGER_ENDPOINT,
+        mainApplicationSocketPath: PLATFORM_APPLICATION_SOCKET_PATH,
+        CommandFunction
+    })
+}
+
+module.exports = ListTasksCommand

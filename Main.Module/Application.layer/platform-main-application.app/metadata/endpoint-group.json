@@ -1,0 +1,67 @@
+{
+    "bound-params":[
+        "serverService",
+        "taskExecutorMachineService",
+        "repositoryManagerService",
+        "ecosystemManagerService",
+        "environmentRuntimeService"
+    ],
+    "endpoints": [
+        {
+            "url": "/task-executor-machine",
+            "type": "controller",
+            "params": {
+                "api-template": "APIs/TaskExecutorMachine.api.json",
+                "controller": "Controllers/TaskExecutorMachine.controller"
+            },
+            "bound-params": {
+                "controller-params":{
+                    "taskExecutorMachineService":"taskExecutorMachineService"
+                },
+                "serverService":"serverService"
+            }
+        },
+        {
+            "url": "/repository-manager",
+            "type": "controller",
+            "params": {
+                "api-template": "APIs/RepositoryManager.api.json",
+                "controller": "Controllers/RepositoryManager.controller"
+            },
+            "bound-params": {
+                "controller-params":{
+                    "repositoryManagerService":"repositoryManagerService"
+                },
+                "serverService":"serverService"
+            }
+        },
+        {
+            "url": "/ecosystem-manager",
+            "type": "controller",
+            "params": {
+                "api-template": "APIs/EcosystemManager.api.json",
+                "controller": "Controllers/EcosystemManager.controller"
+            },
+            "bound-params": {
+                "controller-params":{
+                    "ecosystemManagerService":"ecosystemManagerService"
+                },
+                "serverService":"serverService"
+            }
+        },
+        {
+            "url": "/enviroment-runtime",
+            "type": "controller",
+            "params": {
+                "api-template": "APIs/EnvironmentRuntime.api.json",
+                "controller": "Controllers/EnvironmentRuntime.controller"
+            },
+            "bound-params": {
+                "controller-params":{
+                    "environmentRuntimeService":"environmentRuntimeService"
+                },
+                "serverService":"serverService"
+            }
+        }
+    ]
+}

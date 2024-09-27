@@ -1,0 +1,9 @@
+{
+  "name": "ecosystem-manager.service",
+  "version": "0.0.2",
+  "author": "Kaio Cezar <kadisk.shark@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "colors": "^1.4.0"
+  }
+}

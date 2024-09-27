@@ -1,0 +1,11 @@
+{
+  "name": "ecosystem-daemon-launcher.cli",
+  "version": "0.0.1",
+  "description": "Aplicativo que inicia um daemon do ecosistema",
+  "author": "Kaio Cezar <kadisk.shark@gmail.com>",
+  "dependencies": {
+    "@grpc/grpc-js": "^1.10.7",
+    "@grpc/proto-loader": "^0.7.13",
+    "colors": "^1.4.0"
+  }
+}

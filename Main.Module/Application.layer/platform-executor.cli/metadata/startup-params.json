@@ -1,0 +1,5 @@
+{
+    "PLATFORM_APPLICATION_SOCKET_PATH":"/home/kaiocezar/Workspaces/meta-platform-repo/EcosystemData/sockets/platform-main-application.app.sock",
+    "HTTP_SERVER_MANAGER_ENDPOINT":"/server-manager/status",
+    "REPOS_CONF_EXT_GROUP_DIR":"group"
+}

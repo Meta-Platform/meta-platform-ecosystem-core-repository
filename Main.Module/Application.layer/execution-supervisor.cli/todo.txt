@@ -1,0 +1,3 @@
+execution-supervisor
+
+precisa mostra a lista de processos em execução, e caso tenha somente 1 executar essa

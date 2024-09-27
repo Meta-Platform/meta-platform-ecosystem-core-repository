@@ -1,0 +1,7 @@
+[
+    {
+        "namespace": "HTTPServerService",
+        "path": "Services/HTTPServer.service",
+        "params": ["name", "port"]
+    }
+]

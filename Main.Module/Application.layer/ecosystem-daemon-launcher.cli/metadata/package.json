@@ -1,0 +1,9 @@
+{
+    "namespace": "@/ecosystem-daemon-launcher.cli",
+    "executables": [
+        {
+            "executableName": "mylauncher",
+            "commands": "ExecutableDefinitions/mylauncher.commandGroup.json"
+        }
+    ]
+}

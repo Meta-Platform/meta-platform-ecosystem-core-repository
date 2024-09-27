@@ -1,0 +1,68 @@
+{
+  "name": "HTTPServers",
+  "endpoints": [
+    {
+      "summary": "CreateHTTPServer",
+      "method": "POST",
+      "path": "/http-server",
+      "parameters": [
+        {
+          "name": "name",
+          "in": "body",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "port",
+          "in": "body",
+          "type": "number",
+          "required": true
+        }
+      ]
+    },
+    {
+      "summary": "Status",
+      "method": "GET",
+      "path": "/status"
+    },
+    {
+      "summary": "ListHTTPServers",
+      "method": "GET",
+      "path": "/http-server-manager"
+    },
+    {
+      "summary": "AddWebService",
+      "method": "PUT",
+      "path": "/http-server-manager/:name/web-services"
+    },
+    {
+      "summary": "ListWebService",
+      "method": "GET",
+      "path": "/http-server-manager/:name/web-services"
+    },
+    {
+      "summary": "AddStaticFilesDir",
+      "method": "PUT",
+      "path": "/http-server-manager/:name/static-files-dir",
+      "parameters": [
+        {
+          "name": "name",
+          "in": "path",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "path",
+          "in": "body",
+          "type": "string",
+          "required": false
+        }
+      ]
+    },
+    {
+      "summary": "ListStaticFilesDir",
+      "method": "GET",
+      "path": "/http-server-manager/:name/static-files-dir"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+    "params" : ["port", "serverName"],
+    "services": [
+        {
+            "namespace": "@@/server-service",
+            "dependency": "@/server-manager.service/services/HTTPServerService",
+            "params":{
+                "name":"{{serverName}}",
+                "port": "{{port}}"
+            }
+        }
+    ],
+    "endpoints": [
+        {
+            "dependency": "@//endpoint-group",
+            "bound-params":{
+               "serverServiceForController":"@@/server-service",
+               "serverService": "@@/server-service"
+            }
+        }
+    ]
+}

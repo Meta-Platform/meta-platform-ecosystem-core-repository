@@ -1,0 +1,41 @@
+{
+	"name": "TaskExecutorMachine",
+	"endpoints": [
+		{
+			"summary": "CreateTasks",
+			"method": "POST",
+			"path": "/create-tasks",
+			"parameters": [
+				{
+					"name": "executionParams",
+					"in": "body",
+					"type": "json",
+					"required": true
+				}
+			]
+		},
+		{
+			"summary": "ListTasks",
+			"method": "GET",
+			"path": "/list-task"
+		},
+		{
+			"summary": "GetTask",
+			"method": "GET",
+			"path": "/task/:taskId",
+			"parameters": [
+				{
+				  "name": "taskId",
+				  "in": "path",
+				  "type": "string",
+				  "required": true
+				}
+			]
+		},
+		{
+			"summary": "TaskStatusChange",
+			"method": "WS",
+			"path": "/task-status-change"
+		}
+	]
+}

@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package PackageExecutorRPCSpec;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+service PackageExecutorRPCService {
+  rpc Kill(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc GetStatus(google.protobuf.Empty) returns (ExecutionStatusResponse) {}
+  rpc ListTasks(google.protobuf.Empty) returns (TaskListResponse) {}
+  rpc GetTask(TaskRequest) returns (TaskInformation) {}
+  rpc LogStreaming(google.protobuf.Empty) returns (stream LogResponse) {}
+  rpc StatusChangeNotification(google.protobuf.Empty)
+      returns (stream ExecutionStatusResponse) {}
+}
+
+message EventResponse { string event_message = 1; }
+
+enum ExecutionStatus {
+  UNKNOWN = 0;
+  WAITING_FOR_FIRST_CONNECTION = 1;
+  STARTING = 2;
+  RUNNING = 3;
+  ERROR = 4;
+}
+
+enum TaskStatus {
+  AWAITING_PRECONDITIONS = 1;
+  PRECONDITIONS_COMPLETED = 2;
+  PREPPED_TO_START = 3;
+  STARTING = 4;
+  ACTIVE = 5;
+  STOPPING = 6;
+  FINISHED = 7;
+  FAILURE = 8;
+  TERMINATED = 9;
+}
+
+message ExecutionStatusResponse { ExecutionStatus status = 1; }
+
+message TaskListResponse { repeated Task tasksList = 1; }
+
+message Task {
+  int32 taskId = 1;
+  google.protobuf.Int32Value pTaskId = 2;
+  string objectLoaderType = 3;
+  TaskStatus status = 4;
+  google.protobuf.Struct staticParameters = 5;
+}
+
+message TaskInformation {
+  int32 taskId = 1;
+  google.protobuf.Int32Value pTaskId = 2;
+  string objectLoaderType = 3;
+  TaskStatus status = 4;
+  google.protobuf.Struct staticParameters = 5;
+  bool hasChildTasks = 6;
+  google.protobuf.Struct linkedParameters = 7;
+  repeated AgentLinkRules agentLinkRules = 8;
+  google.protobuf.Struct activationRules = 9;
+}
+
+message AgentLinkRules {
+  string referenceName = 1;
+  google.protobuf.Struct requirement = 2;
+}
+
+message TaskRequest { int32 taskId = 1; }
+
+message LogResponse {
+  string sourceName = 1;
+  string type = 2;
+  string message = 3;
+}
