@@ -1,6 +1,6 @@
 const CommandExecutor = require("../Utils/CommandExecutor")
 
-const StopEnvironmentCommand = async (startupParams, {executionId}) => {
+const StopEnvironmentCommand = async ({args:{executionId}, startupParams}) => {
 
     const {
         PLATFORM_APPLICATION_SOCKET_PATH,

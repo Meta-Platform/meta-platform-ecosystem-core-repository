@@ -6,7 +6,7 @@ const RenderLinkedParametersTaskTable   = require("../Utils/RenderLinkedParamete
 const RenderAgentLinkRulesTaskTable     = require("../Utils/RenderAgentLinkRulesTaskTable")
 const RenderActivationRulesTaskTable    = require("../Utils/RenderActivationRulesTaskTable")
 
-const ShowTaskInformationCommand = async (startupParams, { taskId }) => {
+const ShowTaskInformationCommand = async ({ args:{ taskId }, startupParams}) => {
 
     const {
         PLATFORM_APPLICATION_SOCKET_PATH,

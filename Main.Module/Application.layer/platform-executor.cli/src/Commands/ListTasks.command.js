@@ -2,7 +2,28 @@ const Table = require("cli-table3")
 const { basename } = require("path")
 const colors = require("colors")
 const CommandExecutor = require("../Utils/CommandExecutor")
-const GetColorLogByStatus = require("../Utils/GetColorLogByStatus")
+
+const GetColorLogByStatus = (status) => {
+    switch(status){
+        case "AWAITING_PRECONDITIONS":
+            return "gray"
+        case "PRECONDITIONS_COMPLETED":
+        case "PREPPED_TO_START":
+            return "blue"
+        case "STARTING":
+            return "yellow"
+        case "STOPPING":
+            return "bgYellow"
+        case "ACTIVE":
+            return "bgGreen"
+        case "FINISHED":
+            return "green"
+        case "FAILURE":
+            return "bgRed"
+        case "TERMINATED":
+            return "red"
+    }
+}
 
 const MountTaskTable = async (taskList) => {
 
@@ -53,7 +74,7 @@ const MountTaskTable = async (taskList) => {
     return table
 }
 
-const ListTasksCommand = async (startupParams) => {
+const ListTasksCommand = async ({startupParams}) => {
 
     const {
         PLATFORM_APPLICATION_SOCKET_PATH,

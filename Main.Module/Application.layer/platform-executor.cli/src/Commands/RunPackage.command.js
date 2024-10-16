@@ -3,7 +3,7 @@ const PackageChoiceTerminalView = require("../Utils/PackageChoiceTerminalView")
 const MountPackagePath = require("../Utils/MountPackagePath")
 const ExecutePackage = require("../Utils/ExecutePackage")
 
-const RunPackageCommand = async (startupParams, {path}) => {
+const RunPackageCommand = async ({args:{path}, startupParams}) => {
 
     const {
         PLATFORM_APPLICATION_SOCKET_PATH,

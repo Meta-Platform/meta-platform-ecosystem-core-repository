@@ -2,7 +2,7 @@ const { resolve } = require("path")
 
 const CommandExecutor = require("../Utils/CommandExecutor")
 
-const ExecuteEnvironmentCommand = async (startupParams, {path}) => {
+const ExecuteEnvironmentCommand = async ({args:{path}, startupParams}) => {
 
     const {
         PLATFORM_APPLICATION_SOCKET_PATH,

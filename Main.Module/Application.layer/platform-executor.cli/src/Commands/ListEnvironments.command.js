@@ -20,7 +20,7 @@ const MountTaskTable = (list) => {
     return table
 }
 
-const ListEnvironmentCommand = async (startupParams) => {
+const ListEnvironmentCommand = async ({startupParams}) => {
 
     const {
         PLATFORM_APPLICATION_SOCKET_PATH,

@@ -1,6 +1,6 @@
 const CommandExecutor = require("../Utils/CommandExecutor")
 
-const MonitorCommand = async () => {
+const MonitorCommand = async ({ startupParams }) => {
 
     const {
         PLATFORM_APPLICATION_SOCKET_PATH,
