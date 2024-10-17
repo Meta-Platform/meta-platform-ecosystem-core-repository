@@ -1,8 +1,8 @@
 {
-    "namespace": "@/repository-manager.cli",
+    "namespace": "@/repository-explorer.cli",
     "executables": [
         {
-            "executableName": "myrepo",
+            "executableName": "repoex",
             "commands": "ExecutableDefinitions/myrepo.commandGroup.json"
         }
     ]

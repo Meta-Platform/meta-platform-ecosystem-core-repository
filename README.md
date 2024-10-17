@@ -29,7 +29,7 @@ Módulo principal contendo todos os submódulos essenciais da aplicação.
 #### Application.layer
 Contém as aplicações principais e interfaces de linha de comando.
 - **platform-main-application.app**
-- **repository-manager.cli**
+- **repository-explorer.cli**
 - **platform-executor.cli**
 
 #### Libraries.layer
