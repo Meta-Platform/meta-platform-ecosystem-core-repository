@@ -3,7 +3,7 @@
     "executables": [
         {
             "executableName": "repoex",
-            "commands": "ExecutableDefinitions/myrepo.commandGroup.json"
+            "commands": "ExecutableDefinitions/repoex.commandGroup.json"
         }
     ]
 }
