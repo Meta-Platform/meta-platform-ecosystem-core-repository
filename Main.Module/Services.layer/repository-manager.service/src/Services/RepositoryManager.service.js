@@ -109,14 +109,19 @@ const RepositoryManagerService = (params) => {
     }
 
     const GetPackageDependencyHierarchy = async (params) => {
-        const metadataHierarchy = await GetMetadataHierarchy(params)
-        if(metadataHierarchy){
-            const packageDependencyGraph = GetPackageDependencyGraph(metadataHierarchy)
-            return {
-                dependencyList: metadataHierarchy.dependencyList,
-                packageDependencyGraph
+        try{
+            const metadataHierarchy = await GetMetadataHierarchy(params)
+            if(metadataHierarchy){
+                const packageDependencyGraph = GetPackageDependencyGraph(metadataHierarchy)
+                return {
+                    dependencyList: metadataHierarchy.dependencyList,
+                    packageDependencyGraph
+                }
             }
+        } catch(e){
+            return undefined
         }
+        
     }
 
     const ListRepositories = () => {
