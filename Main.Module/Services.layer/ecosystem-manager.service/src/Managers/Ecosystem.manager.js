@@ -30,7 +30,7 @@ const ExtractStateByTask = (task) => {
 const EcosystemManager = (params) => {
 
     const {
-        registerRepositoryLib,
+        repositoryConfigHandlerLib,
         environmentHandlerLib,
         dependencyGraphBuilderLib,
         metadataHierarchyHandlerLib,
@@ -49,7 +49,7 @@ const EcosystemManager = (params) => {
 
     const ReadAllPackageMetadata      = dependencyGraphBuilderLib.require("Utils/ReadAllPackageMetadata")
     const BuildMetadataHierarchy      = dependencyGraphBuilderLib.require("BuildMetadataHierarchy")
-    const PrepareRepositoriesFileJson = registerRepositoryLib.require("PrepareRepositoriesFileJson")
+    const PrepareRepositoriesFileJson = repositoryConfigHandlerLib.require("PrepareRepositoriesFileJson")
     const CreateEnvironment           = environmentHandlerLib.require("CreateEnvironment")
     const PrepareDataDir              = environmentHandlerLib.require("PrepareDataDir")
     const ResolvePackageName          = resolvePackageNameLib.require("ResolvePackageName")

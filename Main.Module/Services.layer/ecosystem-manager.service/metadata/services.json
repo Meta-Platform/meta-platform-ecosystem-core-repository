@@ -3,7 +3,7 @@
         "namespace": "EcosystemManager",
         "path": "Managers/Ecosystem.manager",
         "bound-params":[
-            "registerRepositoryLib",
+            "repositoryConfigHandlerLib",
             "environmentHandlerLib",
             "dependencyGraphBuilderLib",
             "repositoryManagerService", 

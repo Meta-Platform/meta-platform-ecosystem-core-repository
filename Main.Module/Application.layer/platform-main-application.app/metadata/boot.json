@@ -69,7 +69,7 @@
             "namespace":"@@/ecosystem-manager",
             "dependency": "@/ecosystem-manager.service/services/EcosystemManager",
             "bound-params": {
-                "registerRepositoryLib": "@/register-repository.lib",
+                "repositoryConfigHandlerLib": "@/repository-config-handler.lib",
                 "environmentHandlerLib": "@/environment-handler.lib",
                 "dependencyGraphBuilderLib":"@/dependency-graph-builder.lib",
                 "repositoryManagerService": "@@/repository-manager",
