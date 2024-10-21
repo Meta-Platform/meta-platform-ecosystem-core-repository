@@ -1,6 +1,0 @@
-{
-  "name": "execution-supervisor.cli",
-  "version": "0.0.2",
-  "description": "Ferramenta para comunicação, inicialização, reinicialização e gestão abrangente de um processo iniciado pelo binário pakage-executor.",
-  "author": "Kaio Cezar <kadisk.shark@gmail.com>"
-}
