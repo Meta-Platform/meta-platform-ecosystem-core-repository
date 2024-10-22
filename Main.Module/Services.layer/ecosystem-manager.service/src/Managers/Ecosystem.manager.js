@@ -58,7 +58,7 @@ const EcosystemManager = (params) => {
 
     const _Start = async () => {
         await PrepareRepositoriesFileJson({
-            ECO_DIRPATH_INSTALL_DATA,
+            installDataDirPath: ECO_DIRPATH_INSTALL_DATA,
             REPOS_CONF_FILENAME_REPOS_DATA
         })
         onReady()
