@@ -19,7 +19,7 @@ const StartMainApplication = (loggerEmitter) => {
                 message: "Iniciando o daemon"
             })
 
-            const daemonSubProcess = spawn("start-platform", {
+            const daemonSubProcess = spawn("start-instance-manager", {
                 detached: true,
                 stdio: 'ignore',
             })
