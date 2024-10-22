@@ -1,5 +1,5 @@
 {
-    "socket":"/home/kaiocezar/Workspaces/meta-platform-repo/EcosystemData/sockets/platform-main-application.app.sock",
+    "socket":"/home/kaiocezar/Workspaces/meta-platform-repo/EcosystemData/sockets/ecosystem-instance-manager.app.sock",
     "serverName":"PlatformMainApplicationInstance",
     "ECO_DIRPATH_INSTALL_DATA":"/home/kaiocezar/Workspaces/meta-platform-repo/EcosystemData",
     "REPOS_CONF_FILENAME_REPOS_DATA":"repositories.json",
