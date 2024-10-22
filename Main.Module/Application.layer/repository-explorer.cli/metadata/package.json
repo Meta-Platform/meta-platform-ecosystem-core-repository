@@ -2,8 +2,8 @@
     "namespace": "@/repository-explorer.cli",
     "executables": [
         {
-            "executableName": "repoex",
-            "commands": "ExecutableDefinitions/repoex.commandGroup.json"
+            "executableName": "explorer",
+            "commands": "ExecutableDefinitions/explorer.commandGroup.json"
         }
     ]
 }
