@@ -2,8 +2,8 @@
     "namespace": "@/instance-executor.cli",
     "executables": [
         {
-            "executableName": "myexec",
-            "commands": "ExecutableDefinitions/myexec.commandGroup.json"
+            "executableName": "executor",
+            "commands": "ExecutableDefinitions/executor.commandGroup.json"
         }
     ]
 }
