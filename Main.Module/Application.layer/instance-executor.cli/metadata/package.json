@@ -1,5 +1,5 @@
 {
-    "namespace": "@/platform-executor.cli",
+    "namespace": "@/instance-executor.cli",
     "executables": [
         {
             "executableName": "myexec",

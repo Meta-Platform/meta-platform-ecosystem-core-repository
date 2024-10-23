@@ -5,7 +5,7 @@
 - **Application** *layer*
     - **ecosystem-daemon-launcher** *command line application*
     - **execution-supervisor** *command line application*
-    - **platform-executor** *command line application*
+    - **instance-executor** *command line application*
     - **platform-main-application** *application*
     - **repository-manager** *command line application*
 - **Services** *layer*
@@ -30,7 +30,7 @@ Módulo principal contendo todos os submódulos essenciais da aplicação.
 Contém as aplicações principais e interfaces de linha de comando.
 - **ecosystem-instance-manager.app**
 - **repository-explorer.cli**
-- **platform-executor.cli**
+- **instance-executor.cli**
 
 #### Libraries.layer
 Contém bibliotecas compartilhadas usadas em toda a aplicação.

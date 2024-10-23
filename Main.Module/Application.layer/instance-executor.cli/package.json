@@ -1,5 +1,5 @@
 {
-  "name": "platform-executor.cli",
+  "name": "instance-executor.cli",
   "version": "0.0.4",
   "description": "Aplicação executora de ambientes e pacotes na Meta Platform",
   "author": "Kaio Cezar <kadisk.shark@gmail.com>",
