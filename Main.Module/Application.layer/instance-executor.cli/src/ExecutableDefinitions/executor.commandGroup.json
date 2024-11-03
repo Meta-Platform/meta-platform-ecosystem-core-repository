@@ -31,7 +31,7 @@
            "namespace": "Stop",
            "command" : "stop",
            "description": "Para uma execução de Tarefas, Pacotes e Ambiente",
-           "childCommands": [
+           "children": [
                 {
                     "namespace": "StopEnvironment",
                     "path": "Commands/StopEnvironment.command",
@@ -70,7 +70,7 @@
            "namespace": "Show",
            "command" : "show",
            "description": "Mostra informações sobre elementos de execução",
-           "childCommands": [
+           "children": [
                 {
                     "namespace": "ShowTaskInformation",
                     "path": "Commands/ShowTaskInformation.command",
