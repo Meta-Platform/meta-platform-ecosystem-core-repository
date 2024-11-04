@@ -7,6 +7,12 @@
     },
     {
         "appType":"CLI",
+        "executable":"explorer",
+        "packageNamespace":"Main.Module/Application.layer/repository-explorer.cli",
+        "supervisorSocketFileName":"explorer.sock"
+    },
+    {
+        "appType":"CLI",
         "executable":"mylauncher",
         "packageNamespace":"Main.Module/Application.layer/ecosystem-daemon-launcher.cli",
         "supervisorSocketFileName":"launcher.sock"
@@ -16,11 +22,5 @@
         "executable":"executor",
         "packageNamespace":"Main.Module/Application.layer/instance-executor.cli",
         "supervisorSocketFileName":"executor.sock"
-    },
-    {
-        "appType":"CLI",
-        "executable":"explorer",
-        "packageNamespace":"Main.Module/Application.layer/repository-explorer.cli",
-        "supervisorSocketFileName":"explorer.sock"
     }
 ]

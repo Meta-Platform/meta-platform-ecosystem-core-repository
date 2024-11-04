@@ -1,0 +1,50 @@
+{
+
+    "commands": [
+        {
+            "commandName": "RegisterRepository",
+            "path": "Commands/RegisterRepository.command",
+            "command" : "register [namespace] [path]",
+            "description": "Registra um novo repositório",
+            "parameters": [
+                {
+                    "key":"commandName",
+                    "paramType":"positional",
+                    "valueType":"string",
+                    "describe":"namespace do repositório"
+                },
+                {
+                    "key":"path",
+                    "paramType":"positional",
+                    "valueType":"string",
+                    "describe":"caminho do repositório"
+                }
+            ]
+        },
+        {
+            "commandName": "ListRepositories",
+            "path": "Commands/ListRepositories.command",
+            "command" : "repositories",
+            "description": "Listar repositórios"
+        },
+        {
+            "commandName": "ListModules",
+            "path": "Commands/ListModules.command",
+            "command" : "modules",
+            "description": "Listar modules"
+        },
+        {
+            "commandName": "ListLayers",
+            "path": "Commands/ListLayers.command",
+            "command" : "layers",
+            "description": "Listar layers"
+        },
+        {
+            "commandName": "ListPackages",
+            "path": "Commands/ListPackages.command",
+            "command" : "packages",
+            "description": "Listar packages"
+        }
+    ]
+}
+
