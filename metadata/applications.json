@@ -22,11 +22,5 @@
         "executable":"explorer",
         "packageNamespace":"Main.Module/Application.layer/repository-explorer.cli",
         "supervisorSocketFileName":"explorer.sock"
-    },
-    {
-        "appType":"CLI",
-        "executable":"mysup",
-        "packageNamespace":"Main.Module/Application.layer/execution-supervisor.cli",
-        "supervisorSocketFileName":"mysup.sock"
     }
 ]
