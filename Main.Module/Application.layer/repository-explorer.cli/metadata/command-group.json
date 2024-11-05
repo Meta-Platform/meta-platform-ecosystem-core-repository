@@ -1,5 +1,8 @@
 {
-
+    "params": [ 
+        "platformApplicationSocketPath", 
+        "httpServerManagerEndpoint"
+    ],
     "commands": [
         {
             "commandName": "RegisterRepository",
@@ -19,7 +22,11 @@
                     "valueType":"string",
                     "describe":"caminho do repositório"
                 }
-            ]
+            ],
+            "params":{
+                "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
+                "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
+            }
         },
         {
             "commandName": "ListRepositories",
@@ -31,19 +38,31 @@
             "commandName": "ListModules",
             "path": "Commands/ListModules.command",
             "command" : "modules",
-            "description": "Listar modules"
+            "description": "Listar modules",
+            "params":{
+                "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
+                "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
+            }
         },
         {
             "commandName": "ListLayers",
             "path": "Commands/ListLayers.command",
             "command" : "layers",
-            "description": "Listar layers"
+            "description": "Listar layers",
+            "params":{
+                "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
+                "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
+            }
         },
         {
             "commandName": "ListPackages",
             "path": "Commands/ListPackages.command",
             "command" : "packages",
-            "description": "Listar packages"
+            "description": "Listar packages",
+            "params":{
+                "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
+                "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
+            }
         }
     ]
 }

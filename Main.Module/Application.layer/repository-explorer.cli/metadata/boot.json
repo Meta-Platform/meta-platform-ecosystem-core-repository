@@ -1,0 +1,15 @@
+{
+    "params": [ 
+        "platformApplicationSocketPath", 
+        "httpServerManagerEndpoint"
+    ],
+    "executables":[
+        {
+            "dependency": "@//command-group",
+            "executableName": "explorer",
+            "params":{
+                "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
+                "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"            }
+        }
+    ]
+}

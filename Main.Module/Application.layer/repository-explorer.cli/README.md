@@ -24,29 +24,29 @@ A ferramenta oferece uma série de comandos para gerenciar diversos aspectos do 
 
 **Registrar um Novo Repositório**
   ```bash
-  myrepo register [REPO_NAMESPACE] [REPO_PATH]
+  explorer register [REPO_NAMESPACE] [REPO_PATH]
   # Exemplo:
-  myrepo register Miscellaneous ~/Workspaces/my-platform-reference-distro/repos/Miscellaneous
+  explorer register Miscellaneous ~/Workspaces/my-platform-reference-distro/repos/Miscellaneous
   ```
 
 ### Listagem de Componentes
 
 **Listar Repositórios Registrados**
   ```bash
-  myrepo repositories
+  explorer repositories
   ```
 
 **Listar Módulos**
   ```bash
-  myrepo modules
+  explorer modules
   ```
 
 **Listar Camadas**
   ```bash
-  myrepo layers
+  explorer layers
   ```
 
 **Listar Pacotes**
   ```bash
-  myrepo packages
+  explorer packages
   ```
