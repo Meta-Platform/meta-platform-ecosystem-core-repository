@@ -1,4 +1,5 @@
 {
+    "bound-params":[ "commandExecutorLib" ],
     "params": [ 
         "platformApplicationSocketPath",
         "httpServerManagerEndpoint",
@@ -18,6 +19,9 @@
                     "describe":"caminho do pacote"
                 }
             ],
+            "bound-params": {
+                "commandExecutorLib": "commandExecutorLib"
+            },
             "params":{
                 "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
                 "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}",
@@ -37,6 +41,9 @@
                     "describe":"caminho do pacote"
                 }
             ],
+            "bound-params": {
+                "commandExecutorLib": "commandExecutorLib"
+            },
             "params":{
                 "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
                 "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
@@ -59,19 +66,25 @@
                              "valueType":"number",
                              "describe":"Id da execução"
                          }
-                     ]
+                     ],
+                     "bound-params": {
+                         "commandExecutorLib": "commandExecutorLib"
+                     },
+                     "params":{
+                         "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
+                         "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
+                     }
                  }
-            ],
-            "params":{
-                "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
-                "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
-            }
+            ]
         },
         {
             "namespace": "ListTasks",
             "path": "Commands/ListTasks.command",
             "command": "tasks",
             "description": "Listar tarefas carregadas no task executor global",
+            "bound-params": {
+                "commandExecutorLib": "commandExecutorLib"
+            },
             "params":{
                 "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
                 "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
@@ -82,6 +95,9 @@
             "path": "Commands/ListEnvironments.command",
             "command" : "environments",
             "description": "Listar ambientes em execução",
+            "bound-params": {
+                "commandExecutorLib": "commandExecutorLib"
+            },
             "params":{
                 "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
                 "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
@@ -92,6 +108,9 @@
             "path": "Commands/Monitor.command",
             "command" : "monitor",
             "description": "Monitorar atividade do Task Executor",
+            "bound-params": {
+                "commandExecutorLib": "commandExecutorLib"
+            },
             "params":{
                 "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
                 "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
@@ -114,13 +133,16 @@
                              "valueType":"number",
                              "describe":"Id da tarefa"
                          }
-                     ]
+                     ],
+                     "bound-params": {
+                         "commandExecutorLib": "commandExecutorLib"
+                     },
+                     "params":{
+                         "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
+                         "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
+                     }
                  }
-            ],
-            "params":{
-                "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
-                "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
-            }
+            ]
         }
      ]
 }

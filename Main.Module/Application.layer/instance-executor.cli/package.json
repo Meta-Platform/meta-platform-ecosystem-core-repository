@@ -5,9 +5,7 @@
   "author": "Kaio Cezar <kadisk.shark@gmail.com>",
   "dependencies": {
     "cli-table3": "^0.6.3",
-    "node-fetch": "^2.7.0",
     "colors": "^1.4.0",
-    "ws": "^8.18.0",
     "enquirer": "^2.4.1"
   }
 }

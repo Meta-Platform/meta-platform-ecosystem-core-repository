@@ -1,9 +1,8 @@
-const CommandExecutor = require("../Utils/CommandExecutor")
 const PackageChoiceTerminalView = require("../Utils/PackageChoiceTerminalView")
 const MountPackagePath = require("../Utils/MountPackagePath")
 const ExecutePackage = require("../Utils/ExecutePackage")
 
-const RunPackageCommand = async ({args, startupParams}) => {
+const RunPackageCommand = async ({ args, startupParams, params }) => {
 
     const { path } = args
 
@@ -12,6 +11,10 @@ const RunPackageCommand = async ({args, startupParams}) => {
         httpServerManagerEndpoint,
         REPOS_CONF_EXT_GROUP_DIR
     } = startupParams
+
+    const { commandExecutorLib } = params
+    
+    const CommandExecutor = commandExecutorLib.require("CommandExecutor")
 
     if(path){
         await ExecutePackage(startupParams, path)

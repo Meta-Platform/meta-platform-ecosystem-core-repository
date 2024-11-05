@@ -1,11 +1,17 @@
 const CommandExecutor = require("../Utils/CommandExecutor")
 
-const StopEnvironmentCommand = async ({args:{executionId}, startupParams}) => {
+const StopEnvironmentCommand = async ({ args, startupParams, params }) => {
+
+    const { executionId } = args
 
     const {
         platformApplicationSocketPath,
         httpServerManagerEndpoint
     } = startupParams
+
+    const { commandExecutorLib } = params
+    
+    const CommandExecutor = commandExecutorLib.require("CommandExecutor")
 
     const CommandFunction = async ({ APIs }) => {
         const API = APIs

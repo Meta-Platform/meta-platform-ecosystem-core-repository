@@ -1,8 +1,6 @@
 const { resolve } = require("path")
 
-const CommandExecutor = require("../Utils/CommandExecutor")
-
-const ExecuteEnvironmentCommand = async ({ args, startupParams }) => {
+const ExecuteEnvironmentCommand = async ({ args, startupParams, params }) => {
 
     const { path } = args
 
@@ -10,6 +8,10 @@ const ExecuteEnvironmentCommand = async ({ args, startupParams }) => {
         platformApplicationSocketPath,
         httpServerManagerEndpoint
     } = startupParams
+
+    const { commandExecutorLib } = params
+    
+    const CommandExecutor = commandExecutorLib.require("CommandExecutor")
 
     const CommandFunction = async ({ APIs }) => {
         const absolutePath = resolve(process.cwd(), path)

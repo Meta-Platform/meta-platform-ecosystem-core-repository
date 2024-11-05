@@ -1,17 +1,21 @@
-const CommandExecutor = require("../Utils/CommandExecutor")
-
 const RenderGeneralInformationTaskTable = require("../Utils/RenderGeneralInformationTaskTable")
 const RenderStaticParametersTaskTable   = require("../Utils/RenderStaticParametersTaskTable")
 const RenderLinkedParametersTaskTable   = require("../Utils/RenderLinkedParametersTaskTable")
 const RenderAgentLinkRulesTaskTable     = require("../Utils/RenderAgentLinkRulesTaskTable")
 const RenderActivationRulesTaskTable    = require("../Utils/RenderActivationRulesTaskTable")
 
-const ShowTaskInformationCommand = async ({ args:{ taskId }, startupParams}) => {
+const ShowTaskInformationCommand = async ({ args, startupParams}) => {
+
+    const { taskId } = args
 
     const {
         platformApplicationSocketPath,
         httpServerManagerEndpoint
     } = startupParams
+
+    const { commandExecutorLib } = params
+    
+    const CommandExecutor = commandExecutorLib.require("CommandExecutor")
 
     const CommandFunction = async ({ APIs }) => {
         const API = APIs

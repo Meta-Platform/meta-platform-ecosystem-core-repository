@@ -8,6 +8,9 @@
         {
             "dependency": "@//command-group",
             "executableName": "executor",
+            "bound-params": {
+                "commandExecutorLib": "@/command-executor.lib"
+            },
             "params":{
                 "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
                 "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}",

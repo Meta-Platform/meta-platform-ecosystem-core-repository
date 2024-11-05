@@ -1,6 +1,5 @@
 const Table = require("cli-table3")
 const { basename } = require("path")
-const CommandExecutor = require("../Utils/CommandExecutor")
 
 const MountTaskTable = (list) => {
 
@@ -20,12 +19,16 @@ const MountTaskTable = (list) => {
     return table
 }
 
-const ListEnvironmentCommand = async ({ startupParams }) => {
+const ListEnvironmentCommand = async ({ startupParams, params }) => {
 
     const {
         platformApplicationSocketPath,
         httpServerManagerEndpoint
     } = startupParams
+
+    const { commandExecutorLib } = params
+    
+    const CommandExecutor = commandExecutorLib.require("CommandExecutor")
     
     const CommandFunction = async ({ APIs }) => {
         const API = APIs
