@@ -1,11 +1,13 @@
-const MountAPIs = require("../Utils/MountAPIs")
-
-const ListRepositoriesCommand = async ({ startupParams }) => {
+const ListRepositoriesCommand = async ({ startupParams, params }) => {
 
     const {
         platformApplicationSocketPath,
         httpServerManagerEndpoint
     } = startupParams
+
+    const { mountApiLib } = params
+    
+    const MountAPIs = mountApiLib.require("MountAPIs")
     
 	const APIs = await MountAPIs({
         serverResourceEndpointPath: httpServerManagerEndpoint,

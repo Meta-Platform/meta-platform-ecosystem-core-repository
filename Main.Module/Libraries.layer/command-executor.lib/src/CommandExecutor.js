@@ -1,6 +1,7 @@
+const SmartRequire = require("./SmartRequire")
 const EventEmitter = require('node:events')
-const MountAPIs = require("./MountAPIs")
-const colors = require("colors")
+const MountAPIs = require("../../mount-api.lib/src/MountAPIs")
+const colors = SmartRequire("colors")
 
 const GetColorLogByType = (type) => {
     switch(type){

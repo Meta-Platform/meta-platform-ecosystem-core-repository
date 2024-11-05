@@ -1,11 +1,6 @@
 {
   "name": "repository-explorer.cli",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Aplicação usada para explorar items de repositórios instalados",
-  "author": "Kaio Cezar <kadisk.shark@gmail.com>",
-  "dependencies": {
-    "colors": "^1.4.0",
-    "node-fetch": "^2.7.0",
-    "ws": "^8.18.0"
-  }
+  "author": "Kaio Cezar <kadisk.shark@gmail.com>"
 }

@@ -1,4 +1,6 @@
-const WebSocket = require('ws')
+const SmartRequire = require("../SmartRequire")
+
+const WebSocket = SmartRequire('ws')
 
 const GetRequest = require("./GetRequest")
 //TODO Ja existe repetido

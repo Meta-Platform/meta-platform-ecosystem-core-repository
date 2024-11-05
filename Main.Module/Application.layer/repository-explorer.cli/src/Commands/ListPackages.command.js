@@ -1,11 +1,13 @@
-const CommandExecutor = require("../Utils/CommandExecutor")
-
-const ListPackagesCommand = async ({startupParams}) => {
+const ListPackagesCommand = async ({ startupParams, params }) => {
 
     const {
         platformApplicationSocketPath,
         httpServerManagerEndpoint
     } = startupParams
+
+    const { commandExecutorLib } = params
+    
+    const CommandExecutor = commandExecutorLib.require("CommandExecutor")
 
     const CommandFunction = async ({ APIs }) => {
         const API = APIs

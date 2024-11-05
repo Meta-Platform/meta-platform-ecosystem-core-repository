@@ -1,6 +1,8 @@
+const SmartRequire = require("../SmartRequire")
+
 const querystring = require('querystring')
 const http = require('http')
-const fetch = require("node-fetch")
+const fetch = SmartRequire("node-fetch")
 
 const getURLPath = (path, parameters) => 
 parameters && parameters.length > 0

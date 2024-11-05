@@ -7,9 +7,14 @@
         {
             "dependency": "@//command-group",
             "executableName": "explorer",
+            "bound-params": {
+                "mountApiLib": "@/mount-api.lib",
+                "commandExecutorLib": "@/command-executor.lib"
+            },
             "params":{
                 "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
-                "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"            }
+                "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
+            }
         }
     ]
 }
