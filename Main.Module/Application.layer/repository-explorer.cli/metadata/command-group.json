@@ -1,38 +1,18 @@
 {
     "params": [ 
         "platformApplicationSocketPath", 
-        "httpServerManagerEndpoint"
+        "httpServerManagerEndpoint",
+        "installDataDirPath"
     ],
     "commands": [
-        {
-            "commandName": "RegisterRepository",
-            "path": "Commands/RegisterRepository.command",
-            "command" : "register [namespace] [path]",
-            "description": "Registra um novo repositório",
-            "parameters": [
-                {
-                    "key":"commandName",
-                    "paramType":"positional",
-                    "valueType":"string",
-                    "describe":"namespace do repositório"
-                },
-                {
-                    "key":"path",
-                    "paramType":"positional",
-                    "valueType":"string",
-                    "describe":"caminho do repositório"
-                }
-            ],
-            "params":{
-                "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
-                "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
-            }
-        },
         {
             "commandName": "ListRepositories",
             "path": "Commands/ListRepositories.command",
             "command" : "repositories",
-            "description": "Listar repositórios"
+            "description": "Listar repositórios",
+            "params":{
+                "installDataDirPath":"{{installDataDirPath}}"
+            }
         },
         {
             "commandName": "ListModules",

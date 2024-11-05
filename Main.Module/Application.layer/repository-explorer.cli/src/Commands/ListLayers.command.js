@@ -1,6 +1,6 @@
 const CommandExecutor = require("../Utils/CommandExecutor")
 
-const ListLayersCommand = async (startupParams) => {
+const ListLayersCommand = async ({startupParams}) => {
     
     const {
         platformApplicationSocketPath,
