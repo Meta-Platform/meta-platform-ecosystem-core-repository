@@ -1,0 +1,126 @@
+{
+    "params": [ 
+        "platformApplicationSocketPath",
+        "httpServerManagerEndpoint",
+        "REPOS_CONF_EXT_GROUP_DIR"
+    ],
+    "commands": [
+        {
+            "namespace": "RunPackage",
+            "path": "Commands/RunPackage.command",
+            "command" : "package [path]",
+            "description": "Executar um pacote",
+            "parameters": [
+                {
+                    "key":"path",
+                    "paramType":"positional",
+                    "valueType":"string",
+                    "describe":"caminho do pacote"
+                }
+            ],
+            "params":{
+                "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
+                "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}",
+                "REPOS_CONF_EXT_GROUP_DIR":"{{REPOS_CONF_EXT_GROUP_DIR}}"
+            }
+        },
+        {
+            "namespace": "ExecuteEnvironment",
+            "path": "Commands/ExecuteEnvironment.command",
+            "command" : "env [path]",
+            "description": "Executar um ambiente",
+            "parameters": [
+                {
+                    "key":"path",
+                    "paramType":"positional",
+                    "valueType":"string",
+                    "describe":"caminho do pacote"
+                }
+            ],
+            "params":{
+                "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
+                "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
+            }
+        },
+        {
+            "namespace": "Stop",
+            "command" : "stop",
+            "description": "Para uma execução de Tarefas, Pacotes e Ambiente",
+            "children": [
+                 {
+                     "namespace": "StopEnvironment",
+                     "path": "Commands/StopEnvironment.command",
+                     "command" : "env [executionId]",
+                     "description": "Listar tarefas carregadas no task executor principal",
+                     "parameters": [
+                         {
+                             "key":"executionId",
+                             "paramType":"positional",
+                             "valueType":"number",
+                             "describe":"Id da execução"
+                         }
+                     ]
+                 }
+            ],
+            "params":{
+                "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
+                "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
+            }
+        },
+        {
+            "namespace": "ListTasks",
+            "path": "Commands/ListTasks.command",
+            "command": "tasks",
+            "description": "Listar tarefas carregadas no task executor global",
+            "params":{
+                "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
+                "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
+            }
+        },
+        {
+            "namespace": "ListEnvironments",
+            "path": "Commands/ListEnvironments.command",
+            "command" : "environments",
+            "description": "Listar ambientes em execução",
+            "params":{
+                "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
+                "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
+            }
+        },
+        {
+            "namespace": "Monitor",
+            "path": "Commands/Monitor.command",
+            "command" : "monitor",
+            "description": "Monitorar atividade do Task Executor",
+            "params":{
+                "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
+                "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
+            }
+        },
+        {
+            "namespace": "Show",
+            "command" : "show",
+            "description": "Mostra informações sobre elementos de execução",
+            "children": [
+                 {
+                     "namespace": "ShowTaskInformation",
+                     "path": "Commands/ShowTaskInformation.command",
+                     "command" : "task [taskId]",
+                     "description": "Mostra informação sobre uma tarefa específica",
+                     "parameters": [
+                         {
+                             "key":"taskId",
+                             "paramType":"positional",
+                             "valueType":"number",
+                             "describe":"Id da tarefa"
+                         }
+                     ]
+                 }
+            ],
+            "params":{
+                "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
+                "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
+            }
+        }
+     ]
+}

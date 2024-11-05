@@ -2,11 +2,13 @@ const { resolve } = require("path")
 
 const CommandExecutor = require("../Utils/CommandExecutor")
 
-const ExecuteEnvironmentCommand = async ({args:{path}, startupParams}) => {
+const ExecuteEnvironmentCommand = async ({ args, startupParams }) => {
+
+    const { path } = args
 
     const {
-        PLATFORM_APPLICATION_SOCKET_PATH,
-        HTTP_SERVER_MANAGER_ENDPOINT
+        platformApplicationSocketPath,
+        httpServerManagerEndpoint
     } = startupParams
 
     const CommandFunction = async ({ APIs }) => {
@@ -36,8 +38,8 @@ const ExecuteEnvironmentCommand = async ({args:{path}, startupParams}) => {
     }
 
     await CommandExecutor({
-        serverResourceEndpointPath: HTTP_SERVER_MANAGER_ENDPOINT,
-        mainApplicationSocketPath: PLATFORM_APPLICATION_SOCKET_PATH,
+        serverResourceEndpointPath: httpServerManagerEndpoint,
+        mainApplicationSocketPath: platformApplicationSocketPath,
         CommandFunction
     })
 }

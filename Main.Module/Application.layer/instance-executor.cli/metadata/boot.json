@@ -1,0 +1,18 @@
+{
+    "params": [ 
+        "platformApplicationSocketPath",
+        "httpServerManagerEndpoint",
+        "REPOS_CONF_EXT_GROUP_DIR"
+    ],
+    "executables":[
+        {
+            "dependency": "@//command-group",
+            "executableName": "executor",
+            "params":{
+                "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
+                "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}",
+                "REPOS_CONF_EXT_GROUP_DIR":"{{REPOS_CONF_EXT_GROUP_DIR}}"
+            }
+        }
+    ]
+}

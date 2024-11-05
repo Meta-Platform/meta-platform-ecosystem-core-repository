@@ -9,10 +9,9 @@ const RenderActivationRulesTaskTable    = require("../Utils/RenderActivationRule
 const ShowTaskInformationCommand = async ({ args:{ taskId }, startupParams}) => {
 
     const {
-        PLATFORM_APPLICATION_SOCKET_PATH,
-        HTTP_SERVER_MANAGER_ENDPOINT
+        platformApplicationSocketPath,
+        httpServerManagerEndpoint
     } = startupParams
-
 
     const CommandFunction = async ({ APIs }) => {
         const API = APIs
@@ -39,8 +38,8 @@ const ShowTaskInformationCommand = async ({ args:{ taskId }, startupParams}) => 
     }
     
     await CommandExecutor({
-        serverResourceEndpointPath: HTTP_SERVER_MANAGER_ENDPOINT,
-        mainApplicationSocketPath: PLATFORM_APPLICATION_SOCKET_PATH,
+        serverResourceEndpointPath: httpServerManagerEndpoint,
+        mainApplicationSocketPath: platformApplicationSocketPath,
         CommandFunction
     })
 }

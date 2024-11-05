@@ -3,11 +3,13 @@ const PackageChoiceTerminalView = require("../Utils/PackageChoiceTerminalView")
 const MountPackagePath = require("../Utils/MountPackagePath")
 const ExecutePackage = require("../Utils/ExecutePackage")
 
-const RunPackageCommand = async ({args:{path}, startupParams}) => {
+const RunPackageCommand = async ({args, startupParams}) => {
+
+    const { path } = args
 
     const {
-        PLATFORM_APPLICATION_SOCKET_PATH,
-        HTTP_SERVER_MANAGER_ENDPOINT,
+        platformApplicationSocketPath,
+        httpServerManagerEndpoint,
         REPOS_CONF_EXT_GROUP_DIR
     } = startupParams
 
@@ -43,8 +45,8 @@ const RunPackageCommand = async ({args:{path}, startupParams}) => {
         }
 
         await CommandExecutor({
-            serverResourceEndpointPath: HTTP_SERVER_MANAGER_ENDPOINT,
-            mainApplicationSocketPath: PLATFORM_APPLICATION_SOCKET_PATH,
+            serverResourceEndpointPath: httpServerManagerEndpoint,
+            mainApplicationSocketPath: platformApplicationSocketPath,
             CommandFunction
         })
         

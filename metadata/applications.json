@@ -13,14 +13,14 @@
     },
     {
         "appType":"CLI",
-        "executable":"mylauncher",
-        "packageNamespace":"Main.Module/Application.layer/ecosystem-daemon-launcher.cli",
-        "supervisorSocketFileName":"launcher.sock"
-    },
-    {
-        "appType":"CLI",
         "executable":"executor",
         "packageNamespace":"Main.Module/Application.layer/instance-executor.cli",
         "supervisorSocketFileName":"executor.sock"
+    },
+    {
+        "appType":"CLI",
+        "executable":"mylauncher",
+        "packageNamespace":"Main.Module/Application.layer/ecosystem-daemon-launcher.cli",
+        "supervisorSocketFileName":"launcher.sock"
     }
 ]
