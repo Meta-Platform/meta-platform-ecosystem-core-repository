@@ -3,8 +3,8 @@ const CommandExecutor = require("../Utils/CommandExecutor")
 const RegisterRepositoryCommand = async (startupParams, cmdParams) => {  
 
     const {
-        PLATFORM_APPLICATION_SOCKET_PATH,
-        HTTP_SERVER_MANAGER_ENDPOINT
+        platformApplicationSocketPath,
+        httpServerManagerEndpoint
     } = startupParams
 
     const {
@@ -24,8 +24,8 @@ const RegisterRepositoryCommand = async (startupParams, cmdParams) => {
     }
 
 	await CommandExecutor({
-        serverResourceEndpointPath: HTTP_SERVER_MANAGER_ENDPOINT,
-        mainApplicationSocketPath: PLATFORM_APPLICATION_SOCKET_PATH,
+        serverResourceEndpointPath: httpServerManagerEndpoint,
+        mainApplicationSocketPath: platformApplicationSocketPath,
         CommandFunction
     })
 }

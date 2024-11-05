@@ -1,4 +1,4 @@
 {
-    "PLATFORM_APPLICATION_SOCKET_PATH":"/home/kaiocezar/Workspaces/meta-platform-repo/EcosystemData/sockets/ecosystem-instance-manager.app.sock",
-    "HTTP_SERVER_MANAGER_ENDPOINT":"/server-manager/status"
+    "platformApplicationSocketPath":"/home/kaiocezar/Workspaces/meta-platform-repo/EcosystemData/sockets/ecosystem-instance-manager.app.sock",
+    "httpServerManagerEndpoint":"/server-manager/status"
 }

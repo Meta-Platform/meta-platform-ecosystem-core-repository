@@ -3,8 +3,8 @@ const CommandExecutor = require("../Utils/CommandExecutor")
 const ListLayersCommand = async (startupParams) => {
     
     const {
-        PLATFORM_APPLICATION_SOCKET_PATH,
-        HTTP_SERVER_MANAGER_ENDPOINT
+        platformApplicationSocketPath,
+        httpServerManagerEndpoint
     } = startupParams
 
     const CommandFunction = async ({ APIs }) => {
@@ -23,8 +23,8 @@ const ListLayersCommand = async (startupParams) => {
     }
 
     await CommandExecutor({
-        serverResourceEndpointPath: HTTP_SERVER_MANAGER_ENDPOINT,
-        mainApplicationSocketPath: PLATFORM_APPLICATION_SOCKET_PATH,
+        serverResourceEndpointPath: httpServerManagerEndpoint,
+        mainApplicationSocketPath: platformApplicationSocketPath,
         CommandFunction
     })
 }
