@@ -4,7 +4,7 @@ const RenderLinkedParametersTaskTable   = require("../Utils/RenderLinkedParamete
 const RenderAgentLinkRulesTaskTable     = require("../Utils/RenderAgentLinkRulesTaskTable")
 const RenderActivationRulesTaskTable    = require("../Utils/RenderActivationRulesTaskTable")
 
-const ShowTaskInformationCommand = async ({ args, startupParams}) => {
+const ShowTaskInformationCommand = async ({ args, startupParams, params}) => {
 
     const { taskId } = args
 

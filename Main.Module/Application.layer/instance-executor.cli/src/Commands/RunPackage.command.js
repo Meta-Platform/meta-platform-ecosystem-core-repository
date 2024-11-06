@@ -1,3 +1,5 @@
+const { resolve } = require("path")
+
 const PackageChoiceTerminalView = require("../Utils/PackageChoiceTerminalView")
 const MountPackagePath = require("../Utils/MountPackagePath")
 const ExecutePackage = require("../Utils/ExecutePackage")

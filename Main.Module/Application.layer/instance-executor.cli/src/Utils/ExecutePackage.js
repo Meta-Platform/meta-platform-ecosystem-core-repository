@@ -1,8 +1,8 @@
 
 const { resolve } = require("path")
-const CommandExecutor = require("./CommandExecutor")
+const CommandExecutor = require("../../../../Libraries.layer/command-executor.lib/src/CommandExecutor")
 
-const ExecutePackage = (startupParams, path) => {
+const ExecutePackage = async (startupParams, path) => {
 
     const {
         platformApplicationSocketPath,
@@ -30,7 +30,7 @@ const ExecutePackage = (startupParams, path) => {
         }
     }
 
-    CommandExecutor({
+    await CommandExecutor({
         serverResourceEndpointPath: httpServerManagerEndpoint,
         mainApplicationSocketPath: platformApplicationSocketPath,
         CommandFunction
