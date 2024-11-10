@@ -6,6 +6,12 @@
         "supervisorSocketFileName":"instance-manager.sock"
     },
     {
+        "appType":"APP",
+        "executable":"control-panel",
+        "packageNamespace":"Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.webapp",
+        "supervisorSocketFileName":"control-panel.sock"
+    },
+    {
         "appType":"CLI",
         "executable":"explorer",
         "packageNamespace":"Main.Module/Application.layer/repository-explorer.cli",
