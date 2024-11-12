@@ -4,7 +4,7 @@
   "description": "Aplicativo que inicia um daemon do ecosistema",
   "author": "Kaio Cezar <kadisk.shark@gmail.com>",
   "dependencies": {
-    "@grpc/grpc-js": "^1.10.7",
+    "@grpc/grpc-js": "^1.12.2",
     "@grpc/proto-loader": "^0.7.13",
     "colors": "^1.4.0"
   }

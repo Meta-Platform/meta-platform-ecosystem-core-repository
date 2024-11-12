@@ -4,7 +4,7 @@
   "description": "Aplicação executora de ambientes e pacotes na Meta Platform",
   "author": "Kaio Cezar <kadisk.shark@gmail.com>",
   "dependencies": {
-    "cli-table3": "^0.6.3",
+    "cli-table3": "^0.6.5",
     "colors": "^1.4.0",
     "enquirer": "^2.4.1"
   }
