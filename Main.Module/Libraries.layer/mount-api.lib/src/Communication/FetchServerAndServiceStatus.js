@@ -1,8 +1,4 @@
-const SmartRequire = require("../SmartRequire")
-
 const http = require('http')
-
-const fetch = SmartRequire("node-fetch")
 
 const FetchServerAndServiceStatus = async ({
     serverResourceEndpointPath,
