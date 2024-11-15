@@ -5,7 +5,7 @@ const FormatterDataLog = require("../Utils/FormatterDataLog")
 
 const DaemonLaunchCommand = async () => {
 
-	process.env.DAEMON_SOCKET_PATH = "/home/kaiocezar/Workspaces/meta-platform-repo/EcosystemData/sockets/instance-manager.sock"
+	process.env.DAEMON_SOCKET_PATH = "/home/kadisk/Workspaces/meta-platform-repo/EcosystemData/sockets/instance-manager.sock"
 
 	const loggerEmitter = new EventEmitter()
 	loggerEmitter.on("log", async (dataLog) => console.log(await FormatterDataLog(dataLog)))

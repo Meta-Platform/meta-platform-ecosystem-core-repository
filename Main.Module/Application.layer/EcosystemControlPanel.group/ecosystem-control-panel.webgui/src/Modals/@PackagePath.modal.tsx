@@ -12,7 +12,7 @@ type ModalProps = {
 
 const PackagePathModal = ({open, onClose, onRun}:ModalProps) =>{
 
-    const [packagePath, setPathPackage] = useState("/home/kaiocezar/Workspaces/my-platform-reference-distro/repos/MyPlatform/UtilityApplication.Module/MyPlatformTools.layer/PackageDeveloper.group/package-developer.webapp")
+    const [packagePath, setPathPackage] = useState("/home/kadisk/Workspaces/my-platform-reference-distro/repos/MyPlatform/UtilityApplication.Module/MyPlatformTools.layer/PackageDeveloper.group/package-developer.webapp")
 
     return <Modal 
                 open={open} 

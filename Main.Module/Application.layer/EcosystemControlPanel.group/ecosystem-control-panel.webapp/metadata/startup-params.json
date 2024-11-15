@@ -3,7 +3,7 @@
     "serverName":"RuntimeManagerWebappInstance",
     "serverManagerUrl": "http://localhost:8080/server-manager/status",
     "PKG_CONF_DIRNAME_METADATA":"metadata",
-    "ECO_DIRPATH_INSTALL_DATA":"/home/kaiocezar/Workspaces/meta-platform-repo/EcosystemData",
+    "ECO_DIRPATH_INSTALL_DATA":"/home/kadisk/Workspaces/meta-platform-repo/EcosystemData",
     "REPOS_CONF_FILENAME_REPOS_DATA":"repositories.json",
     "REPOS_CONF_EXT_MODULE_DIR":"Module",
     "REPOS_CONF_EXT_LAYER_DIR":"layer",

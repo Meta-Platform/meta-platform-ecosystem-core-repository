@@ -1,4 +1,4 @@
-const SmartRequire = require("../SmartRequire")
+const SmartRequire = require("./SmartRequire")
 
 const WebSocket = SmartRequire('ws')
 
