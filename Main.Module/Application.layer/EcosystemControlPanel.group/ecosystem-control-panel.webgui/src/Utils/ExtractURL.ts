@@ -1,4 +1,4 @@
-import * as qs from "query-string"
+import queryString from "query-string"
 
 const GetServerStatus = (serversStatus, serverName) => {
     const {listServices=[], port} = 
@@ -58,7 +58,7 @@ const GetURLQuery = (path:string, parameters:Array<object>) => {
             return values
         }, {})
 
-        return `${path}?${qs.stringify(values, null)}`
+        return `${path}?${queryString.stringify(values, null)}`
     }else
         return path
 }
