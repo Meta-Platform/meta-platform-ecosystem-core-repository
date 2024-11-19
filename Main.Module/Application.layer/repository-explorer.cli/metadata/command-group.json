@@ -11,52 +11,43 @@
             "path": "Commands/ListRepositories.command",
             "command" : "repositories",
             "description": "Listar repositórios",
-            "bound-params": {
-                "mountApiLib": "mountApiLib"
-            },
-            "params":{
-                "installDataDirPath":"{{installDataDirPath}}"
-            }
+            "parametersToLoad": [
+                "installDataDirPath",
+                "mountApiLib"
+            ]
         },
         {
             "commandName": "ListModules",
             "path": "Commands/ListModules.command",
             "command" : "modules",
             "description": "Listar modules",
-            "bound-params": {
-                "commandExecutorLib": "commandExecutorLib"
-            },
-            "params":{
-                "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
-                "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
-            }
+            "parametersToLoad": [
+                "commandExecutorLib",
+                "platformApplicationSocketPath",
+                "httpServerManagerEndpoint"
+            ]
         },
         {
             "commandName": "ListLayers",
             "path": "Commands/ListLayers.command",
             "command" : "layers",
             "description": "Listar layers",
-            "bound-params": {
-                "commandExecutorLib": "commandExecutorLib"
-            },
-            "params":{
-                "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
-                "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
-            }
+            "parametersToLoad": [
+                "commandExecutorLib",
+                "platformApplicationSocketPath",
+                "httpServerManagerEndpoint"
+            ]
         },
         {
             "commandName": "ListPackages",
             "path": "Commands/ListPackages.command",
             "command" : "packages",
             "description": "Listar packages",
-            "bound-params": {
-                "commandExecutorLib": "commandExecutorLib"
-            },
-            "params":{
-                "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",
-                "httpServerManagerEndpoint":"{{httpServerManagerEndpoint}}"
-            }
+            "parametersToLoad": [
+                "commandExecutorLib",
+                "platformApplicationSocketPath",
+                "httpServerManagerEndpoint"
+            ]
         }
     ]
 }
-
