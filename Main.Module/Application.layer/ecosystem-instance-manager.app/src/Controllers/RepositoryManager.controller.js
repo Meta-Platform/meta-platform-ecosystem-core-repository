@@ -5,7 +5,7 @@ const RepositoryExplorerController = (params) => {
     const controllerServiceObject = {
         controllerName : "RepositoryManagerController",
         GetPackageIcon         : repositoryManagerService.GetPackageIconPath,
-        RegisterRepository     : repositoryManagerService.RegisterRepository,
+        RegisterRepository     : repositoryManagerService.RegisterRepositoryInstallation,
         ListRepositories       : repositoryManagerService.ListRepositories,
         ListModules            : repositoryManagerService.ListModules,
         ListLayers             : repositoryManagerService.ListLayers,

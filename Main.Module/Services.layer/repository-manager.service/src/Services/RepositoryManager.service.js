@@ -157,9 +157,9 @@ const RepositoryManagerService = (params) => {
         return layerList
     }
 
-    const RegisterRepository = async ({ namespace, path }) => {
-        const _RegisterRepository = repositoryUtilitiesLib.require("RegisterRepository")
-        await _RegisterRepository({
+    const _RegisterRepositoryInstallation = async ({ namespace, path }) => {
+        const RegisterRepositoryInstallation = repositoryUtilitiesLib.require("RegisterRepositoryInstallation")
+        await RegisterRepositoryInstallation({
             namespace, 
             path, 
             ECO_DIRPATH_INSTALL_DATA,
@@ -174,7 +174,7 @@ const RepositoryManagerService = (params) => {
         ListRepositories,
         ListModules,
         ListLayers,
-        RegisterRepository,
+        RegisterRepositoryInstallation: _RegisterRepositoryInstallation,
         ListPackages,
         GetPackageIconPath,
         CheckPackageHasIcon,
