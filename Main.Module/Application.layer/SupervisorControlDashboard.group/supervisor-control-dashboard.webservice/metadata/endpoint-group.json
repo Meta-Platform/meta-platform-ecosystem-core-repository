@@ -1,0 +1,18 @@
+{
+    "bound-params":[
+        "serverService"
+    ],
+    "endpoints": [
+        {
+            "url": "/",
+            "type": "controller",
+            "params": {
+                "api-template": "APIs/Supervisor.api.json",
+                "controller": "Controllers/Supervisor.controller"
+            },
+            "bound-params": {
+                "serverService":"serverService"
+            }
+        }
+    ]
+}
