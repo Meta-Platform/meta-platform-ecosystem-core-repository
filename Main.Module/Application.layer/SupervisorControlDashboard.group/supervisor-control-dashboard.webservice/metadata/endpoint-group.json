@@ -1,6 +1,10 @@
 {
+    "params":[
+        "supervisorSocketsDirPath"
+    ],
     "bound-params":[
-        "serverService"
+        "serverService",
+        "supervisorLib"
     ],
     "endpoints": [
         {
@@ -8,10 +12,16 @@
             "type": "controller",
             "params": {
                 "api-template": "APIs/Supervisor.api.json",
-                "controller": "Controllers/Supervisor.controller"
+                "controller": "Controllers/Supervisor.controller",
+                "controller-params":{
+                    "supervisorSocketsDirPath":"{{supervisorSocketsDirPath}}"
+                }
             },
             "bound-params": {
-                "serverService":"serverService"
+                "serverService":"serverService",
+                "controller-params":{
+                    "supervisorLib":"supervisorLib"
+                }
             }
         }
     ]
