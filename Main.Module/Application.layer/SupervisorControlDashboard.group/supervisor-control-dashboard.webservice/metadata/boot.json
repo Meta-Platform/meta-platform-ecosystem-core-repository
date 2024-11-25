@@ -25,7 +25,8 @@
         {
             "dependency": "@//endpoint-group",
             "bound-params":{
-                "serverService": "@@/server-service"
+                "serverService": "@@/server-service",
+                "supervisorLib": "@/supervisor.lib"
             }
         }
     ]
