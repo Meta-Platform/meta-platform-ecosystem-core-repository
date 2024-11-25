@@ -28,5 +28,17 @@
         "executable":"mylauncher",
         "packageNamespace":"Main.Module/Application.layer/ecosystem-daemon-launcher.cli",
         "supervisorSocketFileName":"launcher.sock"
+    },
+    {
+        "appType":"APP",
+        "executable":"super-webservice",
+        "packageNamespace":"Main.Module/Application.layer/SupervisorControlDashboard.group/supervisor-control-dashboard.webservice",
+        "supervisorSocketFileName":"super-dash-webservice.sock"
+    },
+    {
+        "appType":"APP",
+        "executable":"super-webgui",
+        "packageNamespace":"Main.Module/Application.layer/SupervisorControlDashboard.group/supervisor-control-dashboard.webgui",
+        "supervisorSocketFileName":"super-dash-webgui.sock"
     }
 ]

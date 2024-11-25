@@ -1,5 +1,5 @@
 {
-    "port":"9739",
+    "port":"9999",
     "serverName":"SupervisorControlDashboardWebserviceInstance",
     "supervisorSocketsDirPath": "/home/kadisk/Workspaces/meta-platform-repo/EcosystemData/supervisor-sockets"
 }
