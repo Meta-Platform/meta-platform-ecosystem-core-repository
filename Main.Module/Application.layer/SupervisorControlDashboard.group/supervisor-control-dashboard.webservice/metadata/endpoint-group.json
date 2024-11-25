@@ -4,7 +4,7 @@
     ],
     "endpoints": [
         {
-            "url": "/",
+            "url": "/supervisor",
             "type": "controller",
             "params": {
                 "api-template": "APIs/Supervisor.api.json",

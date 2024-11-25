@@ -9,7 +9,7 @@
 		{
 			"summary": "ShowInstanceStatus",
 			"method": "GET",
-			"path": "socket/:socketFilename/status",
+			"path": "/socket/:socketFilename/status",
 			"parameters": [
 				{
 					"name": "socketFilename",
@@ -22,7 +22,7 @@
 		{
 			"summary": "ListInstanceTasks",
 			"method": "GET",
-			"path": "socket/:socketFilename/tasks",
+			"path": "/socket/:socketFilename/tasks",
 			"parameters": [
 				{
 					"name": "socketFilename",
@@ -48,7 +48,7 @@
 		{
 			"summary": "ShowInstanceTaskInformation",
 			"method": "GET",
-			"path": "socket/:socketFilename/task/:taskId",
+			"path": "/socket/:socketFilename/task/:taskId",
 			"parameters": [
 				{
 					"name": "socketFilename",
