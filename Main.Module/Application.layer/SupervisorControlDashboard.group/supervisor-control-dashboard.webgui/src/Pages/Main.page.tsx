@@ -27,6 +27,8 @@ const MainPage = ({
 }:any) => {
 
 	const [socketFileList, setSocketFileList] = useState([])
+	const [instanceTaskList, setInstanceTaskList] = useState([])
+	const [socketFileName, setSocketFileName] = useState()
 
 	const location = useLocation()
   	const navigate = useNavigate()
@@ -35,16 +37,32 @@ const MainPage = ({
 	useEffect(() => {
 		if(Object.keys(queryParams).length > 0){
 			SetQueryParams(queryParams)
-			updateSocketFileList()
 		}
+		updateSocketFileList()
 	}, [])
 
 	useEffect(() => {
 		const search = qs.stringify(QueryParams)
 		navigate({search: `?${search}`})
 	}, [QueryParams])
-	
+
+	useEffect(() => {
+		if(socketFileName){
+			fetchInstanceTasks(socketFileName)
+		}
+	}, [socketFileName])
+
 	const _GetWebservice = GetRequestByServer(HTTPServerManager)
+
+	const fetchInstanceTasks = (socketFileName) => {
+		_GetWebservice(process.env.SERVER_APP_NAME, "Supervisor")
+		.ListInstanceTasks({
+			socketFilename:socketFileName
+		})
+		.then(({data}:any) => {
+			setInstanceTaskList(data) 
+		})
+	}
 
 	const updateSocketFileList = () => {
 		_GetWebservice(process.env.SERVER_APP_NAME, "Supervisor")
@@ -54,11 +72,18 @@ const MainPage = ({
 		})
 	}
 
+	const handleSelectInstance = (socketFileName) => 
+		setSocketFileName(socketFileName)
+
+
+	console.log(instanceTaskList)
+
 	return <PageDefault>
 	<ColumnGroup columns="three">
 		<Column width={4}>
 		<SocketFileList
-			list={socketFileList}/>
+			list={socketFileList}
+			onSelect={handleSelectInstance}/>
 		</Column>
 		<Column width={12}>
 		</Column>
