@@ -31,14 +31,8 @@
     },
     {
         "appType":"APP",
-        "executable":"super-webservice",
-        "packageNamespace":"Main.Module/Application.layer/SupervisorControlDashboard.group/supervisor-control-dashboard.webservice",
-        "supervisorSocketFileName":"super-dash-webservice.sock"
-    },
-    {
-        "appType":"APP",
-        "executable":"super-webgui",
-        "packageNamespace":"Main.Module/Application.layer/SupervisorControlDashboard.group/supervisor-control-dashboard.webgui",
-        "supervisorSocketFileName":"super-dash-webgui.sock"
+        "executable":"super-dash",
+        "packageNamespace":"Main.Module/Application.layer/SupervisorControlDashboard.group/supervisor-control-dashboard.webapp",
+        "supervisorSocketFileName":"super-dash.sock"
     }
 ]

@@ -11,11 +11,20 @@
     },
     "supervisorSocketsDirPath": {
       "type": "string"
+    },
+    "serverManagerUrl": {
+      "type": "string",
+      "format": "uri"
+    },
+    "RT_ENV_GENERATED_DIR_NAME": {
+      "type": "string"
     }
   },
   "required": [
     "port",
     "serverName",
-    "supervisorSocketsDirPath"
+    "supervisorSocketsDirPath",
+    "serverManagerUrl",
+    "RT_ENV_GENERATED_DIR_NAME"
   ]
 }
