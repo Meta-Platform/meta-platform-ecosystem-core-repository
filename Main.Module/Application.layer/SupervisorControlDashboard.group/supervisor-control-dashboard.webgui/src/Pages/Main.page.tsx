@@ -12,6 +12,7 @@ import {
 import PageDefault from "../Components/PageDefault"
 import SocketFileList from "../Lists/SocketFile.list"
 import GetRequestByServer from "../Utils/GetRequestByServer"
+import TaskItem from "../Components/TaskItem"
 
 import ColumnGroup from "../Layouts/Column.layout/ColumnGroup"
 
@@ -81,11 +82,29 @@ const MainPage = ({
 	return <PageDefault>
 	<ColumnGroup columns="three">
 		<Column width={4}>
-		<SocketFileList
-			list={socketFileList}
-			onSelect={handleSelectInstance}/>
+			<SocketFileList
+				list={socketFileList}
+				onSelect={handleSelectInstance}
+				socketFileSelected={socketFileName}
+				/>
 		</Column>
 		<Column width={12}>
+			{ 
+				instanceTaskList 
+				&& <div style={{ overflow: 'auto', maxHeight:"87vh" }}>
+					{
+						instanceTaskList
+						.map((task, index) =>
+							<TaskItem 
+								key={index} 
+								index={index} 
+								task={task}
+								onShowTaskDetails={(taskId) => {}}/>)
+					}
+				</div>
+			}
+		</Column>
+		<Column width={8}>
 		</Column>
 	</ColumnGroup>
 </PageDefault>
