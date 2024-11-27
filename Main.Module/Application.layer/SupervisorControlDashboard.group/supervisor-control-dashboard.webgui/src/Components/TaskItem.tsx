@@ -50,12 +50,6 @@ const RenderItemTitle = ({
 	}
 }
 
-
-const TaskInfoContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-`
-
 const TaskItem = ({
     index,
     task,

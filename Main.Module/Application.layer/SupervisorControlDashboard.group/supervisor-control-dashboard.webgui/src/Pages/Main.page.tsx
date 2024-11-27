@@ -22,62 +22,98 @@ const Column = Grid.Column
 
 const MainPage = ({
 	HTTPServerManager,
-	SetQueryParams,
 	QueryParams,
-	SetPackageDetails
+	AddQueryParam,
+	SetQueryParams,
+	RemoveQueryParam
 }:any) => {
 
 	const [socketFileList, setSocketFileList] = useState([])
-	const [instanceTaskList, setInstanceTaskList] = useState([])
-	const [socketFileName, setSocketFileName] = useState()
+	const [instanceTaskListSelected, setInstanceTaskListSelected] = useState([])
+
+	const [socketFileNameSelected, setSocketFileNameSelected] = useState<string>()
+	const [taskIdSelected, setTaskIdSelected] = useState<number>()
 
 	const location = useLocation()
   	const navigate = useNavigate()
 	const queryParams = qs.parse(location.search.substr(1))
 
 	useEffect(() => {
+
 		if(Object.keys(queryParams).length > 0){
-			SetQueryParams(queryParams)
+
+			const {
+				socketFileName:socketFileNameQueryParams, 
+				taskId:taskIdQueryParams
+			} = queryParams
+
+			const newQueryParmas = {
+				...(socketFileNameQueryParams ? { socketFileName: socketFileNameQueryParams } : {}),
+				//@ts-ignore
+				...(taskIdQueryParams ? { taskId: parseInt(taskIdQueryParams) } : {})
+			}
+
+			SetQueryParams(newQueryParmas)
 		}
+		
 		updateSocketFileList()
+
 	}, [])
 
 	useEffect(() => {
+
 		const search = qs.stringify(QueryParams)
 		navigate({search: `?${search}`})
+
+		if(Object.keys(QueryParams).length > 0){
+
+			if(QueryParams.socketFileName)
+				setSocketFileNameSelected(QueryParams.socketFileName)
+
+			if(QueryParams.taskIdSelected !== undefined)
+				setTaskIdSelected(QueryParams.taskIdSelected)
+
+		}
+
 	}, [QueryParams])
 
 	useEffect(() => {
-		if(socketFileName){
-			fetchInstanceTasks(socketFileName)
+
+		if(socketFileNameSelected){
+			AddQueryParam("socketFileName", socketFileNameSelected)
+			setTaskIdSelected(undefined)
+			RemoveQueryParam("taskId")
+			fetchInstanceTasks(socketFileNameSelected)
 		}
-	}, [socketFileName])
+		
+	}, [socketFileNameSelected])
+
+	useEffect(() => {
+
+		if(taskIdSelected !== undefined)
+			AddQueryParam("taskId", taskIdSelected)
+
+	}, [taskIdSelected])
 
 	const _GetWebservice = GetRequestByServer(HTTPServerManager)
 
-	const fetchInstanceTasks = (socketFileName) => {
+	const fetchInstanceTasks = (socketFileName) => 
 		_GetWebservice(process.env.SERVER_APP_NAME, "Supervisor")
-		.ListInstanceTasks({
-			socketFilename:socketFileName
-		})
-		.then(({data}:any) => {
-			setInstanceTaskList(data) 
-		})
-	}
+		.ListInstanceTasks({ socketFilename:socketFileName})
+		.then(({data}:any) => setInstanceTaskListSelected(data))
 
-	const updateSocketFileList = () => {
+	const updateSocketFileList = () => 
 		_GetWebservice(process.env.SERVER_APP_NAME, "Supervisor")
-		.ListSockets()
-		.then(({data}:any) => {
-			setSocketFileList(data) 
-		})
-	}
+			.ListSockets()
+			.then(({data}:any) => {
+				setSocketFileList(data) 
+			})
 
 	const handleSelectInstance = (socketFileName) => 
-		setSocketFileName(socketFileName)
+		setSocketFileNameSelected(socketFileName)
 
-
-	console.log(instanceTaskList)
+	const handleSelectTask = (taskId) => 
+		setTaskIdSelected(taskId)
 
 	return <PageDefault>
 	<ColumnGroup columns="three">
@@ -85,21 +121,21 @@ const MainPage = ({
 			<SocketFileList
 				list={socketFileList}
 				onSelect={handleSelectInstance}
-				socketFileSelected={socketFileName}
+				socketFileSelected={socketFileNameSelected}
 				/>
 		</Column>
 		<Column width={12}>
 			{ 
-				instanceTaskList 
+				instanceTaskListSelected 
 				&& <div style={{ overflow: 'auto', maxHeight:"87vh" }}>
 					{
-						instanceTaskList
+						instanceTaskListSelected
 						.map((task, index) =>
 							<TaskItem 
 								key={index} 
 								index={index} 
 								task={task}
-								onShowTaskDetails={(taskId) => {}}/>)
+								onShowTaskDetails={handleSelectTask}/>)
 					}
 				</div>
 			}
@@ -110,10 +146,10 @@ const MainPage = ({
 </PageDefault>
 }
 
-
 const mapDispatchToProps = (dispatch:any) => bindActionCreators({
-	AddQueryParam  : QueryParamsActionsCreator.AddQueryParam,
-	SetQueryParams : QueryParamsActionsCreator.SetQueryParams
+	AddQueryParam    : QueryParamsActionsCreator.AddQueryParam,
+	SetQueryParams   : QueryParamsActionsCreator.SetQueryParams,
+	RemoveQueryParam : QueryParamsActionsCreator.RemoveQueryParam
 }, dispatch)
 
 const mapStateToProps = ({HTTPServerManager, QueryParams}:any) => ({
