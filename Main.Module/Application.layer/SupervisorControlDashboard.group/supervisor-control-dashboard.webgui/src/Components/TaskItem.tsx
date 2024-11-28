@@ -7,15 +7,14 @@ const SegmentTaskStyled = styled(Segment)`
     padding-top: 5px !important;
     padding-bottom: 5px !important;
     margin: 10px !important;
-    box-shadow: 1px 1px 4px 0 rgb(34 36 38 / 71%) !important;
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
     background-color: ${({ isSelected }) =>
-        isSelected ? "antiquewhite" : "#f4f4f4"} !important;
+        isSelected ? "antiquewhite" : "white"} !important;
     border: ${({ isSelected }) =>
-        isSelected ? "1px solid rgb(34 36 38 / 66%)" : "none"} !important;
+        isSelected ? "1px solid rgb(34 36 38 / 66%)" : "1px solid rgba(34, 36, 38, 0.15)"} !important;
 
     &:hover {
         background-color: antiquewhite !important;

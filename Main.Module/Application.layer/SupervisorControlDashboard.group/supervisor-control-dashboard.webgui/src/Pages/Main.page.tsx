@@ -4,8 +4,7 @@ import { connect }            from "react-redux"
 import { bindActionCreators } from "redux"
 import { 
 	Grid,
-	Input,
-ButtonGroup
+	ButtonGroup
  } from "semantic-ui-react"
 import qs                     from "query-string"
 import { 
@@ -16,7 +15,6 @@ import {
 import PageDefault from "../Components/PageDefault"
 import SocketFileList from "../Lists/SocketFile.list"
 import GetRequestByServer from "../Utils/GetRequestByServer"
-import TaskItem from "../Components/TaskItem"
 import TaskListContainer from "../Containers/TaskList.container"
 
 import ColumnGroup from "../Layouts/Column.layout/ColumnGroup"
@@ -126,39 +124,36 @@ const MainPage = ({
 		setTaskIdSelected(taskId)
 
 	return <PageDefault>
-	<ColumnGroup columns="three">
-		<Column width={2}>
-			<SocketFileList
-				list={socketFileList}
-				onSelect={handleSelectInstance}
-				socketFileSelected={socketFileNameSelected}
-				/>
-		</Column>
-		<Column width={taskIdSelected === undefined ? 14 : 8}>
-			<Row>					
-					<ButtonGroup
-						basic
-                        floated="right"
-                        buttons={[{content:'list by TID', active:true}, 'group by loader type', 'diagram']}/>
-			</Row>
-			<TaskListContainer
-				socketFileNameSelected={socketFileNameSelected}
-				taskIdSelected={taskIdSelected}
-				onSelectTask={handleSelectTask}/>
+				<ColumnGroup columns="three">
+					<Column width={2}>
+						<SocketFileList
+							list={socketFileList}
+							onSelect={handleSelectInstance}
+							socketFileSelected={socketFileNameSelected}
+							/>
+					</Column>
+					<Column width={taskIdSelected === undefined ? 14 : 8}>
+						<ButtonGroup
+								basic
+								buttons={[{content:'list by TID', active:true}, 'group by loader type', 'diagram']}/>
+						<TaskListContainer
+							socketFileNameSelected={socketFileNameSelected}
+							taskIdSelected={taskIdSelected}
+							onSelectTask={handleSelectTask}/>
 
-		</Column>
-		
-		{
-			taskIdSelected !== undefined
-			&& <Column width={6}>
-				{
-					taskInformationSelected
-					&& <TaskInformation taskInformation={taskInformationSelected}/>
-				}
-			</Column>
-		}
-	</ColumnGroup>
-</PageDefault>
+					</Column>
+					
+					{
+						taskIdSelected !== undefined
+						&& <Column width={6}>
+							{
+								taskInformationSelected
+								&& <TaskInformation taskInformation={taskInformationSelected}/>
+							}
+						</Column>
+					}
+				</ColumnGroup>
+			</PageDefault>
 }
 
 
