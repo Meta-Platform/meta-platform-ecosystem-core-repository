@@ -3,7 +3,9 @@ import {useEffect, useState}  from "react"
 import { connect }            from "react-redux"
 import { bindActionCreators } from "redux"
 import { 
-	Grid
+	Grid,
+	Input,
+ButtonGroup
  } from "semantic-ui-react"
 import qs                     from "query-string"
 import { 
@@ -22,6 +24,7 @@ import TaskInformation from "../Components/TaskInformation"
 import QueryParamsActionsCreator from "../Actions/QueryParams.actionsCreator"
 
 const Column = Grid.Column
+const Row = Grid.Column
 
 const MainPage = ({
 	HTTPServerManager,
@@ -138,6 +141,18 @@ const MainPage = ({
 				/>
 		</Column>
 		<Column width={taskIdSelected === undefined ? 14 : 8}>
+			<Row>
+				<Input 
+					icon='filter' 
+					placeholder='task filter' 
+					value={"value"}
+					onChange={({target:{value}}) =>{}}/>
+					
+					<ButtonGroup
+						basic
+                        floated="right"
+                        buttons={[{content:'list by TID', active:true}, 'group by loader type', 'diagram']}/>
+			</Row>
 			{ 
 				instanceTaskListSelected 
 				&& <div style={{ overflow: 'auto', maxHeight:"87vh" }}>
