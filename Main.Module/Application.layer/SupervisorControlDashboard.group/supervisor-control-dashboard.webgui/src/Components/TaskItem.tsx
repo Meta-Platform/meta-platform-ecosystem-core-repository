@@ -12,6 +12,11 @@ const SegmentTaskStyled = styled(Segment)`
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background-color: ${({ isSelected }) =>
+        isSelected ? "antiquewhite" : "#f4f4f4"} !important;
+    border: ${({ isSelected }) =>
+        isSelected ? "1px solid rgb(34 36 38 / 66%)" : "none"} !important;
+
     &:hover {
         background-color: antiquewhite !important;
         border: 1px solid rgb(34 36 38 / 66%) !important;
@@ -51,12 +56,14 @@ const RenderItemTitle = ({
 }
 
 const TaskItem = ({
-    index,
     task,
+	taskIdSelected,
     onShowTaskDetails
 }) => {
     return (
-        <SegmentTaskStyled onClick={() => onShowTaskDetails(task.taskId)} style={{ backgroundColor: "#f4f4f4" }}>
+        <SegmentTaskStyled 
+			isSelected={task.taskId === taskIdSelected}
+			onClick={() => onShowTaskDetails(task.taskId)} style={{ backgroundColor: "#f4f4f4" }}>
             <div>
                 <span style={{ fontSize: "1.2rem" }}>
                     <strong> TID {task.taskId}</strong>

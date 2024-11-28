@@ -2,7 +2,9 @@ import * as React             from "react"
 import {useEffect, useState}  from "react"
 import { connect }            from "react-redux"
 import { bindActionCreators } from "redux"
-import { Grid }               from "semantic-ui-react"
+import { 
+	Grid
+ } from "semantic-ui-react"
 import qs                     from "query-string"
 import { 
 	useLocation,
@@ -15,6 +17,7 @@ import GetRequestByServer from "../Utils/GetRequestByServer"
 import TaskItem from "../Components/TaskItem"
 
 import ColumnGroup from "../Layouts/Column.layout/ColumnGroup"
+import TaskInformation from "../Components/TaskInformation"
 
 import QueryParamsActionsCreator from "../Actions/QueryParams.actionsCreator"
 
@@ -33,6 +36,7 @@ const MainPage = ({
 
 	const [socketFileNameSelected, setSocketFileNameSelected] = useState<string>()
 	const [taskIdSelected, setTaskIdSelected] = useState<number>()
+	const [taskInformationSelected, setTaskInformationSelected] = useState<any>()
 
 	const location = useLocation()
   	const navigate = useNavigate()
@@ -70,8 +74,8 @@ const MainPage = ({
 			if(QueryParams.socketFileName)
 				setSocketFileNameSelected(QueryParams.socketFileName)
 
-			if(QueryParams.taskIdSelected !== undefined)
-				setTaskIdSelected(QueryParams.taskIdSelected)
+			if(QueryParams.taskId !== undefined)
+				setTaskIdSelected(QueryParams.taskId)
 
 		}
 
@@ -81,26 +85,31 @@ const MainPage = ({
 
 		if(socketFileNameSelected){
 			AddQueryParam("socketFileName", socketFileNameSelected)
-			setTaskIdSelected(undefined)
-			RemoveQueryParam("taskId")
-			fetchInstanceTasks(socketFileNameSelected)
+			fetchInstanceTasks()
 		}
 		
 	}, [socketFileNameSelected])
 
 	useEffect(() => {
 
-		if(taskIdSelected !== undefined)
+		if(taskIdSelected !== undefined){
 			AddQueryParam("taskId", taskIdSelected)
+			fetchTaskInformation()
+		}
 
 	}, [taskIdSelected])
 
 	const _GetWebservice = GetRequestByServer(HTTPServerManager)
 
-	const fetchInstanceTasks = (socketFileName) => 
+	const fetchTaskInformation = () => 
 		_GetWebservice(process.env.SERVER_APP_NAME, "Supervisor")
-		.ListInstanceTasks({ socketFilename:socketFileName})
-		.then(({data}:any) => setInstanceTaskListSelected(data))
+		.ShowInstanceTaskInformation({ socketFilename:socketFileNameSelected, taskId:taskIdSelected })
+		.then(({data}:any) => setTaskInformationSelected(data))
+	
+	const fetchInstanceTasks = () => 
+		_GetWebservice(process.env.SERVER_APP_NAME, "Supervisor")
+			.ListInstanceTasks({ socketFilename:socketFileNameSelected})
+			.then(({data}:any) => setInstanceTaskListSelected(data))
 
 	const updateSocketFileList = () => 
 		_GetWebservice(process.env.SERVER_APP_NAME, "Supervisor")
@@ -109,22 +118,26 @@ const MainPage = ({
 				setSocketFileList(data) 
 			})
 
-	const handleSelectInstance = (socketFileName) => 
+	const handleSelectInstance = (socketFileName) => {
+		setTaskIdSelected(undefined)
+		setTaskInformationSelected(undefined)
+		RemoveQueryParam("taskId")
 		setSocketFileNameSelected(socketFileName)
+	}
 
 	const handleSelectTask = (taskId) => 
 		setTaskIdSelected(taskId)
 
 	return <PageDefault>
 	<ColumnGroup columns="three">
-		<Column width={4}>
+		<Column width={2}>
 			<SocketFileList
 				list={socketFileList}
 				onSelect={handleSelectInstance}
 				socketFileSelected={socketFileNameSelected}
 				/>
 		</Column>
-		<Column width={12}>
+		<Column width={taskIdSelected === undefined ? 14 : 8}>
 			{ 
 				instanceTaskListSelected 
 				&& <div style={{ overflow: 'auto', maxHeight:"87vh" }}>
@@ -133,15 +146,23 @@ const MainPage = ({
 						.map((task, index) =>
 							<TaskItem 
 								key={index} 
-								index={index} 
+								taskIdSelected={taskIdSelected}
 								task={task}
 								onShowTaskDetails={handleSelectTask}/>)
 					}
 				</div>
 			}
 		</Column>
-		<Column width={8}>
-		</Column>
+		
+		{
+			taskIdSelected !== undefined
+			&& <Column width={6}>
+				{
+					taskInformationSelected
+					&& <TaskInformation taskInformation={taskInformationSelected}/>
+				}
+			</Column>
+		}
 	</ColumnGroup>
 </PageDefault>
 }

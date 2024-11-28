@@ -12,21 +12,11 @@ const MainMenu = () => {
 
     return <Menu attached="top">
                 <AppsMenuItem active>
-                    <Header>Supervisor Control Dashboard</Header>
+                    <Header>Instance Supervisor</Header>
                 </AppsMenuItem>
-                {/*
-                    listIcons
-                    .filter(({enable}:any) => enable)
-                    .map(({icon, title, url}, key) => 
-                        <AppsMenuItem key={key}
-                            title={title}
-                            onClick={()=>{
-                                //@ts-ignore
-                                window.location = url
-                            }}>
-                            <Image spaced="right" src={icon} size="mini"/>
-                        </AppsMenuItem>)
-                */}
+                <AppsMenuItem >
+                    /home/kadisk/Workspaces/meta-platform-repo/EcosystemData/supervisor-sockets
+                </AppsMenuItem>
             </Menu>
 }
 

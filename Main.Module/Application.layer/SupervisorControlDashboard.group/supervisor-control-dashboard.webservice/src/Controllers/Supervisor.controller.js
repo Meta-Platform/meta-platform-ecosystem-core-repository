@@ -16,11 +16,17 @@ const SupervisorController = (params) => {
     }
 
     const ListInstanceTasks = async (socketFilename) => {
-
         const socketFilePath = path.resolve(supervisorSocketsDirPath, socketFilename)
         const daemonClient = await CreateCommunicationInterface(socketFilePath)
         const taskList = await daemonClient.ListTasks()
         return taskList
+    }
+
+    const ShowInstanceTaskInformation = async ({socketFilename, taskId}) => {
+        const socketFilePath = path.resolve(supervisorSocketsDirPath, socketFilename)
+        const daemonClient = await CreateCommunicationInterface(socketFilePath)
+        const task = await daemonClient.GetTask(taskId)
+        return task
     }
 
     const controllerServiceObject = {
@@ -29,7 +35,7 @@ const SupervisorController = (params) => {
         ShowInstanceStatus: (socketFilename) => {},
         ListInstanceTasks,
         KillInstance: (socketFilename) => {},
-        ShowInstanceTaskInformation: ({socketFilename, taskId}) => {}
+        ShowInstanceTaskInformation
     }
 
     return Object.freeze(controllerServiceObject)

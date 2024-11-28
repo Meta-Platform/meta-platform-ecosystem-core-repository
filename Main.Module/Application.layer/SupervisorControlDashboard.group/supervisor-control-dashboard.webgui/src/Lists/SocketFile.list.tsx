@@ -14,10 +14,6 @@ const ListStyled = styled(List)`
     height: 87vh;
 `
 
-const ButtonGitStyle = styled(Button)`
-	margin-left: 10px!important;
-`
-
 type SocketFileListProps =
 {
 	list:Array<string>
@@ -30,7 +26,7 @@ const SocketFileList = ({
 	socketFileSelected, 
 	onSelect
 }:SocketFileListProps) => 
-	<ListStyled selection animated>
+	<List selection animated>
 		{
 			list
 			.map((socketFileName:string, key:number) => 
@@ -43,7 +39,7 @@ const SocketFileList = ({
 				</List.Content>
 			</List.Item>)
 		}
-	</ListStyled>
+	</List>
 
 
 export default SocketFileList
