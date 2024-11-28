@@ -17,6 +17,7 @@ import PageDefault from "../Components/PageDefault"
 import SocketFileList from "../Lists/SocketFile.list"
 import GetRequestByServer from "../Utils/GetRequestByServer"
 import TaskItem from "../Components/TaskItem"
+import TaskListContainer from "../Containers/TaskList.container"
 
 import ColumnGroup from "../Layouts/Column.layout/ColumnGroup"
 import TaskInformation from "../Components/TaskInformation"
@@ -35,7 +36,6 @@ const MainPage = ({
 }:any) => {
 
 	const [socketFileList, setSocketFileList] = useState([])
-	const [instanceTaskListSelected, setInstanceTaskListSelected] = useState([])
 
 	const [socketFileNameSelected, setSocketFileNameSelected] = useState<string>()
 	const [taskIdSelected, setTaskIdSelected] = useState<number>()
@@ -86,10 +86,8 @@ const MainPage = ({
 
 	useEffect(() => {
 
-		if(socketFileNameSelected){
+		if(socketFileNameSelected)
 			AddQueryParam("socketFileName", socketFileNameSelected)
-			fetchInstanceTasks()
-		}
 		
 	}, [socketFileNameSelected])
 
@@ -108,11 +106,7 @@ const MainPage = ({
 		_GetWebservice(process.env.SERVER_APP_NAME, "Supervisor")
 		.ShowInstanceTaskInformation({ socketFilename:socketFileNameSelected, taskId:taskIdSelected })
 		.then(({data}:any) => setTaskInformationSelected(data))
-	
-	const fetchInstanceTasks = () => 
-		_GetWebservice(process.env.SERVER_APP_NAME, "Supervisor")
-			.ListInstanceTasks({ socketFilename:socketFileNameSelected})
-			.then(({data}:any) => setInstanceTaskListSelected(data))
+
 
 	const updateSocketFileList = () => 
 		_GetWebservice(process.env.SERVER_APP_NAME, "Supervisor")
@@ -141,32 +135,17 @@ const MainPage = ({
 				/>
 		</Column>
 		<Column width={taskIdSelected === undefined ? 14 : 8}>
-			<Row>
-				<Input 
-					icon='filter' 
-					placeholder='task filter' 
-					value={"value"}
-					onChange={({target:{value}}) =>{}}/>
-					
+			<Row>					
 					<ButtonGroup
 						basic
                         floated="right"
                         buttons={[{content:'list by TID', active:true}, 'group by loader type', 'diagram']}/>
 			</Row>
-			{ 
-				instanceTaskListSelected 
-				&& <div style={{ overflow: 'auto', maxHeight:"87vh" }}>
-					{
-						instanceTaskListSelected
-						.map((task, index) =>
-							<TaskItem 
-								key={index} 
-								taskIdSelected={taskIdSelected}
-								task={task}
-								onShowTaskDetails={handleSelectTask}/>)
-					}
-				</div>
-			}
+			<TaskListContainer
+				socketFileNameSelected={socketFileNameSelected}
+				taskIdSelected={taskIdSelected}
+				onSelectTask={handleSelectTask}/>
+
 		</Column>
 		
 		{
@@ -181,6 +160,7 @@ const MainPage = ({
 	</ColumnGroup>
 </PageDefault>
 }
+
 
 const mapDispatchToProps = (dispatch:any) => bindActionCreators({
 	AddQueryParam    : QueryParamsActionsCreator.AddQueryParam,
