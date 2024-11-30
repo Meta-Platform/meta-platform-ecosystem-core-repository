@@ -17,6 +17,7 @@ import PageDefault from "../Components/PageDefault"
 import SocketFileList from "../Lists/SocketFile.list"
 import GetRequestByServer from "../Utils/GetRequestByServer"
 import TaskListContainer from "../Containers/TaskList.container"
+import TaskGroupByLoaderContainer from "../Containers/TaskGroupByLoader.container"
 
 import ColumnGroup from "../Layouts/Column.layout/ColumnGroup"
 import TaskInformation from "../Components/TaskInformation"
@@ -125,16 +126,25 @@ const MainPage = ({
 		{
 			menuItem: 'group by loader', render: () => 
 			<TabPane>
-				group by loader
+				<TaskGroupByLoaderContainer
+					socketFileNameSelected={socketFileNameSelected}
+					taskIdSelected={taskIdSelected}
+					onSelectTask={handleSelectTask}/>
 			</TabPane>
 		},
 		{
-			menuItem: 'list', render: () => 
+			menuItem: 'list by id', render: () => 
 			<TabPane style={{background: "#f6f7f8"}}>
 				<TaskListContainer
 					socketFileNameSelected={socketFileNameSelected}
 					taskIdSelected={taskIdSelected}
 					onSelectTask={handleSelectTask}/>
+			</TabPane>
+		},
+		{
+			menuItem: 'group by hierarchy', render: () => 
+			<TabPane style={{background: "#f6f7f8"}}>
+				group by hierarchy
 			</TabPane>
 		},
 		{

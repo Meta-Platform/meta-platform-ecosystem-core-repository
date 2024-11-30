@@ -1,3 +1,4 @@
+import { thresholdSturges } from "d3"
 import * as React from "react"
 import { Label, Segment } from "semantic-ui-react"
 import styled from "styled-components"
@@ -57,7 +58,8 @@ const RenderItemTitle = ({
 const TaskItem = ({
     task,
 	taskIdSelected,
-    onShowTaskDetails
+    onShowTaskDetails,
+	showObjectLoaderType=true
 }) => {
     return (
         <SegmentTaskStyled 
@@ -74,7 +76,7 @@ const TaskItem = ({
 				</span>
             </div>
 			<div>
-				<Label color="grey">{task.objectLoaderType}</Label>
+				{showObjectLoaderType && <Label color="grey">{task.objectLoaderType}</Label>}
 				<Label color={GetColorByStatus(task.status)}>{task.status}</Label>
 			</div>
         </SegmentTaskStyled>
