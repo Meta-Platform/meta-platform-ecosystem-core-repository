@@ -1,4 +1,3 @@
-import { thresholdSturges } from "d3"
 import * as React from "react"
 import { Label, Segment } from "semantic-ui-react"
 import styled from "styled-components"
@@ -7,7 +6,7 @@ const SegmentTaskStyled = styled(Segment)`
     padding-left: 10px !important;
     padding-top: 5px !important;
     padding-bottom: 5px !important;
-    margin: 10px !important;
+    margin: 5px !important;
     cursor: pointer;
     display: flex;
     justify-content: space-between;
@@ -15,7 +14,7 @@ const SegmentTaskStyled = styled(Segment)`
     background-color: ${({ isSelected }) =>
         isSelected ? "antiquewhite" : "white"} !important;
     border: ${({ isSelected }) =>
-        isSelected ? "1px solid rgb(34 36 38 / 66%)" : "1px solid rgba(34, 36, 38, 0.15)"} !important;
+        isSelected ? "1px solid rgb(34 36 38 / 66%)" : "1px solid #afafaf"} !important;
 
     &:hover {
         background-color: antiquewhite !important;
@@ -66,7 +65,7 @@ const TaskItem = ({
 			isSelected={task.taskId === taskIdSelected}
 			onClick={() => onShowTaskDetails(task.taskId)} style={{ backgroundColor: "#f4f4f4" }}>
             <div>
-                <span style={{ fontSize: "1.2rem" }}>
+                <span>
                     <strong> TID {task.taskId}</strong>
                     {task.pTaskId && <> | <i>PTID {task.pTaskId}</i></>}
 					<RenderItemTitle
@@ -76,8 +75,8 @@ const TaskItem = ({
 				</span>
             </div>
 			<div>
-				{showObjectLoaderType && <Label color="grey">{task.objectLoaderType}</Label>}
-				<Label color={GetColorByStatus(task.status)}>{task.status}</Label>
+				{showObjectLoaderType && <Label size="mini" color="grey">{task.objectLoaderType}</Label>}
+				<Label size="mini" color={GetColorByStatus(task.status)}>{task.status}</Label>
 			</div>
         </SegmentTaskStyled>
     )
