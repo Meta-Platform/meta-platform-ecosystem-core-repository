@@ -2,9 +2,7 @@ import * as React             from "react"
 import {useEffect, useState}  from "react"
 import { connect }            from "react-redux"
 import { bindActionCreators } from "redux"
-import { 
-	Segment
- } from "semantic-ui-react"
+
 import GetRequestByServer from "../Utils/GetRequestByServer"
 import TaskItem from "../Components/TaskItem"
 
@@ -31,7 +29,7 @@ const TaskListContainer = ({
 			.ListInstanceTasks({ socketFilename:socketFileNameSelected})
 			.then(({data}:any) => setInstanceTaskListSelected(data))
 
-	return <Segment placeholder>
+	return <>
                 { 
                     instanceTaskListSelected 
                     && <div style={{ overflow: 'auto', maxHeight:"87vh" }}>
@@ -46,7 +44,7 @@ const TaskListContainer = ({
                             }
                         </div>
                 }
-            </Segment>
+            </>
 }
 
 const mapDispatchToProps = (dispatch:any) => bindActionCreators({

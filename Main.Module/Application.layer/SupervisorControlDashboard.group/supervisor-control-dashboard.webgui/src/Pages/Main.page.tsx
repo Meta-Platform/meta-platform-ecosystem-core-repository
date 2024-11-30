@@ -4,7 +4,8 @@ import { connect }            from "react-redux"
 import { bindActionCreators } from "redux"
 import { 
 	Grid,
-	ButtonGroup
+	MenuItem,
+	TabPane, Tab 
  } from "semantic-ui-react"
 import qs                     from "query-string"
 import { 
@@ -120,6 +121,44 @@ const MainPage = ({
 		setSocketFileNameSelected(socketFileName)
 	}
 
+	const taskViewPanes = [
+		{
+			menuItem: 'group by loader', render: () => 
+			<TabPane>
+				group by loader
+			</TabPane>
+		},
+		{
+			menuItem: 'list', render: () => 
+			<TabPane style={{background: "#f6f7f8"}}>
+				<TaskListContainer
+					socketFileNameSelected={socketFileNameSelected}
+					taskIdSelected={taskIdSelected}
+					onSelectTask={handleSelectTask}/>
+			</TabPane>
+		},
+		{
+			menuItem: 'diagram', render: () => 
+			<TabPane>
+				diagram
+			</TabPane>
+		}
+
+	]
+
+	const mainPanes = [
+		{
+			menuItem: <MenuItem key='Tasks' style={{background: "aliceblue"}}>
+							Tasks
+					</MenuItem>,
+		   render: () => 
+			<TabPane style={{background: "aliceblue"}}>
+				<Tab menu={{ color: "aliceblue" , secondary: true, pointing: true }} panes={taskViewPanes} />
+			</TabPane>
+		},
+		{ menuItem: 'Instance Events', render: () => <TabPane>Tab 2 Content</TabPane> },
+	]
+
 	const handleSelectTask = (taskId) => 
 		setTaskIdSelected(taskId)
 
@@ -133,16 +172,8 @@ const MainPage = ({
 							/>
 					</Column>
 					<Column width={taskIdSelected === undefined ? 14 : 8}>
-						<ButtonGroup
-								basic
-								buttons={[{content:'list by TID', active:true}, 'group by loader type', 'diagram']}/>
-						<TaskListContainer
-							socketFileNameSelected={socketFileNameSelected}
-							taskIdSelected={taskIdSelected}
-							onSelectTask={handleSelectTask}/>
-
+						<Tab panes={mainPanes} />
 					</Column>
-					
 					{
 						taskIdSelected !== undefined
 						&& <Column width={6}>
