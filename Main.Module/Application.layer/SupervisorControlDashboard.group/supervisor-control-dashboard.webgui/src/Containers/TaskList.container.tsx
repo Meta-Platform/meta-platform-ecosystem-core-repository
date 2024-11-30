@@ -1,10 +1,10 @@
 import * as React             from "react"
-import {useEffect, useState}  from "react"
 import { connect }            from "react-redux"
 import { bindActionCreators } from "redux"
 
-import GetRequestByServer from "../Utils/GetRequestByServer"
 import TaskItem from "../Components/TaskItem"
+
+import useFetchInstanceTaskList from "../Hooks/useFetchInstanceTaskList"
 
 const TaskListContainer = ({
 	socketFileNameSelected,
@@ -13,21 +13,11 @@ const TaskListContainer = ({
     HTTPServerManager
 }:any) => {
 
-	const [instanceTaskListSelected, setInstanceTaskListSelected] = useState([])
-
-	useEffect(() => {
-
-		if(socketFileNameSelected)
-			fetchInstanceTasks()
-		
-	}, [socketFileNameSelected])
-
-	const _GetWebservice = GetRequestByServer(HTTPServerManager)
-	
-	const fetchInstanceTasks = () => 
-		_GetWebservice(process.env.SERVER_APP_NAME, "Supervisor")
-			.ListInstanceTasks({ socketFilename:socketFileNameSelected})
-			.then(({data}:any) => setInstanceTaskListSelected(data))
+	const instanceTaskListSelected = 
+        useFetchInstanceTaskList({
+            socketFileNameSelected,
+            HTTPServerManager
+        })
 
 	return <>
                 { 
