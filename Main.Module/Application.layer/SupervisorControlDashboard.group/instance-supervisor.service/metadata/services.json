@@ -1,0 +1,8 @@
+[
+    {
+        "namespace": "InstanceSupervisorManager",
+        "path": "Managers/InstanceSupervisor.manager",
+        "bound-params":[],
+        "params": []
+    }
+]
