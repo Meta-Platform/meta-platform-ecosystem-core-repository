@@ -69,7 +69,7 @@ const InstanceMonitoringService = async (params) => {
     
     const AddChangeSocketListListener = (f) =>
 		eventEmitter
-			.on(SOCKET_FILE_LIST_CHANGE_EVENT, (v) => f(v))
+			.on(SOCKET_FILE_LIST_CHANGE_EVENT, (socketFileNameList) => f(socketFileNameList))
     
     const monitoringObject = {
         AddChangeSocketListListener

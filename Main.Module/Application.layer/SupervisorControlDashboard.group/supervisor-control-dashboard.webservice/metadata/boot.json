@@ -24,6 +24,9 @@
         },
         {
             "dependency": "@//endpoint-group",
+            "params":{
+                "supervisorSocketsDirPath":"{{supervisorSocketsDirPath}}"
+            },
             "bound-params":{
                 "serverService": "@@/server-service",
                 "supervisorLib": "@/supervisor.lib"

@@ -14,6 +14,16 @@
                 "name":"{{serverName}}",
                 "port": "{{port}}"
             }
+        },
+        {
+            "namespace": "@@/instance-monitoring-service",
+            "dependency": "@/instance-supervisor.service/services/InstanceMonitoringService",
+            "bound-params":{
+                "supervisorLib": "@/supervisor.lib"
+            },
+            "params":{
+                "supervisorSocketsDirPath": "{{supervisorSocketsDirPath}}"
+            }
         }
     ],
     "endpoints": [
@@ -29,6 +39,9 @@
             "bound-params":{
                 "serverService": "@@/server-service",
                 "supervisorLib": "@/supervisor.lib"
+            },
+            "params":{
+                "supervisorSocketsDirPath": "{{supervisorSocketsDirPath}}"
             }
         },
         {

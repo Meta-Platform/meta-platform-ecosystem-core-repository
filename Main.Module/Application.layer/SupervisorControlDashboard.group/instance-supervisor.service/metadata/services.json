@@ -1,6 +1,6 @@
 [
     {
-        "namespace": "InstanceSupervisorManager",
+        "namespace": "InstanceMonitoringService",
         "path": "Services/InstanceMonitoring.service",
         "bound-params":[ "supervisorLib" ],
         "params": [ "supervisorSocketsDirPath" ]
