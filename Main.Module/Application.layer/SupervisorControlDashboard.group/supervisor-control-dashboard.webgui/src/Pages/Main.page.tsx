@@ -16,6 +16,7 @@ import {
 import PageDefault from "../Components/PageDefault"
 import SocketFileList from "../Lists/SocketFile.list"
 import GetRequestByServer from "../Utils/GetRequestByServer"
+import GetAPI from "../Utils/GetAPI"
 import TaskListContainer from "../Containers/TaskList.container"
 import TaskGroupByLoaderContainer from "../Containers/TaskGroupByLoader.container"
 
@@ -24,8 +25,10 @@ import TaskInformation from "../Components/TaskInformation"
 
 import QueryParamsActionsCreator from "../Actions/QueryParams.actionsCreator"
 
+import useWebSocket from "../Hooks/useWebSocket"
+
 const Column = Grid.Column
-const Row = Grid.Column
+
 
 const MainPage = ({
 	HTTPServerManager,
@@ -44,6 +47,16 @@ const MainPage = ({
 	const location = useLocation()
   	const navigate = useNavigate()
 	const queryParams = qs.parse(location.search.substr(1))
+
+	const getSupervisorAPI = () => 
+		GetAPI({ apiName:"Supervisor", serverManagerInformation: HTTPServerManager })
+
+	useWebSocket({
+		socket          : getSupervisorAPI().InstanceSocketFileListChange,
+		onMessage       : (socketFileList) => setSocketFileList(socketFileList),
+		onConnection    : () => console.log("onConnection"),
+		onDisconnection : () => console.log("onDisconnection")
+	})
 
 	useEffect(() => {
 
@@ -99,6 +112,7 @@ const MainPage = ({
 		}
 
 	}, [taskIdSelected])
+	
 
 	const _GetWebservice = GetRequestByServer(HTTPServerManager)
 
