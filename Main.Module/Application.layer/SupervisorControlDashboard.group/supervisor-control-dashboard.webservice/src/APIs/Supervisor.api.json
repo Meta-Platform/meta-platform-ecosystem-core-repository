@@ -7,6 +7,11 @@
 			"path": "/sockets"
 		},
 		{
+			"summary": "InstanceSocketFileListChange",
+			"method": "WS",
+			"path": "/instance-socket-file-list-change"
+		},
+		{
 			"summary": "ShowInstanceStatus",
 			"method": "GET",
 			"path": "/socket/:socketFilename/status",

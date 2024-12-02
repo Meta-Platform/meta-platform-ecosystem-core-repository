@@ -22,7 +22,7 @@ const AreArraysEqual = (array1, array2) => {
 
 }
 
-const InstanceMonitoringService = async (params) => {
+const InstanceMonitoringService = (params) => {
 
     const {
         supervisorSocketsDirPath,
@@ -80,7 +80,7 @@ const InstanceMonitoringService = async (params) => {
 
     finalizationRegistry.register(monitoringObject, null)
         
-    await _Start()
+    _Start()
         
     return monitoringObject
 

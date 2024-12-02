@@ -38,7 +38,8 @@
             "dependency": "@/supervisor-control-dashboard.webservice/endpoint-group",
             "bound-params":{
                 "serverService": "@@/server-service",
-                "supervisorLib": "@/supervisor.lib"
+                "supervisorLib": "@/supervisor.lib",
+                "instanceMonitoringService": "@@/instance-monitoring-service"
             },
             "params":{
                 "supervisorSocketsDirPath": "{{supervisorSocketsDirPath}}"

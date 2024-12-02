@@ -3,6 +3,7 @@
         "supervisorSocketsDirPath"
     ],
     "bound-params":[
+        "instanceMonitoringService",
         "serverService",
         "supervisorLib"
     ],
@@ -20,6 +21,7 @@
             "bound-params": {
                 "serverService":"serverService",
                 "controller-params":{
+                    "instanceMonitoringService":"instanceMonitoringService",
                     "supervisorLib":"supervisorLib"
                 }
             }
