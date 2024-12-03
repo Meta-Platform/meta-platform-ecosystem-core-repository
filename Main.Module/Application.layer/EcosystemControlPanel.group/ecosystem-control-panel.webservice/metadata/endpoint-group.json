@@ -1,9 +1,12 @@
 {
+    "params": ["supervisorSocketsDirPath"],
     "bound-params":[
         "serverService", 
         "taskExecutorMachineService",
         "repositoryManagerService",
-        "ecosystemManagerService"
+        "ecosystemManagerService",
+        "instanceMonitoringService",
+        "supervisorLib"
     ],
     "endpoints": [
         {
@@ -47,6 +50,24 @@
                     "repositoryManagerService": "repositoryManagerService"
                 },
                 "serverService":"serverService"
+            }
+        },
+        {
+            "url": "/supervisor",
+            "type": "controller",
+            "params": {
+                "api-template": "APIs/InstancesMonitor.api.json",
+                "controller": "Controllers/InstancesMonitor.controller",
+                "controller-params":{
+                    "supervisorSocketsDirPath":"{{supervisorSocketsDirPath}}"
+                }
+            },
+            "bound-params": {
+                "serverService":"serverService",
+                "controller-params":{
+                    "instanceMonitoringService":"instanceMonitoringService",
+                    "supervisorLib":"supervisorLib"
+                }
             }
         }
     ]

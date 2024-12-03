@@ -35,6 +35,9 @@
     },
     "ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA": {
       "type": "string"
+    },
+    "supervisorSocketsDirPath": {
+      "type": "string"
     }
   },
   "required": [
@@ -48,6 +51,7 @@
     "REPOS_CONF_EXT_GROUP_DIR",
     "REPOS_CONF_EXTLIST_PKG_TYPE",
     "EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES",
-    "ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA"
+    "ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA",
+    "supervisorSocketsDirPath"
   ]
 }

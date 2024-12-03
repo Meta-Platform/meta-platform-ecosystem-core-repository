@@ -11,6 +11,7 @@
     "REPOS_CONF_EXTLIST_PKG_TYPE":"app|webapp|webgui|webservice|service|lib",
     "EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES":".dependencies",
     "ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA":"metadata-hierarchy.json",
-    "RT_ENV_GENERATED_DIR_NAME":".generated_data"
+    "RT_ENV_GENERATED_DIR_NAME":".generated_data",
+    "supervisorSocketsDirPath": "/home/kadisk/Workspaces/meta-platform-repo/EcosystemData/supervisor-sockets"
 }
 
