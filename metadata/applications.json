@@ -1,13 +1,13 @@
 [
     {
         "appType":"APP",
-        "executable":"start-instance-manager",
+        "executable":"executor-manager",
         "packageNamespace":"Main.Module/Application.layer/ecosystem-instance-manager.app",
         "supervisorSocketFileName":"instance-manager.sock"
     },
     {
         "appType":"APP",
-        "executable":"control-panel",
+        "executable":"executor-panel",
         "packageNamespace":"Main.Module/Application.layer/InstanceExecutorControlPanel.group/instance-executor-control-panel.webapp",
         "supervisorSocketFileName":"control-panel.sock"
     },

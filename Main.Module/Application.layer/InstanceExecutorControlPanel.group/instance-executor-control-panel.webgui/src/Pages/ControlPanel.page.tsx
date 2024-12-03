@@ -65,7 +65,7 @@ const ControlPanelPage = ({
 				<Grid>
 					<Column  style={{width:"auto", paddingRight:0}}>
 						<SidebarMenu 
-							title="Ecosystem Panel" 
+							title="Instance Executor Panel" 
 							onSelectMenu={handleSelectMenu}
 							activeItem={activeItem}/>
 					</Column>
