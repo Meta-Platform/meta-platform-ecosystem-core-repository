@@ -93,7 +93,7 @@
     ],
     "endpoints": [
         {
-            "dependency": "@/ecosystem-control-panel.webgui/endpoint-group",
+            "dependency": "@/instance-executor-control-panel.webgui/endpoint-group",
             "params":{
                 "serverManagerUrl":"{{serverManagerUrl}}",
                 "serverName":"{{serverName}}",
@@ -111,7 +111,7 @@
             }
         },
         {
-            "dependency": "@/ecosystem-control-panel.webservice/endpoint-group",
+            "dependency": "@/instance-executor-control-panel.webservice/endpoint-group",
             "bound-params":{
                 "serverService": "@@/server-service",
                 "taskExecutorMachineService": "@@/standard-task-executor-machine-service",
