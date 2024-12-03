@@ -18,13 +18,7 @@ const SupervisorController = (params) => {
         eventEmitter.emit(SOCKET_FILE_LIST_CHANGE_EVENT, socketFileNameList)
     })
 
-    const ListSocketFilesName = supervisorLib.require("ListSocketFilesName")
     const CreateCommunicationInterface = supervisorLib.require("CreateCommunicationInterface")
-
-    const ListSockets = async () => {
-        const socketFileNameList = await ListSocketFilesName(supervisorSocketsDirPath)
-        return socketFileNameList
-    }
 
     const ListInstanceTasks = async (socketFilename) => {
         const socketFilePath = path.resolve(supervisorSocketsDirPath, socketFilename)
@@ -33,7 +27,7 @@ const SupervisorController = (params) => {
         return taskList
     }
 
-    const ShowInstanceTaskInformation = async ({socketFilename, taskId}) => {
+    const GetTaskInformation = async ({socketFilename, taskId}) => {
         const socketFilePath = path.resolve(supervisorSocketsDirPath, socketFilename)
         const daemonClient = await CreateCommunicationInterface(socketFilePath)
         const task = await daemonClient.GetTask(taskId)
@@ -51,19 +45,25 @@ const SupervisorController = (params) => {
         })
     }
 
+    const ShowInstanceStatus = async (socketFilename) => {
+        const socketFilePath = path.resolve(supervisorSocketsDirPath, socketFilename)
+        const daemonClient = await CreateCommunicationInterface(socketFilePath)
+        const status = await daemonClient.GetStatus()
+        return status
+    }
+
     const controllerServiceObject = {
         controllerName : "SupervisorController",
-        ListSockets,
-        ShowInstanceStatus: (socketFilename) => {},
+        ListSockets: instanceMonitoringService.GetSocketFileNameList,
+        ShowInstanceStatus,
         ListInstanceTasks,
         KillInstance: (socketFilename) => {},
-        ShowInstanceTaskInformation,
+        GetTaskInformation,
         InstanceSocketFileListChange
     }
 
     return Object.freeze(controllerServiceObject)
     
 }
-
 
 module.exports = SupervisorController

@@ -51,7 +51,7 @@
 			]
 		},
 		{
-			"summary": "ShowInstanceTaskInformation",
+			"summary": "GetTaskInformation",
 			"method": "GET",
 			"path": "/socket/:socketFilename/task/:taskId",
 			"parameters": [

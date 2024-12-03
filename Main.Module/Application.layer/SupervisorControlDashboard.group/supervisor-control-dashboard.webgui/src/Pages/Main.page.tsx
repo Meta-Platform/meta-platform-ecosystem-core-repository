@@ -5,6 +5,7 @@ import { bindActionCreators } from "redux"
 import { 
 	Grid,
 	MenuItem,
+	Label,
 	TabPane, Tab 
  } from "semantic-ui-react"
 import qs                     from "query-string"
@@ -26,6 +27,7 @@ import TaskInformation from "../Components/TaskInformation"
 import QueryParamsActionsCreator from "../Actions/QueryParams.actionsCreator"
 
 import useWebSocket from "../Hooks/useWebSocket"
+import useFetchInstanceTaskList from "../Hooks/useFetchInstanceTaskList"
 
 const Column = Grid.Column
 
@@ -54,8 +56,8 @@ const MainPage = ({
 	useWebSocket({
 		socket          : getSupervisorAPI().InstanceSocketFileListChange,
 		onMessage       : (socketFileList) => setSocketFileList(socketFileList),
-		onConnection    : () => console.log("onConnection"),
-		onDisconnection : () => console.log("onDisconnection")
+		onConnection    : () => {},
+		onDisconnection : () => {}
 	})
 
 	useEffect(() => {
@@ -112,13 +114,19 @@ const MainPage = ({
 		}
 
 	}, [taskIdSelected])
-	
+
+	const instanceTaskListSelected = 
+        useFetchInstanceTaskList({
+            socketFileNameSelected,
+            HTTPServerManager
+        })
+
 
 	const _GetWebservice = GetRequestByServer(HTTPServerManager)
 
 	const fetchTaskInformation = () => 
 		_GetWebservice(process.env.SERVER_APP_NAME, "Supervisor")
-		.ShowInstanceTaskInformation({ socketFilename:socketFileNameSelected, taskId:taskIdSelected })
+		.GetTaskInformation({ socketFilename:socketFileNameSelected, taskId:taskIdSelected })
 		.then(({data}:any) => setTaskInformationSelected(data))
 
 
@@ -141,7 +149,7 @@ const MainPage = ({
 			menuItem: 'group by loader', render: () => 
 			<TabPane>
 				<TaskGroupByLoaderContainer
-					socketFileNameSelected={socketFileNameSelected}
+					instanceTaskListSelected={instanceTaskListSelected}
 					taskIdSelected={taskIdSelected}
 					onSelectTask={handleSelectTask}/>
 			</TabPane>
@@ -150,7 +158,7 @@ const MainPage = ({
 			menuItem: 'list by id', render: () => 
 			<TabPane style={{background: "#f6f7f8"}}>
 				<TaskListContainer
-					socketFileNameSelected={socketFileNameSelected}
+					instanceTaskListSelected={instanceTaskListSelected}
 					taskIdSelected={taskIdSelected}
 					onSelectTask={handleSelectTask}/>
 			</TabPane>
@@ -174,6 +182,7 @@ const MainPage = ({
 		{
 			menuItem: <MenuItem key='Tasks' style={{background: "aliceblue"}}>
 							Tasks
+							<Label>{instanceTaskListSelected.length}</Label>
 					</MenuItem>,
 		   render: () => 
 			<TabPane style={{background: "aliceblue"}}>
@@ -188,19 +197,19 @@ const MainPage = ({
 
 	return <PageDefault>
 				<ColumnGroup columns="three">
-					<Column width={2}>
+					<Column width={3}>
 						<SocketFileList
 							list={socketFileList}
 							onSelect={handleSelectInstance}
 							socketFileSelected={socketFileNameSelected}
 							/>
 					</Column>
-					<Column width={taskIdSelected === undefined ? 14 : 8}>
+					<Column width={taskIdSelected === undefined ? 13 : 7}>
 						<Tab panes={mainPanes} />
 					</Column>
 					{
 						taskIdSelected !== undefined
-						&& <Column width={6}>
+						&& <Column width={5}>
 							{
 								taskInformationSelected
 								&& <TaskInformation taskInformation={taskInformationSelected}/>

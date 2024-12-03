@@ -14,6 +14,7 @@ const InstanceMonitoringService = (params) => {
 
     
     const WatchSocketDirectory = supervisorLib.require("WatchSocketDirectory")
+    const ListSocketFilesName = supervisorLib.require("ListSocketFilesName")
     
     const eventEmitter = new EventEmitter()
 
@@ -30,6 +31,7 @@ const InstanceMonitoringService = (params) => {
     }
 
     const _Start = async () => {
+        socketFileNameList = await ListSocketFilesName(supervisorSocketsDirPath)
         _StartSocketsDirectoryWatcher()
         onReady()
     }
@@ -41,7 +43,8 @@ const InstanceMonitoringService = (params) => {
 			.on(SOCKET_FILE_LIST_CHANGE_EVENT, (socketFileNameList) => f(socketFileNameList))
     
     const monitoringObject = {
-        AddChangeSocketListListener
+        AddChangeSocketListListener,
+        GetSocketFileNameList: () => socketFileNameList
     }
         
     _Start()

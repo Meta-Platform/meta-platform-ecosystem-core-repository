@@ -1,24 +1,12 @@
 import * as React             from "react"
-import { connect }            from "react-redux"
-import { bindActionCreators } from "redux"
 
 import TaskItem from "../Components/TaskItem"
 
-import useFetchInstanceTaskList from "../Hooks/useFetchInstanceTaskList"
-
 const TaskListContainer = ({
-	socketFileNameSelected,
+	instanceTaskListSelected,
     taskIdSelected,
-    onSelectTask,
-    HTTPServerManager
+    onSelectTask
 }:any) => {
-
-	const instanceTaskListSelected = 
-        useFetchInstanceTaskList({
-            socketFileNameSelected,
-            HTTPServerManager
-        })
-
 	return <>
                 { 
                     instanceTaskListSelected 
@@ -37,11 +25,5 @@ const TaskListContainer = ({
             </>
 }
 
-const mapDispatchToProps = (dispatch:any) => bindActionCreators({
-}, dispatch)
 
-const mapStateToProps = ({HTTPServerManager, QueryParams}:any) => ({
-	HTTPServerManager
-})
-
-export default connect(mapStateToProps, mapDispatchToProps)(TaskListContainer)
+export default TaskListContainer
