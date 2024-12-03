@@ -186,7 +186,20 @@ const MainPage = ({
 					</MenuItem>,
 		   render: () => 
 			<TabPane style={{background: "aliceblue"}}>
-				<Tab menu={{ color: "aliceblue" , secondary: true, pointing: true }} panes={taskViewPanes} />
+				<Grid columns="three" style={{background: "aliceblue"}} divided>
+					<Column width={taskIdSelected === undefined ? 16 : 11}>
+						<Tab menu={{ color: "aliceblue" , secondary: true, pointing: true }} panes={taskViewPanes} />
+					</Column>
+					{
+						taskIdSelected !== undefined
+						&& <Column width={5}>
+							{
+								taskInformationSelected
+								&& <TaskInformation taskInformation={taskInformationSelected}/>
+							}
+						</Column>
+					}
+				</Grid>
 			</TabPane>
 		},
 		{ menuItem: 'Instance Events', render: () => <TabPane>Tab 2 Content</TabPane> },
@@ -204,18 +217,10 @@ const MainPage = ({
 							socketFileSelected={socketFileNameSelected}
 							/>
 					</Column>
-					<Column width={taskIdSelected === undefined ? 13 : 7}>
+					<Column width={13}>
 						<Tab panes={mainPanes} />
 					</Column>
-					{
-						taskIdSelected !== undefined
-						&& <Column width={5}>
-							{
-								taskInformationSelected
-								&& <TaskInformation taskInformation={taskInformationSelected}/>
-							}
-						</Column>
-					}
+					
 				</ColumnGroup>
 			</PageDefault>
 }

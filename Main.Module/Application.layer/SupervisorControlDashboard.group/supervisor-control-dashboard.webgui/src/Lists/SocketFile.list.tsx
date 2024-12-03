@@ -1,18 +1,22 @@
-
 import * as React from "react"
 
 import {
-	List, 
-	Image, 
-	Button, 
-	Icon
+	List,
+	Label
 } from "semantic-ui-react"
-import styled from "styled-components"
 
-const ListStyled = styled(List)`
-	overflow: scroll;
-    height: 87vh;
-`
+const GetColorByInstanceStatus = (status) => {
+	switch(status){
+		case "RUNNING":
+			return "green"
+		case "ERROR":
+			return "red"
+		case "STARTING":
+			return "teal"
+		default:
+			return "orange"
+	}
+}
 
 type SocketFileListProps =
 {
@@ -22,7 +26,7 @@ type SocketFileListProps =
 }
 
 const SocketFileList = ({
-	list, 
+	list,
 	socketFileSelected, 
 	onSelect
 }:SocketFileListProps) => 
@@ -35,7 +39,7 @@ const SocketFileList = ({
 				active={socketFileSelected && socketFileName === socketFileSelected}
 				onClick={() => onSelect(socketFileName)} >
 				<List.Content>
-					<List.Header>{socketFileName}</List.Header>
+					<List.Header><Label size="mini" horizontal color={GetColorByInstanceStatus(undefined)}>{undefined}</Label>{socketFileName}</List.Header>
 				</List.Content>
 			</List.Item>)
 		}
