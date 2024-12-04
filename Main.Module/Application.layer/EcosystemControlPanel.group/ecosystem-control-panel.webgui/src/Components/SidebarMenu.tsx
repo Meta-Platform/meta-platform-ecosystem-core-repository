@@ -12,7 +12,12 @@ const SidebarMenu = ({
                     <Header>{title}</Header>
                 </MenuItem>
                 <MenuItem
-                    name='packages'
+                    name='instance monitor'
+                    active={activeItem === 'instance monitor'}
+                    onClick={(e, { name }) => onSelectMenu(name)}
+                />
+                <MenuItem
+                    name='applications and repositories'
                     active={activeItem === 'packages'}
                     onClick={(e, { name }) => onSelectMenu(name)}
                 />
@@ -21,13 +26,15 @@ const SidebarMenu = ({
                     active={activeItem === 'environments'}
                     onClick={(e, { name }) => onSelectMenu(name)}
                 />
+                
                 <MenuItem
-                    name='task executor monitor'
-                    active={activeItem === 'task executor monitor'}
+                    name='sources'
+                    active={activeItem === 'repositories'}
                     onClick={(e, { name }) => onSelectMenu(name)}
                 />
+
                 <MenuItem
-                    name='repositories'
+                    name='configs'
                     active={activeItem === 'repositories'}
                     onClick={(e, { name }) => onSelectMenu(name)}
                 />

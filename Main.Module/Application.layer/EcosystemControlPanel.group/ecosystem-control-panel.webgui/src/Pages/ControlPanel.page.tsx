@@ -71,7 +71,7 @@ const ControlPanelPage = ({
 					</Column>
 					<Column style={{width:"auto", paddingLeft:0}}>
 						{
-							activeItem === "packages"
+							activeItem === "applications and repositories"
 							&& <PackageExplorerContainer serverManagerInformation={HTTPServerManager}/>
 						}
 						{
@@ -79,11 +79,11 @@ const ControlPanelPage = ({
 							&& <ControlPanelContainer serverManagerInformation={HTTPServerManager}/>
 						}
 						{
-							activeItem === "task executor monitor"
+							activeItem === "instance monitor"
 							&& <TaskMonitor />
 						}
 						{
-							activeItem === "repositories"
+							activeItem === "sources"
 							&& <RepositoriesContainer serverManagerInformation={HTTPServerManager}/>
 						}
 					</Column>
