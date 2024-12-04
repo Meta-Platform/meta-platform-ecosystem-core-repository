@@ -3,14 +3,10 @@ import React from "react"
 import { Menu, Header, MenuItem} from "semantic-ui-react"
 
 const SidebarMenu = ({
-    title,
     onSelectMenu,
     activeItem
 }) =>{
     return <Menu pointing secondary vertical>
-                <MenuItem>
-                    <Header>{title}</Header>
-                </MenuItem>
                 <MenuItem
                     name='instance monitor'
                     active={activeItem === 'instance monitor'}

@@ -19,6 +19,9 @@ import TaskMonitor from "../Containers/TaskMonitor.container"
 import ControlPanelContainer from "../Containers/ControlPanel.container"
 import PackageExplorerContainer from "../Containers/PackageExplorer.container"
 import RepositoriesContainer from "../Containers/Repositories.container"
+import InstanceSupervisorContainer from "../Containers/InstanceSupervisor.container"
+
+import MainMenu from "../Components/MainMenu"
 
 import QueryParamsActionsCreator from "../Actions/QueryParams.actionsCreator"
 
@@ -62,14 +65,18 @@ const ControlPanelPage = ({
 	const handleSelectMenu = (activeItem) => setActiveItem(activeItem)
 
 	return <Container fluid={true}>
+				<MainMenu/>
 				<Grid>
 					<Column  style={{width:"auto", paddingRight:0}}>
-						<SidebarMenu 
-							title="Ecosystem Panel" 
+						<SidebarMenu
 							onSelectMenu={handleSelectMenu}
 							activeItem={activeItem}/>
 					</Column>
 					<Column style={{width:"auto", paddingLeft:0}}>
+						{
+							activeItem === "instance monitor"
+							&& <InstanceSupervisorContainer serverManagerInformation={HTTPServerManager}/>
+						}
 						{
 							activeItem === "applications and repositories"
 							&& <PackageExplorerContainer serverManagerInformation={HTTPServerManager}/>
