@@ -17,7 +17,7 @@ type PackageType = {
     ext: string
 }
 
-const ControlPanelContainer = ({ serverManagerInformation }:any) => {
+const EnviromentsContainer = ({ serverManagerInformation }:any) => {
 
     const [ packageList, setPackageList ] = useState<PackageType[]>([])
     const [ packageInfoSelected, setPackageInfoSelected ] = useState()
@@ -93,4 +93,4 @@ const ControlPanelContainer = ({ serverManagerInformation }:any) => {
             </Grid>
 }
 
-export default ControlPanelContainer
+export default EnviromentsContainer
