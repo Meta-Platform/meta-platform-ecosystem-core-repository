@@ -29,7 +29,7 @@ type PackageType = {
     ext: string
 }
 
-const PackageExplorerContainer = ({ serverManagerInformation, QueryParams, AddQueryParam }:any) => {
+const ApplicationsAndPackagesContainer = ({ serverManagerInformation, QueryParams, AddQueryParam }:any) => {
 
     const [ packageList, setPackageList ] = useState<PackageType[]>([])
     const [ packageListFiltered, setPackageListFiltered ] = useState<PackageType[]>()
@@ -178,4 +178,4 @@ const mapDispatchToProps = (dispatch:any) => bindActionCreators({
 
 const mapStateToProps = ({QueryParams}:any) => ({QueryParams})
 
-export default connect(mapStateToProps, mapDispatchToProps)(PackageExplorerContainer)
+export default connect(mapStateToProps, mapDispatchToProps)(ApplicationsAndPackagesContainer)

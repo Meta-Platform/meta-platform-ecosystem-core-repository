@@ -13,18 +13,17 @@ const SidebarMenu = ({
                     onClick={(e, { name }) => onSelectMenu(name)}
                 />
                 <MenuItem
-                    name='applications and repositories'
-                    active={activeItem === 'packages'}
-                    onClick={(e, { name }) => onSelectMenu(name)}
-                />
-                <MenuItem
                     name='environments'
                     active={activeItem === 'environments'}
                     onClick={(e, { name }) => onSelectMenu(name)}
                 />
-                
                 <MenuItem
-                    name='sources'
+                    name='applications and packages'
+                    active={activeItem === 'packages'}
+                    onClick={(e, { name }) => onSelectMenu(name)}
+                />
+                <MenuItem
+                    name='repositories and sources'
                     active={activeItem === 'repositories'}
                     onClick={(e, { name }) => onSelectMenu(name)}
                 />

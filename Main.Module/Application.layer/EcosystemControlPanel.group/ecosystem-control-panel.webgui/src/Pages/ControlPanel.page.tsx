@@ -15,9 +15,8 @@ import SidebarMenu from "../Components/SidebarMenu"
 
 const Column = Grid.Column
 
-import TaskMonitor from "../Containers/TaskMonitor.container"
 import ControlPanelContainer from "../Containers/ControlPanel.container"
-import PackageExplorerContainer from "../Containers/PackageExplorer.container"
+import ApplicationsAndPackagesContainer from "../Containers/ApplicationsAndPackages.container"
 import RepositoriesContainer from "../Containers/Repositories.container"
 import InstanceSupervisorContainer from "../Containers/InstanceSupervisor.container"
 
@@ -74,23 +73,19 @@ const ControlPanelPage = ({
 					</Column>
 					<Column width={14}>
 						{
-							activeItem === "instance monitor"
+							activeItem === "instance supervisor"
 							&& <InstanceSupervisorContainer serverManagerInformation={HTTPServerManager}/>
 						}
 						{
-							activeItem === "applications and repositories"
-							&& <PackageExplorerContainer serverManagerInformation={HTTPServerManager}/>
+							activeItem === "applications and packages"
+							&& <ApplicationsAndPackagesContainer serverManagerInformation={HTTPServerManager}/>
 						}
 						{
 							activeItem === "environments"
 							&& <ControlPanelContainer serverManagerInformation={HTTPServerManager}/>
 						}
 						{
-							activeItem === "instance monitor"
-							&& <TaskMonitor />
-						}
-						{
-							activeItem === "sources"
+							activeItem === "repositories and sources"
 							&& <RepositoriesContainer serverManagerInformation={HTTPServerManager}/>
 						}
 					</Column>
