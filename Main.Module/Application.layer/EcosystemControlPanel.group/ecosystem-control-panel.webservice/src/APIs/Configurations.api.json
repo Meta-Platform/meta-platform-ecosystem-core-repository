@@ -1,0 +1,10 @@
+{
+	"name": "Configurations",
+	"endpoints": [
+		{
+			"summary": "GetDefaultEcosystemParameters",
+			"method": "GET",
+			"path": "/environments"
+		}
+	]
+}

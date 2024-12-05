@@ -1,0 +1,23 @@
+{
+	"name": "ApplicationsAndRepositories",
+	"endpoints": [
+		{
+			"summary": "ListInstalledRepositories",
+			"method": "GET",
+			"path": "/installed-repositories"
+		},
+		{
+			"summary": "ListInstalledApplications",
+			"method": "GET",
+			"path": "/:namespaceRepo/installed-applications",
+			"parameters": [
+				{
+					"name": "namespaceRepo",
+					"in": "path",
+					"type": "string",
+					"required": true
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,10 @@
+{
+	"name": "Sources",
+	"endpoints": [
+		{
+			"summary": "ListSources",
+			"method": "GET",
+			"path": "/sources"
+		}
+	]
+}

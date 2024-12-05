@@ -53,5 +53,4 @@ const EcosystemManagerController = (params) => {
     return Object.freeze(controllerServiceObject)
 }
 
-
 module.exports = EcosystemManagerController

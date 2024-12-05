@@ -69,6 +69,50 @@
                     "supervisorLib":"supervisorLib"
                 }
             }
+        },
+        {
+            "url": "/applications-and-repositories",
+            "type": "controller",
+            "params": {
+                "api-template": "APIs/ApplicationsAndRepositories.api.json",
+                "controller": "Controllers/ApplicationsAndRepositories.controller"
+            },
+            "bound-params": {
+                "serverService":"serverService"
+            }
+        },
+        {
+            "url": "/environments",
+            "type": "controller",
+            "params": {
+                "api-template": "APIs/Enviroments.api.json",
+                "controller": "Controllers/Enviroments.controller"
+            },
+            "bound-params": {
+                "serverService":"serverService"
+            }
+        },
+        {
+            "url": "/sources",
+            "type": "controller",
+            "params": {
+                "api-template": "APIs/sources.api.json",
+                "controller": "Controllers/sources.controller"
+            },
+            "bound-params": {
+                "serverService":"serverService"
+            }
+        },
+        {
+            "url": "/configurations",
+            "type": "controller",
+            "params": {
+                "api-template": "APIs/Configurations.api.json",
+                "controller": "Controllers/Configurations.controller"
+            },
+            "bound-params": {
+                "serverService":"serverService"
+            }
         }
     ]
 }

@@ -1,0 +1,10 @@
+{
+	"name": "Environments",
+	"endpoints": [
+		{
+			"summary": "ListEnvironments",
+			"method": "GET",
+			"path": "/environments"
+		}
+	]
+}
