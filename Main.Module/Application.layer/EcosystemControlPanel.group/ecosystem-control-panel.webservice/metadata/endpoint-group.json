@@ -85,8 +85,8 @@
             "url": "/environments",
             "type": "controller",
             "params": {
-                "api-template": "APIs/Enviroments.api.json",
-                "controller": "Controllers/Enviroments.controller"
+                "api-template": "APIs/Environments.api.json",
+                "controller": "Controllers/Environments.controller"
             },
             "bound-params": {
                 "serverService":"serverService"
@@ -96,8 +96,8 @@
             "url": "/sources",
             "type": "controller",
             "params": {
-                "api-template": "APIs/sources.api.json",
-                "controller": "Controllers/sources.controller"
+                "api-template": "APIs/Sources.api.json",
+                "controller": "Controllers/Sources.controller"
             },
             "bound-params": {
                 "serverService":"serverService"
