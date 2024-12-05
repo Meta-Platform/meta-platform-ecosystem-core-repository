@@ -66,13 +66,13 @@ const ControlPanelPage = ({
 
 	return <Container fluid={true}>
 				<MainMenu/>
-				<Grid>
-					<Column  style={{width:"auto", paddingRight:0}}>
+				<Grid columns="two">
+					<Column  width={2}>
 						<SidebarMenu
 							onSelectMenu={handleSelectMenu}
 							activeItem={activeItem}/>
 					</Column>
-					<Column style={{width:"auto", paddingLeft:0}}>
+					<Column width={14}>
 						{
 							activeItem === "instance monitor"
 							&& <InstanceSupervisorContainer serverManagerInformation={HTTPServerManager}/>

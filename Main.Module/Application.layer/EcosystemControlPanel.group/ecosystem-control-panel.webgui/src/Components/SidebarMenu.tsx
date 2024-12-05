@@ -1,6 +1,6 @@
 
 import React from "react"
-import { Menu, Header, MenuItem} from "semantic-ui-react"
+import { Menu, MenuItem} from "semantic-ui-react"
 
 const SidebarMenu = ({
     onSelectMenu,
