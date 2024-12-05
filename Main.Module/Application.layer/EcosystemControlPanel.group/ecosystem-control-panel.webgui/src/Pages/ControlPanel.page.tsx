@@ -15,7 +15,7 @@ import SidebarMenu from "../Components/SidebarMenu"
 
 const Column = Grid.Column
 
-import EnviromentsContainer from "../Containers/Environments.container"
+import EnvironmentsContainer from "../Containers/Environments.container"
 import ApplicationsAndPackagesContainer from "../Containers/ApplicationsAndPackages.container"
 import RepositoriesContainer from "../Containers/Repositories.container"
 import InstanceSupervisorContainer from "../Containers/InstanceSupervisor.container"
@@ -82,7 +82,7 @@ const ControlPanelPage = ({
 						}
 						{
 							activeItem === "environments"
-							&& <EnviromentsContainer serverManagerInformation={HTTPServerManager}/>
+							&& <EnvironmentsContainer serverManagerInformation={HTTPServerManager}/>
 						}
 						{
 							activeItem === "repositories and sources"

@@ -1,3 +1,3 @@
-import EnviromentsContainer from "./Environments.container"
+import EnvironmentsContainer from "./Environments.container"
 
-export default EnviromentsContainer
+export default EnvironmentsContainer
