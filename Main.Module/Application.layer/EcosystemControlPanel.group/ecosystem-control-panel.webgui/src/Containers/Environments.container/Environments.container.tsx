@@ -1,9 +1,8 @@
 import * as React from "react"
 import { useState } from "react"
 
-import { Grid, Loader, Segment} from "semantic-ui-react"
+import { Grid, Loader } from "semantic-ui-react"
 
-import useWebSocket from "../../Hooks/useWebSocket"
 import GetAPI from "../../Utils/GetAPI"
 import ApplicationDetails from "./ApplicationDetails"
 import CardApplication from "./CardApplication"
@@ -19,37 +18,22 @@ type PackageType = {
 
 const EnvironmentsContainer = ({ serverManagerInformation }:any) => {
 
-    const [ packageList, setPackageList ] = useState<PackageType[]>([])
+    const [ environmentsList, setEnviromentList ] = useState<PackageType[]>([])
     const [ packageInfoSelected, setPackageInfoSelected ] = useState()
     const [ isLoading, setLoading ] = useState(true)
     
-    const getRuntimeManagerAPI = () => 
+    const getEnviromentAPI = () => 
         GetAPI({ 
-            apiName:"EcosystemManager",  
+            apiName:"Environment",  
             serverManagerInformation 
         })
-    
-    useWebSocket({
-		socket: getRuntimeManagerAPI().PackageList,
-		onMessage: (packageList) => {
-            setPackageList(packageList.filter(({ packageInService }:any) => packageInService))
-            setLoading(false)
-        },
-		onConnection: () => {
-            fetchPackageList()
-        },
-		onDisconnection: () => {
-            setPackageList([])
-            setLoading(true)
-        }
-	})
 
-    const fetchPackageList = async () => {
+    const fetchEnvironmentList = async () => {
         try {
-            const api = getRuntimeManagerAPI()
-            const response = await api.ListPackages()
-            const packageList = response.data
-            setPackageList(packageList.filter(({ packageInService }:any) => packageInService))
+            const api = getEnviromentAPI()
+            const response = await api.ListEnvironments()
+            const environmentsList = response.data
+            setEnviromentList(environmentsList.filter(({ packageInService }:any) => packageInService))
             setLoading(false)
         }catch(e){
             console.log(e)
@@ -68,7 +52,7 @@ const EnvironmentsContainer = ({ serverManagerInformation }:any) => {
                     <Grid>
                         <Grid.Row>
                             {
-                                packageList
+                                environmentsList
                                 .map((packageInformation:any, key) => {
                                         return <Grid.Column style={{marginBottom:"15px", width:"auto"}}>
                                                     <CardApplication

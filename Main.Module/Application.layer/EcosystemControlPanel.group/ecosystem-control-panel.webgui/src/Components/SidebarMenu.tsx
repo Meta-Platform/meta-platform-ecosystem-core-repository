@@ -8,8 +8,8 @@ const SidebarMenu = ({
 }) =>{
     return <Menu pointing secondary vertical>
                 <MenuItem
-                    name='instance monitor'
-                    active={activeItem === 'instance monitor'}
+                    name='instance supervisor'
+                    active={activeItem === 'instance supervisor'}
                     onClick={(e, { name }) => onSelectMenu(name)}
                 />
                 <MenuItem
@@ -24,13 +24,13 @@ const SidebarMenu = ({
                 />
                 <MenuItem
                     name='repositories and sources'
-                    active={activeItem === 'repositories'}
+                    active={activeItem === 'repositories and sources'}
                     onClick={(e, { name }) => onSelectMenu(name)}
                 />
 
                 <MenuItem
                     name='configs'
-                    active={activeItem === 'repositories'}
+                    active={activeItem === 'configs'}
                     onClick={(e, { name }) => onSelectMenu(name)}
                 />
             </Menu>

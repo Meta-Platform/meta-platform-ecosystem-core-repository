@@ -7,7 +7,8 @@ import {
 	MenuItem,
 	Label,
 	TabPane, 
-	Tab 
+	Tab,
+	Segment
  } from "semantic-ui-react"
 import qs                     from "query-string"
 import { 
@@ -208,7 +209,8 @@ const InstanceSupervisorContainer = ({
 	const handleSelectTask = (taskId) => 
 		setTaskIdSelected(taskId)
 
-	return <Grid columns="three" divided>
+	return <Segment>
+		<Grid columns="three" divided>
                 <Grid.Row>
 					<Column width={3}>
 						<SocketFileList
@@ -222,6 +224,7 @@ const InstanceSupervisorContainer = ({
 					</Column>
 				</Grid.Row>
 			</Grid>
+	</Segment>
 }
 
 
