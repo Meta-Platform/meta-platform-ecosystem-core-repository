@@ -1,5 +1,3 @@
-const CommandExecutor = require("../Utils/CommandExecutor")
-
 const StopEnvironmentCommand = async ({ args, startupParams, params }) => {
 
     const { executionId } = args

@@ -1,6 +1,7 @@
 {
     "bound-params": [
-        "commandExecutorLib"
+        "commandExecutorLib",
+        "taskTableRenderLib"
     ],
     "params": [
         "platformApplicationSocketPath",
@@ -127,7 +128,8 @@
                     "parametersToLoad": [
                         "commandExecutorLib",
                         "platformApplicationSocketPath",
-                        "httpServerManagerEndpoint"
+                        "httpServerManagerEndpoint",
+                        "taskTableRenderLib"
                     ]
                 }
             ]
