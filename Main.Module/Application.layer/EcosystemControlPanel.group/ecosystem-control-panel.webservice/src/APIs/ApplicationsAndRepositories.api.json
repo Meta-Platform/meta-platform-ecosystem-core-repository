@@ -9,15 +9,7 @@
 		{
 			"summary": "ListInstalledApplications",
 			"method": "GET",
-			"path": "/:namespaceRepo/installed-applications",
-			"parameters": [
-				{
-					"name": "namespaceRepo",
-					"in": "path",
-					"type": "string",
-					"required": true
-				}
-			]
+			"path": "/installed-applications"
 		}
 	]
 }

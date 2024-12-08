@@ -33,15 +33,10 @@ const EnvironmentsContainer = ({ serverManagerInformation }:any) => {
         })
     const fetchEnvironmentsList = async () => {
         const api = getEnviromentAPI()
-        console.log(api)
         const response = await api.ListEnvironments()
         setEnviromentNameList(response.data)
         setLoading(false)
     }
-
-    const handleShowDetailsColumn = 
-        (packageInformation) => 
-        setPackageInfoSelected(packageInformation)
 
     return <Grid style={{padding:"1em"}}>
                 {
@@ -52,8 +47,8 @@ const EnvironmentsContainer = ({ serverManagerInformation }:any) => {
                         {
                                 environmentNameList
                                 .map((environmentName:any, key) => {
-                                        return <Grid.Row style={{marginBottom:"15px", width:"auto"}}>
-                                                    <Segment style={{height: "100%", cursor: "pointer", width:"240px"}}>
+                                        return <Grid.Row>
+                                                    <Segment>
                                                         <strong>{environmentName}</strong>
                                                     </Segment>
                                                 </Grid.Row>

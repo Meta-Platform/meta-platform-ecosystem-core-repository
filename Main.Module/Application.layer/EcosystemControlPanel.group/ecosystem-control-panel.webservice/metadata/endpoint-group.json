@@ -79,10 +79,17 @@
             "type": "controller",
             "params": {
                 "api-template": "APIs/ApplicationsAndRepositories.api.json",
-                "controller": "Controllers/ApplicationsAndRepositories.controller"
+                "controller": "Controllers/ApplicationsAndRepositories.controller",
+                "controller-params":{
+                    "installDataDirPath": "{{installDataDirPath}}",
+                    "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
+                }
             },
             "bound-params": {
-                "serverService":"serverService"
+                "serverService":"serverService",
+                "controller-params":{
+                    "jsonFileUtilitiesLib": "jsonFileUtilitiesLib"
+                }
             }
         },
         {

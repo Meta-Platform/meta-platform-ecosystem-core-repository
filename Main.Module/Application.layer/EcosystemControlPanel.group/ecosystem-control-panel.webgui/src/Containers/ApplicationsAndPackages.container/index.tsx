@@ -1,3 +1,3 @@
-import PackagesContainer from "./Packages.container"
+import ApplicationsAndPackagesContainer from "./ApplicationsAndPackages.container"
 
-export default PackagesContainer
+export default ApplicationsAndPackagesContainer
