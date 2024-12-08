@@ -10,7 +10,7 @@ import {
 
 import ExtractURL from "../../Utils/ExtractURL"
 
-const CardApplication = ({
+const CardEnvironment = ({
     packageInformation,
     serverManagerInformation,
     onShowDetailsColumn
@@ -98,4 +98,4 @@ const CardApplication = ({
             </Segment>
 }
 
-export default CardApplication
+export default CardEnvironment

@@ -5,7 +5,7 @@ import { Grid, Loader } from "semantic-ui-react"
 
 import GetAPI from "../../Utils/GetAPI"
 import ApplicationDetails from "./ApplicationDetails"
-import CardApplication from "./CardApplication"
+import CardEnvironment from "./CardEnvironment"
 
 type PackageType = {
     namespaceRepo: string
@@ -57,7 +57,7 @@ const EnvironmentsContainer = ({ serverManagerInformation }:any) => {
                                 environmentsList
                                 .map((packageInformation:any, key) => {
                                         return <Grid.Column style={{marginBottom:"15px", width:"auto"}}>
-                                                    <CardApplication
+                                                    <CardEnvironment
                                                         onShowDetailsColumn={handleShowDetailsColumn}
                                                         packageInformation={packageInformation}
                                                         serverManagerInformation={serverManagerInformation}/>
