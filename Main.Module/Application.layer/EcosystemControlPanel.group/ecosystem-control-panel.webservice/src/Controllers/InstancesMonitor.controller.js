@@ -8,11 +8,24 @@ const InstancesMonitorController = (params) => {
     const eventEmitter  = new EventEmitter()
 
     const {
-        supervisorSocketsDirPath,
+        installDataDirPath,
+        ecosystemDefaultsFileRelativePath,
+        jsonFileUtilitiesLib,
         instanceMonitoringService,
         supervisorLib
     } = params
 
+    const ReadJsonFile = jsonFileUtilitiesLib.require("ReadJsonFile")
+
+    let supervisorSocketsDirPath = undefined
+    
+    const _InitSupervisorSocketsDirPath = async () => {
+        const ecosystemDefaultFilePath = path.resolve(installDataDirPath, ecosystemDefaultsFileRelativePath)
+        const ecosystemDefaults = await ReadJsonFile(ecosystemDefaultFilePath)
+        supervisorSocketsDirPath = path.resolve(installDataDirPath, ecosystemDefaults.ECOSYSTEMDATA_CONF_DIRNAME_SUPERVISOR_UNIX_SOCKET_DIR)
+    }
+
+    _InitSupervisorSocketsDirPath()
 
     instanceMonitoringService.AddChangeSocketListListener((socketFileNameList) => {
         eventEmitter.emit(SOCKET_FILE_LIST_CHANGE_EVENT, socketFileNameList)

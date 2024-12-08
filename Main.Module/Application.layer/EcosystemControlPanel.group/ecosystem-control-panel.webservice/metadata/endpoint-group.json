@@ -1,5 +1,5 @@
 {
-    "params": ["supervisorSocketsDirPath"],
+    "params": ["installDataDirPath", "ecosystemDefaultsFileRelativePath"],
     "bound-params":[
         "serverService", 
         "taskExecutorMachineService",
@@ -7,7 +7,8 @@
         "ecosystemManagerService",
         "instanceMonitoringService",
         "supervisorLib",
-        "ecosystemControlPanelService"
+        "ecosystemControlPanelService",
+        "jsonFileUtilitiesLib"
     ],
     "endpoints": [
         {
@@ -60,14 +61,16 @@
                 "api-template": "APIs/InstancesMonitor.api.json",
                 "controller": "Controllers/InstancesMonitor.controller",
                 "controller-params":{
-                    "supervisorSocketsDirPath":"{{supervisorSocketsDirPath}}"
+                    "installDataDirPath": "{{installDataDirPath}}",
+                    "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
                 }
             },
             "bound-params": {
                 "serverService":"serverService",
                 "controller-params":{
                     "instanceMonitoringService":"instanceMonitoringService",
-                    "supervisorLib":"supervisorLib"
+                    "supervisorLib":"supervisorLib",
+                    "jsonFileUtilitiesLib": "jsonFileUtilitiesLib"
                 }
             }
         },

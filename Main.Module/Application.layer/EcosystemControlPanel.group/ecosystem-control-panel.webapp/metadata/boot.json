@@ -69,10 +69,12 @@
                 "ecosystemManagerService": "@@/ecosystem-manager",
                 "supervisorLib": "@/supervisor.lib",
                 "instanceMonitoringService": "@@/instance-monitoring-service",
-                "ecosystemControlPanelService": "@@/ecosystem-control-panel-service"
+                "ecosystemControlPanelService": "@@/ecosystem-control-panel-service",
+                "jsonFileUtilitiesLib": "@/json-file-utilities.lib"
             },
             "params":{
-                "supervisorSocketsDirPath": "{{supervisorSocketsDirPath}}"
+                "installDataDirPath": "{{installDataDirPath}}",
+                "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
             }
         }
     ]

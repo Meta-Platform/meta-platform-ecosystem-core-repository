@@ -1,11 +1,10 @@
 import * as React from "react"
 import { useState, useEffect } from "react"
 
-import { Grid, Loader } from "semantic-ui-react"
+import { Grid, Loader, Segment } from "semantic-ui-react"
 
 import GetAPI from "../../Utils/GetAPI"
 import ApplicationDetails from "./ApplicationDetails"
-import CardEnvironment from "./CardEnvironment"
 
 type PackageType = {
     namespaceRepo: string
@@ -18,7 +17,7 @@ type PackageType = {
 
 const EnvironmentsContainer = ({ serverManagerInformation }:any) => {
 
-    const [ environmentsList, setEnviromentList ] = useState<PackageType[]>([])
+    const [ environmentNameList, setEnviromentNameList ] = useState<PackageType[]>([])
     const [ packageInfoSelected, setPackageInfoSelected ] = useState()
     const [ isLoading, setLoading ] = useState(true)
 
@@ -36,10 +35,8 @@ const EnvironmentsContainer = ({ serverManagerInformation }:any) => {
         const api = getEnviromentAPI()
         console.log(api)
         const response = await api.ListEnvironments()
-        console.log(response)
-        /*const environmentsList = response.data
-        setEnviromentList(environmentsList.filter(({ packageInService }:any) => packageInService))
-        setLoading(false)*/
+        setEnviromentNameList(response.data)
+        setLoading(false)
     }
 
     const handleShowDetailsColumn = 
@@ -52,19 +49,16 @@ const EnvironmentsContainer = ({ serverManagerInformation }:any) => {
                 }
                 <Grid.Column width={ packageInfoSelected ? 8 : undefined}>
                     <Grid>
-                        <Grid.Row>
-                            {
-                                environmentsList
-                                .map((packageInformation:any, key) => {
-                                        return <Grid.Column style={{marginBottom:"15px", width:"auto"}}>
-                                                    <CardEnvironment
-                                                        onShowDetailsColumn={handleShowDetailsColumn}
-                                                        packageInformation={packageInformation}
-                                                        serverManagerInformation={serverManagerInformation}/>
-                                                </Grid.Column>
+                        {
+                                environmentNameList
+                                .map((environmentName:any, key) => {
+                                        return <Grid.Row style={{marginBottom:"15px", width:"auto"}}>
+                                                    <Segment style={{height: "100%", cursor: "pointer", width:"240px"}}>
+                                                        <strong>{environmentName}</strong>
+                                                    </Segment>
+                                                </Grid.Row>
                                     })
                             }
-                        </Grid.Row>
                     </Grid>
                 </Grid.Column>
                 {
