@@ -15,10 +15,10 @@ import SidebarMenu from "../Components/SidebarMenu"
 
 const Column = Grid.Column
 
-import EnvironmentsContainer from "../Containers/Environments.container"
+import EnvironmentsContainer            from "../Containers/Environments.container"
 import ApplicationsAndPackagesContainer from "../Containers/ApplicationsAndPackages.container"
-import RepositoriesContainer from "../Containers/Repositories.container"
-import InstanceSupervisorContainer from "../Containers/InstanceSupervisor.container"
+import SourcesContainer                 from "../Containers/Sources.container"
+import InstanceSupervisorContainer      from "../Containers/InstanceSupervisor.container"
 
 import MainMenu from "../Components/MainMenu"
 
@@ -86,7 +86,7 @@ const ControlPanelPage = ({
 						}
 						{
 							activeItem === "repositories and sources"
-							&& <RepositoriesContainer serverManagerInformation={HTTPServerManager}/>
+							&& <SourcesContainer serverManagerInformation={HTTPServerManager}/>
 						}
 					</Column>
 				</Grid>

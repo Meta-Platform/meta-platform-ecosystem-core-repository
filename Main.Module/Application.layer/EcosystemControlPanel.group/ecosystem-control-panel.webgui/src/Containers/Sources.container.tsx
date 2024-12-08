@@ -16,7 +16,7 @@ type RepositoryType = {
     path: string
 }
 
-const RepositoriesContainer = ({ serverManagerInformation }:any) => {
+const SourcesContainer = ({ serverManagerInformation }:any) => {
 
     const [ repos, setRepos ] = useState<RepositoryType[]>([])
     const [newNamespace, setNewNamespace] = useState("")
@@ -25,9 +25,9 @@ const RepositoriesContainer = ({ serverManagerInformation }:any) => {
 
     const isButtonRegisterDisable = () => !(newNamespace && newPath)
 
-    const getRepositoryManagerAPI = () => 
+    const _GetSourcesAPI = () => 
         GetAPI({ 
-            apiName:"RepositoryManager",  
+            apiName:"Sources",  
             serverManagerInformation 
         })
     
@@ -37,7 +37,7 @@ const RepositoriesContainer = ({ serverManagerInformation }:any) => {
     
     const fetchRepoList = async () => {
         try {
-            const api = getRepositoryManagerAPI()
+            const api = _GetSourcesAPI()
             const response = await api.ListRepositories()
             const repos = response.data
             setRepos(repos)
@@ -51,7 +51,7 @@ const RepositoriesContainer = ({ serverManagerInformation }:any) => {
     const RegisterRepo = async () => {
         try {
             setIsLoading(true)
-            const api = getRepositoryManagerAPI()
+            const api = _GetSourcesAPI()
             const response = await api.RegisterRepository({
                 namespace: newNamespace, 
                 path: newPath
@@ -122,4 +122,4 @@ const RepositoriesContainer = ({ serverManagerInformation }:any) => {
             </Segment>
 }
 
-export default RepositoriesContainer
+export default SourcesContainer
