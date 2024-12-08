@@ -50,9 +50,6 @@
             "dependency": "@//endpoint-group",
             "bound-params":{
                 "serverService": "@@/server-service",
-                "taskExecutorMachineService": "@@/standard-task-executor-machine-service",
-                "repositoryManagerService": "@@/repository-manager",
-                "ecosystemManagerService": "@@/ecosystem-manager",
                 "supervisorLib": "@/supervisor.lib",
                 "instanceMonitoringService": "@@/instance-monitoring-service",
                 "ecosystemControlPanelService": "@@/ecosystem-control-panel-service",
