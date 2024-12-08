@@ -4,7 +4,8 @@
         "serverName",
         "serverManagerUrl",
         "RT_ENV_GENERATED_DIR_NAME",
-        "supervisorSocketsDirPath"
+        "installDataDirPath",
+        "ecosystemDefaultsFileRelativePath"
     ],
     "services": [
         {
@@ -19,10 +20,23 @@
             "namespace": "@@/instance-monitoring-service",
             "dependency": "@/instance-supervisor.service/services/InstanceMonitoringService",
             "bound-params":{
-                "supervisorLib": "@/supervisor.lib"
+                "supervisorLib": "@/supervisor.lib",
+                "jsonFileUtilitiesLib": "@/json-file-utilities.lib"
             },
             "params":{
-                "supervisorSocketsDirPath": "{{supervisorSocketsDirPath}}"
+                "installDataDirPath": "{{installDataDirPath}}",
+                "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
+            }
+        },
+        {
+            "namespace": "@@/ecosystem-control-panel-service",
+            "dependency": "@/ecosystem-control-panel.service/services/EnvironmentHandlerService",
+            "bound-params":{
+                "jsonFileUtilitiesLib": "@/json-file-utilities.lib"
+            },
+            "params":{
+                "installDataDirPath": "{{installDataDirPath}}",
+                "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
             }
         }
 
@@ -54,7 +68,8 @@
                 "repositoryManagerService": "@@/repository-manager",
                 "ecosystemManagerService": "@@/ecosystem-manager",
                 "supervisorLib": "@/supervisor.lib",
-                "instanceMonitoringService": "@@/instance-monitoring-service"
+                "instanceMonitoringService": "@@/instance-monitoring-service",
+                "ecosystemControlPanelService": "@@/ecosystem-control-panel-service"
             },
             "params":{
                 "supervisorSocketsDirPath": "{{supervisorSocketsDirPath}}"

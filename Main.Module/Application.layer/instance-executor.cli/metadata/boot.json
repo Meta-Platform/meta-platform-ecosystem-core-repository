@@ -9,7 +9,8 @@
             "dependency": "@//command-group",
             "executableName": "executor",
             "bound-params": {
-                "commandExecutorLib": "@/command-executor.lib"
+                "commandExecutorLib": "@/command-executor.lib",
+                "taskTableRenderLib": "@/task-table-render.lib"
             },
             "params":{
                 "platformApplicationSocketPath":"{{platformApplicationSocketPath}}",

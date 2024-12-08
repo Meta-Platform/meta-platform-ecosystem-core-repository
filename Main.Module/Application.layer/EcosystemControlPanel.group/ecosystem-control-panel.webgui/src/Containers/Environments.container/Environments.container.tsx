@@ -1,5 +1,5 @@
 import * as React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 import { Grid, Loader } from "semantic-ui-react"
 
@@ -21,23 +21,25 @@ const EnvironmentsContainer = ({ serverManagerInformation }:any) => {
     const [ environmentsList, setEnviromentList ] = useState<PackageType[]>([])
     const [ packageInfoSelected, setPackageInfoSelected ] = useState()
     const [ isLoading, setLoading ] = useState(true)
+
+    useEffect(() => {
+        fetchEnvironmentsList()
+    }, [])
+    
     
     const getEnviromentAPI = () => 
         GetAPI({ 
-            apiName:"Environment",  
+            apiName:"Environments",  
             serverManagerInformation 
         })
-
-    const fetchEnvironmentList = async () => {
-        try {
-            const api = getEnviromentAPI()
-            const response = await api.ListEnvironments()
-            const environmentsList = response.data
-            setEnviromentList(environmentsList.filter(({ packageInService }:any) => packageInService))
-            setLoading(false)
-        }catch(e){
-            console.log(e)
-        }
+    const fetchEnvironmentsList = async () => {
+        const api = getEnviromentAPI()
+        console.log(api)
+        const response = await api.ListEnvironments()
+        console.log(response)
+        /*const environmentsList = response.data
+        setEnviromentList(environmentsList.filter(({ packageInService }:any) => packageInService))
+        setLoading(false)*/
     }
 
     const handleShowDetailsColumn = 

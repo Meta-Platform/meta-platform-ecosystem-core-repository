@@ -6,7 +6,8 @@
         "repositoryManagerService",
         "ecosystemManagerService",
         "instanceMonitoringService",
-        "supervisorLib"
+        "supervisorLib",
+        "ecosystemControlPanelService"
     ],
     "endpoints": [
         {
@@ -89,7 +90,10 @@
                 "controller": "Controllers/Environments.controller"
             },
             "bound-params": {
-                "serverService":"serverService"
+                "serverService":"serverService",
+                "controller-params":{
+                    "ecosystemControlPanelService": "ecosystemControlPanelService"
+                }
             }
         },
         {

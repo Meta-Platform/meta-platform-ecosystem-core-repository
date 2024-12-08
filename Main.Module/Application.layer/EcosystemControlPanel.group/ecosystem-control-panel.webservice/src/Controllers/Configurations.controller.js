@@ -5,6 +5,7 @@ const ConfigurationsController = () => {
     }
 
     return {
+        controllerName : "ConfigurationsController",
         GetDefaultEcosystemParameters
     }
 }

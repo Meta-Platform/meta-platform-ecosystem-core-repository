@@ -1,0 +1,8 @@
+[
+    {
+        "namespace": "EnvironmentHandlerService",
+        "path": "Services/EnvironmentHandler.service",
+        "bound-params":[ "jsonFileUtilitiesLib" ],
+        "params": [ "installDataDirPath", "ecosystemDefaultsFileRelativePath" ]
+    }
+]

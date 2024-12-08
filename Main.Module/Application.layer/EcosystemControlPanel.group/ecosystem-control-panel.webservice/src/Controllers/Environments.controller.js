@@ -1,11 +1,12 @@
-const EnvironmentsController = () => {
+const EnvironmentsController = (params) => {
 
-    const ListEnvironments = () => {
-        
-    }
+    const {
+        ecosystemControlPanelService
+    } = params
 
     return {
-        ListEnvironments
+        controllerName : "EnvironmentsController",
+        ListEnvironments: ecosystemControlPanelService.ListEnvironments
     }
 }
 

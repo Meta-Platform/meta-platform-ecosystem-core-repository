@@ -5,6 +5,7 @@ const ApplicationsAndRepositoriesController = () => {
     const ListInstalledApplications = () =>{}
 
     return {
+        controllerName : "ApplicationsAndRepositoriesController",
         ListInstalledRepositories,
         ListInstalledApplications
     }
