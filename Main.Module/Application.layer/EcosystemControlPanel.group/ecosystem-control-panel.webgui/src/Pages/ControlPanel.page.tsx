@@ -19,6 +19,7 @@ import EnvironmentsContainer            from "../Containers/Environments.contain
 import ApplicationsAndPackagesContainer from "../Containers/ApplicationsAndPackages.container"
 import SourcesContainer                 from "../Containers/Sources.container"
 import InstanceSupervisorContainer      from "../Containers/InstanceSupervisor.container"
+import ConfigurationsContainer          from "../Containers/Configurations.container"
 
 import MainMenu from "../Components/MainMenu"
 
@@ -88,6 +89,11 @@ const ControlPanelPage = ({
 							activeItem === "repositories and sources"
 							&& <SourcesContainer serverManagerInformation={HTTPServerManager}/>
 						}
+						{
+							activeItem === "configs"
+							&& <ConfigurationsContainer serverManagerInformation={HTTPServerManager}/>
+						}
+
 					</Column>
 				</Grid>
 		</Container>

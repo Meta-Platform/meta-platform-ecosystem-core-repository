@@ -10,14 +10,11 @@ import {
 
 import GetAPI from "../Utils/GetAPI"
 
-type RepositoryType = {
-    namespace: string
-    path: string
-}
+
 
 const SourcesContainer = ({ serverManagerInformation }:any) => {
 
-    const [ sourceList, setSourceList ] = useState<RepositoryType[]>([])
+    const [ sourceList, setSourceList ] = useState<any[]>([])
     const [ isLoading, setIsLoading ] = useState(true)
 
 

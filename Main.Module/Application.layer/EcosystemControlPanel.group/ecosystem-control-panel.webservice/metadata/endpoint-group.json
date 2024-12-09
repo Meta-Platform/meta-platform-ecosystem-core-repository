@@ -83,10 +83,17 @@
             "type": "controller",
             "params": {
                 "api-template": "APIs/Configurations.api.json",
-                "controller": "Controllers/Configurations.controller"
+                "controller": "Controllers/Configurations.controller",
+                "controller-params":{
+                    "installDataDirPath": "{{installDataDirPath}}",
+                    "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
+                }
             },
             "bound-params": {
-                "serverService":"serverService"
+                "serverService":"serverService",
+                "controller-params":{
+                    "jsonFileUtilitiesLib": "jsonFileUtilitiesLib"
+                }
             }
         }
     ]
