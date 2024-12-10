@@ -9,6 +9,13 @@
     ],
     "services": [
         {
+            "namespace": "@@/ecosystemdata-handler-service",
+            "dependency": "@/ecosystem-control-panel.service/services/EcosystemDataHandlerService",
+            "params":{
+                "installDataDirPath": "{{installDataDirPath}}"
+            }
+        },
+        {
             "namespace": "@@/server-service",
             "dependency": "@/server-manager.service/services/HTTPServerService",
             "params":{
@@ -21,25 +28,24 @@
             "dependency": "@/instance-supervisor.service/services/InstanceMonitoringService",
             "bound-params":{
                 "supervisorLib": "@/supervisor.lib",
-                "jsonFileUtilitiesLib": "@/json-file-utilities.lib"
+                "jsonFileUtilitiesLib": "@/json-file-utilities.lib",
+                "ecosystemdataHandlerService": "@@/ecosystemdata-handler-service"
             },
             "params":{
-                "installDataDirPath": "{{installDataDirPath}}",
                 "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
             }
         },
         {
-            "namespace": "@@/ecosystem-control-panel-service",
+            "namespace": "@@/environment-handler-service",
             "dependency": "@/ecosystem-control-panel.service/services/EnvironmentHandlerService",
             "bound-params":{
-                "jsonFileUtilitiesLib": "@/json-file-utilities.lib"
+                "jsonFileUtilitiesLib": "@/json-file-utilities.lib",
+                "ecosystemdataHandlerService": "@@/ecosystemdata-handler-service"
             },
             "params":{
-                "installDataDirPath": "{{installDataDirPath}}",
                 "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
             }
         }
-
     ],
     "endpoints": [
         {
@@ -64,13 +70,13 @@
             "dependency": "@/ecosystem-control-panel.webservice/endpoint-group",
             "bound-params":{
                 "serverService": "@@/server-service",
-                "supervisorLib": "@/supervisor.lib",
                 "instanceMonitoringService": "@@/instance-monitoring-service",
-                "ecosystemControlPanelService": "@@/ecosystem-control-panel-service",
+                "environmentHandlerService": "@@/environment-handler-service",
+                "ecosystemdataHandlerService": "@@/ecosystemdata-handler-service",
+                "supervisorLib": "@/supervisor.lib",
                 "jsonFileUtilitiesLib": "@/json-file-utilities.lib"
             },
             "params":{
-                "installDataDirPath": "{{installDataDirPath}}",
                 "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
             }
         }

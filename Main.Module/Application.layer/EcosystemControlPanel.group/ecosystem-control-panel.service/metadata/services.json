@@ -2,7 +2,12 @@
     {
         "namespace": "EnvironmentHandlerService",
         "path": "Services/EnvironmentHandler.service",
-        "bound-params":[ "jsonFileUtilitiesLib" ],
-        "params": [ "installDataDirPath", "ecosystemDefaultsFileRelativePath" ]
+        "bound-params":[ "jsonFileUtilitiesLib", "ecosystemdataHandlerService" ],
+        "params": [ "ecosystemDefaultsFileRelativePath" ]
+    },
+    {
+        "namespace": "EcosystemDataHandlerService",
+        "path": "Services/EcosystemDataHandler.service",
+        "params": [ "installDataDirPath" ]
     }
 ]

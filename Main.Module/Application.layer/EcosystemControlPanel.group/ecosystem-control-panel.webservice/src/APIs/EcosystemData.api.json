@@ -1,0 +1,10 @@
+{
+	"name": "EcosystemData",
+	"endpoints": [
+		{
+			"summary": "GetEcosystemDataPath",
+			"method": "GET",
+			"path": "/ecosystemdata-path"
+		}
+	]
+}

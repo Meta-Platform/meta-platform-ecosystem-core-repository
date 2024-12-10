@@ -1,12 +1,12 @@
 const EnvironmentsController = (params) => {
 
     const {
-        ecosystemControlPanelService
+        environmentHandlerService
     } = params
 
     return {
         controllerName : "EnvironmentsController",
-        ListEnvironments: ecosystemControlPanelService.ListEnvironments
+        ListEnvironments: environmentHandlerService.ListEnvironments
     }
 }
 

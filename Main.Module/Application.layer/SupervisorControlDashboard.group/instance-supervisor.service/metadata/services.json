@@ -2,7 +2,7 @@
     {
         "namespace": "InstanceMonitoringService",
         "path": "Services/InstanceMonitoring.service",
-        "bound-params":[ "supervisorLib", "jsonFileUtilitiesLib" ],
-        "params": [ "installDataDirPath", "ecosystemDefaultsFileRelativePath" ]
+        "bound-params":[ "ecosystemdataHandlerService", "supervisorLib", "jsonFileUtilitiesLib" ],
+        "params": ["ecosystemDefaultsFileRelativePath" ]
     }
 ]

@@ -52,7 +52,7 @@
                 "serverService": "@@/server-service",
                 "supervisorLib": "@/supervisor.lib",
                 "instanceMonitoringService": "@@/instance-monitoring-service",
-                "ecosystemControlPanelService": "@@/ecosystem-control-panel-service",
+                "environmentHandlerService": "@@/ecosystem-control-panel-service",
                 "jsonFileUtilitiesLib": "@/json-file-utilities.lib"
             },
             "params":{

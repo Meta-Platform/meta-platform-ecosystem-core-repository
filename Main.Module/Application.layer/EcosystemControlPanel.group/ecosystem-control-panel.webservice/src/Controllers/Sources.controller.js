@@ -23,7 +23,7 @@ const SourcesController = (params) => {
 
 
     const { 
-        installDataDirPath,
+        ecosystemdataHandlerService,
         ecosystemDefaultsFileRelativePath,
         jsonFileUtilitiesLib 
     } = params
@@ -31,9 +31,9 @@ const SourcesController = (params) => {
     const ReadJsonFile = jsonFileUtilitiesLib.require("ReadJsonFile")
 
     const _GetSourcesData = async () => {
-        const ecosystemDefaultFilePath = path.resolve(installDataDirPath, ecosystemDefaultsFileRelativePath)
+        const ecosystemDefaultFilePath = path.resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaultsFileRelativePath)
         const ecosystemDefaults = await ReadJsonFile(ecosystemDefaultFilePath)
-        const sourcesDataFilePath = path.resolve(installDataDirPath, ecosystemDefaults.REPOS_CONF_FILENAME_SOURCE_DATA)
+        const sourcesDataFilePath = path.resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaults.REPOS_CONF_FILENAME_SOURCE_DATA)
         const sourcesData = await ReadJsonFile(sourcesDataFilePath)
         return sourcesData
     }

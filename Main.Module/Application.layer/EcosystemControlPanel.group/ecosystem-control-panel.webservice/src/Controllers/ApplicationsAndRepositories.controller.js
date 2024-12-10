@@ -27,7 +27,7 @@ const ExtractInstalledAplicationByRepoData = (repositoriesData) => {
 const ApplicationsAndRepositoriesController = (params) => {
 
     const { 
-        installDataDirPath,
+        ecosystemdataHandlerService,
         ecosystemDefaultsFileRelativePath,
         jsonFileUtilitiesLib 
     } = params
@@ -35,9 +35,9 @@ const ApplicationsAndRepositoriesController = (params) => {
     const ReadJsonFile = jsonFileUtilitiesLib.require("ReadJsonFile")
 
     const _GetRepositoriesData = async () => {
-        const ecosystemDefaultFilePath = path.resolve(installDataDirPath, ecosystemDefaultsFileRelativePath)
+        const ecosystemDefaultFilePath = path.resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaultsFileRelativePath)
         const ecosystemDefaults = await ReadJsonFile(ecosystemDefaultFilePath)
-        const repoDataFilePath = path.resolve(installDataDirPath, ecosystemDefaults.REPOS_CONF_FILENAME_REPOS_DATA)
+        const repoDataFilePath = path.resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaults.REPOS_CONF_FILENAME_REPOS_DATA)
         const repositoriesData = await ReadJsonFile(repoDataFilePath)
         return repositoriesData
     }

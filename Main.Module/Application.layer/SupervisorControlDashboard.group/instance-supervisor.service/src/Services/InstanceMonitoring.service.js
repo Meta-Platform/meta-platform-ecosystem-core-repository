@@ -8,7 +8,7 @@ const SOCKET_FILE_LIST_CHANGE_EVENT = Symbol()
 const InstanceMonitoringService = (params) => {
 
     const {
-        installDataDirPath,
+        ecosystemdataHandlerService,
         ecosystemDefaultsFileRelativePath,
         jsonFileUtilitiesLib,
         supervisorLib,
@@ -19,7 +19,7 @@ const InstanceMonitoringService = (params) => {
     const ListSocketFilesName = supervisorLib.require("ListSocketFilesName")
     const ReadJsonFile = jsonFileUtilitiesLib.require("ReadJsonFile")
 
-    const ecosystemDefaultFilePath = resolve(installDataDirPath, ecosystemDefaultsFileRelativePath)
+    const ecosystemDefaultFilePath = resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaultsFileRelativePath)
     let supervisorSocketsDirPath = undefined
 
     const eventEmitter = new EventEmitter()
@@ -40,7 +40,7 @@ const InstanceMonitoringService = (params) => {
     const _Start = async () => {
 
         const ecosystemDefaults = await ReadJsonFile(ecosystemDefaultFilePath)
-        supervisorSocketsDirPath = resolve(installDataDirPath, ecosystemDefaults.ECOSYSTEMDATA_CONF_DIRNAME_SUPERVISOR_UNIX_SOCKET_DIR)
+        supervisorSocketsDirPath = resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaults.ECOSYSTEMDATA_CONF_DIRNAME_SUPERVISOR_UNIX_SOCKET_DIR)
 
         socketFileNameList = await ListSocketFilesName(supervisorSocketsDirPath)
         _StartSocketsDirectoryWatcher()

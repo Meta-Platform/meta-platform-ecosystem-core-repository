@@ -3,28 +3,36 @@ import {
 	Menu,
 	Header,
     MenuMenu,
-    MenuItem,
-    Icon
+    Dropdown,
+    DropdownMenu,
+    DropdownItem,
+    Button
 } from "semantic-ui-react"
-import styled from "styled-components"
 
-const AppsMenuItem = styled(Menu.Item)`
-	padding: 8px!important;
-`
-const MainMenu = () => {
+const MainMenu = ({
+    ecosystemdataPath,
+    onClickOpenEcosystemDataPathModal
+}) => {
 
     return <Menu attached="top">
-                <AppsMenuItem active>
-                    <Header>Ecosystem Panel</Header>
-                </AppsMenuItem>
-                <AppsMenuItem >
-                    <Icon name='folder open' />
-                    /home/kadisk/Workspaces/meta-platform-repo/EcosystemData
-                </AppsMenuItem>
+                <Menu.Item active>
+                    <Header >Ecosystem Panel</Header>
+                </Menu.Item>
+                <Menu.Item >
+                    <Button 
+                        onClick={() => onClickOpenEcosystemDataPathModal()}
+                        circular 
+                        icon='folder open' 
+                        size="mini" 
+                        style={{fontSize: ".7em", "marginRight": "5px"}}/>
+                    {ecosystemdataPath}
+                </Menu.Item>
                 <MenuMenu position='right'>
-                    <MenuItem>
-                        <Icon name='calendar' />
-                    </MenuItem>
+                    <Dropdown item icon='sliders horizontal' simple>
+                        <DropdownMenu>
+                            <DropdownItem icon='folder open' text='change ecosystem' />
+                        </DropdownMenu>
+                    </Dropdown>
                 </MenuMenu>
             </Menu>
 }

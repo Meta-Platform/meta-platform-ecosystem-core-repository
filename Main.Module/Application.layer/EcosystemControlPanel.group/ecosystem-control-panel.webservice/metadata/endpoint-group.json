@@ -1,11 +1,12 @@
 {
-    "params": ["installDataDirPath", "ecosystemDefaultsFileRelativePath"],
+    "params": ["ecosystemDefaultsFileRelativePath"],
     "bound-params":[
         "serverService", 
         "instanceMonitoringService",
         "supervisorLib",
-        "ecosystemControlPanelService",
-        "jsonFileUtilitiesLib"
+        "environmentHandlerService",
+        "jsonFileUtilitiesLib",
+        "ecosystemdataHandlerService"
     ],
     "endpoints": [
         {
@@ -15,13 +16,13 @@
                 "api-template": "APIs/InstancesMonitor.api.json",
                 "controller": "Controllers/InstancesMonitor.controller",
                 "controller-params":{
-                    "installDataDirPath": "{{installDataDirPath}}",
                     "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
                 }
             },
             "bound-params": {
                 "serverService":"serverService",
                 "controller-params":{
+                    "ecosystemdataHandlerService":"ecosystemdataHandlerService",
                     "instanceMonitoringService":"instanceMonitoringService",
                     "supervisorLib":"supervisorLib",
                     "jsonFileUtilitiesLib": "jsonFileUtilitiesLib"
@@ -35,13 +36,13 @@
                 "api-template": "APIs/ApplicationsAndRepositories.api.json",
                 "controller": "Controllers/ApplicationsAndRepositories.controller",
                 "controller-params":{
-                    "installDataDirPath": "{{installDataDirPath}}",
                     "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
                 }
             },
             "bound-params": {
                 "serverService":"serverService",
                 "controller-params":{
+                    "ecosystemdataHandlerService":"ecosystemdataHandlerService",
                     "jsonFileUtilitiesLib": "jsonFileUtilitiesLib"
                 }
             }
@@ -56,7 +57,7 @@
             "bound-params": {
                 "serverService":"serverService",
                 "controller-params":{
-                    "ecosystemControlPanelService": "ecosystemControlPanelService"
+                    "environmentHandlerService": "environmentHandlerService"
                 }
             }
         },
@@ -67,13 +68,13 @@
                 "api-template": "APIs/Sources.api.json",
                 "controller": "Controllers/Sources.controller",
                 "controller-params":{
-                    "installDataDirPath": "{{installDataDirPath}}",
                     "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
                 }
             },
             "bound-params": {
                 "serverService":"serverService",
                 "controller-params":{
+                    "ecosystemdataHandlerService":"ecosystemdataHandlerService",
                     "jsonFileUtilitiesLib": "jsonFileUtilitiesLib"
                 }
             }
@@ -85,14 +86,28 @@
                 "api-template": "APIs/Configurations.api.json",
                 "controller": "Controllers/Configurations.controller",
                 "controller-params":{
-                    "installDataDirPath": "{{installDataDirPath}}",
                     "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
                 }
             },
             "bound-params": {
                 "serverService":"serverService",
                 "controller-params":{
+                    "ecosystemdataHandlerService":"ecosystemdataHandlerService",
                     "jsonFileUtilitiesLib": "jsonFileUtilitiesLib"
+                }
+            }
+        },
+        {
+            "url": "/ecosystemdata-handler",
+            "type": "controller",
+            "params": {
+                "api-template": "APIs/EcosystemData.api.json",
+                "controller": "Controllers/EcosystemData.controller"
+            },
+            "bound-params": {
+                "serverService":"serverService",
+                "controller-params":{
+                    "ecosystemdataHandlerService":"ecosystemdataHandlerService"
                 }
             }
         }

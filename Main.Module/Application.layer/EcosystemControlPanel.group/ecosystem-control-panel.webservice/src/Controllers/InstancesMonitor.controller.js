@@ -8,11 +8,11 @@ const InstancesMonitorController = (params) => {
     const eventEmitter  = new EventEmitter()
 
     const {
-        installDataDirPath,
         ecosystemDefaultsFileRelativePath,
         jsonFileUtilitiesLib,
         instanceMonitoringService,
-        supervisorLib
+        supervisorLib,
+        ecosystemdataHandlerService
     } = params
 
     const ReadJsonFile = jsonFileUtilitiesLib.require("ReadJsonFile")
@@ -20,9 +20,9 @@ const InstancesMonitorController = (params) => {
     let supervisorSocketsDirPath = undefined
     
     const _InitSupervisorSocketsDirPath = async () => {
-        const ecosystemDefaultFilePath = path.resolve(installDataDirPath, ecosystemDefaultsFileRelativePath)
+        const ecosystemDefaultFilePath = path.resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaultsFileRelativePath)
         const ecosystemDefaults = await ReadJsonFile(ecosystemDefaultFilePath)
-        supervisorSocketsDirPath = path.resolve(installDataDirPath, ecosystemDefaults.ECOSYSTEMDATA_CONF_DIRNAME_SUPERVISOR_UNIX_SOCKET_DIR)
+        supervisorSocketsDirPath = path.resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaults.ECOSYSTEMDATA_CONF_DIRNAME_SUPERVISOR_UNIX_SOCKET_DIR)
     }
 
     _InitSupervisorSocketsDirPath()

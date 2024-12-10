@@ -10,7 +10,7 @@ const ListDirectories = async (path) => {
 const EnvironmentHandlerService = (params) => {
 
     const {
-        installDataDirPath,
+        ecosystemdataHandlerService,
         ecosystemDefaultsFileRelativePath,
         jsonFileUtilitiesLib,
         onReady 
@@ -18,12 +18,12 @@ const EnvironmentHandlerService = (params) => {
 
     const ReadJsonFile = jsonFileUtilitiesLib.require("ReadJsonFile")
 
-    const ecosystemDefaultFilePath = resolve(installDataDirPath, ecosystemDefaultsFileRelativePath)
+    const ecosystemDefaultFilePath = resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaultsFileRelativePath)
     let executionDataDirPath = undefined
 
     const _Start = async () => {
         const ecosystemDefaults = await ReadJsonFile(ecosystemDefaultFilePath)
-        executionDataDirPath = resolve(installDataDirPath, ecosystemDefaults.ECOSYSTEMDATA_CONF_DIRNAME_EXECUTION_DATA_DIR)
+        executionDataDirPath = resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaults.ECOSYSTEMDATA_CONF_DIRNAME_EXECUTION_DATA_DIR)
         onReady()   
     }
 

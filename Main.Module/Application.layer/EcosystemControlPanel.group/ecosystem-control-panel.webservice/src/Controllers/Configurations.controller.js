@@ -3,7 +3,7 @@ const path = require("path")
 const ConfigurationsController = (params) => {
 
     const { 
-        installDataDirPath,
+        ecosystemdataHandlerService,
         ecosystemDefaultsFileRelativePath,
         jsonFileUtilitiesLib 
     } = params
@@ -11,7 +11,7 @@ const ConfigurationsController = (params) => {
     const ReadJsonFile = jsonFileUtilitiesLib.require("ReadJsonFile")
 
     const GetDefaultEcosystemParameters = async () => {
-        const ecosystemDefaultFilePath = path.resolve(installDataDirPath, ecosystemDefaultsFileRelativePath)
+        const ecosystemDefaultFilePath = path.resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaultsFileRelativePath)
         const ecosystemDefaults = await ReadJsonFile(ecosystemDefaultFilePath)
         return ecosystemDefaults
     }
