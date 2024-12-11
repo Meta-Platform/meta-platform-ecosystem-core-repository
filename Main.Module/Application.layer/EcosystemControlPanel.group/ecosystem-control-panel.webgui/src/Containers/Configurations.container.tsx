@@ -52,8 +52,8 @@ const ConfigurationsContainer = ({ serverManagerInformation }:any) => {
                                 .map((paramName) => <ListItem>
                                                 <ListIcon name='wrench' size='large' verticalAlign='middle' />
                                                 <ListContent>
-                                                    <ListHeader>{paramName}</ListHeader>
-                                                    <ListDescription>{ecosystemDefault[paramName]}</ListDescription>
+                                                    <ListDescription>{paramName}</ListDescription>
+                                                    <ListHeader>{ecosystemDefault[paramName]}</ListHeader>
                                                 </ListContent>
                                             </ListItem>)
                             }

@@ -8,8 +8,21 @@ import {
 	Label,
 	TabPane, 
 	Tab,
-	Segment
+	Segment,
+	MenuMenu,
+	Card,
+	CardGroup,
+	CardContent,
+	CardHeader,
+	CardMeta,
+	CardDescription,
+	Icon,
+	Menu,
+	Button
  } from "semantic-ui-react"
+
+
+
 import qs                     from "query-string"
 import { 
 	useLocation,
@@ -32,6 +45,91 @@ import useFetchInstanceTaskList from "../Hooks/useFetchInstanceTaskList"
 
 const Column = Grid.Column
 
+const GetColorByStatus = (status) => {
+	switch(status){
+		case "ACTIVE":
+			return "green"
+		case "FAILURE":
+			return "red"
+		case "STARTING":
+			return "blue"
+		case "AWAITING_PRECONDITIONS":
+			return "teal"
+		default:
+			return "orange"
+	}
+}
+
+const TaskInfoCard = ({data}) => {
+
+	const {
+		taskId,
+		label,
+		status,
+		descriptionContent
+	} = data 
+	return <Card>
+				<CardContent>
+					<CardHeader>{label}</CardHeader>
+					<CardMeta><Label size="mini" color={GetColorByStatus(status)} style={{"marginRight":"5px"}}>{status}</Label>Task ID {taskId}</CardMeta>
+					<CardDescription>{descriptionContent}</CardDescription>
+				</CardContent>
+			</Card>
+}
+
+const TaskCardGroup = ({tasklist}) => {
+
+
+	const _GetApplicationInstanceCardData = () => {
+
+		const data = tasklist.find(({objectLoaderType}) => objectLoaderType === "application-instance")
+
+		if(data){
+			return {
+				taskId: data.taskId,
+				label: "Application Instance Task",
+				status: data.status,
+				descriptionContent: <>
+					<i>namespace</i><br/>
+					<strong>{data.staticParameters.namespace}</strong>
+				</>
+			}
+		}
+		
+	}
+
+	const _GetServerManagerCardDataCardData = () => {
+		const data = tasklist
+			.find(({objectLoaderType, staticParameters}) => objectLoaderType === "service-instance" && staticParameters?.path === "Services/HTTPServer.service")
+
+		if(data){
+
+			const getURL = () => {
+				if(isNaN(data.staticParameters.port)) return data.staticParameters.port
+				else return <a href={`http://localhost:${data.staticParameters.port}`}>http://localhost:{data.staticParameters.port}</a>
+			}
+			
+			return {
+				taskId: data.taskId,
+				label: "Server Manager Service Task",
+				status: data.status,
+				descriptionContent: <>
+					<i>server name</i><br/>
+					<strong>{data.staticParameters.name}</strong><br/>
+					<strong>{getURL()}</strong>
+				</>
+			}
+		}
+	}
+
+	const applicationInstanceCardData = _GetApplicationInstanceCardData()
+	const serverManagerCardData = _GetServerManagerCardDataCardData()
+
+	return <CardGroup>
+		{applicationInstanceCardData && <TaskInfoCard data={applicationInstanceCardData}/>}
+		{serverManagerCardData && <TaskInfoCard data={serverManagerCardData}/>}
+</CardGroup>
+}
 
 const InstanceSupervisorContainer = ({
 	HTTPServerManager,
@@ -189,6 +287,7 @@ const InstanceSupervisorContainer = ({
 			<TabPane style={{background: "aliceblue"}}>
 				<Grid columns="three" style={{background: "aliceblue"}} divided>
 					<Column width={taskIdSelected === undefined ? 16 : 11}>
+						<TaskCardGroup tasklist={instanceTaskListSelected}/>
 						<Tab menu={{ color: "aliceblue" , secondary: true, pointing: true }} panes={taskViewPanes} />
 					</Column>
 					{
@@ -203,26 +302,34 @@ const InstanceSupervisorContainer = ({
 				</Grid>
 			</TabPane>
 		},
-		{ menuItem: 'Instance Events', render: () => <TabPane>Tab 2 Content</TabPane> },
+		{ menuItem: 'Startup Params', render: () => <TabPane>Tab 2 Content</TabPane> },
 	]
 
 	const handleSelectTask = (taskId) => 
 		setTaskIdSelected(taskId)
 
-	return <Segment>
-		<Grid columns="three" divided>
-                <Grid.Row>
-					<Column width={3}>
+	return <Segment style={{margin:"15px", background: "antiquewhite"}}>
+		<Grid columns="two" divided>
+				<Column width={2}>
 						<SocketFileList
 							list={socketFileList}
 							onSelect={handleSelectInstance}
 							socketFileSelected={socketFileNameSelected}
 							/>
 					</Column>
-					<Column width={13}>
+					<Column width={14}>
+						<Menu>
+							<MenuMenu position='right'>
+								<MenuItem>
+									<Button icon color="red">
+										<Icon name='close'/>
+										kill instance
+									</Button>
+								</MenuItem>
+							</MenuMenu>
+						</Menu>
 						<Tab panes={mainPanes} />
 					</Column>
-				</Grid.Row>
 			</Grid>
 	</Segment>
 }

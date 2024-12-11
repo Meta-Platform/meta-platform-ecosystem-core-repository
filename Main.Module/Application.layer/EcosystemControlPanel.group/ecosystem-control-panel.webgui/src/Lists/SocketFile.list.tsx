@@ -39,7 +39,7 @@ const SocketFileList = ({
 				active={socketFileSelected && socketFileName === socketFileSelected}
 				onClick={() => onSelect(socketFileName)} >
 				<List.Content>
-					<List.Header><Label size="mini" horizontal color={GetColorByInstanceStatus(undefined)}>{undefined}</Label>{socketFileName}</List.Header>
+					<List.Header><Label size="mini" horizontal color={GetColorByInstanceStatus("RUNNING")}>{"RUNNING"}</Label>{socketFileName}</List.Header>
 				</List.Content>
 			</List.Item>)
 		}

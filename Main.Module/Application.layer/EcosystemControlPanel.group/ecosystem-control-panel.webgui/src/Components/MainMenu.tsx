@@ -6,7 +6,8 @@ import {
     Dropdown,
     DropdownMenu,
     DropdownItem,
-    Button
+    Button,
+    Icon
 } from "semantic-ui-react"
 
 const MainMenu = ({
@@ -28,6 +29,9 @@ const MainMenu = ({
                     {ecosystemdataPath}
                 </Menu.Item>
                 <MenuMenu position='right'>
+                    <Menu.Item position='right'>
+                        <Icon name='bell' />
+                    </Menu.Item>
                     <Dropdown item icon='sliders horizontal' simple>
                         <DropdownMenu>
                             <DropdownItem icon='folder open' text='change ecosystem' />

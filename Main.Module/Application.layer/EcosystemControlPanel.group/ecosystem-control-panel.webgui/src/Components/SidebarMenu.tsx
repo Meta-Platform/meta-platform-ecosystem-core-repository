@@ -6,7 +6,7 @@ const SidebarMenu = ({
     onSelectMenu,
     activeItem
 }) =>{
-    return <Menu pointing secondary vertical>
+    return <Menu pointing secondary vertical style={{width:"auto"}}>
                 <MenuItem
                     name='instance supervisor'
                     active={activeItem === 'instance supervisor'}
