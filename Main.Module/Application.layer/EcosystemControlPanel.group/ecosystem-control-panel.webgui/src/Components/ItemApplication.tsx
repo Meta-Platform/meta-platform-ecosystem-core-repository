@@ -1,8 +1,13 @@
 import * as React from "react"
 
 import {
-    Label,
-    Segment
+    Divider,
+    Icon,
+    Card,
+	CardContent,
+	CardHeader,
+	CardMeta,
+	CardDescription,
 } from "semantic-ui-react"
 
 const ItemApplication = ({
@@ -10,29 +15,30 @@ const ItemApplication = ({
 }) => {
 
     const {
-        appType,
         executable,
         packageNamespace,
         repositoryNamespace,
         supervisorSocketFileName,
     } = applicationData
 
-    return <Segment >
-                <h2>{executable}</h2>
-                <Label size="mini">{appType}</Label>
-                
-                <br/>
-                <p style={{marginTop: "5px"}}>
-                   <strong>{packageNamespace}</strong>
-                </p>
-                <p style={{marginTop: "5px"}}>
-                   {repositoryNamespace}
-                </p>
-                <p style={{marginTop: "5px"}}>
-                   <i>{supervisorSocketFileName}</i>
-                </p>
-            
-            </Segment>
+    const getPackageNamespaceBase = () => {
+        const chunks = packageNamespace.split("/")
+        return chunks[chunks.length-1]
+    }
+
+    return <Card style={{"width":"300px"}}>
+                <CardContent>
+                    <CardHeader><Icon name='terminal' /> {executable}</CardHeader>
+                    <CardMeta>{getPackageNamespaceBase()}</CardMeta>
+                    <CardDescription style={{"backgroundColor":"beige", "padding": "5px", border: "1px solid #c4c4c4"}}>
+                        <i style={{ color: 'grey' }}>repository namespace</i><br/>
+                        <strong>{repositoryNamespace}</strong>
+                        <Divider style={{margin: "1px"}}/>
+                        <i style={{ color: 'grey' }}>supervisor socket filename</i><br/>
+                        <strong>{supervisorSocketFileName}</strong>
+                    </CardDescription>
+                </CardContent>
+            </Card>
 }
 
 export default ItemApplication

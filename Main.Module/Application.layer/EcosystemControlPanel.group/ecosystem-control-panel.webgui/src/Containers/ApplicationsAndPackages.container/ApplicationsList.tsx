@@ -1,9 +1,11 @@
 import * as React from "react"
 
 import {
-    Segment, 
+    Tab, 
     Loader,
-    Dimmer
+    Dimmer,
+    TabPane,
+    CardGroup
 } from "semantic-ui-react"
 
 import ItemApplication from "../../Components/ItemApplication"
@@ -13,16 +15,37 @@ const ApplicationsList = ({
     installedApplicationList
 }) => {
 
-    return <Segment placeholder>
-                { isLoading && <Dimmer active><Loader/></Dimmer> }
-                <div style={{ overflow: 'auto', height:"82vh" }}>
-                    {
-                        installedApplicationList
-                        .map((applicationData:any, key) => 
-                            <ItemApplication key={key} applicationData={applicationData}/>)
-                    }
-                </div>
-            </Segment>
+
+    const panes = [
+        {
+            menuItem: 'command line application',
+            render: () => <TabPane attached={false} style={{"backgroundColor": "mintcream"}}>
+                                <CardGroup>
+                                    {
+                                        installedApplicationList
+                                        .filter(({appType}) => appType === "CLI")
+                                        .map((applicationData:any, key) => 
+                                            <ItemApplication key={key} applicationData={applicationData}/>)
+                                    }
+                                </CardGroup>  
+                        </TabPane>,
+        },
+        {
+            menuItem: 'application',
+            render: () => <TabPane attached={false} style={{"backgroundColor": "mistyrose"}}> 
+                                <CardGroup>
+                                    {
+                                        installedApplicationList
+                                        .filter(({appType}) => appType === "APP")
+                                        .map((applicationData:any, key) => 
+                                            <ItemApplication key={key} applicationData={applicationData}/>)
+                                    }
+                                </CardGroup>  
+                        </TabPane>,
+        }
+    ]
+
+    return isLoading ? <Dimmer active><Loader/></Dimmer>: <Tab menu={{ secondary: true, pointing: true }} panes={panes} />
 }
 
 export default ApplicationsList

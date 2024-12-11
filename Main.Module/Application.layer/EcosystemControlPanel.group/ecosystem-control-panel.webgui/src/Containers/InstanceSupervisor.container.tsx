@@ -90,7 +90,7 @@ const TaskCardGroup = ({tasklist}) => {
 				label: "Application Instance Task",
 				status: data.status,
 				descriptionContent: <>
-					<i>namespace</i><br/>
+					<i style={{"color": "grey"}}>namespace</i><br/>
 					<strong>{data.staticParameters.namespace}</strong>
 				</>
 			}
@@ -114,7 +114,7 @@ const TaskCardGroup = ({tasklist}) => {
 				label: "Server Manager Service Task",
 				status: data.status,
 				descriptionContent: <>
-					<i>server name</i><br/>
+					<i style={{"color": "grey"}}>server name</i><br/>
 					<strong>{data.staticParameters.name}</strong><br/>
 					<strong>{getURL()}</strong>
 				</>
@@ -309,29 +309,29 @@ const InstanceSupervisorContainer = ({
 		setTaskIdSelected(taskId)
 
 	return <Segment style={{margin:"15px", background: "antiquewhite"}}>
-		<Grid columns="two" divided>
-				<Column width={2}>
-						<SocketFileList
-							list={socketFileList}
-							onSelect={handleSelectInstance}
-							socketFileSelected={socketFileNameSelected}
-							/>
-					</Column>
-					<Column width={14}>
-						<Menu>
-							<MenuMenu position='right'>
-								<MenuItem>
-									<Button icon color="red">
-										<Icon name='close'/>
-										kill instance
-									</Button>
-								</MenuItem>
-							</MenuMenu>
-						</Menu>
-						<Tab panes={mainPanes} />
-					</Column>
-			</Grid>
-	</Segment>
+				<Grid columns="two" divided>
+						<Column width={2}>
+							<SocketFileList
+								list={socketFileList}
+								onSelect={handleSelectInstance}
+								socketFileSelected={socketFileNameSelected}
+								/>
+						</Column>
+						<Column width={14}>
+							<Menu>
+								<MenuMenu position='right'>
+									<MenuItem>
+										<Button icon color="red">
+											<Icon name='close'/>
+											kill instance
+										</Button>
+									</MenuItem>
+								</MenuMenu>
+							</Menu>
+							<Tab panes={mainPanes} />
+						</Column>
+					</Grid>
+			</Segment>
 }
 
 

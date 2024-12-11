@@ -3,11 +3,12 @@ import { useState, useEffect } from "react"
 import { connect }             from "react-redux"
 import { bindActionCreators }  from "redux"
 
-import {
-    Grid,
-    Input,
-    ButtonGroup
-} from "semantic-ui-react"
+import { 
+	MenuItem,
+	Label,
+	TabPane, 
+	Tab
+ } from "semantic-ui-react"
 
 import GetAPI from "../../Utils/GetAPI"
 
@@ -72,33 +73,30 @@ const ApplicationsAndPackagesContainer = ({ serverManagerInformation, QueryParam
         setPackageListFiltered(filteredList)
     }
 
-    const handleFilterInstalledApplicationList = (filterValue:string) => setFilterValue(filterValue)
+    const mainPanes = [
+		{
+			menuItem: <MenuItem key='Tasks' style={{background: "aliceblue"}}>
+							installed applications
+					</MenuItem>,
+		   render: () => 
+			<TabPane style={{background: "aliceblue"}}>
+				<ApplicationsList
+                isLoading={isLoading}
+                installedApplicationList={(installedApplicationListFiltered || installedApplicationList)}/>
+			</TabPane>
+		},
+        {
+			menuItem: <MenuItem key='Tasks' style={{background: "lightsteelblue"}}>
+						installed packages
+					</MenuItem>,
+		   render: () => 
+			<TabPane style={{background: "lightsteelblue"}}>
+				dfghdfghdfghfg
+			</TabPane>
+		}
+	]
 
-    return <Grid style={{padding:"1em"}}>
-                <Grid.Row>
-                    <Grid.Column width={16}>
-                        <Grid.Row>
-                            <Input 
-                                icon='filter' 
-                                placeholder='package filter' 
-                                value={filterValue}
-                                onChange={({target:{value}}) => handleFilterInstalledApplicationList(value)}
-                                />
-                                <ButtonGroup
-                                    floated="right"
-                                    buttons={[
-                                        { key: 'card-view', icon: 'th' },
-                                        { key: 'list-view', icon: 'th list' }
-                                    ]}/>
-                        </Grid.Row>
-                        <ApplicationsList
-                            isLoading={isLoading}
-                            installedApplicationList={(installedApplicationListFiltered || installedApplicationList)}/>
-                    </Grid.Column>
-                  
-                    
-                </Grid.Row>
-            </Grid>
+    return  <Tab  style={{margin:"15px"}} panes={mainPanes} />
          
 }
 
