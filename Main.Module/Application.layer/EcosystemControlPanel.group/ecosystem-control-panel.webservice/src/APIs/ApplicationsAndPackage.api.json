@@ -1,5 +1,5 @@
 {
-	"name": "ApplicationsAndRepositories",
+	"name": "ApplicationsAndPackages",
 	"endpoints": [
 		{
 			"summary": "ListInstalledRepositories",

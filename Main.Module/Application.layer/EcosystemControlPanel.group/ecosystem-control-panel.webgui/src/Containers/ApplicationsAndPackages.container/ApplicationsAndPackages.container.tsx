@@ -23,9 +23,9 @@ const ApplicationsAndPackagesContainer = ({ serverManagerInformation, QueryParam
     const [ filterValue, setFilterValue ] = useState<string>()
     const [ isLoading, setIsLoading ] = useState(true)
 
-    const _GetApplicationsAndRepositoriesAPI = () => 
+    const _GetApplicationsAndPackagesAPI = () => 
         GetAPI({ 
-            apiName:"ApplicationsAndRepositories",  
+            apiName:"ApplicationsAndPackages",  
             serverManagerInformation 
         })
 
@@ -56,7 +56,7 @@ const ApplicationsAndPackagesContainer = ({ serverManagerInformation, QueryParam
     }, [filterValue])
 
     const fetchInstalledApplicationList = async () => {
-        const api = _GetApplicationsAndRepositoriesAPI()
+        const api = _GetApplicationsAndPackagesAPI()
         const response = await api.ListInstalledApplications()
         const installedApplicationList = response.data
         setInstalledApplicationList(installedApplicationList)

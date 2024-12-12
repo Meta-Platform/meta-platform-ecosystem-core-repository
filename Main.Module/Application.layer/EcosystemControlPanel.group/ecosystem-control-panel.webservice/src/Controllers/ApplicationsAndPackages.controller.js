@@ -24,7 +24,7 @@ const ExtractInstalledAplicationByRepoData = (repositoriesData) => {
     return installedApplicationsList
 }
 
-const ApplicationsAndRepositoriesController = (params) => {
+const ApplicationsAndPackagesController = (params) => {
 
     const { 
         ecosystemdataHandlerService,
@@ -55,11 +55,11 @@ const ApplicationsAndRepositoriesController = (params) => {
     }
 
     return {
-        controllerName : "ApplicationsAndRepositoriesController",
+        controllerName : "ApplicationsAndPackagesController",
         ListInstalledRepositories,
         ListInstalledApplications
     }
 }
 
 
-module.exports = ApplicationsAndRepositoriesController
+module.exports = ApplicationsAndPackagesController
