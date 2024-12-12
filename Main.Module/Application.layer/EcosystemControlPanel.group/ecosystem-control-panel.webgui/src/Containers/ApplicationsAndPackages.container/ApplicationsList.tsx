@@ -68,17 +68,17 @@ const ApplicationsList = ({
 
     const panes = [
         {
+            menuItem: 'standard aplication',
+            render: () => <TabPane attached={false} style={{"backgroundColor": "mistyrose"}}> 
+                                <ApplicationDataCardGroup applicationList={installedApplicationList
+                                        .filter(({appType}) => appType === "APP")} />
+                        </TabPane>,
+        },
+        {
             menuItem: 'command line application',
             render: () => <TabPane attached={false} style={{"backgroundColor": "mintcream"}}>
                                 <ApplicationDataCardGroup applicationList={installedApplicationList
                                         .filter(({appType}) => appType === "CLI")} />
-                        </TabPane>,
-        },
-        {
-            menuItem: 'application',
-            render: () => <TabPane attached={false} style={{"backgroundColor": "mistyrose"}}> 
-                                <ApplicationDataCardGroup applicationList={installedApplicationList
-                                        .filter(({appType}) => appType === "APP")} />
                         </TabPane>,
         }
     ]

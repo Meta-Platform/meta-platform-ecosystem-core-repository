@@ -5,7 +5,6 @@ import { bindActionCreators }  from "redux"
 
 import { 
 	MenuItem,
-	Label,
 	TabPane, 
 	Tab
  } from "semantic-ui-react"

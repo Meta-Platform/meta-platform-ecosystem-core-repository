@@ -1,7 +1,7 @@
 import * as React from "react"
 
 import {  
-    Label,
+    Header,
     Segment
 } from "semantic-ui-react"
 
@@ -12,12 +12,9 @@ const ItemPackage = ({
 }) => {
 
     return <Segment style={style} >
-                <Label size="mini">{packageInformation.ext.toUpperCase()}</Label>
-                <br/>
-                <p style={{marginTop: "5px"}}>
-                   <i>{packageInformation.namespaceRepo}</i>{`.${packageInformation.moduleName}.${packageInformation.layerName}${packageInformation.parentGroup ? `.${packageInformation.parentGroup}`: ""}.`} <strong>{packageInformation.packageName}</strong>
-                </p>
-            
+                   <span style={{"color": "gray"}}><strong>{packageInformation.namespaceRepo}</strong><i>{`.${packageInformation.moduleName}.${packageInformation.layerName}${packageInformation.parentGroup ? `.${packageInformation.parentGroup}`: ""}`}</i></span>
+                   <br/>
+                   <strong style={{"fontSize": "large"}}>{packageInformation.packageName}.{packageInformation.ext}</strong>
             </Segment>
 }
 

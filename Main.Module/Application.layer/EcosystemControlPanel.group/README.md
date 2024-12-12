@@ -1,4 +1,5 @@
 ## Funcionalidades a ser implementas no Ecosystem Control Panel
+- Detectar instancia e ambiente em execução
 - Abrir vscode
 - Executar um terminal
 - Executar um aplicativo
