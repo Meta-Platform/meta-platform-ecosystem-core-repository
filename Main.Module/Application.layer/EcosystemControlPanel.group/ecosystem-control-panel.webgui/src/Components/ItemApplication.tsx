@@ -17,7 +17,6 @@ const ItemApplication = ({
     const {
         executable,
         packageNamespace,
-        repositoryNamespace,
         supervisorSocketFileName,
     } = applicationData
 
@@ -31,9 +30,6 @@ const ItemApplication = ({
                     <CardHeader><Icon name='terminal' /> {executable}</CardHeader>
                     <CardMeta>{getPackageNamespaceBase()}</CardMeta>
                     <CardDescription style={{"backgroundColor":"beige", "padding": "5px", border: "1px solid #c4c4c4"}}>
-                        <i style={{ color: 'grey' }}>repository namespace</i><br/>
-                        <strong>{repositoryNamespace}</strong>
-                        <Divider style={{margin: "1px"}}/>
                         <i style={{ color: 'grey' }}>supervisor socket filename</i><br/>
                         <strong>{supervisorSocketFileName}</strong>
                     </CardDescription>

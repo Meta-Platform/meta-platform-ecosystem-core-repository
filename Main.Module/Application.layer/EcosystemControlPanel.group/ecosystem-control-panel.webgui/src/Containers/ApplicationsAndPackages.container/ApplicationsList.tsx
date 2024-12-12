@@ -5,42 +5,80 @@ import {
     Loader,
     Dimmer,
     TabPane,
+    Header,
     CardGroup
 } from "semantic-ui-react"
 
 import ItemApplication from "../../Components/ItemApplication"
+
+const GroupDataListByRepositoryNamespace = (applicationList) => {
+    return applicationList
+    .reduce((acc, applicationData) => {
+
+        if(!acc[applicationData.repositoryNamespace]){
+            acc[applicationData.repositoryNamespace] = []
+        }
+
+        acc[applicationData.repositoryNamespace].push(applicationData)
+
+        return acc
+    }, {})
+}
+
+const ApplicationDataCardGroup = ({applicationList}) => {
+
+    const applicationDataGrouped = GroupDataListByRepositoryNamespace(applicationList)
+
+    return <>
+        {
+            Object.keys(applicationDataGrouped)
+            .map((repositoryNamespace) => <>
+                <Header dividing>{repositoryNamespace}</Header>
+                <CardGroup>
+                    {
+                        applicationDataGrouped[repositoryNamespace]
+                        .map((applicationData:any, key) => 
+                            <ItemApplication key={key} applicationData={applicationData}/>)
+                    }
+                </CardGroup> 
+            </>)
+
+        }
+        
+    </> 
+}
 
 const ApplicationsList = ({
     isLoading,
     installedApplicationList
 }) => {
 
+    const applicationListByRepo =
+        installedApplicationList
+        .reduce((acc, applicationData) => {
+
+            if(!acc[applicationData.repositoryNamespace]){
+                acc[applicationData.repositoryNamespace] = []
+            }
+
+            acc[applicationData.repositoryNamespace].push(applicationData)
+
+            return acc
+        }, {})
 
     const panes = [
         {
             menuItem: 'command line application',
             render: () => <TabPane attached={false} style={{"backgroundColor": "mintcream"}}>
-                                <CardGroup>
-                                    {
-                                        installedApplicationList
-                                        .filter(({appType}) => appType === "CLI")
-                                        .map((applicationData:any, key) => 
-                                            <ItemApplication key={key} applicationData={applicationData}/>)
-                                    }
-                                </CardGroup>  
+                                <ApplicationDataCardGroup applicationList={installedApplicationList
+                                        .filter(({appType}) => appType === "CLI")} />
                         </TabPane>,
         },
         {
             menuItem: 'application',
             render: () => <TabPane attached={false} style={{"backgroundColor": "mistyrose"}}> 
-                                <CardGroup>
-                                    {
-                                        installedApplicationList
-                                        .filter(({appType}) => appType === "APP")
-                                        .map((applicationData:any, key) => 
-                                            <ItemApplication key={key} applicationData={applicationData}/>)
-                                    }
-                                </CardGroup>  
+                                <ApplicationDataCardGroup applicationList={installedApplicationList
+                                        .filter(({appType}) => appType === "APP")} />
                         </TabPane>,
         }
     ]
