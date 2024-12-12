@@ -15,13 +15,17 @@ import GetAPI from "../../Utils/GetAPI"
 import QueryParamsActionsCreator from "../../Actions/QueryParams.actionsCreator"
 
 import ApplicationsList from "./ApplicationsList"
+import PackageList from "./PackageList"
 
 const ApplicationsAndPackagesContainer = ({ serverManagerInformation, QueryParams, AddQueryParam }:any) => {
 
     const [ installedApplicationList, setInstalledApplicationList ] = useState<any[]>([])
+    const [ installedPackageList, setInstalledPackageList ] = useState<any[]>([])
+
     const [ installedApplicationListFiltered, setPackageListFiltered ] = useState<any[]>()
     const [ filterValue, setFilterValue ] = useState<string>()
-    const [ isLoading, setIsLoading ] = useState(true)
+    const [ isApplicationListLoading, setIsApplicationListLoading ] = useState(true)
+    const [ isPackageListLoading, setIsPackageListLoading ] = useState(true)
 
     const _GetApplicationsAndPackagesAPI = () => 
         GetAPI({ 
@@ -32,6 +36,7 @@ const ApplicationsAndPackagesContainer = ({ serverManagerInformation, QueryParam
     useEffect(() => {
 
         fetchInstalledApplicationList()
+        fetchInstalledPackageList()
 
         if(QueryParams.filterValue)
             setFilterValue(QueryParams.filterValue)
@@ -57,10 +62,18 @@ const ApplicationsAndPackagesContainer = ({ serverManagerInformation, QueryParam
 
     const fetchInstalledApplicationList = async () => {
         const api = _GetApplicationsAndPackagesAPI()
-        const response = await api.ListInstalledApplications()
+        const response = await api.ListPackages()
+        const installedPackageList = response.data
+        setInstalledPackageList(installedPackageList)
+        setIsPackageListLoading(false)
+    }
+
+    const fetchInstalledPackageList = async () => {
+        const api = _GetApplicationsAndPackagesAPI()
+        const response = await api.ListApplications()
         const installedApplicationList = response.data
         setInstalledApplicationList(installedApplicationList)
-        setIsLoading(false)
+        setIsApplicationListLoading(false)
     }
     
     const filterInstalledApplicationList = () => {
@@ -81,7 +94,7 @@ const ApplicationsAndPackagesContainer = ({ serverManagerInformation, QueryParam
 		   render: () => 
 			<TabPane style={{background: "aliceblue"}}>
 				<ApplicationsList
-                isLoading={isLoading}
+                isLoading={isApplicationListLoading}
                 installedApplicationList={(installedApplicationListFiltered || installedApplicationList)}/>
 			</TabPane>
 		},
@@ -91,7 +104,7 @@ const ApplicationsAndPackagesContainer = ({ serverManagerInformation, QueryParam
 					</MenuItem>,
 		   render: () => 
 			<TabPane style={{background: "lightsteelblue"}}>
-				dfghdfghdfghfg
+				<PackageList packageList={installedPackageList}  isLoading={isPackageListLoading}/>
 			</TabPane>
 		}
 	]

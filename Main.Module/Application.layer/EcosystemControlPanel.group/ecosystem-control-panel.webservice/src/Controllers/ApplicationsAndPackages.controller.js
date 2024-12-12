@@ -28,6 +28,7 @@ const ApplicationsAndPackagesController = (params) => {
 
     const { 
         ecosystemdataHandlerService,
+        repositoryManagerService,
         ecosystemDefaultsFileRelativePath,
         jsonFileUtilitiesLib 
     } = params
@@ -41,14 +42,8 @@ const ApplicationsAndPackagesController = (params) => {
         const repositoriesData = await ReadJsonFile(repoDataFilePath)
         return repositoriesData
     }
-    
-    const ListInstalledRepositories = async () => {
-        const repositoriesData = await _GetRepositoriesData()
-        const installedRepositoriesList = ExtractInstalledRepositoriesByRepoData(repositoriesData)
-        return installedRepositoriesList
-    }
 
-    const ListInstalledApplications = async () => {
+    const ListApplications = async () => {
         const repositoriesData = await _GetRepositoriesData()
         const installedApplicationsList = ExtractInstalledAplicationByRepoData(repositoriesData)
         return installedApplicationsList
@@ -56,8 +51,8 @@ const ApplicationsAndPackagesController = (params) => {
 
     return {
         controllerName : "ApplicationsAndPackagesController",
-        ListInstalledRepositories,
-        ListInstalledApplications
+        ListPackages : repositoryManagerService.ListPackages,
+        ListApplications
     }
 }
 

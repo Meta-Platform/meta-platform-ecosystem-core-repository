@@ -6,7 +6,8 @@
         "supervisorLib",
         "environmentHandlerService",
         "jsonFileUtilitiesLib",
-        "ecosystemdataHandlerService"
+        "ecosystemdataHandlerService",
+        "repositoryManagerService"
     ],
     "endpoints": [
         {
@@ -43,7 +44,8 @@
                 "serverService":"serverService",
                 "controller-params":{
                     "ecosystemdataHandlerService":"ecosystemdataHandlerService",
-                    "jsonFileUtilitiesLib": "jsonFileUtilitiesLib"
+                    "jsonFileUtilitiesLib": "jsonFileUtilitiesLib",
+                    "repositoryManagerService": "repositoryManagerService"
                 }
             }
         },

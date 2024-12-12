@@ -19,7 +19,7 @@ const SidebarMenu = ({
                 />
                 <MenuItem
                     name='applications and packages'
-                    active={activeItem === 'packages'}
+                    active={activeItem === 'applications and packages'}
                     onClick={(e, { name }) => onSelectMenu(name)}
                 />
                 <MenuItem

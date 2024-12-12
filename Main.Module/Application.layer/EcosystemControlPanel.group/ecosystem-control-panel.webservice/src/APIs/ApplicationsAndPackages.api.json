@@ -1,0 +1,15 @@
+{
+	"name": "ApplicationsAndPackages",
+	"endpoints": [
+		{
+			"summary": "ListPackages",
+			"method": "GET",
+			"path": "/packages"
+		},
+		{
+			"summary": "ListApplications",
+			"method": "GET",
+			"path": "/applications"
+		}
+	]
+}
