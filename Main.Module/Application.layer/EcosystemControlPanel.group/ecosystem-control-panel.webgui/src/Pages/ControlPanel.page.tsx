@@ -116,7 +116,7 @@ const ControlPanelPage = ({
 								&& <EnvironmentsContainer serverManagerInformation={HTTPServerManager}/>
 							}
 							{
-								activeItem === "repositories and sources"
+								activeItem === "repository sources"
 								&& <SourcesContainer serverManagerInformation={HTTPServerManager}/>
 							}
 							{
