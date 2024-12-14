@@ -54,12 +54,17 @@
             "type": "controller",
             "params": {
                 "api-template": "APIs/Environments.api.json",
-                "controller": "Controllers/Environments.controller"
+                "controller": "Controllers/Environments.controller",
+                "controller-params":{
+                    "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
+                }
             },
             "bound-params": {
                 "serverService":"serverService",
                 "controller-params":{
-                    "environmentHandlerService": "environmentHandlerService"
+                    "jsonFileUtilitiesLib": "jsonFileUtilitiesLib",
+                    "environmentHandlerService": "environmentHandlerService",
+                    "ecosystemdataHandlerService": "ecosystemdataHandlerService"
                 }
             }
         },

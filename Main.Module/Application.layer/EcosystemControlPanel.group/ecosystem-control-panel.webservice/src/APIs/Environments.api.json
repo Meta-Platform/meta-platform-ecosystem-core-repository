@@ -5,6 +5,19 @@
 			"summary": "ListEnvironments",
 			"method": "GET",
 			"path": "/environments"
+		},
+		{
+			"summary": "GetMetadataHierarchy",
+			"method": "POST",
+			"path": "/metadata-hierarchy",
+			"parameters": [
+				{
+					"name": "environmentName",
+					"in": "body",
+					"type": "string",
+					"required": true
+				}
+			]
 		}
 	]
 }

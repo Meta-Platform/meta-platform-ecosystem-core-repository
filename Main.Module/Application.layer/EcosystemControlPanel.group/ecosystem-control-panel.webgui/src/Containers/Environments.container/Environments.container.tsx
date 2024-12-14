@@ -21,12 +21,16 @@ const EnvironmentsContainer = ({
     const [ environmentNameSelected, setEnvironmentNameSelected ] = useState()
     const [ isLoading, setLoading ] = useState(true)
 
+    const [ metadataHierarchySelected, setMetadataHierarchySelected] = useState()
+
   	const navigate = useNavigate()
 
     useEffect(() => {
 
-		if(environmentNameSelected)
+		if(environmentNameSelected){
 			AddQueryParam("environmentName", environmentNameSelected)
+            fetchMetadataHierarchy()
+        }
 		
 	}, [environmentNameSelected])
 
@@ -60,6 +64,12 @@ const EnvironmentsContainer = ({
         const response = await api.ListEnvironments()
         setEnviromentNameList(response.data)
         setLoading(false)
+    }
+
+    const fetchMetadataHierarchy = async () => {
+        const api = getEnviromentAPI()
+        const response = await api.GetMetadataHierarchy({environmentName: environmentNameSelected})
+        setMetadataHierarchySelected(response.data)
     }
 
     const handleSelectEnvironment = (environmentName) => 
