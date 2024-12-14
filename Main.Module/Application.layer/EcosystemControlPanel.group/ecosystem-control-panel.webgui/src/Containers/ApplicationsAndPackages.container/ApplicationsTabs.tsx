@@ -48,7 +48,7 @@ const ApplicationDataCardGroup = ({applicationList}) => {
     </> 
 }
 
-const ApplicationsList = ({
+const ApplicationsTabs = ({
     isLoading,
     installedApplicationList
 }) => {
@@ -86,4 +86,4 @@ const ApplicationsList = ({
     return isLoading ? <Dimmer active><Loader/></Dimmer>: <Tab menu={{ secondary: true, pointing: true }} panes={panes} />
 }
 
-export default ApplicationsList
+export default ApplicationsTabs

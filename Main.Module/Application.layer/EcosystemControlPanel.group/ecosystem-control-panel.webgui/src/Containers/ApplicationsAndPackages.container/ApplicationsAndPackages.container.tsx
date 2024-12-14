@@ -13,7 +13,7 @@ import GetAPI from "../../Utils/GetAPI"
 
 import QueryParamsActionsCreator from "../../Actions/QueryParams.actionsCreator"
 
-import ApplicationsList from "./ApplicationsList"
+import ApplicationsTabs from "./ApplicationsTabs"
 import PackageList from "./PackageList"
 
 const ApplicationsAndPackagesContainer = ({ serverManagerInformation, QueryParams, AddQueryParam }:any) => {
@@ -92,9 +92,9 @@ const ApplicationsAndPackagesContainer = ({ serverManagerInformation, QueryParam
 					</MenuItem>,
 		   render: () => 
 			<TabPane style={{background: "aliceblue"}}>
-				<ApplicationsList
-                isLoading={isApplicationListLoading}
-                installedApplicationList={(installedApplicationListFiltered || installedApplicationList)}/>
+				<ApplicationsTabs
+                    isLoading={isApplicationListLoading}
+                    installedApplicationList={(installedApplicationListFiltered || installedApplicationList)}/>
 			</TabPane>
 		},
         {
