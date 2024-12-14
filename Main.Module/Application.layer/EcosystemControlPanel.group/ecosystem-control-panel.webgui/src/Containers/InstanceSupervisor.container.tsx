@@ -21,8 +21,6 @@ import {
 	Button
  } from "semantic-ui-react"
 
-
-
 import qs                     from "query-string"
 import { 
 	useLocation,
@@ -310,27 +308,27 @@ const InstanceSupervisorContainer = ({
 
 	return <Segment style={{margin:"15px", background: "antiquewhite"}}>
 				<Grid columns="two" divided>
-						<Column width={2}>
-							<SocketFileList
-								list={socketFileList}
-								onSelect={handleSelectInstance}
-								socketFileSelected={socketFileNameSelected}
-								/>
-						</Column>
-						<Column width={14}>
-							<Menu>
-								<MenuMenu position='right'>
-									<MenuItem>
-										<Button icon color="red">
-											<Icon name='close'/>
-											kill instance
-										</Button>
-									</MenuItem>
-								</MenuMenu>
-							</Menu>
-							<Tab panes={mainPanes} />
-						</Column>
-					</Grid>
+					<Column width={2}>
+						<SocketFileList
+							list={socketFileList}
+							onSelect={handleSelectInstance}
+							socketFileSelected={socketFileNameSelected}
+							/>
+					</Column>
+					<Column width={14}>
+						<Menu>
+							<MenuMenu position='right'>
+								<MenuItem>
+									<Button icon color="red">
+										<Icon name='close'/>
+										kill instance
+									</Button>
+								</MenuItem>
+							</MenuMenu>
+						</Menu>
+						<Tab panes={mainPanes} />
+					</Column>
+				</Grid>
 			</Segment>
 }
 
