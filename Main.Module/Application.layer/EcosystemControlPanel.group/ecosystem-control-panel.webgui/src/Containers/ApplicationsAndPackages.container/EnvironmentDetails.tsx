@@ -23,7 +23,7 @@ const FindPackageInformation = (list, params) =>
         (packageInformation) => 
             CompareObjects(packageInformation.repositoryParams, params))
 
-const PackageDetails = ({
+const EnvironmentDetails = ({
     packageList,
     repositoryParams,
     serverManagerInformation,
@@ -191,4 +191,4 @@ const PackageDetails = ({
                 </Segment>
 }
 
-export default PackageDetails
+export default EnvironmentDetails
