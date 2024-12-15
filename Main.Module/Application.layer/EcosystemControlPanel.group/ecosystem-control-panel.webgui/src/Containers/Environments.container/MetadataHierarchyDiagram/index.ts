@@ -1,0 +1,2 @@
+import MetadataHierarchyDiagram from "./MetadataHierarchyDiagram"
+export default MetadataHierarchyDiagram

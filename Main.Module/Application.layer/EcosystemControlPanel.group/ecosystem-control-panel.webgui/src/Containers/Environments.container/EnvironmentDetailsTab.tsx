@@ -6,7 +6,7 @@ import {
     Loader
 } from "semantic-ui-react"
 
-import DependencyDiagram from "./DependencyDiagram"
+import MetadataHierarchyDiagram from "./MetadataHierarchyDiagram"
 
 const EnvironmentDetailsTab = ({
     metadataHierarchy
@@ -18,7 +18,7 @@ const EnvironmentDetailsTab = ({
             render: () => <TabPane>
                 {
                     metadataHierarchy
-                    ? <DependencyDiagram metadataHierarchy={metadataHierarchy}/>
+                    ? <MetadataHierarchyDiagram metadataHierarchy={metadataHierarchy}/>
                     : <Loader/>
                 }
             </TabPane>

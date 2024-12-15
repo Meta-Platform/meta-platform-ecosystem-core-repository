@@ -37,7 +37,7 @@ const ConvertLinkedGraphToEdges = (linkedGraph) => {
 
         return {
             edgeId,
-            //type: 'smoothstep',
+            type: 'floating',
             markerEnd: {
                 type: MarkerType.ArrowClosed,
             },
@@ -70,15 +70,15 @@ const ConvertLinkedGraphToEdges = (linkedGraph) => {
     return edges
 }
 
-const ConvertDependencyToFlowElements = (dependencyHierarchy) => {
+const ConvertDependencyToFlowElements = (metadataHierarchy) => {
 
     const {
         dependencyList,
-        packageDependencyGraph
-    } = dependencyHierarchy
+        linkedGraph
+    } = metadataHierarchy
 
     const nodes = ConvertDependencyListToNodes(dependencyList)
-    const edges = ConvertLinkedGraphToEdges(packageDependencyGraph)
+    const edges = ConvertLinkedGraphToEdges(linkedGraph)
 
     return { 
         nodes: Array.from(nodes.values()), 
