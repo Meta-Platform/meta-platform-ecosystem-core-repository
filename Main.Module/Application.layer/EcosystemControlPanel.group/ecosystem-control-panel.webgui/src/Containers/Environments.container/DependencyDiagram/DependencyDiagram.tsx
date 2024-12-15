@@ -16,25 +16,25 @@ import GetLayoutedElements from "./GetLayoutedElements"
 
 const DivFlowContainerStyled = styled.div`
     width: 100%;
-    height: 320px;
+    height: 650px;
     overflow: hidden;
     border: 1px solid #eee;
 `
 
-const DependencyDiagram = ({ dependencyHierarchy }) => {
+const DependencyDiagram = ({ metadataHierarchy }) => {
 
 	const [nodes, setNodes, onNodesChange] = useNodesState([])
 	const [edges, setEdges, onEdgesChange] = useEdgesState([])
 
 	useEffect(() => {
-		if(dependencyHierarchy){
-			const { nodes: initialNodes, edges: initialEdges } = ConvertDependencyToFlowElements(dependencyHierarchy)
+		if(metadataHierarchy){
+			const { nodes: initialNodes, edges: initialEdges } = ConvertDependencyToFlowElements(metadataHierarchy)
 			const { nodes, edges } = GetLayoutedElements(initialNodes, initialEdges, "LR")
 			setNodes(nodes)
 			setEdges(edges)
 		}
 
-	}, [dependencyHierarchy])
+	}, [metadataHierarchy])
 
 	const onConnect = useCallback(
 		(params) =>

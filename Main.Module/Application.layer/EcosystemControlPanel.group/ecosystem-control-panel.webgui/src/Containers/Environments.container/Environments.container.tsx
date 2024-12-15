@@ -11,6 +11,13 @@ import {
 import QueryParamsActionsCreator from "../../Actions/QueryParams.actionsCreator"
 import GetAPI from "../../Utils/GetAPI"
 
+import EnvironmentDetailsTab from "./EnvironmentDetailsTab"
+
+const CleanEnvironmentName = environmentName => {
+    const index = environmentName.lastIndexOf('-')
+    return index !== -1 ? environmentName.slice(0, index) : environmentName
+}
+
 const EnvironmentsContainer = ({ 
     HTTPServerManager,
     AddQueryParam,
@@ -80,7 +87,7 @@ const EnvironmentsContainer = ({
                     isLoading && <Loader active style={{margin: "50px"}}/>
                 }
                 <Grid columns="two" divided>
-					<Grid.Column width={5}>
+					<Grid.Column width={3}>
                         <List selection animated>
                             {
                                 environmentNameList
@@ -89,13 +96,16 @@ const EnvironmentsContainer = ({
                                     active={environmentNameSelected && environmentName === environmentNameSelected}
                                     onClick={() => handleSelectEnvironment(environmentName)}>
                                     <List.Content>
-                                        <List.Header>{environmentName}</List.Header>
+                                        <List.Header>{CleanEnvironmentName(environmentName)}</List.Header>
                                     </List.Content>
                                 </List.Item>)
                             }
                         </List>	
 					</Grid.Column>
-					<Grid.Column width={11}>retyrtyerty</Grid.Column>
+					<Grid.Column width={13}>
+                        <EnvironmentDetailsTab
+                            metadataHierarchy={metadataHierarchySelected}/>
+                    </Grid.Column>
 				</Grid>
             </Segment>
 }
