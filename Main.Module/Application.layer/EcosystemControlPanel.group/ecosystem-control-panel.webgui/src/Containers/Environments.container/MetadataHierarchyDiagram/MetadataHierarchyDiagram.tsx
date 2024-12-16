@@ -5,12 +5,14 @@ import ReactFlow, {
 	useNodesState,
 	useEdgesState,
 	Background,
+	useReactFlow,
 	Controls,
 } from "reactflow"
 import styled from "styled-components"
 import "reactflow/dist/style.css"
 import ConvertDependencyToFlowElements from "./ConvertDependencyToFlowElements"
-import dagre from "dagre"
+
+import GetLayoutedElements from "./GetLayoutedElements"
 
 const DivFlowContainerStyled = styled.div`
   width: 100%;
@@ -18,47 +20,6 @@ const DivFlowContainerStyled = styled.div`
   overflow: hidden;
   border: 1px solid #eee;
 `
-
-const nodeWidth = 300
-const nodeHeight = 50
-
-const GetLayoutedElements = (nodes, edges, direction = "TB") => {
-	const dagreGraph = new dagre.graphlib.Graph()
-	dagreGraph.setDefaultEdgeLabel(() => ({}))
-
-	dagreGraph.setGraph({ rankdir: direction, marginx: 50, marginy: 50 })
-
-	nodes.forEach((node) => {
-		dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight })
-	})
-
-	edges.forEach((edge) => {
-		dagreGraph.setEdge(edge.source, edge.target)
-	})
-
-	dagre.layout(dagreGraph)
-
-	const layoutedNodes = nodes.map((node) => {
-		const nodeWithPosition = dagreGraph.node(node.id)
-		node.targetPosition = "top"
-		node.sourcePosition = "bottom"
-		node.position = {
-			x: nodeWithPosition.x - nodeWidth / 2,
-			y: nodeWithPosition.y - nodeHeight / 2,
-		}
-		return node
-	})
-
-	const adjustedEdges = edges.map((edge) => ({
-		...edge,
-		animated: true,
-		label: "depends on",
-		labelStyle: { fontSize: 12 },
-		style: { stroke: "#6c63ff" },
-	}))
-
-	return { nodes: layoutedNodes, edges: adjustedEdges }
-}
 
 const MetadataHierarchyDiagram = ({ metadataHierarchy }) => {
 	const [nodes, setNodes, onNodesChange] = useNodesState([])
@@ -71,21 +32,23 @@ const MetadataHierarchyDiagram = ({ metadataHierarchy }) => {
 
 			const styledNodes = nodes.map((node) => {
 				let backgroundColor = "#fff"
-				if (node.data.label.includes("webapp")) {
+				const label = node.data.label
+				
+				if (label.endsWith(".webapp"))
 					backgroundColor = "#d1e7ff"
-				} else if (node.data.label.includes("webservice")) {
+				else if (label.endsWith(".webservice"))
 					backgroundColor = "#d4edda"
-				} else if (node.data.label.includes("webgui")) {
+				else if (label.endsWith(".webgui"))
 					backgroundColor = "#f8a0ff"
-				} else if (node.data.label.includes("cli")) {
+				else if (label.endsWith(".cli"))
 					backgroundColor = "#cbffe3"
-				} else if (node.data.label.includes("app")) {
+				else if (label.endsWith(".app"))
 					backgroundColor = "#9fe5ff"
-				} else if (node.data.label.includes("service")) {
+				else if (label.endsWith(".service"))
 					backgroundColor = "#ffcca0"
-				} else if (node.data.label.includes("lib")) {
+				else if (label.endsWith(".lib"))
 					backgroundColor = "#f8d7da"
-				}
+
 				return {
 					...node,
 					style: {
@@ -93,7 +56,7 @@ const MetadataHierarchyDiagram = ({ metadataHierarchy }) => {
 						backgroundColor,
 						border: "1px solid #ccc",
 						width: 300,
-					},
+					}
 				}
 			})
 

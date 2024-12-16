@@ -34,6 +34,7 @@ const EnvironmentsContainer = ({
 
     useEffect(() => {
 
+        setMetadataHierarchySelected(undefined)
 		if(environmentNameSelected){
 			AddQueryParam("environmentName", environmentNameSelected)
             fetchMetadataHierarchy()
