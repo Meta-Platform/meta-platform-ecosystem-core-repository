@@ -37,15 +37,77 @@ const GroupSources = (sourceList) => {
     }, {})
 }
 
+const SourceParamsTable = ({
+    repositorySourceData
+}) => {
+
+    return <Table basic='very' celled collapsing style={{"backgroundColor":"antiquewhite", "padding":"10px"}}>
+                <TableHeader>
+                    <TableRow>
+                        <TableHeaderCell>Parameter</TableHeaderCell>
+                        <TableHeaderCell>value</TableHeaderCell>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {
+                        Object
+                        .keys(repositorySourceData)
+                        .filter((property) => property !== "repositoryNamespace" && property !== "sourceType")
+                        .map((property) => <TableRow>
+                                                <TableCell>{property}</TableCell>
+                                                <TableCell><strong>{repositorySourceData[property]}</strong></TableCell>
+                                                {/*<TableCell style={{"padding":"5px"}}><Button size="mini" primary>edit</Button></TableCell>*/}
+                                            </TableRow>)
+                    }
+                </TableBody>
+            </Table>
+
+}
+
+const SourceTypeListItem = ({
+    repositorySourceData
+}) => {
+    return <ListItem style={{padding:"15px"}} >
+                <ListDescription>source type</ListDescription>
+                <ListHeader>{repositorySourceData.sourceType}</ListHeader>
+                    <SourceParamsTable repositorySourceData={repositorySourceData}/>          
+            </ListItem>
+}
+
+const RepositoryNamespacePanel = ({
+    repositoryNamespace,
+    groupedSources,
+    activeSourceList
+}) => {
+
+    const activeSourceData = activeSourceList
+        .find((activeSourceData) => activeSourceData.repositoryNamespace === repositoryNamespace)
+
+    return <Segment style={{marginRight:"15px", "backgroundColor":"lavender"}} >
+        <strong style={{"fontSize": "large"}}>{repositoryNamespace}</strong>
+
+
+        {
+            activeSourceData
+             && <SourceParamsTable repositorySourceData={activeSourceData.sourceData}/>          
+        }
+
+        {/*<List divided style={{"backgroundColor":"floralwhite"}}>
+        {
+            groupedSources[repositoryNamespace]
+                .map((repo) => <SourceTypeListItem repositorySourceData={repo}/>)
+        }
+        </List>*/}
+    </Segment>
+}
+
 const SourcesContainer = ({ serverManagerInformation }:any) => {
 
     const [ sourceList, setSourceList ] = useState<any[]>([])
+    const [ activeSourceList, setActiveSourceList ] = useState<any[]>([])
     const [ isLoading, setIsLoading ] = useState(true)
 
     const [ groupedSources, setGroupedSources] = useState({})
-
-    console.log("===> groupedSources")
-    console.log(groupedSources)
 
     const _GetSourcesAPI = () => 
         GetAPI({ 
@@ -55,6 +117,7 @@ const SourcesContainer = ({ serverManagerInformation }:any) => {
     
     useEffect(() => {
         fetchSourceList()
+        fetchActiveSourceList()
     }, [])
     
     const fetchSourceList = async () => {
@@ -71,13 +134,22 @@ const SourcesContainer = ({ serverManagerInformation }:any) => {
         }
     }
 
-
+    const fetchActiveSourceList = async () => {
+        try {
+            const api = _GetSourcesAPI()
+            const response = await api.ListActiveSources()
+            const activeSourceList = response.data
+            setActiveSourceList(activeSourceList)
+        }catch(e){
+            console.log(e)
+        }
+    }
+    
     return <>
                 <Menu style={{margin:"1em", "backgroundColor": "honeydew"}} >
                     <MenuMenu position='right'>
                         <MenuItem>
                             <Button icon primary>
-                                <Icon name='plus'/>
                                 add new repository namespace 
                             </Button>
                         </MenuItem>
@@ -91,44 +163,11 @@ const SourcesContainer = ({ serverManagerInformation }:any) => {
                         :<div style={{ overflow: 'auto', height:"82vh" }}>
                             {
                                 Object.keys(groupedSources)
-                                .map((repositoryNamespace) => {
-                                    return <Segment style={{marginRight:"15px", "backgroundColor":"lavender"}} >
-                                                <strong style={{"fontSize": "large"}}>{repositoryNamespace}</strong>
-                          
-                                                    <List divided style={{"backgroundColor":"floralwhite"}}>
-                                                    {
-                                                        groupedSources[repositoryNamespace]
-                                                            .map((repo) => <ListItem style={{padding:"15px"}} >
-                                                                                <ListDescription>source type</ListDescription>
-                                                                                <ListHeader>{repo.sourceType}</ListHeader>
-                                                                  
-                                                                                    <Table basic='very' celled collapsing style={{"backgroundColor":"antiquewhite", "padding":"10px"}}>
-                                                                                        <TableHeader>
-                                                                                            <TableRow>
-                                                                                                <TableHeaderCell>Parameter</TableHeaderCell>
-                                                                                                <TableHeaderCell>value</TableHeaderCell>
-                                                                                            </TableRow>
-                                                                                        </TableHeader>
-                                                                                        <TableBody>
-                                                                                            {
-                                                                                                Object
-                                                                                                .keys(repo)
-                                                                                                .filter((property) => property !== "repositoryNamespace" && property !== "sourceType")
-                                                                                                .map((property) => <TableRow>
-                                                                                                                        <TableCell>{property}</TableCell>
-                                                                                                                        <TableCell><strong>{repo[property]}</strong></TableCell>
-                                                                                                                        <TableCell style={{"padding":"5px"}}><Button size="mini" primary>edit</Button></TableCell>
-                                                                                                                    </TableRow>)
-                                                                                            }
-                                                                                        </TableBody>
-                                                                                    </Table>
-                                                                             
-                                                                                
-                                                                            </ListItem>)
-                                                    }
-                                                    </List>
-                                                </Segment>
-                                })
+                                .map((repositoryNamespace) =>
+                                    <RepositoryNamespacePanel
+                                        activeSourceList={activeSourceList}
+                                        repositoryNamespace={repositoryNamespace}
+                                        groupedSources={groupedSources}/>)
                             }
                         </div>
                     }

@@ -11,14 +11,16 @@ const useFetchInstanceTaskList = ({
 
     useEffect(() => {
 
-		if(socketFileNameSelected)
+		if(socketFileNameSelected){
+			setInstanceTaskListSelected([])
 			fetchInstanceTasks()
+		}
 		
 	}, [socketFileNameSelected])
 
     const _GetWebservice = GetRequestByServer(HTTPServerManager)
 	
-	const fetchInstanceTasks = () => 
+	const fetchInstanceTasks = () =>
 		_GetWebservice(process.env.SERVER_APP_NAME, "InstancesMonitor")
 			.ListInstanceTasks({ socketFilename:socketFileNameSelected})
 			.then(({data}:any) => setInstanceTaskListSelected(data))

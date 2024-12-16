@@ -5,6 +5,11 @@
 			"summary": "ListSources",
 			"method": "GET",
 			"path": "/sources"
+		},
+		{
+			"summary": "ListActiveSources",
+			"method": "GET",
+			"path": "/active-sources"
 		}
 	]
 }
