@@ -29,18 +29,22 @@ const EnvironmentsContainer = ({
     const [ isLoading, setLoading ] = useState(true)
 
     const [ metadataHierarchySelected, setMetadataHierarchySelected] = useState()
+    const [ executionParamsSelected, setExecutionParamsSelected] = useState()
 
   	const navigate = useNavigate()
 
     useEffect(() => {
 
         setMetadataHierarchySelected(undefined)
+        setExecutionParamsSelected(undefined)
 		if(environmentNameSelected){
 			AddQueryParam("environmentName", environmentNameSelected)
             fetchMetadataHierarchy()
+            fetchExecutionParams()
         }
 		
 	}, [environmentNameSelected])
+
 
     useEffect(() => {
 
@@ -48,7 +52,6 @@ const EnvironmentsContainer = ({
 		navigate({search: `?${search}`})
 
 		if(Object.keys(QueryParams).length > 0){
-
 			if(QueryParams.environmentName)
 				setEnvironmentNameSelected(QueryParams.environmentName)
 
@@ -74,6 +77,12 @@ const EnvironmentsContainer = ({
         setLoading(false)
     }
 
+    const fetchExecutionParams = async () => {
+        const api = getEnviromentAPI()
+        const response = await api.GetExecutionParams({environmentName: environmentNameSelected})
+        setExecutionParamsSelected(response.data)
+    }
+    
     const fetchMetadataHierarchy = async () => {
         const api = getEnviromentAPI()
         const response = await api.GetMetadataHierarchy({environmentName: environmentNameSelected})
@@ -105,7 +114,8 @@ const EnvironmentsContainer = ({
 					</Grid.Column>
 					<Grid.Column width={13}>
                         <EnvironmentDetailsTab
-                            metadataHierarchy={metadataHierarchySelected}/>
+                            metadataHierarchy={metadataHierarchySelected}
+                            executionParams={executionParamsSelected}/>
                     </Grid.Column>
 				</Grid>
             </Segment>

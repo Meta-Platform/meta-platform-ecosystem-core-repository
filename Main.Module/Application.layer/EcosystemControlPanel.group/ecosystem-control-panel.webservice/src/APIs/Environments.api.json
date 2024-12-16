@@ -18,6 +18,19 @@
 					"required": true
 				}
 			]
+		},
+		{
+			"summary": "GetExecutionParams",
+			"method": "POST",
+			"path": "/execution-params",
+			"parameters": [
+				{
+					"name": "environmentName",
+					"in": "body",
+					"type": "string",
+					"required": true
+				}
+			]
 		}
 	]
 }
