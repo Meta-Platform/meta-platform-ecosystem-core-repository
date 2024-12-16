@@ -40,16 +40,21 @@ const APIEndpointsService = ({path, service, apiTemplate}) => {
         parameters
     }) => {
 
-        const _Callback = async (request, response)=>{
+        const _Callback = async (request, response, next)=>{
             const params = getAllParams(request)
 
-            if(!parameters){
-                await Send(typeResponse, response, service[summary]())
-            }else if(Object.keys(params).length == 1 && parameters.length == 1){
-                await Send(typeResponse, response, service[summary](params[Object.keys(params)[0]]))
-            }else{
-                await Send(typeResponse, response, service[summary](params))
+            try{
+                if(!parameters){
+                    await Send(typeResponse, response, service[summary]())
+                }else if(Object.keys(params).length == 1 && parameters.length == 1){
+                    await Send(typeResponse, response, service[summary](params[Object.keys(params)[0]]))
+                }else{
+                    await Send(typeResponse, response, service[summary](params))
+                }
+            }catch(e){
+                next(e)
             }
+            
         }
 
         const _CallbackWebSocket = (ws, request) => {
