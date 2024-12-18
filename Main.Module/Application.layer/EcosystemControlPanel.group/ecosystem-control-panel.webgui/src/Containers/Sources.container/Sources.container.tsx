@@ -37,12 +37,30 @@ const GroupSources = (sourceList) => {
 
 const RepositoryNamespaceCard = ({
     repositoryNamespace,
+    serverManagerInformation,
     activeSourceList,
     onOpenSwitchSource
 }) => {
 
     const activeSourceData = activeSourceList
         .find((activeSourceData) => activeSourceData.repositoryNamespace === repositoryNamespace)
+
+    const _GetSourcesAPI = () => 
+        GetAPI({ 
+            apiName:"Sources",  
+            serverManagerInformation 
+        })
+
+    const UpdateRepository = async () => {
+        try {
+            const api = _GetSourcesAPI()
+            await api.UpdateRepository({repositoryNamespace})
+        }catch(e){
+            console.log(e)
+        }
+    }
+
+    const handleUpdateRepository = () => UpdateRepository()
 
     return <Card style={{"width":"400px", "padding":"15px"}}>
         <strong style={{"fontSize": "large"}}>{repositoryNamespace}</strong>
@@ -53,7 +71,7 @@ const RepositoryNamespaceCard = ({
         }
         <ButtonGroup>
             <Button color="orange" onClick={() => onOpenSwitchSource(repositoryNamespace)}>switch source</Button>
-            <Button primary>update repository</Button>
+            <Button primary onClick={handleUpdateRepository}>update repository</Button>
         </ButtonGroup>
     </Card>
 }
@@ -132,6 +150,7 @@ const SourcesContainer = ({ serverManagerInformation }:any) => {
                                 Object.keys(groupedSources)
                                 .map((repositoryNamespace) =>
                                     <RepositoryNamespaceCard
+                                        serverManagerInformation={serverManagerInformation}
                                         onOpenSwitchSource={handleOpenSwitchSource}
                                         activeSourceList={activeSourceList}
                                         repositoryNamespace={repositoryNamespace}/>)

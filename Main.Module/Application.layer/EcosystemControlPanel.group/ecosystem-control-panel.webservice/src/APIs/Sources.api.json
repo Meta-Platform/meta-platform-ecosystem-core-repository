@@ -10,6 +10,19 @@
 			"summary": "ListActiveSources",
 			"method": "GET",
 			"path": "/active-sources"
+		},
+		{
+			"summary": "UpdateRepository",
+			"method": "POST",
+			"path": "/update-repository",
+			"parameters": [
+				{
+					"in": "body",
+					"name": "repositoryNamespace",
+					"type": "string",
+					"required": true
+				}
+			]
 		}
 	]
 }

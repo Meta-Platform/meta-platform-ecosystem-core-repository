@@ -7,7 +7,8 @@
         "environmentHandlerService",
         "jsonFileUtilitiesLib",
         "ecosystemdataHandlerService",
-        "repositoryManagerService"
+        "repositoryManagerService",
+        "ecosystemInstallUtilitiesLib"
     ],
     "endpoints": [
         {
@@ -82,7 +83,8 @@
                 "serverService":"serverService",
                 "controller-params":{
                     "ecosystemdataHandlerService":"ecosystemdataHandlerService",
-                    "jsonFileUtilitiesLib": "jsonFileUtilitiesLib"
+                    "jsonFileUtilitiesLib": "jsonFileUtilitiesLib",
+                    "ecosystemInstallUtilitiesLib": "ecosystemInstallUtilitiesLib"
                 }
             }
         },

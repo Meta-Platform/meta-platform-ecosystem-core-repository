@@ -1,4 +1,5 @@
 const path = require("path")
+const EventEmitter = require('node:events')
 
 const ExtractSourceListBySourcesData = (sourcesData) => {
 
@@ -46,22 +47,28 @@ const SourcesController = (params) => {
     const { 
         ecosystemdataHandlerService,
         ecosystemDefaultsFileRelativePath,
-        jsonFileUtilitiesLib 
+        jsonFileUtilitiesLib,
+        ecosystemInstallUtilitiesLib
     } = params
 
     const ReadJsonFile = jsonFileUtilitiesLib.require("ReadJsonFile")
+    const UpdateRepository = ecosystemInstallUtilitiesLib.require("UpdateRepository")
 
-    const _GetSourcesData = async () => {
+    const _GetEcosystemDefaults =  async () => {
         const ecosystemDefaultFilePath = path.resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaultsFileRelativePath)
         const ecosystemDefaults = await ReadJsonFile(ecosystemDefaultFilePath)
+        return ecosystemDefaults
+    }
+
+    const _GetSourcesData = async () => {
+        const ecosystemDefaults = await _GetEcosystemDefaults()
         const sourcesDataFilePath = path.resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaults.REPOS_CONF_FILENAME_SOURCE_DATA)
         const sourcesData = await ReadJsonFile(sourcesDataFilePath)
         return sourcesData
     }
 
     const _GetRepositoriesData = async () => {
-        const ecosystemDefaultFilePath = path.resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaultsFileRelativePath)
-        const ecosystemDefaults = await ReadJsonFile(ecosystemDefaultFilePath)
+        const ecosystemDefaults = await _GetEcosystemDefaults()
         const repoDataFilePath = path.resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaults.REPOS_CONF_FILENAME_REPOS_DATA)
         const repositoriesData = await ReadJsonFile(repoDataFilePath)
         return repositoriesData
@@ -79,10 +86,30 @@ const SourcesController = (params) => {
         return activeSourcesList
     }
 
+    const UpdateRepositoryByNamespace = async (repositoryNamespace) => {
+        
+        const repositoriesData = await _GetRepositoriesData()
+        const {sourceData} = repositoriesData[repositoryNamespace]
+
+        const ecosystemDefaults = await _GetEcosystemDefaults()
+
+        const loggerEmitter = new EventEmitter()
+        loggerEmitter.on("log", (dataLog) => console.log(dataLog))
+
+        await UpdateRepository({
+            repositoryNamespace,
+            sourceData,
+            installDataDirPath: ecosystemdataHandlerService.GetEcosystemDataPath(),
+            ecosystemDefaults,
+            loggerEmitter
+        })
+    }
+
     return {
         controllerName : "SourcesController",
         ListSources,
-        ListActiveSources
+        ListActiveSources,
+        UpdateRepository: UpdateRepositoryByNamespace
     }
 }
 

@@ -98,7 +98,8 @@
                 "ecosystemdataHandlerService": "@@/ecosystemdata-handler-service",
                 "supervisorLib": "@/supervisor.lib",
                 "jsonFileUtilitiesLib": "@/json-file-utilities.lib",
-                "repositoryManagerService": "@@/repository-manager"
+                "repositoryManagerService": "@@/repository-manager",
+                "ecosystemInstallUtilitiesLib": "@/ecosystem-install-utilities.lib"
             },
             "params":{
                 "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
