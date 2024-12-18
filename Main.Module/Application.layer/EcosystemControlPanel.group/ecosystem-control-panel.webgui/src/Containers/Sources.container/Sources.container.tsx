@@ -42,6 +42,8 @@ const RepositoryNamespaceCard = ({
     onOpenSwitchSource
 }) => {
 
+    const [ isUpdating, setIsUpdating ] = useState(false)
+
     const activeSourceData = activeSourceList
         .find((activeSourceData) => activeSourceData.repositoryNamespace === repositoryNamespace)
 
@@ -53,10 +55,13 @@ const RepositoryNamespaceCard = ({
 
     const UpdateRepository = async () => {
         try {
+            setIsUpdating(true)
             const api = _GetSourcesAPI()
             await api.UpdateRepository({repositoryNamespace})
+            setIsUpdating(false)
         }catch(e){
             console.log(e)
+            setIsUpdating(false)
         }
     }
 
@@ -70,8 +75,8 @@ const RepositoryNamespaceCard = ({
                     repositorySourceData={activeSourceData.sourceData}/>          
         }
         <ButtonGroup>
-            <Button color="orange" onClick={() => onOpenSwitchSource(repositoryNamespace)}>switch source</Button>
-            <Button primary onClick={handleUpdateRepository}>update repository</Button>
+            <Button onClick={() => onOpenSwitchSource(repositoryNamespace)}>switch source</Button>
+            <Button primary loading={isUpdating} onClick={handleUpdateRepository}>update repository</Button>
         </ButtonGroup>
     </Card>
 }
