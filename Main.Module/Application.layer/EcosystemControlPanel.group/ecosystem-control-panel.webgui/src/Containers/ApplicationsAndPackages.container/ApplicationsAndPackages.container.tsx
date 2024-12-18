@@ -103,7 +103,9 @@ const ApplicationsAndPackagesContainer = ({ serverManagerInformation, QueryParam
 					</MenuItem>,
 		   render: () => 
 			<TabPane style={{background: "lightsteelblue"}}>
-				<PackageList packageList={installedPackageList}  isLoading={isPackageListLoading}/>
+				<PackageList 
+                    packageList={installedPackageList}
+                    isLoading={isPackageListLoading}/>
 			</TabPane>
 		}
 	]

@@ -8,20 +8,16 @@ import {
     MenuMenu,
     MenuItem,
     Button,
-    ListItem,
-    TableHeaderCell,
-    Table,
-    ListHeader,
-    List,
-    Icon,
-    TableRow,
-    TableHeader,
-    TableBody,
-    TableCell,
-    ListDescription
+    ButtonGroup,
+    CardGroup,
+    Card
 } from "semantic-ui-react"
 
-import GetAPI from "../Utils/GetAPI"
+import GetAPI from "../../Utils/GetAPI"
+
+import SwitchSourceModal from "../../Modals/SwitchSource.modal"
+
+import SourceParamsTable from "./SourceParams.table"
 
 const GroupSources = (sourceList) => {
 
@@ -37,68 +33,29 @@ const GroupSources = (sourceList) => {
     }, {})
 }
 
-const SourceParamsTable = ({
-    repositorySourceData
-}) => {
 
-    return <Table basic='very' celled collapsing style={{"backgroundColor":"antiquewhite", "padding":"10px"}}>
-                <TableHeader>
-                    <TableRow>
-                        <TableHeaderCell>Parameter</TableHeaderCell>
-                        <TableHeaderCell>value</TableHeaderCell>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {
-                        Object
-                        .keys(repositorySourceData)
-                        .filter((property) => property !== "repositoryNamespace" && property !== "sourceType")
-                        .map((property) => <TableRow>
-                                                <TableCell>{property}</TableCell>
-                                                <TableCell><strong>{repositorySourceData[property]}</strong></TableCell>
-                                                {/*<TableCell style={{"padding":"5px"}}><Button size="mini" primary>edit</Button></TableCell>*/}
-                                            </TableRow>)
-                    }
-                </TableBody>
-            </Table>
 
-}
-
-const SourceTypeListItem = ({
-    repositorySourceData
-}) => {
-    return <ListItem style={{padding:"15px"}} >
-                <ListDescription>source type</ListDescription>
-                <ListHeader>{repositorySourceData.sourceType}</ListHeader>
-                    <SourceParamsTable repositorySourceData={repositorySourceData}/>          
-            </ListItem>
-}
-
-const RepositoryNamespacePanel = ({
+const RepositoryNamespaceCard = ({
     repositoryNamespace,
-    groupedSources,
-    activeSourceList
+    activeSourceList,
+    onOpenSwitchSource
 }) => {
 
     const activeSourceData = activeSourceList
         .find((activeSourceData) => activeSourceData.repositoryNamespace === repositoryNamespace)
 
-    return <Segment style={{marginRight:"15px", "backgroundColor":"lavender"}} >
+    return <Card style={{"width":"400px", "padding":"15px"}}>
         <strong style={{"fontSize": "large"}}>{repositoryNamespace}</strong>
-
-
         {
             activeSourceData
-             && <SourceParamsTable repositorySourceData={activeSourceData.sourceData}/>          
+             && <SourceParamsTable 
+                    repositorySourceData={activeSourceData.sourceData}/>          
         }
-
-        {/*<List divided style={{"backgroundColor":"floralwhite"}}>
-        {
-            groupedSources[repositoryNamespace]
-                .map((repo) => <SourceTypeListItem repositorySourceData={repo}/>)
-        }
-        </List>*/}
-    </Segment>
+        <ButtonGroup>
+            <Button color="orange" onClick={() => onOpenSwitchSource(repositoryNamespace)}>switch source</Button>
+            <Button primary>update repository</Button>
+        </ButtonGroup>
+    </Card>
 }
 
 const SourcesContainer = ({ serverManagerInformation }:any) => {
@@ -108,6 +65,8 @@ const SourcesContainer = ({ serverManagerInformation }:any) => {
     const [ isLoading, setIsLoading ] = useState(true)
 
     const [ groupedSources, setGroupedSources] = useState({})
+
+    const [ sourceDataListSwitchSourceSelected, setSourceDataListSwitchSourceSelected ] = useState<any[]>()
 
     const _GetSourcesAPI = () => 
         GetAPI({ 
@@ -145,6 +104,14 @@ const SourcesContainer = ({ serverManagerInformation }:any) => {
         }
     }
     
+    const handleOpenSwitchSource = (repositoryNamespace) => {
+        const sourceListFilteredByRepositoryNamespace = sourceList
+        .filter((sourceData) => sourceData.repositoryNamespace === repositoryNamespace)
+        setSourceDataListSwitchSourceSelected(sourceListFilteredByRepositoryNamespace)
+    }
+
+    const handleCloseSwitchSource = () => setSourceDataListSwitchSourceSelected(undefined)
+
     return <>
                 <Menu style={{margin:"1em", "backgroundColor": "honeydew"}} >
                     <MenuMenu position='right'>
@@ -156,22 +123,31 @@ const SourcesContainer = ({ serverManagerInformation }:any) => {
                     </MenuMenu>
                 </Menu>
                 <Segment style={{margin:"1em", "backgroundColor": "honeydew"}}>
-                
                     {
                         isLoading 
                         ? <Loader active style={{margin: "50px"}}/>
-                        :<div style={{ overflow: 'auto', height:"82vh" }}>
+                        :<div style={{ overflow: 'auto', height:"82vh", "padding":"10px" }}>
+                            <CardGroup>
                             {
                                 Object.keys(groupedSources)
                                 .map((repositoryNamespace) =>
-                                    <RepositoryNamespacePanel
+                                    <RepositoryNamespaceCard
+                                        onOpenSwitchSource={handleOpenSwitchSource}
                                         activeSourceList={activeSourceList}
-                                        repositoryNamespace={repositoryNamespace}
-                                        groupedSources={groupedSources}/>)
+                                        repositoryNamespace={repositoryNamespace}/>)
                             }
+                            </CardGroup>
+                            
                         </div>
                     }
                 </Segment>
+                {
+                    sourceDataListSwitchSourceSelected 
+                    && <SwitchSourceModal
+						sourceList={sourceDataListSwitchSourceSelected}
+					 	open={true}
+					 	onClose={handleCloseSwitchSource}/>
+                }
             </>
 }
 
