@@ -1,0 +1,10 @@
+{
+	"name": "Notification",
+	"endpoints": [
+		{
+			"summary": "StreamNotifications",
+			"method": "WS",
+			"path": "/stream-notifications"
+		}
+	]
+}

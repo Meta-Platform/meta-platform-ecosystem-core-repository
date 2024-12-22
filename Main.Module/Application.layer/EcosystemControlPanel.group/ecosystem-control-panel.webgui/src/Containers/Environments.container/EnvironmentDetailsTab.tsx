@@ -7,7 +7,7 @@ import {
 } from "semantic-ui-react"
 
 import MetadataHierarchyDiagram from "./MetadataHierarchyDiagram"
-import ExecutionPlanDiagram from "./ExecutionPlanDiagram"
+//import ExecutionPlanDiagram from "./ExecutionPlanDiagram"
 //<ExecutionPlanDiagram executionParams={executionParams}/>
 const EnvironmentDetailsTab = ({
     metadataHierarchy,

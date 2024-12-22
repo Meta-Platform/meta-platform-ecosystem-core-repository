@@ -19,7 +19,6 @@ import SidebarMenu from "../Components/SidebarMenu"
 
 import GetAPI from "../Utils/GetAPI"
 
-
 const Column = Grid.Column
 
 import EnvironmentsContainer            from "../Containers/Environments.container"
@@ -29,9 +28,49 @@ import InstanceSupervisorContainer      from "../Containers/InstanceSupervisor.c
 import ConfigurationsContainer          from "../Containers/Configurations.container"
 import EcosystemDataPathModal           from "../Modals/EcosystemDataPath.modal"
 
+import useWebSocket from "../Hooks/useWebSocket"
+
 import MainMenu from "../Components/MainMenu"
 
 import QueryParamsActionsCreator from "../Actions/QueryParams.actionsCreator"
+
+const useNotificationManager = (serverManagerInformation) => {
+
+	const [ notificationStateList, setNotificationStateList ]= useState<any[]>([])
+
+	const [ nUnreadNotifications, setNUnreadNotifications] = useState<number>(0)
+
+	const _GetNotificationAPI = () => 
+		GetAPI({ 
+			apiName:"Notification",  
+			serverManagerInformation 
+		})
+
+
+	const _RegisterNotification = (notification) => {
+		notificationStateList.push({
+			wasSeen:false,
+			content:notification
+		})
+
+		setNotificationStateList(notificationStateList)
+		setNUnreadNotifications(notificationStateList.length)
+	}
+
+	const _ReceiveNotification = (notification) =>
+		_RegisterNotification(notification)
+
+	useWebSocket({
+		socket          : _GetNotificationAPI().StreamNotifications,
+		onMessage       : (notification) => _ReceiveNotification(notification),
+		onConnection    : () => {},
+		onDisconnection : () => {}
+	})
+
+	return {
+		nUnreadNotifications
+	}
+}
 
 const ControlPanelPage = ({ 
 	HTTPServerManager, 
@@ -46,6 +85,8 @@ const ControlPanelPage = ({
 	const [ activeItem, setActiveItem ] = useState<string>()
 	const [ ecosystemdataPathSelected, setEcosystemdataPathSelected ] = useState()
 
+	const [ isOpenNotificationPanel, setIsOpenNotificationPanel] = useState(false)
+
 	const location = useLocation()
   	const navigate = useNavigate()
 	const queryParams = qs.parse(location.search.substr(1))
@@ -56,6 +97,19 @@ const ControlPanelPage = ({
 		}
 		updateEcosystemdataPath()
 	}, [])
+
+
+	const _GetEcosystemdataAPI = () => 
+        GetAPI({ 
+            apiName:"EcosystemData",  
+            serverManagerInformation: HTTPServerManager 
+        })
+
+	
+	const {
+		nUnreadNotifications
+	} = useNotificationManager(HTTPServerManager)
+	
 
 	useEffect(() => {
 		const search = qs.stringify(QueryParams)
@@ -72,12 +126,6 @@ const ControlPanelPage = ({
 
 	}, [activeItem])
 
-	const _GetEcosystemdataAPI = () => 
-        GetAPI({ 
-            apiName:"EcosystemData",  
-            serverManagerInformation: HTTPServerManager 
-        })
-
 	const updateEcosystemdataPath = async () => {
 		const api = _GetEcosystemdataAPI()
 		const response = await api.GetEcosystemDataPath()
@@ -90,19 +138,23 @@ const ControlPanelPage = ({
 	const handleOpenEcosystemDataModal = () => setIsEcosystemDataPathModalOpen(true)
 	const handleCloseEcosystemDataModal = () => setIsEcosystemDataPathModalOpen(false)
 
+	const handleOpenNotificationPanel = () => setIsOpenNotificationPanel(true)
+
 	return isLoading 
 			? <Loader active style={{margin: "50px"}}/>
 			:<Container fluid={true}>
 					<MainMenu
+						nUnreadNotifications={nUnreadNotifications}
 						ecosystemdataPath={ecosystemdataPathSelected}
-						onClickOpenEcosystemDataPathModal={handleOpenEcosystemDataModal}/>
-					<Grid columns="two">
+						onClickOpenEcosystemDataPathModal={handleOpenEcosystemDataModal}
+						onClickOpenNotificationPanel={handleOpenNotificationPanel}/>
+					<Grid>
 						<Column  width={2}>
 							<SidebarMenu
 								onSelectMenu={handleSelectMenu}
 								activeItem={activeItem}/>
 						</Column>
-						<Column width={14}>
+						<Column width={isOpenNotificationPanel ? 8 : 14}>
 							{
 								activeItem === "instance supervisor"
 								&& <InstanceSupervisorContainer/>
@@ -125,6 +177,13 @@ const ControlPanelPage = ({
 							}
 
 						</Column>
+						
+						{
+							isOpenNotificationPanel
+							&& <Column width={6}>
+								NOTAS
+						</Column>
+						}
 					</Grid>
 					<EcosystemDataPathModal
 						ecosystemdataPath={ecosystemdataPathSelected}

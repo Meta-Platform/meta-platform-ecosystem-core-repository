@@ -9,5 +9,9 @@
         "namespace": "EcosystemDataHandlerService",
         "path": "Services/EcosystemDataHandler.service",
         "params": [ "installDataDirPath" ]
+    },
+    {
+        "namespace":"NotificationHubService",
+        "path":"Services/NotificationHub.service"
     }
 ]

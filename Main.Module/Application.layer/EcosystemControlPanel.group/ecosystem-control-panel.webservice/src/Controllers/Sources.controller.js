@@ -48,8 +48,12 @@ const SourcesController = (params) => {
         ecosystemdataHandlerService,
         ecosystemDefaultsFileRelativePath,
         jsonFileUtilitiesLib,
-        ecosystemInstallUtilitiesLib
+        ecosystemInstallUtilitiesLib,
+        notificationHubService
     } = params
+
+
+    const { NotifyEvent } = notificationHubService
 
     const ReadJsonFile = jsonFileUtilitiesLib.require("ReadJsonFile")
     const UpdateRepository = ecosystemInstallUtilitiesLib.require("UpdateRepository")
@@ -94,7 +98,12 @@ const SourcesController = (params) => {
         const ecosystemDefaults = await _GetEcosystemDefaults()
 
         const loggerEmitter = new EventEmitter()
-        loggerEmitter.on("log", (dataLog) => console.log(dataLog))
+        loggerEmitter
+            .on("log", (dataLog) => NotifyEvent({
+                origin: "SourcesController.UpdateRepositoryByNamespace",
+                type:"log",
+                content: dataLog
+            }))
 
         await UpdateRepository({
             repositoryNamespace,

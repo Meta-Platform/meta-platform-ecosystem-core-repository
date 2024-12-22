@@ -148,7 +148,10 @@ const InstanceSupervisorContainer = ({
 	const queryParams = qs.parse(location.search.substr(1))
 
 	const getSupervisorAPI = () => 
-		GetAPI({ apiName:"InstancesMonitor", serverManagerInformation: HTTPServerManager })
+		GetAPI({ 
+			apiName:"InstancesMonitor",
+			serverManagerInformation: HTTPServerManager
+		})
 
 	useWebSocket({
 		socket          : getSupervisorAPI().InstanceSocketFileListChange,

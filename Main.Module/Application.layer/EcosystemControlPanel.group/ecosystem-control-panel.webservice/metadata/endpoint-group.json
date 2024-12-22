@@ -8,7 +8,8 @@
         "jsonFileUtilitiesLib",
         "ecosystemdataHandlerService",
         "repositoryManagerService",
-        "ecosystemInstallUtilitiesLib"
+        "ecosystemInstallUtilitiesLib",
+        "notificationHubService"
     ],
     "endpoints": [
         {
@@ -82,6 +83,7 @@
             "bound-params": {
                 "serverService":"serverService",
                 "controller-params":{
+                    "notificationHubService": "notificationHubService",
                     "ecosystemdataHandlerService":"ecosystemdataHandlerService",
                     "jsonFileUtilitiesLib": "jsonFileUtilitiesLib",
                     "ecosystemInstallUtilitiesLib": "ecosystemInstallUtilitiesLib"
@@ -117,6 +119,20 @@
                 "serverService":"serverService",
                 "controller-params":{
                     "ecosystemdataHandlerService":"ecosystemdataHandlerService"
+                }
+            }
+        },
+        {
+            "url": "/notification",
+            "type": "controller",
+            "params": {
+                "api-template": "APIs/Notification.api.json",
+                "controller": "Controllers/Notification.controller"
+            },
+            "bound-params": {
+                "serverService":"serverService",
+                "controller-params":{
+                    "notificationHubService":"notificationHubService"
                 }
             }
         }

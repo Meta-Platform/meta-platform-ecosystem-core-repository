@@ -15,6 +15,10 @@
     ],
     "services": [
         {
+            "namespace": "@@/notification-hub-service",
+            "dependency": "@/ecosystem-control-panel.service/services/NotificationHubService"
+        },
+        {
             "namespace": "@@/ecosystemdata-handler-service",
             "dependency": "@/ecosystem-control-panel.service/services/EcosystemDataHandlerService",
             "params":{
@@ -99,7 +103,8 @@
                 "supervisorLib": "@/supervisor.lib",
                 "jsonFileUtilitiesLib": "@/json-file-utilities.lib",
                 "repositoryManagerService": "@@/repository-manager",
-                "ecosystemInstallUtilitiesLib": "@/ecosystem-install-utilities.lib"
+                "ecosystemInstallUtilitiesLib": "@/ecosystem-install-utilities.lib",
+                "notificationHubService": "@@/notification-hub-service"
             },
             "params":{
                 "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"

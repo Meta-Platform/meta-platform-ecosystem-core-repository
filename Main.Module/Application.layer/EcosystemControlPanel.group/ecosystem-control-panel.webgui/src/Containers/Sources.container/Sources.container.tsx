@@ -69,11 +69,14 @@ const RepositoryNamespaceCard = ({
 
     return <Card style={{"width":"400px", "padding":"15px"}}>
         <strong style={{"fontSize": "large"}}>{repositoryNamespace}</strong>
-        {
-            activeSourceData
-             && <SourceParamsTable 
-                    repositorySourceData={activeSourceData.sourceData}/>          
-        }
+        <Segment style={{"backgroundColor": "aliceblue"}}>
+            {
+                Object
+                .keys(activeSourceData.sourceData)
+                .filter((property) => property !== "repositoryNamespace")
+                .map((property) => <p>{property}<br/><strong>{activeSourceData.sourceData[property]}</strong></p>)
+            }
+        </Segment>
         <ButtonGroup>
             <Button onClick={() => onOpenSwitchSource(repositoryNamespace)}>switch source</Button>
             <Button primary loading={isUpdating} onClick={handleUpdateRepository}>update repository</Button>

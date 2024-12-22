@@ -35,12 +35,12 @@ const SwitchSourceModal = ({ sourceList, open, onClose }:ModalProps) =>{
                 onClose={() => onClose()}>
                 <Modal.Header>switch source</Modal.Header>
                 <Modal.Content>
-                <List divided style={{"backgroundColor":"floralwhite"}}>
-                    {
-                        sourceList
-                            .map((repo) => <SourceTypeListItem repositorySourceData={repo}/>)
-                    }
-                    </List>
+                    <List divided style={{"backgroundColor":"floralwhite"}}>
+                        {
+                            sourceList
+                                .map((repo) => <SourceTypeListItem repositorySourceData={repo}/>)
+                        }
+                        </List>
                 </Modal.Content>
             </Modal>
 }

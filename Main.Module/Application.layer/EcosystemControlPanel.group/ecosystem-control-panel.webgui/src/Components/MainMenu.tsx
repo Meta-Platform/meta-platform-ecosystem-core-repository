@@ -7,14 +7,16 @@ import {
     DropdownMenu,
     DropdownItem,
     Button,
-    Icon
+    Icon,
+    Label
 } from "semantic-ui-react"
 
 const MainMenu = ({
+    nUnreadNotifications,
     ecosystemdataPath,
-    onClickOpenEcosystemDataPathModal
+    onClickOpenEcosystemDataPathModal,
+    onClickOpenNotificationPanel
 }) => {
-
     return <Menu attached="top">
                 <Menu.Item active>
                     <Header >Ecosystem Panel</Header>
@@ -29,8 +31,15 @@ const MainMenu = ({
                     {ecosystemdataPath}
                 </Menu.Item>
                 <MenuMenu position='right'>
-                    <Menu.Item position='right'>
-                        <Icon name='bell' />
+                    <Menu.Item position='right' onClick={onClickOpenNotificationPanel}>
+
+                        {
+                            nUnreadNotifications > 0
+                            ? <Label color='orange'>
+                                    <Icon name='bell' size="big" /> {nUnreadNotifications}
+                                </Label>
+                            : <Icon name='bell' size="big" />
+                        }
                     </Menu.Item>
                     <Dropdown item icon='sliders horizontal' simple>
                         <DropdownMenu>
