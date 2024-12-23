@@ -36,9 +36,9 @@ const MainMenu = ({
                         {
                             nUnreadNotifications > 0
                             ? <Label color='orange'>
-                                    <Icon name='bell' size="big" /> {nUnreadNotifications}
+                                    <Icon name='bell' size="large" /> {nUnreadNotifications}
                                 </Label>
-                            : <Icon name='bell' size="big" />
+                            : <Icon name='bell' size="large" />
                         }
                     </Menu.Item>
                     <Dropdown item icon='sliders horizontal' simple>

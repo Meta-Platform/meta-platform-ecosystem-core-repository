@@ -152,7 +152,7 @@ const SourcesContainer = ({ serverManagerInformation }:any) => {
                     {
                         isLoading 
                         ? <Loader active style={{margin: "50px"}}/>
-                        :<div style={{ overflow: 'auto', height:"82vh", "padding":"10px" }}>
+                        :<div style={{ overflow: 'auto', height:"77vh", "padding":"10px" }}>
                             <CardGroup>
                             {
                                 Object.keys(groupedSources)

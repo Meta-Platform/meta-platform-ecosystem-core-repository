@@ -1,12 +1,23 @@
 import * as React              from "react"
 import { useEffect, useState } from "react"
-
+import AnsiToHtml              from "ansi-to-html"
 import { connect }             from "react-redux"
 import { 
 	Container, 
 	Grid, 
-	Loader
+	Loader,
+	Segment,
+	Header,
+	Button
 } from "semantic-ui-react"
+
+
+const ansiConverter = new AnsiToHtml({
+	fg: '#000',
+	bg: '#fff',
+	newline: true,
+	escapeXML: true
+  })
 
 import { bindActionCreators } from "redux"
 import qs                     from "query-string"
@@ -50,7 +61,7 @@ const useNotificationManager = (serverManagerInformation) => {
 	const _RegisterNotification = (notification) => {
 		notificationStateList.push({
 			wasSeen:false,
-			content:notification
+			payload:notification
 		})
 
 		setNotificationStateList(notificationStateList)
@@ -68,8 +79,50 @@ const useNotificationManager = (serverManagerInformation) => {
 	})
 
 	return {
-		nUnreadNotifications
+		nUnreadNotifications,
+		notificationStateList
 	}
+}
+
+const NotificationPanel = ({ onClose, notificationStateList }) => {
+	return <Segment style={{margin: "15px 15px 15px -20px"}}>
+				<Button 
+							circular 
+							icon='close' 
+							floated="right"
+							onClick={onClose} />
+				<Header as='h2' textAlign='center'>
+					Notifications
+				</Header>
+
+				<div style={{ overflow: 'auto', maxHeight:"76vh" }}>
+					{
+						notificationStateList
+						.map((notification) => {
+
+							const {
+								payload
+							} = notification
+
+							const {
+								type,
+								origin,
+								content
+							} = payload
+
+							const messageHtml = ansiConverter.toHtml(content.message)
+
+							return <Segment secondary style={{"margin": "2px", padding:"8px"}}>
+								<strong style={{fontSize: "medium"}}>{type.toUpperCase()} - {content.type.toUpperCase()}</strong><br/>
+								<strong> {origin}  - {content.sourceName}</strong>
+								<Segment style={{"marginTop": "5px", padding:"8px"}}>
+									<p dangerouslySetInnerHTML={{ __html: messageHtml }}></p>
+								</Segment>
+							</Segment>
+						})
+					}
+				</div>
+			</Segment>
 }
 
 const ControlPanelPage = ({ 
@@ -107,7 +160,8 @@ const ControlPanelPage = ({
 
 	
 	const {
-		nUnreadNotifications
+		nUnreadNotifications,
+		notificationStateList
 	} = useNotificationManager(HTTPServerManager)
 	
 
@@ -139,6 +193,8 @@ const ControlPanelPage = ({
 	const handleCloseEcosystemDataModal = () => setIsEcosystemDataPathModalOpen(false)
 
 	const handleOpenNotificationPanel = () => setIsOpenNotificationPanel(true)
+
+	const handleCloseNotificationPanel = () => setIsOpenNotificationPanel(false)
 
 	return isLoading 
 			? <Loader active style={{margin: "50px"}}/>
@@ -181,14 +237,16 @@ const ControlPanelPage = ({
 						{
 							isOpenNotificationPanel
 							&& <Column width={6}>
-								NOTAS
+								<NotificationPanel 
+									onClose={handleCloseNotificationPanel}
+									notificationStateList={notificationStateList}/>
 						</Column>
 						}
 					</Grid>
 					<EcosystemDataPathModal
 						ecosystemdataPath={ecosystemdataPathSelected}
 					 	open={isEcosystemDataPathModalOpen}
-					 	onClose={()=> handleCloseEcosystemDataModal()}/>
+					 	onClose={() => handleCloseEcosystemDataModal()}/>
 			</Container>
 
 }
