@@ -28,18 +28,18 @@ import {
   } from "react-router-dom"
 
 
-import SocketFileList from "../Lists/SocketFile.list"
-import GetRequestByServer from "../Utils/GetRequestByServer"
-import GetAPI from "../Utils/GetAPI"
-import TaskListContainer from "../Containers/TaskList.container"
-import TaskGroupByLoaderContainer from "../Containers/TaskGroupByLoader.container"
+import SocketFileList from "../../Lists/SocketFile.list"
+import GetRequestByServer from "../../Utils/GetRequestByServer"
+import GetAPI from "../../Utils/GetAPI"
+import TaskListContainer from "../../Containers/TaskList.container"
+import TaskGroupByLoaderContainer from "../../Containers/TaskGroupByLoader.container"
 
-import TaskInformation from "../Components/TaskInformation"
+import TaskInformation from "../../Components/TaskInformation"
 
-import QueryParamsActionsCreator from "../Actions/QueryParams.actionsCreator"
+import QueryParamsActionsCreator from "../../Actions/QueryParams.actionsCreator"
 
-import useWebSocket from "../Hooks/useWebSocket"
-import useFetchInstanceTaskList from "../Hooks/useFetchInstanceTaskList"
+import useWebSocket from "../../Hooks/useWebSocket"
+import useFetchInstanceTaskList from "../../Hooks/useFetchInstanceTaskList"
 
 const Column = Grid.Column
 
