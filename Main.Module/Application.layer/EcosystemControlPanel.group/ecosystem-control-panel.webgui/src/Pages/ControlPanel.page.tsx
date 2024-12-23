@@ -8,7 +8,9 @@ import {
 	Loader,
 	Segment,
 	Header,
-	Button
+	Button,
+	Icon,
+	Label
 } from "semantic-ui-react"
 
 
@@ -59,7 +61,7 @@ const useNotificationManager = (serverManagerInformation) => {
 
 
 	const _RegisterNotification = (notification) => {
-		notificationStateList.push({
+		notificationStateList.unshift({
 			wasSeen:false,
 			payload:notification
 		})
@@ -85,13 +87,14 @@ const useNotificationManager = (serverManagerInformation) => {
 }
 
 const NotificationPanel = ({ onClose, notificationStateList }) => {
-	return <Segment style={{margin: "15px 15px 15px -20px"}}>
+	return <Segment style={{margin: "15px 15px 15px -20px", "backgroundColor": "lightsalmon"}}>
 				<Button 
 							circular 
 							icon='close' 
 							floated="right"
 							onClick={onClose} />
 				<Header as='h2' textAlign='center'>
+					<Icon name='bell' />
 					Notifications
 				</Header>
 
@@ -103,21 +106,23 @@ const NotificationPanel = ({ onClose, notificationStateList }) => {
 							const {
 								payload
 							} = notification
-
+							
 							const {
 								type,
+								date,
 								origin,
 								content
 							} = payload
 
 							const messageHtml = ansiConverter.toHtml(content.message)
 
-							return <Segment secondary style={{"margin": "2px", padding:"8px"}}>
-								<strong style={{fontSize: "medium"}}>{type.toUpperCase()} - {content.type.toUpperCase()}</strong><br/>
-								<strong> {origin}  - {content.sourceName}</strong>
-								<Segment style={{"marginTop": "5px", padding:"8px"}}>
+							return <Segment secondary style={{"margin": "5px", padding:"8px", boxShadow: "1px 1px 1px black"}}>
+								<Label color="grey" size="small" attached='top right'>{date}</Label>
+								<strong style={{fontSize: "medium"}}>{type.toUpperCase()} - {content.type.toUpperCase()} - {content.sourceName}</strong><br/>
+								<Segment style={{"margin": "5px", padding:"8px", "color":"black"}}>
 									<p dangerouslySetInnerHTML={{ __html: messageHtml }}></p>
 								</Segment>
+								<strong>{origin}</strong>
 							</Segment>
 						})
 					}
@@ -210,7 +215,7 @@ const ControlPanelPage = ({
 								onSelectMenu={handleSelectMenu}
 								activeItem={activeItem}/>
 						</Column>
-						<Column width={isOpenNotificationPanel ? 8 : 14}>
+						<Column width={isOpenNotificationPanel ? 9 : 14}>
 							{
 								activeItem === "instance supervisor"
 								&& <InstanceSupervisorContainer/>
@@ -236,7 +241,7 @@ const ControlPanelPage = ({
 						
 						{
 							isOpenNotificationPanel
-							&& <Column width={6}>
+							&& <Column width={5}>
 								<NotificationPanel 
 									onClose={handleCloseNotificationPanel}
 									notificationStateList={notificationStateList}/>
