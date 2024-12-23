@@ -9,12 +9,12 @@ const SupervisorController = (params) => {
 
     const {
         supervisorSocketsDirPath,
-        instanceMonitoringService,
+        instanceMonitoringManager,
         supervisorLib
     } = params
 
 
-    instanceMonitoringService.AddChangeSocketListListener((socketFileNameList) => {
+    instanceMonitoringManager.AddChangeSocketListListener((socketFileNameList) => {
         eventEmitter.emit(SOCKET_FILE_LIST_CHANGE_EVENT, socketFileNameList)
     })
 
@@ -54,7 +54,7 @@ const SupervisorController = (params) => {
 
     const controllerServiceObject = {
         controllerName : "SupervisorController",
-        ListSockets: instanceMonitoringService.GetSocketFileNameList,
+        ListSockets: instanceMonitoringManager.GetSocketFileNameList,
         ShowInstanceStatus,
         ListInstanceTasks,
         KillInstance: (socketFilename) => {},

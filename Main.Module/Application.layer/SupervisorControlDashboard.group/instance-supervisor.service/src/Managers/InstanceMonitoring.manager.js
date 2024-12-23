@@ -5,7 +5,7 @@ const AreArraysEqual = require("../Utils/AreArraysEqual")
 
 const SOCKET_FILE_LIST_CHANGE_EVENT = Symbol()    
 
-const InstanceMonitoringService = (params) => {
+const InstanceMonitoringManager = (params) => {
 
     const {
         ecosystemdataHandlerService,
@@ -65,4 +65,4 @@ const InstanceMonitoringService = (params) => {
 
 }
 
-module.exports = InstanceMonitoringService
+module.exports = InstanceMonitoringManager

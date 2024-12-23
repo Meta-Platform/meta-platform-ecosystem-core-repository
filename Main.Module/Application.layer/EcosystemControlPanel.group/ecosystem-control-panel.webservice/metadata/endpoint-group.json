@@ -2,7 +2,7 @@
     "params": ["ecosystemDefaultsFileRelativePath"],
     "bound-params":[
         "serverService", 
-        "instanceMonitoringService",
+        "instanceMonitoringManager",
         "supervisorLib",
         "environmentHandlerService",
         "jsonFileUtilitiesLib",
@@ -26,7 +26,7 @@
                 "serverService":"serverService",
                 "controller-params":{
                     "ecosystemdataHandlerService":"ecosystemdataHandlerService",
-                    "instanceMonitoringService":"instanceMonitoringService",
+                    "instanceMonitoringManager":"instanceMonitoringManager",
                     "supervisorLib":"supervisorLib",
                     "jsonFileUtilitiesLib": "jsonFileUtilitiesLib"
                 }

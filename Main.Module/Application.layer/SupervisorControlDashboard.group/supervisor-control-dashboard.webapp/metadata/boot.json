@@ -16,8 +16,8 @@
             }
         },
         {
-            "namespace": "@@/instance-monitoring-service",
-            "dependency": "@/instance-supervisor.service/services/InstanceMonitoringService",
+            "namespace": "@@/instance-monitoring-manager-service",
+            "dependency": "@/instance-supervisor.service/services/InstanceMonitoringManager",
             "bound-params":{
                 "supervisorLib": "@/supervisor.lib"
             },
@@ -39,7 +39,7 @@
             "bound-params":{
                 "serverService": "@@/server-service",
                 "supervisorLib": "@/supervisor.lib",
-                "instanceMonitoringService": "@@/instance-monitoring-service"
+                "instanceMonitoringManager": "@@/instance-monitoring-manager-service"
             },
             "params":{
                 "supervisorSocketsDirPath": "{{supervisorSocketsDirPath}}"

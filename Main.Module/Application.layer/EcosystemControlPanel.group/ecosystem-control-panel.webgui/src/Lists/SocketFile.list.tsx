@@ -1,22 +1,6 @@
 import * as React from "react"
 
-import {
-	List,
-	Label
-} from "semantic-ui-react"
-
-const GetColorByInstanceStatus = (status) => {
-	switch(status){
-		case "RUNNING":
-			return "green"
-		case "ERROR":
-			return "red"
-		case "STARTING":
-			return "teal"
-		default:
-			return "orange"
-	}
-}
+import { List } from "semantic-ui-react"
 
 type SocketFileListProps =
 {
@@ -39,11 +23,10 @@ const SocketFileList = ({
 				active={socketFileSelected && socketFileName === socketFileSelected}
 				onClick={() => onSelect(socketFileName)} >
 				<List.Content>
-					<List.Header><Label size="mini" horizontal color={GetColorByInstanceStatus("RUNNING")}>{"RUNNING"}</Label>{socketFileName}</List.Header>
+					<List.Header>{socketFileName}</List.Header>
 				</List.Content>
 			</List.Item>)
 		}
 	</List>
-
 
 export default SocketFileList

@@ -34,8 +34,8 @@
             }
         },
         {
-            "namespace": "@@/instance-monitoring-service",
-            "dependency": "@/instance-supervisor.service/services/InstanceMonitoringService",
+            "namespace": "@@/instance-monitoring-manager-service",
+            "dependency": "@/instance-supervisor.service/services/InstanceMonitoringManager",
             "bound-params":{
                 "supervisorLib": "@/supervisor.lib",
                 "jsonFileUtilitiesLib": "@/json-file-utilities.lib",
@@ -97,7 +97,7 @@
             "dependency": "@/ecosystem-control-panel.webservice/endpoint-group",
             "bound-params":{
                 "serverService": "@@/server-service",
-                "instanceMonitoringService": "@@/instance-monitoring-service",
+                "instanceMonitoringManager": "@@/instance-monitoring-manager-service",
                 "environmentHandlerService": "@@/environment-handler-service",
                 "ecosystemdataHandlerService": "@@/ecosystemdata-handler-service",
                 "supervisorLib": "@/supervisor.lib",
