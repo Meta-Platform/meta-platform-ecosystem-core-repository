@@ -10,12 +10,6 @@ import {
 	Tab,
 	Segment,
 	MenuMenu,
-	Card,
-	CardGroup,
-	CardContent,
-	CardHeader,
-	CardMeta,
-	CardDescription,
 	Icon,
 	Menu,
 	Button
@@ -43,91 +37,7 @@ import useFetchInstanceTaskList from "../../Hooks/useFetchInstanceTaskList"
 
 const Column = Grid.Column
 
-const GetColorByStatus = (status) => {
-	switch(status){
-		case "ACTIVE":
-			return "green"
-		case "FAILURE":
-			return "red"
-		case "STARTING":
-			return "blue"
-		case "AWAITING_PRECONDITIONS":
-			return "teal"
-		default:
-			return "orange"
-	}
-}
-
-const TaskInfoCard = ({data}) => {
-
-	const {
-		taskId,
-		label,
-		status,
-		descriptionContent
-	} = data 
-	return <Card>
-				<CardContent>
-					<CardHeader>{label}</CardHeader>
-					<CardMeta><Label size="mini" color={GetColorByStatus(status)} style={{"marginRight":"5px"}}>{status}</Label>Task ID {taskId}</CardMeta>
-					<CardDescription>{descriptionContent}</CardDescription>
-				</CardContent>
-			</Card>
-}
-
-const TaskCardGroup = ({tasklist}) => {
-
-
-	const _GetApplicationInstanceCardData = () => {
-
-		const data = tasklist.find(({objectLoaderType}) => objectLoaderType === "application-instance")
-
-		if(data){
-			return {
-				taskId: data.taskId,
-				label: "Application Instance Task",
-				status: data.status,
-				descriptionContent: <>
-					<i style={{"color": "grey"}}>namespace</i><br/>
-					<strong>{data.staticParameters.namespace}</strong>
-				</>
-			}
-		}
-		
-	}
-
-	const _GetServerManagerCardDataCardData = () => {
-		const data = tasklist
-			.find(({objectLoaderType, staticParameters}) => objectLoaderType === "service-instance" && staticParameters?.path === "Services/HTTPServer.service")
-
-		if(data){
-
-			const getURL = () => {
-				if(isNaN(data.staticParameters.port)) return data.staticParameters.port
-				else return <a href={`http://localhost:${data.staticParameters.port}`}>http://localhost:{data.staticParameters.port}</a>
-			}
-			
-			return {
-				taskId: data.taskId,
-				label: "Server Manager Service Task",
-				status: data.status,
-				descriptionContent: <>
-					<i style={{"color": "grey"}}>server name</i><br/>
-					<strong>{data.staticParameters.name}</strong><br/>
-					<strong>{getURL()}</strong>
-				</>
-			}
-		}
-	}
-
-	const applicationInstanceCardData = _GetApplicationInstanceCardData()
-	const serverManagerCardData = _GetServerManagerCardDataCardData()
-
-	return <CardGroup>
-		{applicationInstanceCardData && <TaskInfoCard data={applicationInstanceCardData}/>}
-		{serverManagerCardData && <TaskInfoCard data={serverManagerCardData}/>}
-</CardGroup>
-}
+import TaskCardGroup from "./Task.cardGroup"
 
 const InstanceSupervisorContainer = ({
 	HTTPServerManager,
