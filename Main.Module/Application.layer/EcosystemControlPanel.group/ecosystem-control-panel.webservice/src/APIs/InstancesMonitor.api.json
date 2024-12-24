@@ -2,6 +2,11 @@
 	"name": "InstancesMonitor",
 	"endpoints": [
 		{
+			"summary": "Overview",
+			"method": "GET",
+			"path": "/overview"
+		},
+		{
 			"summary": "ListSockets",
 			"method": "GET",
 			"path": "/sockets"

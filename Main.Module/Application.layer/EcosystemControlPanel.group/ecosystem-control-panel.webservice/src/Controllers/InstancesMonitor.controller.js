@@ -10,7 +10,7 @@ const InstancesMonitorController = (params) => {
     const {
         ecosystemDefaultsFileRelativePath,
         jsonFileUtilitiesLib,
-        instanceMonitoringService,
+        instanceMonitoringManager,
         supervisorLib,
         ecosystemdataHandlerService
     } = params
@@ -27,7 +27,7 @@ const InstancesMonitorController = (params) => {
 
     _InitSupervisorSocketsDirPath()
 
-    instanceMonitoringService.AddChangeSocketListListener((socketFileNameList) => {
+    instanceMonitoringManager.AddChangeSocketListListener((socketFileNameList) => {
         eventEmitter.emit(SOCKET_FILE_LIST_CHANGE_EVENT, socketFileNameList)
     })
 
@@ -67,7 +67,8 @@ const InstancesMonitorController = (params) => {
 
     const controllerServiceObject = {
         controllerName : "InstancesMonitorController",
-        ListSockets: instanceMonitoringService.GetSocketFileNameList,
+        ListSockets: instanceMonitoringManager.GetSocketFileNameList,
+        Overview: instanceMonitoringManager.GetOverview,
         ShowInstanceStatus,
         ListInstanceTasks,
         KillInstance: (socketFilename) => {},

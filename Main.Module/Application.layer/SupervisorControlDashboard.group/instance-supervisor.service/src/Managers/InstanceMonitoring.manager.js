@@ -53,10 +53,22 @@ const InstanceMonitoringManager = (params) => {
     const AddChangeSocketListListener = (f) =>
 		eventEmitter
 			.on(SOCKET_FILE_LIST_CHANGE_EVENT, (socketFileNameList) => f(socketFileNameList))
+
+
+    const GetOverview = () => {
+        return socketFileNameList
+        .reduce((acc, socketFileName) => {
+            return {
+                ...acc,
+                [socketFileName]:{}
+            }
+        }, {})
+    }
     
     const monitoringObject = {
         AddChangeSocketListListener,
-        GetSocketFileNameList: () => socketFileNameList
+        GetSocketFileNameList: () => socketFileNameList,
+        GetOverview
     }
         
     _Start()

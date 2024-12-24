@@ -12,7 +12,13 @@ import {
 	MenuMenu,
 	Icon,
 	Menu,
-	Button
+	Button,
+	Divider,
+	CardGroup,
+	Card,
+	CardContent,
+	CardHeader,
+	CardMeta
  } from "semantic-ui-react"
 
 import qs                     from "query-string"
@@ -23,7 +29,6 @@ import {
 
 
 import SocketFileList from "../../Lists/SocketFile.list"
-import GetRequestByServer from "../../Utils/GetRequestByServer"
 import GetAPI from "../../Utils/GetAPI"
 import TaskListContainer from "../../Containers/TaskList.container"
 import TaskGroupByLoaderContainer from "../../Containers/TaskGroupByLoader.container"
@@ -38,6 +43,41 @@ import useFetchInstanceTaskList from "../../Hooks/useFetchInstanceTaskList"
 const Column = Grid.Column
 
 import TaskCardGroup from "./Task.cardGroup"
+
+const OverviewSocketPanel = ({
+	socketFileSelected,
+	supervisorAPI,
+	onSelect
+}) => {
+
+	const [overview, setOverview] = useState({})
+
+	useEffect(() => {
+		fetchOverview()
+	}, [])
+
+	const fetchOverview = () => 
+		supervisorAPI
+		.Overview()
+		.then(({data}:any) => setOverview(data))
+
+	return <Segment style={{margin:"15px", background: "antiquewhite"}}>
+	<h1>Overview</h1>
+	<Divider/>
+	<CardGroup>
+		{
+			Object.keys(overview)
+			.map((socketFileName) => 
+			<Card onClick={() => onSelect(socketFileName)}>
+				<CardContent>
+					<CardHeader>{socketFileName}</CardHeader>
+					<CardMeta>xpto</CardMeta>
+				</CardContent>
+			</Card>)
+		}
+	</CardGroup>
+</Segment>
+}
 
 const InstanceSupervisorContainer = ({
 	HTTPServerManager,
@@ -57,14 +97,14 @@ const InstanceSupervisorContainer = ({
   	const navigate = useNavigate()
 	const queryParams = qs.parse(location.search.substr(1))
 
-	const getSupervisorAPI = () => 
+	const _GetSupervisorAPI = () => 
 		GetAPI({ 
 			apiName:"InstancesMonitor",
 			serverManagerInformation: HTTPServerManager
 		})
 
 	useWebSocket({
-		socket          : getSupervisorAPI().InstanceSocketFileListChange,
+		socket          : _GetSupervisorAPI().InstanceSocketFileListChange,
 		onMessage       : (socketFileList) => setSocketFileList(socketFileList),
 		onConnection    : () => {},
 		onDisconnection : () => {}
@@ -132,16 +172,15 @@ const InstanceSupervisorContainer = ({
         })
 
 
-	const _GetWebservice = GetRequestByServer(HTTPServerManager)
 
 	const fetchTaskInformation = () => 
-		_GetWebservice(process.env.SERVER_APP_NAME, "InstancesMonitor")
+		_GetSupervisorAPI()
 		.GetTaskInformation({ socketFilename:socketFileNameSelected, taskId:taskIdSelected })
 		.then(({data}:any) => setTaskInformationSelected(data))
 
 
 	const updateSocketFileList = () => 
-		_GetWebservice(process.env.SERVER_APP_NAME, "InstancesMonitor")
+		_GetSupervisorAPI()
 			.ListSockets()
 			.then(({data}:any) => {
 				setSocketFileList(data) 
@@ -219,14 +258,14 @@ const InstanceSupervisorContainer = ({
 	const handleSelectTask = (taskId) => 
 		setTaskIdSelected(taskId)
 
-	return <Segment style={{margin:"15px", background: "antiquewhite"}}>
+	return socketFileNameSelected
+		? <Segment style={{margin:"15px", background: "antiquewhite"}}>
 				<Grid columns="two" divided>
 					<Column width={2}>
 						<SocketFileList
 							list={socketFileList}
 							onSelect={handleSelectInstance}
-							socketFileSelected={socketFileNameSelected}
-							/>
+							socketFileSelected={socketFileNameSelected}/>
 					</Column>
 					<Column width={14}>
 						<Menu>
@@ -243,6 +282,11 @@ const InstanceSupervisorContainer = ({
 					</Column>
 				</Grid>
 			</Segment>
+		: <OverviewSocketPanel 
+			onSelect={handleSelectInstance}
+			socketFileSelected={socketFileNameSelected}
+			supervisorAPI={_GetSupervisorAPI()}/>
+	
 }
 
 
