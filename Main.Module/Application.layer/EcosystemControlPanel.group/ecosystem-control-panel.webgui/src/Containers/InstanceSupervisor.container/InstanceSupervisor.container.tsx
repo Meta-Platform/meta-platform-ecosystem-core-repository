@@ -186,11 +186,16 @@ const InstanceSupervisorContainer = ({
 				setSocketFileList(data) 
 			})
 
-	const handleSelectInstance = (socketFileName) => {
+	const resetTaskSelection = () => {
 		setTaskIdSelected(undefined)
 		setTaskInformationSelected(undefined)
 		RemoveQueryParam("taskId")
+	}
+	
+	const handleSelectInstance = (socketFileName) => {
+		resetTaskSelection()
 		setSocketFileNameSelected(socketFileName)
+		RemoveQueryParam("taskId")
 	}
 
 	const taskViewPanes = [
@@ -258,22 +263,34 @@ const InstanceSupervisorContainer = ({
 	const handleSelectTask = (taskId) => 
 		setTaskIdSelected(taskId)
 
+	const handleBackTOverview = () => {
+		resetTaskSelection()
+		setSocketFileNameSelected(undefined)
+		RemoveQueryParam("socketFileName")
+	}
+
 	return socketFileNameSelected
 		? <Segment style={{margin:"15px", background: "antiquewhite"}}>
 				<Grid columns="two" divided>
-					<Column width={2}>
+					<Column width={3}>
 						<SocketFileList
 							list={socketFileList}
 							onSelect={handleSelectInstance}
 							socketFileSelected={socketFileNameSelected}/>
 					</Column>
-					<Column width={14}>
+					<Column width={13}>
 						<Menu>
+							<MenuItem>
+								<Button icon color="red">
+									<Icon name='close'/>
+									kill instance
+								</Button>
+							</MenuItem>
 							<MenuMenu position='right'>
 								<MenuItem>
-									<Button icon color="red">
-										<Icon name='close'/>
-										kill instance
+									<Button icon onClick={() => handleBackTOverview()}>
+										<Icon name='arrow left'/>
+										go back
 									</Button>
 								</MenuItem>
 							</MenuMenu>
