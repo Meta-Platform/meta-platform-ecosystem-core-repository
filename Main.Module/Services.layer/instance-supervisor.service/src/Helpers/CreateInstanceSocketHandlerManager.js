@@ -1,32 +1,40 @@
+
+
+const CreateSocketMonitoringState = () => {
+    return {
+
+    }
+}
+
 const CreateInstanceSocketHandlerManager = () => {
 
-    let monitoredSocketFileNames = []
+    let monitoredSocketFilePaths = []
 
-    const StartSocketMonitoring = (socketFileName) => {
+    const StartSocketMonitoring = (socketFilePath) => {
 
-        if(!IsSocketBeingMonitored(socketFileName)){
-            monitoredSocketFileNames.push(socketFileName)
+        if(!IsSocketBeingMonitored(socketFilePath)){
+            monitoredSocketFilePaths.push(socketFilePath)
         } else {
-            throw `${socketFileName} já está sendo monitorado!`
+            throw `${socketFilePath} já está sendo monitorado!`
         }
 
     }
 
-    const TryStartSocketMonitoring = (socketFileName) => {
-        if(!IsSocketBeingMonitored(socketFileName)){
-            monitoredSocketFileNames.push(socketFileName)
+    const TryStartSocketMonitoring = (socketFilePath) => {
+        if(!IsSocketBeingMonitored(socketFilePath)){
+            monitoredSocketFilePaths.push(socketFilePath)
         }
     }
 
-    const IsSocketBeingMonitored = (socketFileName) =>
-        monitoredSocketFileNames.indexOf(socketFileName) > -1
+    const IsSocketBeingMonitored = (socketFilePath) =>
+        monitoredSocketFilePaths.indexOf(socketFilePath) > -1
 
     const MonitoringOverview = () => {
-        return monitoredSocketFileNames
-        .reduce((acc, socketFileName) => {
+        return monitoredSocketFilePaths
+        .reduce((acc, socketFilePath) => {
             return {
                 ...acc,
-                [socketFileName]:{}
+                [socketFilePath]:{}
             }
         }, {})
     }
@@ -36,7 +44,7 @@ const CreateInstanceSocketHandlerManager = () => {
         TryStartSocketMonitoring,
         IsSocketBeingMonitored,
         MonitoringOverview,
-        GetMonitoredSocketFileNames: () => monitoredSocketFileNames
+        GetMonitoredSocketFilePaths: () => monitoredSocketFilePaths
     }
 }
 

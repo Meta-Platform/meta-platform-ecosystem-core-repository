@@ -5,7 +5,6 @@ const AreArraysEqual = require("../Utils/AreArraysEqual")
 
 const SOCKET_FILE_LIST_CHANGE_EVENT = Symbol()
 
-
 const CreateInstanceSocketHandlerManager = require("../Helpers/CreateInstanceSocketHandlerManager")
 
 const InstanceMonitoringManager = (params) => {
@@ -19,8 +18,8 @@ const InstanceMonitoringManager = (params) => {
     } = params
 
     const WatchSocketDirectory = supervisorLib.require("WatchSocketDirectory")
-    const ListSocketFilesName = supervisorLib.require("ListSocketFilesName")
-    const ReadJsonFile = jsonFileUtilitiesLib.require("ReadJsonFile")
+    const ListSocketFilesName  = supervisorLib.require("ListSocketFilesName")
+    const ReadJsonFile         = jsonFileUtilitiesLib.require("ReadJsonFile")
 
     const ecosystemDefaultFilePath = resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaultsFileRelativePath)
     let supervisorSocketsDirPath = undefined
@@ -31,7 +30,7 @@ const InstanceMonitoringManager = (params) => {
         MonitoringOverview,
         TryStartSocketMonitoring,
         StartSocketMonitoring,
-        GetMonitoredSocketFileNames
+        GetMonitoredSocketFilePaths
     } = CreateInstanceSocketHandlerManager()
 
     const _StartSocketsDirectoryWatcher = () => {
@@ -66,9 +65,8 @@ const InstanceMonitoringManager = (params) => {
         return socketsDirPath
     }
 
-
     const _NotifySocketFileListChange = () => 
-            eventEmitter.emit(SOCKET_FILE_LIST_CHANGE_EVENT, GetMonitoredSocketFileNames())
+            eventEmitter.emit(SOCKET_FILE_LIST_CHANGE_EVENT, GetMonitoredSocketFilePaths())
     
     const AddChangeSocketListListener = (f) =>
 		eventEmitter
@@ -76,7 +74,7 @@ const InstanceMonitoringManager = (params) => {
     
     const monitoringObject = {
         AddChangeSocketListListener,
-        GetMonitoredSocketFileNames,
+        GetMonitoredSocketFilePaths,
         GetOverview: MonitoringOverview
     }
         

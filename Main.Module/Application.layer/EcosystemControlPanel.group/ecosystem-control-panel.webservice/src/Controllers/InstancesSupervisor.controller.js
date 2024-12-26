@@ -67,7 +67,7 @@ const InstancesSupervisorController = (params) => {
 
     const controllerServiceObject = {
         controllerName : "InstancesSupervisorController",
-        ListSockets: instanceMonitoringManager.GetMonitoredSocketFileNames,
+        ListSockets: instanceMonitoringManager.GetMonitoredSocketFilePaths,
         Overview: instanceMonitoringManager.GetOverview,
         ShowInstanceStatus,
         ListInstanceTasks,
