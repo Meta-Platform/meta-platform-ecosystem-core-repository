@@ -1,5 +1,5 @@
 {
-	"name": "InstancesMonitor",
+	"name": "InstancesSupervisor",
 	"endpoints": [
 		{
 			"summary": "Overview",

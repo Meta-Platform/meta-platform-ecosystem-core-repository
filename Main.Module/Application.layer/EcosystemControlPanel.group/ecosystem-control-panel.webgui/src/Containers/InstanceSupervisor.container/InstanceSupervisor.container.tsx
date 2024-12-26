@@ -99,7 +99,7 @@ const InstanceSupervisorContainer = ({
 
 	const _GetSupervisorAPI = () => 
 		GetAPI({ 
-			apiName:"InstancesMonitor",
+			apiName:"InstancesSupervisor",
 			serverManagerInformation: HTTPServerManager
 		})
 

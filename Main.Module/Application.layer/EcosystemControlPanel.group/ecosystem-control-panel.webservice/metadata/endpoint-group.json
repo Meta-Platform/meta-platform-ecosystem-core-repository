@@ -16,8 +16,8 @@
             "url": "/supervisor",
             "type": "controller",
             "params": {
-                "api-template": "APIs/InstancesMonitor.api.json",
-                "controller": "Controllers/InstancesMonitor.controller",
+                "api-template": "APIs/InstancesSupervisor.api.json",
+                "controller": "Controllers/InstancesSupervisor.controller",
                 "controller-params":{
                     "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
                 }

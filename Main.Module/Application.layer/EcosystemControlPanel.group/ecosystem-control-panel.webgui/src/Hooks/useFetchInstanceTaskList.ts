@@ -21,7 +21,7 @@ const useFetchInstanceTaskList = ({
     const _GetWebservice = GetRequestByServer(HTTPServerManager)
 	
 	const fetchInstanceTasks = () =>
-		_GetWebservice(process.env.SERVER_APP_NAME, "InstancesMonitor")
+		_GetWebservice(process.env.SERVER_APP_NAME, "InstancesSupervisor")
 			.ListInstanceTasks({ socketFileName:socketFileNameSelected})
 			.then(({data}:any) => setInstanceTaskListSelected(data))
     

@@ -3,7 +3,7 @@ const EventEmitter = require('node:events')
 
 const SOCKET_FILE_LIST_CHANGE_EVENT = Symbol()  
 
-const InstancesMonitorController = (params) => {
+const InstancesSupervisorController = (params) => {
 
     const eventEmitter  = new EventEmitter()
 
@@ -66,8 +66,8 @@ const InstancesMonitorController = (params) => {
     }
 
     const controllerServiceObject = {
-        controllerName : "InstancesMonitorController",
-        ListSockets: instanceMonitoringManager.GetSocketFileNameList,
+        controllerName : "InstancesSupervisorController",
+        ListSockets: instanceMonitoringManager.GetMonitoredSocketFileNames,
         Overview: instanceMonitoringManager.GetOverview,
         ShowInstanceStatus,
         ListInstanceTasks,
@@ -80,4 +80,4 @@ const InstancesMonitorController = (params) => {
     
 }
 
-module.exports = InstancesMonitorController
+module.exports = InstancesSupervisorController

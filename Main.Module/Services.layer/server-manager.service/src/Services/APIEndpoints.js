@@ -44,12 +44,16 @@ const APIEndpointsService = ({path, service, apiTemplate}) => {
             const params = getAllParams(request)
 
             try{
-                if(!parameters){
-                    await Send(typeResponse, response, service[summary]())
-                }else if(Object.keys(params).length == 1 && parameters.length == 1){
-                    await Send(typeResponse, response, service[summary](params[Object.keys(params)[0]]))
-                }else{
-                    await Send(typeResponse, response, service[summary](params))
+                if(service[summary]){
+                    if(!parameters){
+                        await Send(typeResponse, response, service[summary]())
+                    }else if(Object.keys(params).length == 1 && parameters.length == 1){
+                        await Send(typeResponse, response, service[summary](params[Object.keys(params)[0]]))
+                    }else{
+                        await Send(typeResponse, response, service[summary](params))
+                    }
+                } else {
+                    throw `O summary "${summary}"do controller "${service.controllerName}" está indefinido!`
                 }
             }catch(e){
                 next(e)
