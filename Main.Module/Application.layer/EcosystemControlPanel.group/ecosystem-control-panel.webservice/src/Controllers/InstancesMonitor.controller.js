@@ -33,15 +33,15 @@ const InstancesMonitorController = (params) => {
 
     const CreateCommunicationInterface = supervisorLib.require("CreateCommunicationInterface")
 
-    const ListInstanceTasks = async (socketFilename) => {
-        const socketFilePath = path.resolve(supervisorSocketsDirPath, socketFilename)
+    const ListInstanceTasks = async (socketFileName) => {
+        const socketFilePath = path.resolve(supervisorSocketsDirPath, socketFileName)
         const daemonClient = await CreateCommunicationInterface(socketFilePath)
         const taskList = await daemonClient.ListTasks()
         return taskList
     }
 
-    const GetTaskInformation = async ({socketFilename, taskId}) => {
-        const socketFilePath = path.resolve(supervisorSocketsDirPath, socketFilename)
+    const GetTaskInformation = async ({socketFileName, taskId}) => {
+        const socketFilePath = path.resolve(supervisorSocketsDirPath, socketFileName)
         const daemonClient = await CreateCommunicationInterface(socketFilePath)
         const task = await daemonClient.GetTask(taskId)
         return task
@@ -58,8 +58,8 @@ const InstancesMonitorController = (params) => {
         })
     }
 
-    const ShowInstanceStatus = async (socketFilename) => {
-        const socketFilePath = path.resolve(supervisorSocketsDirPath, socketFilename)
+    const ShowInstanceStatus = async (socketFileName) => {
+        const socketFilePath = path.resolve(supervisorSocketsDirPath, socketFileName)
         const daemonClient = await CreateCommunicationInterface(socketFilePath)
         const status = await daemonClient.GetStatus()
         return status
@@ -71,7 +71,7 @@ const InstancesMonitorController = (params) => {
         Overview: instanceMonitoringManager.GetOverview,
         ShowInstanceStatus,
         ListInstanceTasks,
-        KillInstance: (socketFilename) => {},
+        KillInstance: (socketFileName) => {},
         GetTaskInformation,
         InstanceSocketFileListChange
     }

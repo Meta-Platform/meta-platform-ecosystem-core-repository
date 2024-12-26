@@ -3,7 +3,10 @@ const { resolve } = require("path")
 
 const AreArraysEqual = require("../Utils/AreArraysEqual")
 
-const SOCKET_FILE_LIST_CHANGE_EVENT = Symbol()    
+const SOCKET_FILE_LIST_CHANGE_EVENT = Symbol()
+
+
+const CreateInstanceSocketHandlerManager = require("../Helpers/CreateInstanceSocketHandlerManager")
 
 const InstanceMonitoringManager = (params) => {
 
@@ -24,14 +27,19 @@ const InstanceMonitoringManager = (params) => {
 
     const eventEmitter = new EventEmitter()
 
-    let socketFileNameList = []
+    const {
+        MonitoringOverview,
+        TryStartSocketMonitoring,
+        StartSocketMonitoring,
+        GetMonitoredSocketFileNames
+    } = CreateInstanceSocketHandlerManager()
 
     const _StartSocketsDirectoryWatcher = () => {
-
         WatchSocketDirectory({
             directoryPath: supervisorSocketsDirPath, onChangeSocketFileList: (newSocketFileNameList) => {
                 if(!AreArraysEqual(newSocketFileNameList, socketFileNameList)){
-                    socketFileNameList = newSocketFileNameList
+                    newSocketFileNameList
+                    .forEach((socketFileName) => TryStartSocketMonitoring(socketFileName))
                     _NotifySocketFileListChange()
                 }
             }})
@@ -39,36 +47,37 @@ const InstanceMonitoringManager = (params) => {
 
     const _Start = async () => {
 
-        const ecosystemDefaults = await ReadJsonFile(ecosystemDefaultFilePath)
-        supervisorSocketsDirPath = resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaults.ECOSYSTEMDATA_CONF_DIRNAME_SUPERVISOR_UNIX_SOCKET_DIR)
+        const socketsDirPath = await _ConfigSocketsDirPath()
 
-        socketFileNameList = await ListSocketFilesName(supervisorSocketsDirPath)
+        const socketFileNames = await ListSocketFilesName(socketsDirPath)
+        
+        socketFileNames
+            .forEach((socketFileName) => StartSocketMonitoring(socketFileName))
+
         _StartSocketsDirectoryWatcher()
         onReady()
 
     }
+
+    const _ConfigSocketsDirPath = async () => {
+        const ecosystemDefaults = await ReadJsonFile(ecosystemDefaultFilePath)
+        const socketsDirPath = resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaults.ECOSYSTEMDATA_CONF_DIRNAME_SUPERVISOR_UNIX_SOCKET_DIR)
+        supervisorSocketsDirPath = socketsDirPath
+        return socketsDirPath
+    }
+
+
     const _NotifySocketFileListChange = () => 
-            eventEmitter.emit(SOCKET_FILE_LIST_CHANGE_EVENT, socketFileNameList)
+            eventEmitter.emit(SOCKET_FILE_LIST_CHANGE_EVENT, GetMonitoredSocketFileNames())
     
     const AddChangeSocketListListener = (f) =>
 		eventEmitter
-			.on(SOCKET_FILE_LIST_CHANGE_EVENT, (socketFileNameList) => f(socketFileNameList))
-
-
-    const GetOverview = () => {
-        return socketFileNameList
-        .reduce((acc, socketFileName) => {
-            return {
-                ...acc,
-                [socketFileName]:{}
-            }
-        }, {})
-    }
+			.on(SOCKET_FILE_LIST_CHANGE_EVENT, (socketFileNames) => f(socketFileNames))
     
     const monitoringObject = {
         AddChangeSocketListListener,
-        GetSocketFileNameList: () => socketFileNameList,
-        GetOverview
+        GetMonitoredSocketFileNames,
+        GetOverview: MonitoringOverview
     }
         
     _Start()

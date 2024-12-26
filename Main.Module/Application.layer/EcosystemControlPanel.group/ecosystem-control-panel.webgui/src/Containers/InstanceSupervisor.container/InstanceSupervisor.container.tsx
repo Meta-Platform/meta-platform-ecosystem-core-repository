@@ -175,7 +175,7 @@ const InstanceSupervisorContainer = ({
 
 	const fetchTaskInformation = () => 
 		_GetSupervisorAPI()
-		.GetTaskInformation({ socketFilename:socketFileNameSelected, taskId:taskIdSelected })
+		.GetTaskInformation({ socketFileName:socketFileNameSelected, taskId:taskIdSelected })
 		.then(({data}:any) => setTaskInformationSelected(data))
 
 
