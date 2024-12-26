@@ -1,50 +1,69 @@
 
+const crypto = require('crypto')
 
-const CreateSocketMonitoringState = () => {
+const CreateMonitoringStateKey = (socketFilePath) => {
+    const hash = crypto.createHash("sha256")
+    hash.update(socketFilePath)
+    return hash.digest('hex')
+}
+  
+
+const CreateSocketMonitoringState = (socketFilePath) => {
+
     return {
-
+        GetSocketFilePath: () => socketFilePath
     }
 }
 
 const CreateInstanceSocketHandlerManager = () => {
 
+    const allMonitoringState = {}
+
     let monitoredSocketFilePaths = []
 
-    const StartSocketMonitoring = (socketFilePath) => {
+    const InitializeSocketMonitoring = (socketFilePath) => {
 
-        if(!IsSocketBeingMonitored(socketFilePath)){
-            monitoredSocketFilePaths.push(socketFilePath)
+        const monitoringStateKey = CreateMonitoringStateKey(socketFilePath)
+
+        if(!IsSocketBeingMonitored(monitoringStateKey)){
+            allMonitoringState[monitoringStateKey] = CreateSocketMonitoringState(socketFilePath)
         } else {
             throw `${socketFilePath} já está sendo monitorado!`
         }
 
     }
 
-    const TryStartSocketMonitoring = (socketFilePath) => {
-        if(!IsSocketBeingMonitored(socketFilePath)){
-            monitoredSocketFilePaths.push(socketFilePath)
+    const TryInitializeSocketMonitoring = (socketFilePath) => {
+        try {
+            InitializeSocketMonitoring(socketFilePath)
+        } catch(e){
+            console.log(e)
         }
     }
 
-    const IsSocketBeingMonitored = (socketFilePath) =>
-        monitoredSocketFilePaths.indexOf(socketFilePath) > -1
+    const IsSocketBeingMonitored = (monitoringStateKey) => !!allMonitoringState[monitoringStateKey]
 
     const MonitoringOverview = () => {
-        return monitoredSocketFilePaths
-        .reduce((acc, socketFilePath) => {
+        return Object.keys(allMonitoringState)
+        .reduce((acc, monitoringStateKey) => {
+
+            const monitoringState = allMonitoringState[monitoringStateKey]
+
             return {
                 ...acc,
-                [socketFilePath]:{}
+                [monitoringStateKey]:{
+                    filePath: monitoringState.GetSocketFilePath()
+                }
             }
         }, {})
     }
 
     return {
-        StartSocketMonitoring,
-        TryStartSocketMonitoring,
+        InitializeSocketMonitoring,
+        TryInitializeSocketMonitoring,
         IsSocketBeingMonitored,
         MonitoringOverview,
-        GetMonitoredSocketFilePaths: () => monitoredSocketFilePaths
+        GetMonitoringKeys: () => Object.keys(allMonitoringState)
     }
 }
 

@@ -181,7 +181,7 @@ const InstanceSupervisorContainer = ({
 
 	const updateSocketFileList = () => 
 		_GetSupervisorAPI()
-			.ListSockets()
+			.ListMonitoringKeys()
 			.then(({data}:any) => {
 				setSocketFileList(data) 
 			})

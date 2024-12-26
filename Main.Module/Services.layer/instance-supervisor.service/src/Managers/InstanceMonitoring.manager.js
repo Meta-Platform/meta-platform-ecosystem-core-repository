@@ -28,9 +28,9 @@ const InstanceMonitoringManager = (params) => {
 
     const {
         MonitoringOverview,
-        TryStartSocketMonitoring,
-        StartSocketMonitoring,
-        GetMonitoredSocketFilePaths
+        TryInitializeSocketMonitoring,
+        InitializeSocketMonitoring,
+        GetMonitoringKeys
     } = CreateInstanceSocketHandlerManager()
 
     const _StartSocketsDirectoryWatcher = () => {
@@ -38,7 +38,7 @@ const InstanceMonitoringManager = (params) => {
             directoryPath: supervisorSocketsDirPath, onChangeSocketFileList: (newSocketFileNameList) => {
                 if(!AreArraysEqual(newSocketFileNameList, socketFileNameList)){
                     newSocketFileNameList
-                    .forEach((socketFileName) => TryStartSocketMonitoring(_GetSocketFilePath(socketFileName)))
+                    .forEach((socketFileName) => TryInitializeSocketMonitoring(_GetSocketFilePath(socketFileName)))
                     _NotifySocketFileListChange()
                 }
             }})
@@ -53,7 +53,7 @@ const InstanceMonitoringManager = (params) => {
         const socketFileNames = await ListSocketFilesName(socketsDirPath)
         
         socketFileNames
-            .forEach((socketFileName) => StartSocketMonitoring(_GetSocketFilePath(socketFileName)))
+            .forEach((socketFileName) => InitializeSocketMonitoring(_GetSocketFilePath(socketFileName)))
 
         _StartSocketsDirectoryWatcher()
         onReady()
@@ -68,7 +68,7 @@ const InstanceMonitoringManager = (params) => {
     }
 
     const _NotifySocketFileListChange = () => 
-            eventEmitter.emit(SOCKET_FILE_LIST_CHANGE_EVENT, GetMonitoredSocketFilePaths())
+            eventEmitter.emit(SOCKET_FILE_LIST_CHANGE_EVENT, GetMonitoringKeys())
     
     const AddChangeSocketListListener = (f) =>
 		eventEmitter
@@ -76,7 +76,7 @@ const InstanceMonitoringManager = (params) => {
     
     const monitoringObject = {
         AddChangeSocketListListener,
-        GetMonitoredSocketFilePaths,
+        GetMonitoringKeys,
         GetOverview: MonitoringOverview
     }
         

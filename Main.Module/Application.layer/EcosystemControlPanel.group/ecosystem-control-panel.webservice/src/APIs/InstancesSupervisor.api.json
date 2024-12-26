@@ -7,7 +7,7 @@
 			"path": "/overview"
 		},
 		{
-			"summary": "ListSockets",
+			"summary": "ListMonitoringKeys",
 			"method": "GET",
 			"path": "/sockets"
 		},
