@@ -1,7 +1,0 @@
-{
-    "port":"8888",
-    "serverName":"SupervisorControlDashboardWebguiInstance",
-    "serverManagerUrl": "http://localhost:9999/server-manager/status",
-    "RT_ENV_GENERATED_DIR_NAME":".generated_data",
-    "isWatch": true
-}
