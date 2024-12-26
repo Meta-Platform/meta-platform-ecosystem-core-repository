@@ -38,11 +38,13 @@ const InstanceMonitoringManager = (params) => {
             directoryPath: supervisorSocketsDirPath, onChangeSocketFileList: (newSocketFileNameList) => {
                 if(!AreArraysEqual(newSocketFileNameList, socketFileNameList)){
                     newSocketFileNameList
-                    .forEach((socketFileName) => TryStartSocketMonitoring(socketFileName))
+                    .forEach((socketFileName) => TryStartSocketMonitoring(_GetSocketFilePath(socketFileName)))
                     _NotifySocketFileListChange()
                 }
             }})
     }
+
+    const _GetSocketFilePath = (socketFileName) => resolve(supervisorSocketsDirPath, socketFileName)
 
     const _Start = async () => {
 
@@ -51,7 +53,7 @@ const InstanceMonitoringManager = (params) => {
         const socketFileNames = await ListSocketFilesName(socketsDirPath)
         
         socketFileNames
-            .forEach((socketFileName) => StartSocketMonitoring(socketFileName))
+            .forEach((socketFileName) => StartSocketMonitoring(_GetSocketFilePath(socketFileName)))
 
         _StartSocketsDirectoryWatcher()
         onReady()
