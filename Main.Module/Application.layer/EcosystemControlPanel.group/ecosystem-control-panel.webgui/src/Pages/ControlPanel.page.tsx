@@ -86,6 +86,27 @@ const useNotificationManager = (serverManagerInformation) => {
 	}
 }
 
+
+const CardLog = ({
+	date,
+	type,
+	content
+}) => {
+
+	const messageHtml = ansiConverter.toHtml(content.message)
+
+	return <Segment secondary style={{"margin": "5px", padding:"8px", boxShadow: "1px 1px 1px black"}}>
+				<Label color="grey" size="small" attached='top right'>{date}</Label>
+				<strong style={{fontSize: "medium"}}>{type.toUpperCase()} - {content.type.toUpperCase()} - {content.sourceName}</strong><br/>
+				<Segment style={{"margin": "5px", padding:"8px", "color":"black"}}>
+					<p dangerouslySetInnerHTML={{ __html: messageHtml }}></p>
+				</Segment>
+				<strong>{origin}</strong>
+			</Segment>
+}
+	
+
+
 const NotificationPanel = ({ onClose, notificationStateList }) => {
 	return <Segment style={{margin: "15px 15px 15px -20px", "backgroundColor": "lightsalmon"}}>
 				<Button 
@@ -114,16 +135,20 @@ const NotificationPanel = ({ onClose, notificationStateList }) => {
 								content
 							} = payload
 
-							const messageHtml = ansiConverter.toHtml(content.message)
-
-							return <Segment secondary style={{"margin": "5px", padding:"8px", boxShadow: "1px 1px 1px black"}}>
-								<Label color="grey" size="small" attached='top right'>{date}</Label>
-								<strong style={{fontSize: "medium"}}>{type.toUpperCase()} - {content.type.toUpperCase()} - {content.sourceName}</strong><br/>
-								<Segment style={{"margin": "5px", padding:"8px", "color":"black"}}>
-									<p dangerouslySetInnerHTML={{ __html: messageHtml }}></p>
+							return type === "log" 
+							? CardLog({
+									date,
+									type,
+									content
+								}) 
+							:<Segment secondary style={{"margin": "5px", padding:"8px", boxShadow: "1px 1px 1px black"}}>
+									<Label color="grey" size="small" attached='top right'>{date}</Label>
+									<strong style={{fontSize: "medium"}}>{type.toUpperCase()}</strong><br/>
+									<Segment style={{"margin": "5px", padding:"8px", "color":"black"}}>
+										<p dangerouslySetInnerHTML={{ __html:  ansiConverter.toHtml(content) }}></p>
+									</Segment>
+									<strong>{origin}</strong>
 								</Segment>
-								<strong>{origin}</strong>
-							</Segment>
 						})
 					}
 				</div>

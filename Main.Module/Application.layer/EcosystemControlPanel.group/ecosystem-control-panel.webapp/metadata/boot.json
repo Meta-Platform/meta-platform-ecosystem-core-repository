@@ -39,7 +39,8 @@
             "bound-params":{
                 "supervisorLib": "@/supervisor.lib",
                 "jsonFileUtilitiesLib": "@/json-file-utilities.lib",
-                "ecosystemdataHandlerService": "@@/ecosystemdata-handler-service"
+                "ecosystemdataHandlerService": "@@/ecosystemdata-handler-service",
+                "notificationHubService": "@@/notification-hub-service"
             },
             "params":{
                 "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
@@ -100,7 +101,6 @@
                 "instanceMonitoringManager": "@@/instance-monitoring-manager-service",
                 "environmentHandlerService": "@@/environment-handler-service",
                 "ecosystemdataHandlerService": "@@/ecosystemdata-handler-service",
-                "supervisorLib": "@/supervisor.lib",
                 "jsonFileUtilitiesLib": "@/json-file-utilities.lib",
                 "repositoryManagerService": "@@/repository-manager",
                 "ecosystemInstallUtilitiesLib": "@/ecosystem-install-utilities.lib",

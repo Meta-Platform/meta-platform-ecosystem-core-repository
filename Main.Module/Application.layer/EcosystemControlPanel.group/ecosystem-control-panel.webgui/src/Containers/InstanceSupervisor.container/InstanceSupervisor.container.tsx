@@ -67,13 +67,15 @@ const OverviewSocketPanel = ({
 	<CardGroup>
 		{
 			Object.keys(overview)
-			.map((socketFileName) => 
-			<Card onClick={() => onSelect(socketFileName)}>
-				<CardContent>
-					<CardHeader>{socketFileName}</CardHeader>
-					<CardMeta>xpto</CardMeta>
-				</CardContent>
-			</Card>)
+			.map((monitoringStateKey) => {
+				const monitoringStateInformation = overview[monitoringStateKey]
+				return <Card disabled onClick={() => onSelect(monitoringStateKey)} style={{"width":"600px"}}>
+							<Label attached='top' color="pink">{monitoringStateInformation.status}</Label>
+							<CardContent>
+								<CardMeta>{monitoringStateKey}</CardMeta>
+							</CardContent>
+						</Card>
+			})
 		}
 	</CardGroup>
 </Segment>
@@ -89,7 +91,7 @@ const InstanceSupervisorContainer = ({
 
 	const [socketFileList, setSocketFileList] = useState([])
 
-	const [socketFileNameSelected, setSocketFileNameSelected] = useState<string>()
+	const [monitoringStateKeySelected, setSocketFileNameSelected] = useState<string>()
 	const [taskIdSelected, setTaskIdSelected] = useState<number>()
 	const [taskInformationSelected, setTaskInformationSelected] = useState<any>()
 
@@ -151,10 +153,10 @@ const InstanceSupervisorContainer = ({
 
 	useEffect(() => {
 
-		if(socketFileNameSelected)
-			AddQueryParam("socketFileName", socketFileNameSelected)
+		if(monitoringStateKeySelected)
+			AddQueryParam("monitoringStateKey", monitoringStateKeySelected)
 		
-	}, [socketFileNameSelected])
+	}, [monitoringStateKeySelected])
 
 	useEffect(() => {
 
@@ -167,7 +169,7 @@ const InstanceSupervisorContainer = ({
 
 	const instanceTaskListSelected = 
         useFetchInstanceTaskList({
-            socketFileNameSelected,
+            monitoringStateKeySelected,
             HTTPServerManager
         })
 
@@ -175,7 +177,7 @@ const InstanceSupervisorContainer = ({
 
 	const fetchTaskInformation = () => 
 		_GetSupervisorAPI()
-		.GetTaskInformation({ socketFileName:socketFileNameSelected, taskId:taskIdSelected })
+		.GetTaskInformation({ monitoringStateKey:monitoringStateKeySelected, taskId:taskIdSelected })
 		.then(({data}:any) => setTaskInformationSelected(data))
 
 
@@ -266,17 +268,17 @@ const InstanceSupervisorContainer = ({
 	const handleBackTOverview = () => {
 		resetTaskSelection()
 		setSocketFileNameSelected(undefined)
-		RemoveQueryParam("socketFileName")
+		RemoveQueryParam("monitoringStateKey")
 	}
 
-	return socketFileNameSelected
+	return monitoringStateKeySelected
 		? <Segment style={{margin:"15px", background: "antiquewhite"}}>
 				<Grid columns="two" divided>
 					<Column width={3}>
 						<SocketFileList
 							list={socketFileList}
 							onSelect={handleSelectInstance}
-							socketFileSelected={socketFileNameSelected}/>
+							socketFileSelected={monitoringStateKeySelected}/>
 					</Column>
 					<Column width={13}>
 						<Menu>
@@ -301,7 +303,7 @@ const InstanceSupervisorContainer = ({
 			</Segment>
 		: <OverviewSocketPanel 
 			onSelect={handleSelectInstance}
-			socketFileSelected={socketFileNameSelected}
+			socketFileSelected={monitoringStateKeySelected}
 			supervisorAPI={_GetSupervisorAPI()}/>
 	
 }

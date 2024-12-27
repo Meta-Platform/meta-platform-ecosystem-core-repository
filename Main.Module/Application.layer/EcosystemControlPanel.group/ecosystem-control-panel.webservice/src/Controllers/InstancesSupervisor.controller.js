@@ -11,13 +11,10 @@ const InstancesSupervisorController = (params) => {
         ecosystemDefaultsFileRelativePath,
         jsonFileUtilitiesLib,
         instanceMonitoringManager,
-        supervisorLib,
         ecosystemdataHandlerService
     } = params
 
     const ReadJsonFile = jsonFileUtilitiesLib.require("ReadJsonFile")
-
-    let supervisorSocketsDirPath = undefined
     
     const _InitSupervisorSocketsDirPath = async () => {
         const ecosystemDefaultFilePath = path.resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaultsFileRelativePath)
@@ -31,22 +28,6 @@ const InstancesSupervisorController = (params) => {
         eventEmitter.emit(SOCKET_FILE_LIST_CHANGE_EVENT, socketFileNameList)
     })
 
-    const CreateCommunicationInterface = supervisorLib.require("CreateCommunicationInterface")
-
-    const ListInstanceTasks = async (socketFileName) => {
-        const socketFilePath = path.resolve(supervisorSocketsDirPath, socketFileName)
-        const daemonClient = await CreateCommunicationInterface(socketFilePath)
-        const taskList = await daemonClient.ListTasks()
-        return taskList
-    }
-
-    const GetTaskInformation = async ({socketFileName, taskId}) => {
-        const socketFilePath = path.resolve(supervisorSocketsDirPath, socketFileName)
-        const daemonClient = await CreateCommunicationInterface(socketFilePath)
-        const task = await daemonClient.GetTask(taskId)
-        return task
-    }
-
     const InstanceSocketFileListChange = (ws) => {
         eventEmitter
         .on(SOCKET_FILE_LIST_CHANGE_EVENT, (socketFileNameList) => {
@@ -58,21 +39,13 @@ const InstancesSupervisorController = (params) => {
         })
     }
 
-    const ShowInstanceStatus = async (socketFileName) => {
-        const socketFilePath = path.resolve(supervisorSocketsDirPath, socketFileName)
-        const daemonClient = await CreateCommunicationInterface(socketFilePath)
-        const status = await daemonClient.GetStatus()
-        return status
-    }
-
     const controllerServiceObject = {
         controllerName : "InstancesSupervisorController",
         ListMonitoringKeys: instanceMonitoringManager.GetMonitoringKeys,
         Overview: instanceMonitoringManager.GetOverview,
-        ShowInstanceStatus,
-        ListInstanceTasks,
+        ListInstanceTasks: instanceMonitoringManager.ListInstanceTasks,
+        GetTaskInformation: instanceMonitoringManager.GetTaskInformation,
         KillInstance: (socketFileName) => {},
-        GetTaskInformation,
         InstanceSocketFileListChange
     }
 

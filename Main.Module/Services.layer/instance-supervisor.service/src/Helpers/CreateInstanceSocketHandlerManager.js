@@ -1,5 +1,13 @@
 
 const crypto = require('crypto')
+const EventEmitter = require('node:events')
+
+
+const MonitoringStateTypes = Object.freeze({
+    CREATED: "CREATED",
+    CONNECTING: "CONNECTING",
+    CONNECTED : "CONNECTED"
+})
 
 const CreateMonitoringStateKey = (socketFilePath) => {
     const hash = crypto.createHash("sha256")
@@ -8,25 +16,62 @@ const CreateMonitoringStateKey = (socketFilePath) => {
 }
   
 
-const CreateSocketMonitoringState = (socketFilePath) => {
+const CreateSocketMonitoringState = ({
+    socketFilePath,
+    helpers
+}) => {
+    
+    const eventEmitter = new EventEmitter()
+
+    const { CreateCommunicationInterface } = helpers
+
+    const CONNECTION_STATUS_CHANGE = Symbol()
+
+    let communicationStatus = MonitoringStateTypes.CREATED
+    let communicationClient = undefined
+
+    const _ChangeStatus = (newStatus) => {
+        communicationStatus = newStatus
+        eventEmitter.emit(CONNECTION_STATUS_CHANGE, newStatus)
+    }
+
+    const _ConnectInstance =  async () => {
+        _ChangeStatus(MonitoringStateTypes.CONNECTING)
+        const instanceCommunicationClient = await CreateCommunicationInterface(socketFilePath)
+        communicationClient = instanceCommunicationClient
+        _ChangeStatus(MonitoringStateTypes.CONNECTED)
+    }
+
+    const ConnectionStatusListener = (f) => 
+        eventEmitter.on(CONNECTION_STATUS_CHANGE, (event) => f(event))
+
+    _ConnectInstance()
 
     return {
-        GetSocketFilePath: () => socketFilePath
+        GetSocketFilePath: () => socketFilePath,
+        GetCommunicationClient: () => communicationClient,
+        GetCommunicationStatus: () => communicationStatus,
+        ConnectionStatusListener
     }
 }
 
-const CreateInstanceSocketHandlerManager = () => {
+const CreateInstanceSocketHandlerManager = ({
+    helpers
+}) => {
 
     const allMonitoringState = {}
 
-    let monitoredSocketFilePaths = []
+    const eventEmitter = new EventEmitter()
 
     const InitializeSocketMonitoring = (socketFilePath) => {
 
         const monitoringStateKey = CreateMonitoringStateKey(socketFilePath)
-
+        const NEW_EVENT = Symbol()
         if(!IsSocketBeingMonitored(monitoringStateKey)){
-            allMonitoringState[monitoringStateKey] = CreateSocketMonitoringState(socketFilePath)
+            const monitoringState = CreateSocketMonitoringState({socketFilePath, helpers})
+            allMonitoringState[monitoringStateKey] = monitoringState
+            monitoringState.ConnectionStatusListener(() =>  eventEmitter.emit(NEW_EVENT))
+
         } else {
             throw `${socketFilePath} já está sendo monitorado!`
         }
@@ -52,18 +97,27 @@ const CreateInstanceSocketHandlerManager = () => {
             return {
                 ...acc,
                 [monitoringStateKey]:{
-                    filePath: monitoringState.GetSocketFilePath()
+                    filePath: monitoringState.GetSocketFilePath(),
+                    status: monitoringState.GetCommunicationStatus()
                 }
             }
         }, {})
     }
+
+    const AddNewEventListener = (f) => 
+        eventEmitter.on(NEW_EVENT, () => f())
+
+    const GetSocketMonitoringState = 
+        (monitoringStateKey) => allMonitoringState[monitoringStateKey]
 
     return {
         InitializeSocketMonitoring,
         TryInitializeSocketMonitoring,
         IsSocketBeingMonitored,
         MonitoringOverview,
-        GetMonitoringKeys: () => Object.keys(allMonitoringState)
+        GetMonitoringKeys: () => Object.keys(allMonitoringState),
+        AddNewEventListener,
+        GetSocketMonitoringState
     }
 }
 

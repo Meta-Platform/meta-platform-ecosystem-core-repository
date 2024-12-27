@@ -3,7 +3,6 @@
     "bound-params":[
         "serverService", 
         "instanceMonitoringManager",
-        "supervisorLib",
         "environmentHandlerService",
         "jsonFileUtilitiesLib",
         "ecosystemdataHandlerService",
@@ -27,7 +26,6 @@
                 "controller-params":{
                     "ecosystemdataHandlerService":"ecosystemdataHandlerService",
                     "instanceMonitoringManager":"instanceMonitoringManager",
-                    "supervisorLib":"supervisorLib",
                     "jsonFileUtilitiesLib": "jsonFileUtilitiesLib"
                 }
             }

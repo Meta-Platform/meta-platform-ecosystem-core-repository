@@ -17,25 +17,12 @@
 			"path": "/instance-socket-file-list-change"
 		},
 		{
-			"summary": "ShowInstanceStatus",
-			"method": "GET",
-			"path": "/socket/:socketFileName/status",
-			"parameters": [
-				{
-					"name": "socketFileName",
-					"in": "path",
-					"type": "string",
-					"required": true
-				}
-			]
-		},
-		{
 			"summary": "ListInstanceTasks",
 			"method": "GET",
-			"path": "/socket/:socketFileName/tasks",
+			"path": "/socket/:monitoringStateKey/tasks",
 			"parameters": [
 				{
-					"name": "socketFileName",
+					"name": "monitoringStateKey",
 					"in": "path",
 					"type": "string",
 					"required": true
@@ -48,7 +35,7 @@
 			"path": "/kill-instance",
 			"parameters": [
 				{
-					"name": "socketFileName",
+					"name": "monitoringStateKey",
 					"in": "body",
 					"type": "string",
 					"required": true
@@ -58,10 +45,10 @@
 		{
 			"summary": "GetTaskInformation",
 			"method": "GET",
-			"path": "/socket/:socketFileName/task/:taskId",
+			"path": "/socket/:monitoringStateKey/task/:taskId",
 			"parameters": [
 				{
-					"name": "socketFileName",
+					"name": "monitoringStateKey",
 					"in": "path",
 					"type": "string",
 					"required": true

@@ -1,5 +1,6 @@
 const EventEmitter = require('node:events')
 const { resolve } = require("path")
+const colors = require("colors")
 
 const AreArraysEqual = require("../Utils/AreArraysEqual")
 
@@ -14,12 +15,16 @@ const InstanceMonitoringManager = (params) => {
         ecosystemDefaultsFileRelativePath,
         jsonFileUtilitiesLib,
         supervisorLib,
+        notificationHubService,
         onReady 
     } = params
 
-    const WatchSocketDirectory = supervisorLib.require("WatchSocketDirectory")
-    const ListSocketFilesName  = supervisorLib.require("ListSocketFilesName")
-    const ReadJsonFile         = jsonFileUtilitiesLib.require("ReadJsonFile")
+    const WatchSocketDirectory         = supervisorLib.require("WatchSocketDirectory")
+    const ListSocketFilesName          = supervisorLib.require("ListSocketFilesName")
+    const CreateCommunicationInterface = supervisorLib.require("CreateCommunicationInterface")
+    const ReadJsonFile                 = jsonFileUtilitiesLib.require("ReadJsonFile")
+
+    const { NotifyEvent } = notificationHubService
 
     const ecosystemDefaultFilePath = resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaultsFileRelativePath)
     let supervisorSocketsDirPath = undefined
@@ -30,18 +35,37 @@ const InstanceMonitoringManager = (params) => {
         MonitoringOverview,
         TryInitializeSocketMonitoring,
         InitializeSocketMonitoring,
-        GetMonitoringKeys
-    } = CreateInstanceSocketHandlerManager()
+        GetMonitoringKeys,
+        GetSocketMonitoringState
+    } = CreateInstanceSocketHandlerManager({
+        helpers:{
+            CreateCommunicationInterface,
+            NotifyEvent
+        }
+    })
 
-    const _StartSocketsDirectoryWatcher = () => {
-        WatchSocketDirectory({
-            directoryPath: supervisorSocketsDirPath, onChangeSocketFileList: (newSocketFileNameList) => {
-                if(!AreArraysEqual(newSocketFileNameList, socketFileNameList)){
-                    newSocketFileNameList
-                    .forEach((socketFileName) => TryInitializeSocketMonitoring(_GetSocketFilePath(socketFileName)))
-                    _NotifySocketFileListChange()
-                }
-            }})
+    const _CreateHandlerSocketDirectoryChange = () => {
+        
+        let socketFileNameList = []
+
+        const __ChangeList = (newList) => {
+            socketFileNameList = newList
+            NotifyEvent({
+                origin: "InstanceMonitoringManager",
+                type:"message",
+                content: `A lista de sockets foi atualizada para ${colors.bold(newList.join(", "))}`
+            })
+        }
+
+        const __HandlerSocketDirectoryChange = (newSocketFileNameList) => {
+            if(!AreArraysEqual(newSocketFileNameList, socketFileNameList)){
+                __ChangeList(newSocketFileNameList)
+                newSocketFileNameList
+                .forEach((socketFileName) => TryInitializeSocketMonitoring(_GetSocketFilePath(socketFileName)))
+            }
+        }
+        
+        return __HandlerSocketDirectoryChange
     }
 
     const _GetSocketFilePath = (socketFileName) => resolve(supervisorSocketsDirPath, socketFileName)
@@ -49,13 +73,15 @@ const InstanceMonitoringManager = (params) => {
     const _Start = async () => {
 
         const socketsDirPath = await _ConfigSocketsDirPath()
-
         const socketFileNames = await ListSocketFilesName(socketsDirPath)
-        
-        socketFileNames
-            .forEach((socketFileName) => InitializeSocketMonitoring(_GetSocketFilePath(socketFileName)))
+        socketFileNames.forEach((socketFileName) => InitializeSocketMonitoring(_GetSocketFilePath(socketFileName)))
 
-        _StartSocketsDirectoryWatcher()
+        const __HandlerSocketDirectoryChange = _CreateHandlerSocketDirectoryChange()
+
+        WatchSocketDirectory({
+            directoryPath: supervisorSocketsDirPath, 
+            onChangeSocketFileList: __HandlerSocketDirectoryChange
+        })
         onReady()
 
     }
@@ -67,17 +93,34 @@ const InstanceMonitoringManager = (params) => {
         return socketsDirPath
     }
 
-    const _NotifySocketFileListChange = () => 
-            eventEmitter.emit(SOCKET_FILE_LIST_CHANGE_EVENT, GetMonitoringKeys())
-    
     const AddChangeSocketListListener = (f) =>
 		eventEmitter
 			.on(SOCKET_FILE_LIST_CHANGE_EVENT, (socketFileNames) => f(socketFileNames))
+
+    const _GetConnectionClient = (monitoringStateKey) => {
+        const socketMonitoringState = GetSocketMonitoringState(monitoringStateKey)
+        const communicationClient = socketMonitoringState.GetCommunicationClient()
+        return communicationClient
+    }
+
+    const ListInstanceTasks = async (monitoringStateKey) => {
+        const communicationClient = _GetConnectionClient(monitoringStateKey)
+        const taskList = await communicationClient.ListTasks()
+        return taskList
+    }
+
+    const GetTaskInformation = async ({monitoringStateKey, taskId}) => {
+        const communicationClient = _GetConnectionClient(monitoringStateKey)
+        const task = await communicationClient.GetTask(taskId)
+        return task
+    }
     
     const monitoringObject = {
         AddChangeSocketListListener,
         GetMonitoringKeys,
-        GetOverview: MonitoringOverview
+        GetOverview: MonitoringOverview,
+        ListInstanceTasks,
+        GetTaskInformation
     }
         
     _Start()
