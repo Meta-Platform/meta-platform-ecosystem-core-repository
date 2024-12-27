@@ -1,6 +1,8 @@
 import * as React             from "react"
 import {useEffect, useState}  from "react"
 
+import useWebSocket from "../../Hooks/useWebSocket"
+
 import { 
 	Label,
 	Segment,
@@ -12,7 +14,6 @@ import {
  } from "semantic-ui-react"
 
 const OverviewSocketPanel = ({
-	socketFileSelected,
 	supervisorAPI,
 	onSelect
 }) => {
@@ -22,6 +23,14 @@ const OverviewSocketPanel = ({
 	useEffect(() => {
 		fetchOverview()
 	}, [])
+
+
+    useWebSocket({
+		socket          : supervisorAPI.InstanceOverviewChange,
+		onMessage       : (newOverview) => console.log(newOverview),
+		onConnection    : () => {},
+		onDisconnection : () => {}
+	})
 
 	const fetchOverview = () => 
 		supervisorAPI

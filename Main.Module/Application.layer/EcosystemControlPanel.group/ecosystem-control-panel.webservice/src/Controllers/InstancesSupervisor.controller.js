@@ -1,7 +1,7 @@
 const path = require("path")
 const EventEmitter = require('node:events')
 
-const SOCKET_FILE_LIST_CHANGE_EVENT = Symbol()  
+const INSTANCE_OVERVIEW_CHANGE_EVENT = Symbol()  
 
 const InstancesSupervisorController = (params) => {
 
@@ -24,15 +24,13 @@ const InstancesSupervisorController = (params) => {
 
     _InitSupervisorSocketsDirPath()
 
-    instanceMonitoringManager.AddChangeSocketListListener((socketFileNameList) => {
-        eventEmitter.emit(SOCKET_FILE_LIST_CHANGE_EVENT, socketFileNameList)
-    })
+    instanceMonitoringManager.OverviewChangeListener(() => eventEmitter.emit(INSTANCE_OVERVIEW_CHANGE_EVENT))
 
-    const InstanceSocketFileListChange = (ws) => {
+    const InstanceOverviewChange = (ws) => {
         eventEmitter
-        .on(SOCKET_FILE_LIST_CHANGE_EVENT, (socketFileNameList) => {
+        .on(INSTANCE_OVERVIEW_CHANGE_EVENT, () => {
             try{
-                ws.send(JSON.stringify(socketFileNameList))
+                ws.send(instanceMonitoringManager.GetOverview())
             }catch(e){
                 console.log(e)
             }
@@ -46,7 +44,7 @@ const InstancesSupervisorController = (params) => {
         ListInstanceTasks: instanceMonitoringManager.ListInstanceTasks,
         GetTaskInformation: instanceMonitoringManager.GetTaskInformation,
         KillInstance: (socketFileName) => {},
-        InstanceSocketFileListChange
+        InstanceOverviewChange
     }
 
     return Object.freeze(controllerServiceObject)

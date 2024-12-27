@@ -12,13 +12,7 @@ import {
 	MenuMenu,
 	Icon,
 	Menu,
-	Button,
-	Divider,
-	CardGroup,
-	Card,
-	CardContent,
-	CardHeader,
-	CardMeta
+	Button
  } from "semantic-ui-react"
 
 import qs                     from "query-string"
@@ -37,49 +31,13 @@ import TaskInformation from "../../Components/TaskInformation"
 
 import QueryParamsActionsCreator from "../../Actions/QueryParams.actionsCreator"
 
-import useWebSocket from "../../Hooks/useWebSocket"
 import useFetchInstanceTaskList from "../../Hooks/useFetchInstanceTaskList"
 
 const Column = Grid.Column
 
 import TaskCardGroup from "./Task.cardGroup"
 
-const OverviewSocketPanel = ({
-	socketFileSelected,
-	supervisorAPI,
-	onSelect
-}) => {
-
-	const [overview, setOverview] = useState({})
-
-	useEffect(() => {
-		fetchOverview()
-	}, [])
-
-	const fetchOverview = () => 
-		supervisorAPI
-		.Overview()
-		.then(({data}:any) => setOverview(data))
-
-	return <Segment style={{margin:"15px", background: "antiquewhite"}}>
-	<h1>Overview</h1>
-	<Divider/>
-	<CardGroup>
-		{
-			Object.keys(overview)
-			.map((monitoringStateKey) => {
-				const monitoringStateInformation = overview[monitoringStateKey]
-				return <Card disabled onClick={() => onSelect(monitoringStateKey)} style={{"width":"600px"}}>
-							<Label attached='top' color="pink">{monitoringStateInformation.status}</Label>
-							<CardContent>
-								<CardMeta>{monitoringStateKey}</CardMeta>
-							</CardContent>
-						</Card>
-			})
-		}
-	</CardGroup>
-</Segment>
-}
+import OverviewSocketPanel from "./OverviewSocketPanel"
 
 const InstanceSupervisorContainer = ({
 	HTTPServerManager,
@@ -89,7 +47,7 @@ const InstanceSupervisorContainer = ({
 	RemoveQueryParam
 }:any) => {
 
-	const [socketFileList, setSocketFileList] = useState([])
+	const [monitoringKeyList, setMonitoringKeyList] = useState([])
 
 	const [monitoringStateKeySelected, setSocketFileNameSelected] = useState<string>()
 	const [taskIdSelected, setTaskIdSelected] = useState<number>()
@@ -105,12 +63,7 @@ const InstanceSupervisorContainer = ({
 			serverManagerInformation: HTTPServerManager
 		})
 
-	useWebSocket({
-		socket          : _GetSupervisorAPI().InstanceSocketFileListChange,
-		onMessage       : (socketFileList) => setSocketFileList(socketFileList),
-		onConnection    : () => {},
-		onDisconnection : () => {}
-	})
+	
 
 	useEffect(() => {
 
@@ -185,7 +138,7 @@ const InstanceSupervisorContainer = ({
 		_GetSupervisorAPI()
 			.ListMonitoringKeys()
 			.then(({data}:any) => {
-				setSocketFileList(data) 
+				setMonitoringKeyList(data) 
 			})
 
 	const resetTaskSelection = () => {
@@ -276,7 +229,7 @@ const InstanceSupervisorContainer = ({
 				<Grid columns="two" divided>
 					<Column width={3}>
 						<SocketFileList
-							list={socketFileList}
+							list={monitoringKeyList}
 							onSelect={handleSelectInstance}
 							socketFileSelected={monitoringStateKeySelected}/>
 					</Column>
@@ -303,7 +256,6 @@ const InstanceSupervisorContainer = ({
 			</Segment>
 		: <OverviewSocketPanel 
 			onSelect={handleSelectInstance}
-			socketFileSelected={monitoringStateKeySelected}
 			supervisorAPI={_GetSupervisorAPI()}/>
 	
 }

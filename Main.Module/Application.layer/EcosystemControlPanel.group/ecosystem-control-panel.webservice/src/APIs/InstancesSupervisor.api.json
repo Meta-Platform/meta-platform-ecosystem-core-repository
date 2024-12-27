@@ -9,12 +9,12 @@
 		{
 			"summary": "ListMonitoringKeys",
 			"method": "GET",
-			"path": "/sockets"
+			"path": "/monitoring-keys"
 		},
 		{
-			"summary": "InstanceSocketFileListChange",
+			"summary": "InstanceOverviewChange",
 			"method": "WS",
-			"path": "/instance-socket-file-list-change"
+			"path": "/instance-overview-change"
 		},
 		{
 			"summary": "ListInstanceTasks",

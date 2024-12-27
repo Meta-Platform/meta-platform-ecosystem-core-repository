@@ -4,8 +4,6 @@ const colors = require("colors")
 
 const AreArraysEqual = require("../Utils/AreArraysEqual")
 
-const SOCKET_FILE_LIST_CHANGE_EVENT = Symbol()
-
 const CreateInstanceSocketHandlerManager = require("../Helpers/CreateInstanceSocketHandlerManager")
 
 const InstanceMonitoringManager = (params) => {
@@ -29,14 +27,13 @@ const InstanceMonitoringManager = (params) => {
     const ecosystemDefaultFilePath = resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaultsFileRelativePath)
     let supervisorSocketsDirPath = undefined
 
-    const eventEmitter = new EventEmitter()
-
     const {
-        MonitoringOverview,
+        Overview,
         TryInitializeSocketMonitoring,
         InitializeSocketMonitoring,
         GetMonitoringKeys,
-        GetSocketMonitoringState
+        GetSocketMonitoringState,
+        AddEventListener
     } = CreateInstanceSocketHandlerManager({
         helpers:{
             CreateCommunicationInterface,
@@ -93,9 +90,7 @@ const InstanceMonitoringManager = (params) => {
         return socketsDirPath
     }
 
-    const AddChangeSocketListListener = (f) =>
-		eventEmitter
-			.on(SOCKET_FILE_LIST_CHANGE_EVENT, (socketFileNames) => f(socketFileNames))
+    const OverviewChangeListener = AddEventListener
 
     const _GetConnectionClient = (monitoringStateKey) => {
         const socketMonitoringState = GetSocketMonitoringState(monitoringStateKey)
@@ -116,9 +111,9 @@ const InstanceMonitoringManager = (params) => {
     }
     
     const monitoringObject = {
-        AddChangeSocketListListener,
+        OverviewChangeListener,
         GetMonitoringKeys,
-        GetOverview: MonitoringOverview,
+        GetOverview: Overview,
         ListInstanceTasks,
         GetTaskInformation
     }
