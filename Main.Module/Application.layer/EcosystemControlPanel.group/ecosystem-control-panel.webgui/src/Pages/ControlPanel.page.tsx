@@ -205,8 +205,6 @@ const ControlPanelPage = ({
 			AddQueryParam("panel", activeItem)
 		else if(!activeItem && queryParams.panel)
 			setActiveItem(queryParams.panel as string)
-		else 
-			setActiveItem("packages")
 
 	}, [activeItem])
 

@@ -30,7 +30,8 @@ const InstancesSupervisorController = (params) => {
         eventEmitter
         .on(INSTANCE_OVERVIEW_CHANGE_EVENT, () => {
             try{
-                ws.send(instanceMonitoringManager.GetOverview())
+                const overviewData = instanceMonitoringManager.GetOverview()
+                ws.send(JSON.stringify(overviewData))
             }catch(e){
                 console.log(e)
             }

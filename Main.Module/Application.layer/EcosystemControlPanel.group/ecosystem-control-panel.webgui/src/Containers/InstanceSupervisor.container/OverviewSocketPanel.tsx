@@ -3,6 +3,17 @@ import {useEffect, useState}  from "react"
 
 import useWebSocket from "../../Hooks/useWebSocket"
 
+const GetColorLogByConnectionStatus = (status) => {
+    switch(status){
+        case "CONNECTING":
+            return "yellow"
+        case "CONNECTED":
+            return "green"
+        case "UNAVAILABLE":
+            return "red"
+    }
+}
+
 import { 
 	Label,
 	Segment,
@@ -27,7 +38,7 @@ const OverviewSocketPanel = ({
 
     useWebSocket({
 		socket          : supervisorAPI.InstanceOverviewChange,
-		onMessage       : (newOverview) => console.log(newOverview),
+		onMessage       : (newOverview) => setOverview(newOverview),
 		onConnection    : () => {},
 		onDisconnection : () => {}
 	})
@@ -37,6 +48,8 @@ const OverviewSocketPanel = ({
 		.Overview()
 		.then(({data}:any) => setOverview(data))
 
+	const isConnected = (status) => status === "CONNECTED"
+
 	return <Segment style={{margin:"15px", background: "antiquewhite"}}>
                 <h1>Overview</h1>
                 <Divider/>
@@ -45,8 +58,9 @@ const OverviewSocketPanel = ({
                         Object.keys(overview)
                         .map((monitoringStateKey) => {
                             const monitoringStateInformation = overview[monitoringStateKey]
-                            return <Card disabled onClick={() => onSelect(monitoringStateKey)} style={{"width":"600px"}}>
-                                        <Label attached='top' color="pink">{monitoringStateInformation.status}</Label>
+                            return <Card disabled={!isConnected(monitoringStateInformation.status)} 
+										onClick={isConnected(monitoringStateInformation.status) ? () => onSelect(monitoringStateKey) : undefined} style={{"width":"600px"}}>
+                                        <Label attached='top' color={GetColorLogByConnectionStatus(monitoringStateInformation.status)}>{monitoringStateInformation.status}</Label>
                                         <CardContent>
                                             <CardMeta>{monitoringStateKey}</CardMeta>
                                         </CardContent>

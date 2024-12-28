@@ -33,7 +33,6 @@ const CreateSocketMonitoringState = ({
             communicationClient = instanceCommunicationClient
             _ChangeStatus(MonitoringStateTypes.CONNECTED)
         }catch(e){
-            console.log(e)
             _ChangeStatus(MonitoringStateTypes.UNAVAILABLE)
         }
        
