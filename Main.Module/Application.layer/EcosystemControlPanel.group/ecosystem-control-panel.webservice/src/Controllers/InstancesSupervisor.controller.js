@@ -40,7 +40,7 @@ const InstancesSupervisorController = (params) => {
 
     const controllerServiceObject = {
         controllerName : "InstancesSupervisorController",
-        ListMonitoringKeys: instanceMonitoringManager.GetMonitoringKeys,
+        ListMonitoringKeys: instanceMonitoringManager.GetMonitoringKeysReady,
         Overview: instanceMonitoringManager.GetOverview,
         ListInstanceTasks: instanceMonitoringManager.ListInstanceTasks,
         GetTaskInformation: instanceMonitoringManager.GetTaskInformation,

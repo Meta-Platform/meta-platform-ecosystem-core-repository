@@ -41,13 +41,16 @@ const CreateInstanceSocketHandlerManager = ({
         }
     }
 
-    const IsSocketBeingMonitored = (monitoringStateKey) => !!allMonitoringState[monitoringStateKey]
+    const _GetMonitoringStateByKey = (monitoringStateKey) => allMonitoringState[monitoringStateKey]
+    const _GetMonitoringKeys = () => Object.keys(allMonitoringState)
+
+    const IsSocketBeingMonitored = (monitoringStateKey) => !!_GetMonitoringStateByKey(monitoringStateKey)
 
     const Overview = () => {
-        return Object.keys(allMonitoringState)
+        return _GetMonitoringKeys()
         .reduce((acc, monitoringStateKey) => {
 
-            const monitoringState = allMonitoringState[monitoringStateKey]
+            const monitoringState = _GetMonitoringStateByKey(monitoringStateKey)
 
             return {
                 ...acc,
@@ -62,17 +65,22 @@ const CreateInstanceSocketHandlerManager = ({
     const AddEventListener = (f) => 
         eventEmitter.on(NEW_EVENT, f)
 
-    const GetSocketMonitoringState = 
-        (monitoringStateKey) => allMonitoringState[monitoringStateKey]
+
+    const GetMonitoringKeysReady = () => 
+        _GetMonitoringKeys()
+        .filter((key) => {
+            const { GetCommunicationStatus } = _GetMonitoringStateByKey(key)
+            return GetCommunicationStatus() === "CONNECTED"
+        })
 
     return {
         InitializeSocketMonitoring,
         TryInitializeSocketMonitoring,
         IsSocketBeingMonitored,
         Overview,
-        GetMonitoringKeys: () => Object.keys(allMonitoringState),
+        GetMonitoringKeysReady,
         AddEventListener,
-        GetSocketMonitoringState
+        GetSocketMonitoringState: _GetMonitoringStateByKey
     }
 }
 

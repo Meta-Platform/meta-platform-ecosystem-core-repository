@@ -21,21 +21,15 @@ import {
 	useNavigate
   } from "react-router-dom"
 
-
 import SocketFileList from "../../Lists/SocketFile.list"
 import GetAPI from "../../Utils/GetAPI"
-import TaskListContainer from "../../Containers/TaskList.container"
-import TaskGroupByLoaderContainer from "../../Containers/TaskGroupByLoader.container"
-
-import TaskInformation from "../../Components/TaskInformation"
+import Tasks from "./Tasks"
 
 import QueryParamsActionsCreator from "../../Actions/QueryParams.actionsCreator"
 
 import useFetchInstanceTaskList from "../../Hooks/useFetchInstanceTaskList"
 
 const Column = Grid.Column
-
-import TaskCardGroup from "./Task.cardGroup"
 
 import OverviewSocketPanel from "./OverviewSocketPanel"
 
@@ -62,8 +56,6 @@ const InstanceSupervisorContainer = ({
 			apiName:"InstancesSupervisor",
 			serverManagerInformation: HTTPServerManager
 		})
-
-	
 
 	useEffect(() => {
 
@@ -126,8 +118,6 @@ const InstanceSupervisorContainer = ({
             HTTPServerManager
         })
 
-
-
 	const fetchTaskInformation = () => 
 		_GetSupervisorAPI()
 		.GetTaskInformation({ monitoringStateKey:monitoringStateKeySelected, taskId:taskIdSelected })
@@ -153,70 +143,27 @@ const InstanceSupervisorContainer = ({
 		RemoveQueryParam("taskId")
 	}
 
-	const taskViewPanes = [
-		{
-			menuItem: 'group by loader', render: () => 
-			<TabPane>
-				<TaskGroupByLoaderContainer
-					instanceTaskListSelected={instanceTaskListSelected}
-					taskIdSelected={taskIdSelected}
-					onSelectTask={handleSelectTask}/>
-			</TabPane>
-		},
-		{
-			menuItem: 'list by id', render: () => 
-			<TabPane style={{background: "#f6f7f8"}}>
-				<TaskListContainer
-					instanceTaskListSelected={instanceTaskListSelected}
-					taskIdSelected={taskIdSelected}
-					onSelectTask={handleSelectTask}/>
-			</TabPane>
-		},
-		{
-			menuItem: 'group by hierarchy', render: () => 
-			<TabPane style={{background: "#f6f7f8"}}>
-				group by hierarchy
-			</TabPane>
-		},
-		{
-			menuItem: 'diagram', render: () => 
-			<TabPane>
-				diagram
-			</TabPane>
-		}
-
-	]
+	const handleSelectTask = (taskId) => 
+		setTaskIdSelected(taskId)
 
 	const mainPanes = [
 		{
-			menuItem: <MenuItem key='Tasks' style={{background: "aliceblue"}}>
-							Tasks
+			menuItem: <MenuItem key='tasks' style={{background: "aliceblue"}}>
+							tasks
 							<Label>{instanceTaskListSelected.length}</Label>
 					</MenuItem>,
 		   render: () => 
 			<TabPane style={{background: "aliceblue"}}>
-				<Grid columns="three" style={{background: "aliceblue"}} divided>
-					<Column width={taskIdSelected === undefined ? 16 : 11}>
-						<TaskCardGroup tasklist={instanceTaskListSelected}/>
-						<Tab menu={{ color: "aliceblue" , secondary: true, pointing: true }} panes={taskViewPanes} />
-					</Column>
-					{
-						taskIdSelected !== undefined
-						&& <Column width={5}>
-							{
-								taskInformationSelected
-								&& <TaskInformation taskInformation={taskInformationSelected}/>
-							}
-						</Column>
-					}
-				</Grid>
+				<Tasks 
+					taskIdSelected={taskIdSelected}
+					instanceTaskListSelected={instanceTaskListSelected}
+					taskInformationSelected={taskInformationSelected}
+					onSelectTask={handleSelectTask}
+				/>
 			</TabPane>
 		},
-		{ menuItem: 'Startup Params', render: () => <TabPane>Tab 2 Content</TabPane> },
+		{ menuItem: 'startup arguments', render: () => <TabPane>Tab 2 Content</TabPane> },
 	]
-
-	const handleSelectTask = (taskId) => 
-		setTaskIdSelected(taskId)
 
 	const handleBackTOverview = () => {
 		resetTaskSelection()

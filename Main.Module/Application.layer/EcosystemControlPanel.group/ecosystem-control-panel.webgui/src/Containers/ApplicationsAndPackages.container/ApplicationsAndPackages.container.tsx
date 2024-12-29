@@ -87,7 +87,7 @@ const ApplicationsAndPackagesContainer = ({ serverManagerInformation, QueryParam
 
     const mainPanes = [
 		{
-			menuItem: <MenuItem key='Tasks' style={{background: "aliceblue"}}>
+			menuItem: <MenuItem key='tasks' style={{background: "aliceblue"}}>
 							installed applications
 					</MenuItem>,
 		   render: () => 
@@ -98,7 +98,7 @@ const ApplicationsAndPackagesContainer = ({ serverManagerInformation, QueryParam
 			</TabPane>
 		},
         {
-			menuItem: <MenuItem key='Tasks' style={{background: "lightsteelblue"}}>
+			menuItem: <MenuItem key='tasks' style={{background: "lightsteelblue"}}>
 						installed packages
 					</MenuItem>,
 		   render: () => 

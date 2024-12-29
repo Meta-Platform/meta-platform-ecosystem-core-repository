@@ -31,7 +31,7 @@ const InstanceMonitoringManager = (params) => {
         Overview,
         TryInitializeSocketMonitoring,
         InitializeSocketMonitoring,
-        GetMonitoringKeys,
+        GetMonitoringKeysReady,
         GetSocketMonitoringState,
         AddEventListener
     } = CreateInstanceSocketHandlerManager({
@@ -112,7 +112,7 @@ const InstanceMonitoringManager = (params) => {
     
     const monitoringObject = {
         OverviewChangeListener,
-        GetMonitoringKeys,
+        GetMonitoringKeysReady,
         GetOverview: Overview,
         ListInstanceTasks,
         GetTaskInformation
