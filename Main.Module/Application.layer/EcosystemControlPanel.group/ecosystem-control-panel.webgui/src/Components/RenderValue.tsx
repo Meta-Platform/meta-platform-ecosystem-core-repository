@@ -40,7 +40,8 @@ const RenderValue = ({value}) => {
                             </ListItem>)
                     }
                 </List>
-    
+
+    return <div style={{ marginLeft:"10px", color:"rgb(98 98 98)", backgroundColor: "#e8e8e8", padding:"10px" }}>{value}</div>
 
 }
 

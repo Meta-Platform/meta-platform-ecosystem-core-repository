@@ -9,6 +9,7 @@ import "google/protobuf/wrappers.proto";
 service PackageExecutorRPCService {
   rpc Kill(google.protobuf.Empty) returns (google.protobuf.Empty) {}
   rpc GetStartupArguments(google.protobuf.Empty) returns (StartupArgumentsResponse) {}
+  rpc GetProcessInformation(google.protobuf.Empty) returns (ProcessInformationResponse) {}
   rpc GetStatus(google.protobuf.Empty) returns (ExecutionStatusResponse) {}
   rpc ListTasks(google.protobuf.Empty) returns (TaskListResponse) {}
   rpc GetTask(TaskRequest) returns (TaskInformation) {}
@@ -86,4 +87,10 @@ message StartupArgumentsResponse {
   string executableName = 7;
   string commandLineArgs = 8;
   string ecosystemDataPath = 9;
+}
+
+message ProcessInformationResponse {
+  int32 pid = 1;
+  string platform = 2;
+  string arch = 3;
 }
