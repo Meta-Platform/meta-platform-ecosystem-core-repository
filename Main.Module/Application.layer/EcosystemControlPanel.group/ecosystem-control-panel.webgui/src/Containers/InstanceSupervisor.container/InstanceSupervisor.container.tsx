@@ -171,8 +171,14 @@ const InstanceSupervisorContainer = ({
 			</TabPane>
 		},
 		{
-			menuItem: 'startup arguments',
-			render: () => <TabPane><StartupArguments startupArguments={startupArgumentsCurrent}/></TabPane>
+			menuItem: <MenuItem key='startup arguments' style={{background: "gainsboro"}}>
+							startup arguments		
+						</MenuItem>,
+			render: () =>
+				<TabPane style={{background: "gainsboro"}}>
+					<StartupArguments 
+						startupArguments={startupArgumentsCurrent}/>
+				</TabPane>
 		},
 	]
 
