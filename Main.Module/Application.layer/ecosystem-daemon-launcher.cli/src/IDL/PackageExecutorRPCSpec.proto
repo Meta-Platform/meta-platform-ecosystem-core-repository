@@ -8,6 +8,7 @@ import "google/protobuf/wrappers.proto";
 
 service PackageExecutorRPCService {
   rpc Kill(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc GetStartupArguments(google.protobuf.Empty) returns (StartupArgumentsResponse) {}
   rpc GetStatus(google.protobuf.Empty) returns (ExecutionStatusResponse) {}
   rpc ListTasks(google.protobuf.Empty) returns (TaskListResponse) {}
   rpc GetTask(TaskRequest) returns (TaskInformation) {}
@@ -73,4 +74,16 @@ message LogResponse {
   string sourceName = 1;
   string type = 2;
   string message = 3;
+}
+
+message StartupArgumentsResponse {
+  string packagePath = 1;
+  string startupJsonFilePath = 2;
+  string ecosystemDefaultJsonFilePath = 3;
+  string nodejsProjectDependenciesPath = 4;
+  bool verbose = 5;
+  string supervisorSocketPath = 6;
+  string executableName = 7;
+  string commandLineArgs = 8;
+  string ecosystemDataPath = 9;
 }

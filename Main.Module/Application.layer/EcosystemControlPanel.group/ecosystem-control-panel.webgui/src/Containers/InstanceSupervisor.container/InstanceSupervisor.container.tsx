@@ -15,7 +15,7 @@ import {
 	Button
  } from "semantic-ui-react"
 
-import qs                     from "query-string"
+import qs from "query-string"
 import { 
 	useLocation,
 	useNavigate
@@ -28,10 +28,12 @@ import Tasks from "./Tasks"
 import QueryParamsActionsCreator from "../../Actions/QueryParams.actionsCreator"
 
 import useFetchInstanceTaskList from "../../Hooks/useFetchInstanceTaskList"
+import useFetchStartupArguments from "../../Hooks/useFetchStartupArguments"
 
 const Column = Grid.Column
 
 import OverviewSocketPanel from "./OverviewSocketPanel"
+import StartupArguments from "./StartupArguments"
 
 const InstanceSupervisorContainer = ({
 	HTTPServerManager,
@@ -112,11 +114,17 @@ const InstanceSupervisorContainer = ({
 
 	}, [taskIdSelected])
 
-	const instanceTaskListSelected = 
+	const instanceTaskListCurrent = 
         useFetchInstanceTaskList({
             monitoringStateKeySelected,
             HTTPServerManager
         })
+
+	const startupArgumentsCurrent = 
+		useFetchStartupArguments({
+			monitoringStateKeySelected,
+			HTTPServerManager
+		})
 
 	const fetchTaskInformation = () => 
 		_GetSupervisorAPI()
@@ -130,7 +138,7 @@ const InstanceSupervisorContainer = ({
 			.then(({data}:any) => {
 				setMonitoringKeyList(data) 
 			})
-
+	
 	const resetTaskSelection = () => {
 		setTaskIdSelected(undefined)
 		setTaskInformationSelected(undefined)
@@ -150,19 +158,22 @@ const InstanceSupervisorContainer = ({
 		{
 			menuItem: <MenuItem key='tasks' style={{background: "aliceblue"}}>
 							tasks
-							<Label>{instanceTaskListSelected.length}</Label>
+							<Label>{instanceTaskListCurrent.length}</Label>
 					</MenuItem>,
 		   render: () => 
 			<TabPane style={{background: "aliceblue"}}>
 				<Tasks 
-					taskIdSelected={taskIdSelected}
-					instanceTaskListSelected={instanceTaskListSelected}
-					taskInformationSelected={taskInformationSelected}
+					taskId={taskIdSelected}
+					instanceTaskList={instanceTaskListCurrent}
+					taskInformation={taskInformationSelected}
 					onSelectTask={handleSelectTask}
 				/>
 			</TabPane>
 		},
-		{ menuItem: 'startup arguments', render: () => <TabPane>Tab 2 Content</TabPane> },
+		{
+			menuItem: 'startup arguments',
+			render: () => <TabPane><StartupArguments startupArguments={startupArgumentsCurrent}/></TabPane>
+		},
 	]
 
 	const handleBackTOverview = () => {

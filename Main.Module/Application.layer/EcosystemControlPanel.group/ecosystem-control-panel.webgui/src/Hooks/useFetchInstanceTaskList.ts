@@ -7,12 +7,12 @@ const useFetchInstanceTaskList = ({
     HTTPServerManager
 }) => {
 
-    const [instanceTaskListSelected, setInstanceTaskListSelected] = useState([])
+    const [instanceTaskListCurrent, setInstanceTaskListCurrent] = useState([])
 
     useEffect(() => {
 
 		if(monitoringStateKeySelected){
-			setInstanceTaskListSelected([])
+			setInstanceTaskListCurrent([])
 			fetchInstanceTasks()
 		}
 		
@@ -23,9 +23,9 @@ const useFetchInstanceTaskList = ({
 	const fetchInstanceTasks = () =>
 		_GetWebservice(process.env.SERVER_APP_NAME, "InstancesSupervisor")
 			.ListInstanceTasks({ monitoringStateKey:monitoringStateKeySelected})
-			.then(({data}:any) => setInstanceTaskListSelected(data))
+			.then(({data}:any) => setInstanceTaskListCurrent(data))
     
-    return instanceTaskListSelected
+    return instanceTaskListCurrent
 }
 
 export default useFetchInstanceTaskList

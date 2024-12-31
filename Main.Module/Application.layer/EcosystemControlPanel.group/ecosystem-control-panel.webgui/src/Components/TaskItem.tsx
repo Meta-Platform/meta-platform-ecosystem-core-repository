@@ -56,13 +56,13 @@ const RenderItemTitle = ({
 
 const TaskItem = ({
     task,
-	taskIdSelected,
+	taskId,
     onShowTaskDetails,
 	showObjectLoaderType=true
 }) => {
     return (
         <SegmentTaskStyled 
-			isSelected={task.taskId === taskIdSelected}
+			isSelected={task.taskId === taskId}
 			onClick={() => onShowTaskDetails(task.taskId)} style={{ backgroundColor: "#f4f4f4" }}>
             <div>
                 <span>

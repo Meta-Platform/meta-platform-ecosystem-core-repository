@@ -13,16 +13,16 @@ const useFetchStartupArguments = ({
 
 		if(monitoringStateKeySelected){
 			setStartupArgumentsCurrent(undefined)
-			fetchInstanceTasks()
+			fetchStartupArguments()
 		}
 		
 	}, [monitoringStateKeySelected])
 
     const _GetWebservice = GetRequestByServer(HTTPServerManager)
 	
-	const fetchInstanceTasks = () =>
+	const fetchStartupArguments = () =>
 		_GetWebservice(process.env.SERVER_APP_NAME, "InstancesSupervisor")
-			.ListInstanceTasks({ monitoringStateKey:monitoringStateKeySelected})
+			.GetStartupArguments({ monitoringStateKey:monitoringStateKeySelected})
 			.then(({data}:any) => setStartupArgumentsCurrent(data))
     
     return startupArgumentsCurrent

@@ -15,9 +15,9 @@ const Column = Grid.Column
 import TaskCardGroup from "./Task.cardGroup"
 
 const Tasks = ({
-    taskIdSelected,
-    instanceTaskListSelected,
-    taskInformationSelected,
+    taskId,
+    instanceTaskList,
+    taskInformation,
     onSelectTask
 }) => {
 	const taskViewPanes = [
@@ -25,8 +25,8 @@ const Tasks = ({
 			menuItem: 'group by loader', render: () => 
 			<TabPane>
 				<TaskGroupByLoaderContainer
-					instanceTaskListSelected={instanceTaskListSelected}
-					taskIdSelected={taskIdSelected}
+					instanceTaskList={instanceTaskList}
+					taskId={taskId}
 					onSelectTask={onSelectTask}/>
 			</TabPane>
 		},
@@ -34,8 +34,8 @@ const Tasks = ({
 			menuItem: 'list by id', render: () => 
 			<TabPane style={{background: "#f6f7f8"}}>
 				<TaskListContainer
-					instanceTaskListSelected={instanceTaskListSelected}
-					taskIdSelected={taskIdSelected}
+					instanceTaskList={instanceTaskList}
+					taskId={taskId}
 					onSelectTask={onSelectTask}/>
 			</TabPane>
 		},
@@ -55,16 +55,16 @@ const Tasks = ({
 	]
 
     return <Grid columns="three" style={{background: "aliceblue"}} divided>
-                <Column width={taskIdSelected === undefined ? 16 : 11}>
-                    <TaskCardGroup tasklist={instanceTaskListSelected}/>
+                <Column width={taskId === undefined ? 16 : 11}>
+                    <TaskCardGroup tasklist={instanceTaskList}/>
                     <Tab menu={{ color: "aliceblue" , secondary: true, pointing: true }} panes={taskViewPanes} />
                 </Column>
                 {
-                    taskIdSelected !== undefined
+                    taskId !== undefined
                     && <Column width={5}>
                         {
-                            taskInformationSelected
-                            && <TaskInformation taskInformation={taskInformationSelected}/>
+                            taskInformation
+                            && <TaskInformation taskInformation={taskInformation}/>
                         }
                     </Column>
                 }

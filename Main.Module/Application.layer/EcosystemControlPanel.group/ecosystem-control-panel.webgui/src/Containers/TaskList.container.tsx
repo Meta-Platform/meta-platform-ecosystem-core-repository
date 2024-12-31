@@ -3,20 +3,20 @@ import * as React             from "react"
 import TaskItem from "../Components/TaskItem"
 
 const TaskListContainer = ({
-	instanceTaskListSelected,
-    taskIdSelected,
+	instanceTaskList,
+    taskId,
     onSelectTask
 }:any) => {
 	return <>
                 { 
-                    instanceTaskListSelected 
+                    instanceTaskList 
                     && <div style={{ overflow: 'auto', maxHeight:"87vh" }}>
                             {
-                                instanceTaskListSelected
+                                instanceTaskList
                                 .map((task, index) =>
                                     <TaskItem 
                                         key={index} 
-                                        taskIdSelected={taskIdSelected}
+                                        taskId={taskId}
                                         task={task}
                                         onShowTaskDetails={taskId => onSelectTask(taskId)}/>)
                             }

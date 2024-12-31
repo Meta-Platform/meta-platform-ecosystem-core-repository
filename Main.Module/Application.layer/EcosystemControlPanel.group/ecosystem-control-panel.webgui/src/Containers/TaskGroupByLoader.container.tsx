@@ -9,18 +9,17 @@ import {
  } from "semantic-ui-react"
 
 const TaskGroupByLoaderContainer = ({
-	instanceTaskListSelected,
-    taskIdSelected,
+	instanceTaskList,
+    taskId,
     onSelectTask
 }:any) => {
 
-
     const [groupedInstanceTasks, setGroupedInstanceTasks] = useState({})
 
-    useEffect(() => _UpdateTaskGrouping(), [instanceTaskListSelected])
+    useEffect(() => _UpdateTaskGrouping(), [instanceTaskList])
 
     const _UpdateTaskGrouping = () => {
-        const groupedTasks = instanceTaskListSelected
+        const groupedTasks = instanceTaskList
             .reduce((acc, task) => {
                 if(acc[task.objectLoaderType])
                     acc[task.objectLoaderType].push(task)
@@ -31,7 +30,6 @@ const TaskGroupByLoaderContainer = ({
 
         setGroupedInstanceTasks(groupedTasks)
     }
-
 
 	return <>                
                 {
@@ -44,7 +42,7 @@ const TaskGroupByLoaderContainer = ({
                                     .map((task, index) =>
                                         <TaskItem 
                                             key={index} 
-                                            taskIdSelected={taskIdSelected}
+                                            taskId={taskId}
                                             task={task}
                                             showObjectLoaderType={false}
                                             onShowTaskDetails={taskId => onSelectTask(taskId)}/>)
@@ -54,6 +52,5 @@ const TaskGroupByLoaderContainer = ({
                     }
             </>
 }
-
 
 export default TaskGroupByLoaderContainer

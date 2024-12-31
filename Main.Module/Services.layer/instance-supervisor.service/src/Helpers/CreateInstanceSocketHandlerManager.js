@@ -10,7 +10,6 @@ const CreateMonitoringStateKey = (socketFilePath) => {
     return hash.digest('hex')
 }
 
-
 const CreateSocketMonitoringState = require("./CreateSocketMonitoringState")
 
 const CreateInstanceSocketHandlerManager = ({
@@ -64,7 +63,6 @@ const CreateInstanceSocketHandlerManager = ({
 
     const AddEventListener = (f) => 
         eventEmitter.on(NEW_EVENT, f)
-
 
     const GetMonitoringKeysReady = () => 
         _GetMonitoringKeys()

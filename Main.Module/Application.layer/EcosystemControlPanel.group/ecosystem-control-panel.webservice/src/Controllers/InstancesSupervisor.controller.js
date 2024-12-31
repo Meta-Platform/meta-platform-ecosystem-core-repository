@@ -39,15 +39,15 @@ const InstancesSupervisorController = (params) => {
     }
 
     const controllerServiceObject = {
-        controllerName : "InstancesSupervisorController",
-        ListMonitoringKeys: instanceMonitoringManager.GetMonitoringKeysReady,
-        Overview: instanceMonitoringManager.GetOverview,
-        ListInstanceTasks: instanceMonitoringManager.ListInstanceTasks,
-        GetTaskInformation: instanceMonitoringManager.GetTaskInformation,
-        KillInstance: (socketFileName) => {},
+        controllerName         : "InstancesSupervisorController",
+        ListMonitoringKeys     : instanceMonitoringManager.GetMonitoringKeysReady,
+        Overview               : instanceMonitoringManager.GetOverview,
+        ListInstanceTasks      : instanceMonitoringManager.ListInstanceTasks,
+        GetTaskInformation     : instanceMonitoringManager.GetTaskInformation,
+        GetStartupArguments    : instanceMonitoringManager.GetStartupArguments,
+        KillInstance           : (socketFileName) => {},
         InstanceOverviewChange
     }
-
     return Object.freeze(controllerServiceObject)
     
 }

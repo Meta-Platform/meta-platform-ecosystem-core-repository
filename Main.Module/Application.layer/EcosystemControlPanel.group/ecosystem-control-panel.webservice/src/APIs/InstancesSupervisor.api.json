@@ -60,6 +60,19 @@
 					"required": true
 				}
 			]
+		},
+		{
+			"summary": "GetStartupArguments",
+			"method": "GET",
+			"path": "/start-arguments/:monitoringStateKey",
+			"parameters": [
+				{
+					"name": "monitoringStateKey",
+					"in": "path",
+					"type": "string",
+					"required": true
+				}
+			]
 		}
 	]
 }
