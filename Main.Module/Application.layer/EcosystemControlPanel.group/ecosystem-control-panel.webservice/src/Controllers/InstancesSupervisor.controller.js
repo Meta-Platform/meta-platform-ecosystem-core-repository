@@ -45,6 +45,7 @@ const InstancesSupervisorController = (params) => {
         ListInstanceTasks      : instanceMonitoringManager.ListInstanceTasks,
         GetTaskInformation     : instanceMonitoringManager.GetTaskInformation,
         GetStartupArguments    : instanceMonitoringManager.GetStartupArguments,
+        GetProcessInformation  : instanceMonitoringManager.GetProcessInformation,
         KillInstance           : (socketFileName) => {},
         InstanceOverviewChange
     }

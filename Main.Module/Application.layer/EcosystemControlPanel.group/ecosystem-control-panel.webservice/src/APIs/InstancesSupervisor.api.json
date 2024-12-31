@@ -73,6 +73,21 @@
 					"required": true
 				}
 			]
+		},
+		{
+			"summary": "GetProcessInformation",
+			"method": "GET",
+			"path": "/process-info/:monitoringStateKey",
+			"parameters": [
+				{
+					"name": "monitoringStateKey",
+					"in": "path",
+					"type": "string",
+					"required": true
+				}
+			]
 		}
+
+		
 	]
 }

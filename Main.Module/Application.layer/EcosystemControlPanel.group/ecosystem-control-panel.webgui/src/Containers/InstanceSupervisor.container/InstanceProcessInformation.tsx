@@ -1,20 +1,19 @@
 import * as React from "react"
 
-
 import { Segment } from "semantic-ui-react"
 
 import RenderValue from "../../Components/RenderValue"
 
-const StartupArguments = ({
-    startupArguments
+const InstanceProcessInformation = ({
+    processInformation
 }) => {
     return <Segment>
         {
-            Object.keys(startupArguments)
-            .map((paramName, key) => startupArguments[paramName]
+            Object.keys(processInformation)
+            .map((paramName, key) => processInformation[paramName]
             ? <div key={key} style={{marginBottom:"10px"}}>
                     <strong>{paramName}</strong>
-                    <RenderValue value={startupArguments[paramName]}/>
+                    <RenderValue value={processInformation[paramName]}/>
                 </div>
             : <></>)
         }
@@ -22,4 +21,4 @@ const StartupArguments = ({
 }
 
 
-export default StartupArguments
+export default InstanceProcessInformation

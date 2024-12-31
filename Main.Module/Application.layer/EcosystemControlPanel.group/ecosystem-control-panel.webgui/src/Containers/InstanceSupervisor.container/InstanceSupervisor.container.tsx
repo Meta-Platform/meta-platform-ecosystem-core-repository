@@ -27,13 +27,15 @@ import Tasks from "./Tasks"
 
 import QueryParamsActionsCreator from "../../Actions/QueryParams.actionsCreator"
 
-import useFetchInstanceTaskList from "../../Hooks/useFetchInstanceTaskList"
-import useFetchStartupArguments from "../../Hooks/useFetchStartupArguments"
+import useFetchInstanceTaskList    from "../../Hooks/useFetchInstanceTaskList"
+import useFetchStartupArguments    from "../../Hooks/useFetchStartupArguments"
+import useFetchInstanceInformation from "../../Hooks/useFetchInstanceInformation"
 
 const Column = Grid.Column
 
 import OverviewSocketPanel from "./OverviewSocketPanel"
 import StartupArguments from "./StartupArguments"
+import InstanceProcessInformation from "./InstanceProcessInformation"
 
 const InstanceSupervisorContainer = ({
 	HTTPServerManager,
@@ -126,6 +128,11 @@ const InstanceSupervisorContainer = ({
 			HTTPServerManager
 		})
 
+	const instanceProcessInformationCurrent = 
+		useFetchInstanceInformation({
+			monitoringStateKeySelected,
+			HTTPServerManager
+		})
 	const fetchTaskInformation = () => 
 		_GetSupervisorAPI()
 		.GetTaskInformation({ monitoringStateKey:monitoringStateKeySelected, taskId:taskIdSelected })
@@ -180,6 +187,16 @@ const InstanceSupervisorContainer = ({
 						startupArguments={startupArgumentsCurrent}/>
 				</TabPane>
 		},
+		{
+			menuItem: <MenuItem key='instance process information' style={{background: "plum"}}>
+							instance process information		
+						</MenuItem>,
+			render: () =>
+				<TabPane style={{background: "plum"}}>
+					<InstanceProcessInformation
+						processInformation={instanceProcessInformationCurrent}/>
+				</TabPane>
+		}
 	]
 
 	const handleBackTOverview = () => {
