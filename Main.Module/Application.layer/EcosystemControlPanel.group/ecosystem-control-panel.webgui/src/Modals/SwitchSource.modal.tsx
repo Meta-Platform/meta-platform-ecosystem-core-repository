@@ -14,7 +14,7 @@ type ModalProps = {
     onClose           : Function
 }
 
-import SourceParamsTable from "../Containers/Sources.container/SourceParams.table"
+import SourceParamsTable from "../Containers/RepositorySources.container/SourceParams.table"
 
 const SourceTypeListItem = ({
     repositorySourceData

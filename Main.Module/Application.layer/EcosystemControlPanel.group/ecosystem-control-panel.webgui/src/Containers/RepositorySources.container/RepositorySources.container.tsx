@@ -84,7 +84,7 @@ const RepositoryNamespaceCard = ({
     </Card>
 }
 
-const SourcesContainer = ({ serverManagerInformation }:any) => {
+const RepositorySourcesContainer = ({ serverManagerInformation }:any) => {
 
     const [ sourceList, setSourceList ] = useState<any[]>([])
     const [ activeSourceList, setActiveSourceList ] = useState<any[]>([])
@@ -178,4 +178,4 @@ const SourcesContainer = ({ serverManagerInformation }:any) => {
             </>
 }
 
-export default SourcesContainer
+export default RepositorySourcesContainer

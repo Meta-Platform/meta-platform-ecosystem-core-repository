@@ -36,7 +36,7 @@ const Column = Grid.Column
 
 import EnvironmentsContainer            from "../Containers/Environments.container"
 import ApplicationsAndPackagesContainer from "../Containers/ApplicationsAndPackages.container"
-import SourcesContainer                 from "../Containers/Sources.container"
+import RepositorySourcesContainer                 from "../Containers/RepositorySources.container"
 import InstanceSupervisorContainer      from "../Containers/InstanceSupervisor.container"
 import ConfigurationsContainer          from "../Containers/Configurations.container"
 import EcosystemDataPathModal           from "../Modals/EcosystemDataPath.modal"
@@ -253,7 +253,7 @@ const ControlPanelPage = ({
 							}
 							{
 								activeItem === "repository sources"
-								&& <SourcesContainer serverManagerInformation={HTTPServerManager}/>
+								&& <RepositorySourcesContainer serverManagerInformation={HTTPServerManager}/>
 							}
 							{
 								activeItem === "configs"
