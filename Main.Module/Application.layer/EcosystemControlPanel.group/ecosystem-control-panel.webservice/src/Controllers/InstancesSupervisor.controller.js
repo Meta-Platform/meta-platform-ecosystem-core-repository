@@ -46,7 +46,7 @@ const InstancesSupervisorController = (params) => {
         GetTaskInformation     : instanceMonitoringManager.GetTaskInformation,
         GetStartupArguments    : instanceMonitoringManager.GetStartupArguments,
         GetProcessInformation  : instanceMonitoringManager.GetProcessInformation,
-        KillInstance           : (socketFileName) => {},
+        KillInstance           : instanceMonitoringManager.KillInstance,
         InstanceOverviewChange
     }
     return Object.freeze(controllerServiceObject)

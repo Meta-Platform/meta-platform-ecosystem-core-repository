@@ -161,6 +161,13 @@ const InstanceSupervisorContainer = ({
 	const handleSelectTask = (taskId) => 
 		setTaskIdSelected(taskId)
 
+	const KillInstance = () => {
+		_GetSupervisorAPI()
+		.KillInstance({ monitoringStateKey:monitoringStateKeySelected })
+	}
+
+	const handleKillInstance = () => KillInstance()
+
 	const mainPanes = [
 		{
 			menuItem: <MenuItem key='tasks' style={{background: "aliceblue"}}>
@@ -217,7 +224,7 @@ const InstanceSupervisorContainer = ({
 					<Column width={13}>
 						<Menu>
 							<MenuItem>
-								<Button icon color="red">
+								<Button icon color="red" onClick={() => handleKillInstance()}>
 									<Icon name='close'/>
 									kill instance
 								</Button>

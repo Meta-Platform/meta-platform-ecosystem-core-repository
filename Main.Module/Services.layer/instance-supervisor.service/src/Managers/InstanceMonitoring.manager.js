@@ -103,15 +103,22 @@ const InstanceMonitoringManager = (params) => {
         const responseData = await communicationClient[fname](fArgs)
         return responseData
     }
+
+    const ListInstanceTasks     = async (monitoringStateKey) =>           await _CallRPC(monitoringStateKey, "ListTasks")
+    const GetTaskInformation    = async ({monitoringStateKey, taskId}) => await _CallRPC(monitoringStateKey, "GetTask", taskId)
+    const GetStartupArguments   = async (monitoringStateKey) =>           await _CallRPC(monitoringStateKey, "GetStartupArguments")
+    const GetProcessInformation = async (monitoringStateKey) =>           await _CallRPC(monitoringStateKey, "GetProcessInformation")
+    const KillInstance          = async (monitoringStateKey) =>           await _CallRPC(monitoringStateKey, "KillInstance")
     
     const monitoringObject = {
         OverviewChangeListener,
         GetMonitoringKeysReady,
         GetOverview: Overview,
-        ListInstanceTasks     : async (monitoringStateKey) =>           await _CallRPC(monitoringStateKey, "ListTasks"),
-        GetTaskInformation    : async ({monitoringStateKey, taskId}) => await _CallRPC(monitoringStateKey, "GetTask", taskId) ,
-        GetStartupArguments   : async (monitoringStateKey) =>           await _CallRPC(monitoringStateKey, "GetStartupArguments"),
-        GetProcessInformation : async (monitoringStateKey) =>           await _CallRPC(monitoringStateKey, "GetProcessInformation")
+        ListInstanceTasks,
+        GetTaskInformation,
+        GetStartupArguments,
+        GetProcessInformation,
+        KillInstance
     }
         
     _Start()
