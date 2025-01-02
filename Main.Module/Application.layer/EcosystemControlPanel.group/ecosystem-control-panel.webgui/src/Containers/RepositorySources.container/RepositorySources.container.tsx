@@ -19,7 +19,7 @@ import SwitchSourceModal from "../../Modals/SwitchSource.modal"
 
 import SourceParamsTable from "./SourceParams.table"
 
-import RepositoryNamespaceCard from "./RepositoryNamespace.card"
+import RepositorySourceCard from "./RepositorySource.card"
 
 const GroupSources = (sourceList) => {
 
@@ -108,7 +108,7 @@ const RepositorySourcesContainer = ({ serverManagerInformation }:any) => {
                             {
                                 Object.keys(groupedSources)
                                 .map((repositoryNamespace) =>
-                                    <RepositoryNamespaceCard
+                                    <RepositorySourceCard
                                         serverManagerInformation={serverManagerInformation}
                                         onOpenSwitchSource={handleOpenSwitchSource}
                                         activeSourceList={activeSourceList}

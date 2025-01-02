@@ -10,7 +10,7 @@ import {
 
 import GetAPI from "../../Utils/GetAPI"
 
-const RepositoryNamespaceCard = ({
+const RepositorySourceCard = ({
     repositoryNamespace,
     serverManagerInformation,
     activeSourceList,
@@ -59,4 +59,4 @@ const RepositoryNamespaceCard = ({
     </Card>
 }
 
-export default RepositoryNamespaceCard
+export default RepositorySourceCard
