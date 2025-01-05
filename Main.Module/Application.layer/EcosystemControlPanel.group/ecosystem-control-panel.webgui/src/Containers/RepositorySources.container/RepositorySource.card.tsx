@@ -5,7 +5,8 @@ import {
     Segment,
     Button,
     ButtonGroup,
-    Card
+    Card,
+    Loader
 } from "semantic-ui-react"
 
 import GetAPI from "../../Utils/GetAPI"
@@ -43,19 +44,26 @@ const RepositorySourceCard = ({
     const handleUpdateRepository = () => UpdateRepository()
 
     return <Card style={{"width":"400px", "padding":"15px"}}>
-        <strong style={{"fontSize": "large"}}>{repositoryNamespace}</strong>
-        <Segment style={{"backgroundColor": "aliceblue"}}>
-            {
-                Object
-                .keys(activeSourceData.sourceData)
-                .filter((property) => property !== "repositoryNamespace")
-                .map((property) => <p>{property}<br/><strong>{activeSourceData.sourceData[property]}</strong></p>)
-            }
-        </Segment>
-        <ButtonGroup>
-            <Button onClick={() => onOpenSwitchSource(repositoryNamespace)}>switch source</Button>
-            <Button primary loading={isUpdating} onClick={handleUpdateRepository}>update repository</Button>
-        </ButtonGroup>
+        {
+            activeSourceData
+            ? <>
+                <strong style={{"fontSize": "large"}}>{repositoryNamespace}</strong>
+                <Segment style={{"backgroundColor": "aliceblue"}}>
+                    {
+                        Object
+                        .keys(activeSourceData.sourceData)
+                        .filter((property) => property !== "repositoryNamespace")
+                        .map((property) => <p>{property}<br/><strong>{activeSourceData.sourceData[property]}</strong></p>)
+                    }
+                </Segment>
+                <ButtonGroup>
+                    <Button onClick={() => onOpenSwitchSource(repositoryNamespace)}>switch source</Button>
+                    <Button primary loading={isUpdating} onClick={handleUpdateRepository}>update repository</Button>
+                </ButtonGroup>
+            </>
+            : <Loader/>
+        }
+        
     </Card>
 }
 

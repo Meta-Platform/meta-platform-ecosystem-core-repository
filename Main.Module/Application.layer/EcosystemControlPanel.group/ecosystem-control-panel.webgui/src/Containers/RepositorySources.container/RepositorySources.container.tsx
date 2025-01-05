@@ -20,6 +20,7 @@ import SwitchSourceModal from "../../Modals/SwitchSource.modal"
 import SourceParamsTable from "./SourceParams.table"
 
 import RepositorySourceCard from "./RepositorySource.card"
+import NewRepositorySourceCard from "./NewRepositorySource.card"
 
 const GroupSources = (sourceList) => {
 
@@ -44,6 +45,8 @@ const RepositorySourcesContainer = ({ serverManagerInformation }:any) => {
     const [ groupedSources, setGroupedSources] = useState({})
 
     const [ sourceDataListSwitchSourceSelected, setSourceDataListSwitchSourceSelected ] = useState<any[]>()
+
+    const [ newRepoMode, setNewRepoMode ] = useState(false)
 
     const _GetSourcesAPI = () => 
         GetAPI({ 
@@ -89,14 +92,24 @@ const RepositorySourcesContainer = ({ serverManagerInformation }:any) => {
 
     const handleCloseSwitchSource = () => setSourceDataListSwitchSourceSelected(undefined)
 
+    const handleAddNewRepository = () => {
+        setNewRepoMode(true)
+    }
+
+    const handleCreateRepositoryNamespace = (repositoryNamespace) => {
+        alert(repositoryNamespace)
+    }
+
     return <>
                 <Menu style={{margin:"1em", "backgroundColor": "honeydew"}} >
                     <MenuMenu position='right'>
-                        <MenuItem>
-                            <Button icon primary>
-                                add new repository namespace 
-                            </Button>
-                        </MenuItem>
+                        {
+                            !newRepoMode && <MenuItem>
+                                <Button icon primary onClick={handleAddNewRepository}>
+                                    add new repository namespace 
+                                </Button>
+                            </MenuItem>
+                        }
                     </MenuMenu>
                 </Menu>
                 <Segment style={{margin:"1em", "backgroundColor": "honeydew"}}>
@@ -105,15 +118,21 @@ const RepositorySourcesContainer = ({ serverManagerInformation }:any) => {
                         ? <Loader active style={{margin: "50px"}}/>
                         :<div style={{ overflow: 'auto', height:"77vh", "padding":"10px" }}>
                             <CardGroup>
-                            {
-                                Object.keys(groupedSources)
-                                .map((repositoryNamespace) =>
-                                    <RepositorySourceCard
-                                        serverManagerInformation={serverManagerInformation}
-                                        onOpenSwitchSource={handleOpenSwitchSource}
-                                        activeSourceList={activeSourceList}
-                                        repositoryNamespace={repositoryNamespace}/>)
-                            }
+                                {
+                                    newRepoMode
+                                    && <NewRepositorySourceCard 
+                                        onCancel={() => setNewRepoMode(false)}
+                                        onCreateRepositoryNamespace={handleCreateRepositoryNamespace}/>
+                                }
+                                {
+                                    Object.keys(groupedSources)
+                                    .map((repositoryNamespace) =>
+                                        <RepositorySourceCard
+                                            serverManagerInformation={serverManagerInformation}
+                                            onOpenSwitchSource={handleOpenSwitchSource}
+                                            activeSourceList={activeSourceList}
+                                            repositoryNamespace={repositoryNamespace}/>)
+                                }
                             </CardGroup>
                             
                         </div>
