@@ -2,6 +2,20 @@
 	"name": "Sources",
 	"endpoints": [
 		{
+			"summary":"CreateNewRepositoryNamespace",
+			"method":"POST",
+			"path":"/new-repository-namespace",
+			"parameters": [
+				{
+					"in": "body",
+					"name": "repositoryNamespace",
+					"type": "string",
+					"required": true
+				}
+			]
+			
+		},
+		{
 			"summary": "ListSources",
 			"method": "GET",
 			"path": "/sources"

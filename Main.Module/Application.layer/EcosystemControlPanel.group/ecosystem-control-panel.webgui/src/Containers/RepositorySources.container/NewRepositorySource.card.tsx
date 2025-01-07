@@ -52,27 +52,27 @@ const NewRepositorySourceCard = ({
     }
 
     return <Card style={{"width":"400px", "padding":"15px", "border":"2px solid blue"}}>
-        <strong style={{"fontSize": "large", color:"write"}}>new repository</strong>
-        <Segment style={{"backgroundColor": "blanchedalmond"}}>
-            <Form>
-                <FormField>
-                    <label>repository namespace</label>
-                    <input placeholder='repository namespace' onChange={({target:{value}}) => setRepositoryNamespace(value)}  />
-                </FormField>
-            </Form>
-        </Segment>
-        <ButtonGroup>
-            <Button  onClick={onCancel}>cancel</Button>
-            <Button color="orange" disabled={!repositoryNamespace} onClick={handleCreateNewRepository}>add</Button>
-        </ButtonGroup>
-       {
-            showModalConfirm
-            && <ConfirmModal 
-                    repositoryNamespace={repositoryNamespace}
-                    onGoBack={() => setShowModalConfirm(false)}
-                    onConfirm={handleModalConfirm}/>
-       }
-    </Card>
+                <strong style={{"fontSize": "large", color:"write"}}>new repository</strong>
+                <Segment style={{"backgroundColor": "blanchedalmond"}}>
+                    <Form>
+                        <FormField>
+                            <label>repository namespace</label>
+                            <input placeholder='repository namespace' onChange={({target:{value}}) => setRepositoryNamespace(value)}  />
+                        </FormField>
+                    </Form>
+                </Segment>
+                <ButtonGroup>
+                    <Button  onClick={onCancel}>cancel</Button>
+                    <Button color="orange" disabled={!repositoryNamespace} onClick={handleCreateNewRepository}>add</Button>
+                </ButtonGroup>
+                {
+                    showModalConfirm
+                    && <ConfirmModal 
+                            repositoryNamespace={repositoryNamespace}
+                            onGoBack={() => setShowModalConfirm(false)}
+                            onConfirm={handleModalConfirm}/>
+                }
+        </Card>
 }
 
 export default NewRepositorySourceCard

@@ -6,7 +6,9 @@ import {
     Button,
     ButtonGroup,
     Card,
-    Loader
+    Loader,
+    Tab,
+    MenuItem
 } from "semantic-ui-react"
 
 import GetAPI from "../../Utils/GetAPI"
@@ -43,19 +45,25 @@ const RepositorySourceCard = ({
 
     const handleUpdateRepository = () => UpdateRepository()
 
+    const panes = [
+        {
+			menuItem: 
+            <MenuItem key='tasks'>
+                LOCAL_FS
+            </MenuItem>,
+			render: () => 
+				<Tab.Pane>
+					dfgdfgsdfg
+				</Tab.Pane>
+		}
+    ]
+
     return <Card style={{"width":"400px", "padding":"15px"}}>
         {
             activeSourceData
             ? <>
                 <strong style={{"fontSize": "large"}}>{repositoryNamespace}</strong>
-                <Segment style={{"backgroundColor": "aliceblue"}}>
-                    {
-                        Object
-                        .keys(activeSourceData.sourceData)
-                        .filter((property) => property !== "repositoryNamespace")
-                        .map((property) => <p>{property}<br/><strong>{activeSourceData.sourceData[property]}</strong></p>)
-                    }
-                </Segment>
+                <Tab panes={panes} />
                 <ButtonGroup>
                     <Button onClick={() => onOpenSwitchSource(repositoryNamespace)}>switch source</Button>
                     <Button primary loading={isUpdating} onClick={handleUpdateRepository}>update repository</Button>

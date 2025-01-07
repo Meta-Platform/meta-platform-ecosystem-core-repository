@@ -8,14 +8,10 @@ import {
     MenuMenu,
     MenuItem,
     Button,
-    ButtonGroup,
-    CardGroup,
-    Card
+    CardGroup
 } from "semantic-ui-react"
 
 import GetAPI from "../../Utils/GetAPI"
-
-import SwitchSourceModal from "../../Modals/SwitchSource.modal"
 
 import SourceParamsTable from "./SourceParams.table"
 
@@ -55,9 +51,14 @@ const RepositorySourcesContainer = ({ serverManagerInformation }:any) => {
         })
     
     useEffect(() => {
+        updateAllList()
+    }, [])
+
+
+    const updateAllList = () => {
         fetchSourceList()
         fetchActiveSourceList()
-    }, [])
+    }
     
     const fetchSourceList = async () => {
         try {
@@ -83,7 +84,18 @@ const RepositorySourcesContainer = ({ serverManagerInformation }:any) => {
             console.log(e)
         }
     }
-    
+
+    const CreateNamespace = async (namespace) => {
+        try{
+            const api = _GetSourcesAPI()
+            await api.CreateNewRepositoryNamespace({repositoryNamespace: namespace})
+            updateAllList()
+            setNewRepoMode(false)
+        }catch(e){
+            console.log(e)
+        }
+    }
+
     const handleOpenSwitchSource = (repositoryNamespace) => {
         const sourceListFilteredByRepositoryNamespace = sourceList
         .filter((sourceData) => sourceData.repositoryNamespace === repositoryNamespace)
@@ -92,13 +104,9 @@ const RepositorySourcesContainer = ({ serverManagerInformation }:any) => {
 
     const handleCloseSwitchSource = () => setSourceDataListSwitchSourceSelected(undefined)
 
-    const handleAddNewRepository = () => {
-        setNewRepoMode(true)
-    }
+    const handleAddNewRepository = () => setNewRepoMode(true)
 
-    const handleCreateRepositoryNamespace = (repositoryNamespace) => {
-        alert(repositoryNamespace)
-    }
+    const handleCreateRepositoryNamespace = (repositoryNamespace) => CreateNamespace(repositoryNamespace)
 
     return <>
                 <Menu style={{margin:"1em", "backgroundColor": "honeydew"}} >
@@ -138,13 +146,7 @@ const RepositorySourcesContainer = ({ serverManagerInformation }:any) => {
                         </div>
                     }
                 </Segment>
-                {
-                    sourceDataListSwitchSourceSelected 
-                    && <SwitchSourceModal
-						sourceList={sourceDataListSwitchSourceSelected}
-					 	open={true}
-					 	onClose={handleCloseSwitchSource}/>
-                }
+               
             </>
 }
 

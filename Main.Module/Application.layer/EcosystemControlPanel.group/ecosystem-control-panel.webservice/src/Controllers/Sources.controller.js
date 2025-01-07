@@ -42,8 +42,7 @@ const ExtractActiveSourcesByRepoData = (repositoriesData) => {
 }
 
 const SourcesController = (params) => {
-
-
+ 
     const { 
         ecosystemdataHandlerService,
         ecosystemDefaultsFileRelativePath,
@@ -52,10 +51,10 @@ const SourcesController = (params) => {
         notificationHubService
     } = params
 
-
     const { NotifyEvent } = notificationHubService
 
     const ReadJsonFile = jsonFileUtilitiesLib.require("ReadJsonFile")
+    const WriteObjectToFile = jsonFileUtilitiesLib.require("WriteObjectToFile")
     const UpdateRepository = ecosystemInstallUtilitiesLib.require("UpdateRepository")
 
     const _GetEcosystemDefaults =  async () => {
@@ -64,35 +63,37 @@ const SourcesController = (params) => {
         return ecosystemDefaults
     }
 
-    const _GetSourcesData = async () => {
+    const _ResolvePathWithEcosystemDataPath = async (paramName) => {
         const ecosystemDefaults = await _GetEcosystemDefaults()
-        const sourcesDataFilePath = path.resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaults.REPOS_CONF_FILENAME_SOURCE_DATA)
-        const sourcesData = await ReadJsonFile(sourcesDataFilePath)
-        return sourcesData
+        return path.resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaults[paramName])
     }
 
-    const _GetRepositoriesData = async () => {
-        const ecosystemDefaults = await _GetEcosystemDefaults()
-        const repoDataFilePath = path.resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaults.REPOS_CONF_FILENAME_REPOS_DATA)
-        const repositoriesData = await ReadJsonFile(repoDataFilePath)
-        return repositoriesData
+    const _ReadConfigFile = async (paramName) => {
+        const confFilePath = await _ResolvePathWithEcosystemDataPath(paramName)
+        const configData = await ReadJsonFile(confFilePath)
+        return configData
+    }
+
+    const _WriteConfigFile = async (paramName, configData) => {
+        const confFilePath = await _ResolvePathWithEcosystemDataPath(paramName)
+        await WriteObjectToFile(confFilePath, configData)
     }
 
     const ListSources = async () => {
-        const sourcesData = await _GetSourcesData()
+        const sourcesData = await _ReadConfigFile("REPOS_CONF_FILENAME_SOURCE_DATA")
         const sourceList = ExtractSourceListBySourcesData(sourcesData)
         return sourceList
     }
 
     const ListActiveSources = async () => {
-        const repositoriesData = await _GetRepositoriesData()
+        const repositoriesData = await _ReadConfigFile("REPOS_CONF_FILENAME_REPOS_DATA")
         const activeSourcesList = ExtractActiveSourcesByRepoData(repositoriesData)
         return activeSourcesList
     }
 
     const UpdateRepositoryByNamespace = async (repositoryNamespace) => {
         
-        const repositoriesData = await _GetRepositoriesData()
+        const repositoriesData = await _ReadConfigFile("REPOS_CONF_FILENAME_REPOS_DATA")
         const {sourceData} = repositoriesData[repositoryNamespace]
 
         const ecosystemDefaults = await _GetEcosystemDefaults()
@@ -114,11 +115,30 @@ const SourcesController = (params) => {
         })
     }
 
+    const CreateNewRepositoryNamespace = async (repositoryNamespace) => {
+
+        const sourceData = await _ReadConfigFile("REPOS_CONF_FILENAME_SOURCE_DATA")
+
+        if(sourceData[repositoryNamespace] === undefined){
+
+            const newSourceData = {
+                ...sourceData,
+                [repositoryNamespace]: []
+            } 
+
+            await _WriteConfigFile("REPOS_CONF_FILENAME_SOURCE_DATA", newSourceData)
+            
+        } else {
+            throw `O namespace ${repositoryNamespace} já esta cadastrado!`
+        }
+    }
+
     return {
         controllerName : "SourcesController",
         ListSources,
         ListActiveSources,
-        UpdateRepository: UpdateRepositoryByNamespace
+        UpdateRepository: UpdateRepositoryByNamespace,
+        CreateNewRepositoryNamespace
     }
 }
 
