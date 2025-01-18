@@ -1,12 +1,12 @@
-# Ecosystem Daemon Launcher
+# Application Launcher
 
-E um aplicativo que inicia um daemon do ecosistema
+O applications laucher é um aplicativo de linha de comando que executa pacotes
 
 ## Comandos Disponíveis
 
 ```bash
 
 # Inicia um novo daemon
-mylauncher
+mylauncher 
 
 ```
