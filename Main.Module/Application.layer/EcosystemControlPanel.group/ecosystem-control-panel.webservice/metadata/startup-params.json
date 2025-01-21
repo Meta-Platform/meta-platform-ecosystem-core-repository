@@ -1,6 +1,6 @@
 {
     "port":"9084",
     "serverName":"RuntimeManagerWebserviceInstance",
-    "supervisorSocketsDirPath": "/home/kadisk/Workspaces/meta-platform-repo/EcosystemData/supervisor-sockets"
+    "supervisorSocketsDirPath": "~/meta-platform-repo/EcosystemData/supervisor-sockets"
 }
 

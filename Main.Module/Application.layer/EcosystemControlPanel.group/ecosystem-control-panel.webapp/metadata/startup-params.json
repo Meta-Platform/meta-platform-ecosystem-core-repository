@@ -3,7 +3,7 @@
     "serverName":"RuntimeManagerWebappInstance",
     "serverManagerUrl": "http://localhost:9999/server-manager/status",
     "RT_ENV_GENERATED_DIR_NAME":".generated_data",
-    "installDataDirPath":"/home/kadisk/Workspaces/meta-platform-repo/EcosystemData",
+    "installDataDirPath":"~/EcosystemData",
     "ecosystemDefaultsFileRelativePath":"config-files/ecosystem-defaults.json",
     "REPOS_CONF_FILENAME_REPOS_DATA":"repositories.json",
     "REPOS_CONF_EXT_MODULE_DIR":"Module", 
