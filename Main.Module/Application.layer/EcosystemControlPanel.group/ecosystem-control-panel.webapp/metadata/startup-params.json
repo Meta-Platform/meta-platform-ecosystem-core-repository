@@ -4,7 +4,7 @@
     "serverManagerUrl": "http://localhost:9999/server-manager/status",
     "RT_ENV_GENERATED_DIR_NAME":".generated_data",
     "installDataDirPath":"~/EcosystemData",
-    "ecosystemDefaultsFileRelativePath":"config-files/ecosystem-defaults.json",
+    "ecosystemDefaultsFileRelativePath":"./config-files/ecosystem-defaults.json",
     "REPOS_CONF_FILENAME_REPOS_DATA":"repositories.json",
     "REPOS_CONF_EXT_MODULE_DIR":"Module", 
     "REPOS_CONF_EXT_LAYER_DIR":"layer",

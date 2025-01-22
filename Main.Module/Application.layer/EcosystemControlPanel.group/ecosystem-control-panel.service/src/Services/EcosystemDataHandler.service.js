@@ -1,3 +1,12 @@
+
+const path = require("path")
+const os = require('os')
+
+const ConvertPathToAbsolutPath = (_path) => path
+    .join(_path)
+    .replace('~', os.homedir())
+
+
 const EcosystemDataHandlerService = (params) => {
 
     const {
@@ -10,7 +19,7 @@ const EcosystemDataHandlerService = (params) => {
     _Start()
 
     return {
-        GetEcosystemDataPath: () => installDataDirPath
+        GetEcosystemDataPath: () => ConvertPathToAbsolutPath(installDataDirPath)
     }
 
 }
