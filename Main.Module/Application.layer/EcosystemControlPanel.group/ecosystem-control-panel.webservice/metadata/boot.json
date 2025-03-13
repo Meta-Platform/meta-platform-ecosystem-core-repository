@@ -27,7 +27,7 @@
             }
         },
         {
-            "namespace": "@@/ecosystem-control-panel-service",
+            "namespace": "@@/environment-handler-service",
             "dependency": "@/ecosystem-control-panel.service/services/EnvironmentHandlerService",
             "bound-params":{
                 "jsonFileUtilitiesLib": "@/json-file-utilities.lib"
@@ -52,7 +52,7 @@
                 "serverService": "@@/server-service",
                 "supervisorLib": "@/supervisor.lib",
                 "instanceMonitoringManager": "@@/instance-monitoring-manager-service",
-                "environmentHandlerService": "@@/ecosystem-control-panel-service",
+                "environmentHandlerService": "@@/environment-handler-service",
                 "jsonFileUtilitiesLib": "@/json-file-utilities.lib"
             },
             "params":{
