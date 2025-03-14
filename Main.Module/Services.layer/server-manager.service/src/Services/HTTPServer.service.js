@@ -4,9 +4,8 @@ const bodyParser    = require("body-parser")
 const expressWs     = require("express-ws")
 const fs = require("fs")
 
-const APIEndpointsService    = require("./APIEndpoints")
-const StaticEndpointsService = require("./StaticEndpoints")
-
+const CreateAPIEndpointsService    = require("../Helpers/CreateAPIEndpointsService")
+const CreateStaticEndpointsService = require("../Helpers/CreateStaticEndpointsService")
 
 const HTTPServerService = (params) => {
 
@@ -34,16 +33,14 @@ const HTTPServerService = (params) => {
         server = app.listen(port, onReady)
     }
 
-    //TODO trocar path para URL
     const AddStaticEndpoint = ({path, staticDir}) => {
-        const staticEndpointsService = StaticEndpointsService({path, staticDir})
+        const staticEndpointsService = CreateStaticEndpointsService({path, staticDir})
         serviceList.push(staticEndpointsService)
         app.use(staticEndpointsService.GetRoute())
     }
 
-    //TODO trocar path para URL
     const AddServiceEndpoint = ({path, apiTemplate, service}) => {
-        const apiEndpointsService = APIEndpointsService({
+        const apiEndpointsService = CreateAPIEndpointsService({
             path,
             service, 
             apiTemplate

@@ -1,6 +1,6 @@
 const express  = require("express")
 
-const StaticEndpointsService = ({path, staticDir}) => {
+const CreateStaticEndpointsService = ({path, staticDir}) => {
 
     const router = express.Router()
     router.use(path, express.static(staticDir))
@@ -17,4 +17,4 @@ const StaticEndpointsService = ({path, staticDir}) => {
     }
 }
 
-module.exports = StaticEndpointsService
+module.exports = CreateStaticEndpointsService

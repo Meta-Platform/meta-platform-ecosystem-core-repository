@@ -20,7 +20,7 @@ const Send = async (typeResponse, response, data) => {
     } else response.send(data)
 }
 
-const APIEndpointsService = ({path, service, apiTemplate}) => {
+const CreateAPIEndpointsService = ({path, service, apiTemplate}) => {
 
     const summariesNotFound = []
 
@@ -90,7 +90,7 @@ const APIEndpointsService = ({path, service, apiTemplate}) => {
     return {
         GetData: () => {
             return {
-                serviceName: "APIEndpointsService", 
+                serviceName: "CreateAPIEndpointsService", 
                 path, 
                 service, 
                 apiTemplate, 
@@ -101,4 +101,4 @@ const APIEndpointsService = ({path, service, apiTemplate}) => {
     }
 }
 
-module.exports = APIEndpointsService
+module.exports = CreateAPIEndpointsService
