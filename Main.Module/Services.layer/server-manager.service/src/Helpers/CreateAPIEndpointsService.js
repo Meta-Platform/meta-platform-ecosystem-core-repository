@@ -20,7 +20,12 @@ const Send = async (typeResponse, response, data) => {
     } else response.send(data)
 }
 
-const CreateAPIEndpointsService = ({path, service, apiTemplate}) => {
+const CreateAPIEndpointsService = ({
+    path,
+    service,
+    apiTemplate,
+    needsAuth
+}) => {
 
     const summariesNotFound = []
 
@@ -74,23 +79,34 @@ const CreateAPIEndpointsService = ({path, service, apiTemplate}) => {
             }
         }
 
-        if(method.toLowerCase() === "ws"){
-            router[method.toLowerCase()](path, _CallbackWebSocket) 
-        }else{
-            router[method.toLowerCase()](path, _Callback) 
+        const _AuthenticationMiddleware = (request, response, next) => {
+            response.status(401).json({ 
+                error: 'Unauthorized'
+            })
         }
+
+        const _GetCallbackFunction = () => 
+            method.toLowerCase() === "ws"
+            ? _CallbackWebSocket
+            :_Callback
+        
+        if(needsAuth)
+            router[method.toLowerCase()](path, _AuthenticationMiddleware, _GetCallbackFunction()) 
+        else
+            router[method.toLowerCase()](path, _GetCallbackFunction())
+
 
         if(!service[summary])
             summariesNotFound.push(summary)
 
     }
-
+    
     Start()
 
     return {
         GetData: () => {
             return {
-                serviceName: "CreateAPIEndpointsService", 
+                serviceName: "APIEndpointsService", 
                 path, 
                 service, 
                 apiTemplate, 

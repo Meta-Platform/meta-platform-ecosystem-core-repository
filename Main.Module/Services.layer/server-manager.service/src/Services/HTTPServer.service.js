@@ -33,18 +33,20 @@ const HTTPServerService = (params) => {
         server = app.listen(port, onReady)
     }
 
-    const AddStaticEndpoint = ({path, staticDir}) => {
-        const staticEndpointsService = CreateStaticEndpointsService({path, staticDir})
+    const AddStaticEndpoint = ({path, staticDir, needsAuth}) => {
+        const staticEndpointsService = CreateStaticEndpointsService({path, staticDir, needsAuth})
         serviceList.push(staticEndpointsService)
         app.use(staticEndpointsService.GetRoute())
     }
 
-    const AddServiceEndpoint = ({path, apiTemplate, service}) => {
+    const AddServiceEndpoint = ({path, apiTemplate, service, needsAuth}) => {
         const apiEndpointsService = CreateAPIEndpointsService({
             path,
             service, 
-            apiTemplate
+            apiTemplate,
+            needsAuth
         })
+
         serviceList.push(apiEndpointsService)
         app.use(path, apiEndpointsService.GetRoute())
     }
