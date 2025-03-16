@@ -2,6 +2,8 @@ const express       = require("express")
 const cors          = require("cors")
 const bodyParser    = require("body-parser")
 const expressWs     = require("express-ws")
+const cookieParser = require('cookie-parser')
+
 const fs = require("fs")
 
 const CreateAPIEndpointsService    = require("../Helpers/CreateAPIEndpointsService")
@@ -15,7 +17,8 @@ const HTTPServerService = (params) => {
         name, 
         port,
         onReady,
-        onClose
+        onClose,
+        authenticationService
     } = params
 
     const app = express()
@@ -23,7 +26,8 @@ const HTTPServerService = (params) => {
 
     app.use(cors())
     app.use(bodyParser.json())
-
+    app.use(cookieParser())
+    
     let server = {}
 
     if (isNaN(parseInt(port, 10))) {
@@ -44,7 +48,8 @@ const HTTPServerService = (params) => {
             path,
             service, 
             apiTemplate,
-            needsAuth
+            needsAuth,
+            authenticationService
         })
 
         serviceList.push(apiEndpointsService)

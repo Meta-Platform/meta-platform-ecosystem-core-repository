@@ -3,8 +3,10 @@
   "version": "0.0.3",
   "author": "Kaio Cezar <kadisk.shark@gmail.com>",
   "dependencies": {
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "express": "^4.21.1",
-    "express-ws": "^5.0.2"
+    "express-ws": "^5.0.2",
+    "jsonwebtoken": "^9.0.2"
   }
 }

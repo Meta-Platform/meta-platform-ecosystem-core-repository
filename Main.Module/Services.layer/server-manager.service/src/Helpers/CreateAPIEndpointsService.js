@@ -24,7 +24,8 @@ const CreateAPIEndpointsService = ({
     path,
     service,
     apiTemplate,
-    needsAuth
+    needsAuth,
+    authenticationService
 }) => {
 
     const summariesNotFound = []
@@ -79,19 +80,13 @@ const CreateAPIEndpointsService = ({
             }
         }
 
-        const _AuthenticationMiddleware = (request, response, next) => {
-            response.status(401).json({ 
-                error: 'Unauthorized'
-            })
-        }
-
         const _GetCallbackFunction = () => 
             method.toLowerCase() === "ws"
             ? _CallbackWebSocket
             :_Callback
         
         if(needsAuth)
-            router[method.toLowerCase()](path, _AuthenticationMiddleware, _GetCallbackFunction()) 
+            router[method.toLowerCase()](path, authenticationService.GetMiddleware(), _GetCallbackFunction()) 
         else
             router[method.toLowerCase()](path, _GetCallbackFunction())
 

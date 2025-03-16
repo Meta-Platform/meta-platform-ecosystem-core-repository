@@ -2,6 +2,12 @@
     {
         "namespace": "HTTPServerService",
         "path": "Services/HTTPServer.service",
+        "bound-params":["authenticationService"],
         "params": ["name", "port"]
+    },
+    {
+        "namespace": "JWTAuthenticationService",
+        "path": "Services/JWTAuthentication.service",
+        "params": ["secretKey"]
     }
 ]
