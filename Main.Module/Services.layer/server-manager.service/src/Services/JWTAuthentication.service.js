@@ -23,10 +23,9 @@ const JWTAuthenticationService = (params) => {
     const GetMiddleware = () => (request, response, next) => {
         try{
             const token = ExtractTokenByRequest(request)
-            jwt.verify(token, secretKey)
+            request.authenticationData = jwt.verify(token, secretKey)
             next()
         }catch(e){
-            console.log(e)
             response.status(401).json({ 
                 error: 'Unauthorized'
             })

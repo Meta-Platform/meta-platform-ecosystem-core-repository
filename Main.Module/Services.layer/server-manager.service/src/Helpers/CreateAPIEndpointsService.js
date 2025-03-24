@@ -43,21 +43,26 @@ const CreateAPIEndpointsService = ({
         path, 
         method, 
         summary, 
+        forwardRawRequest,
         parameters
     }) => {
 
-        const _Callback = async (request, response, next)=>{
+        const _CallbackMiddleware = async (request, response, next) => {
             const params = getAllParams(request)
 
             try{
                 if(service[summary]){
+
+                    const { authenticationData } = request
+
                     if(!parameters){
-                        await Send(typeResponse, response, service[summary]())
+                        await Send(typeResponse, response, service[summary](authenticationData ? { authenticationData } : undefined))
                     }else if(Object.keys(params).length == 1 && parameters.length == 1){
-                        await Send(typeResponse, response, service[summary](params[Object.keys(params)[0]]))
+                        await Send(typeResponse, response, service[summary](params[Object.keys(params)[0]], authenticationData ? { authenticationData } : undefined))
                     }else{
-                        await Send(typeResponse, response, service[summary](params))
+                        await Send(typeResponse, response, service[summary](params, authenticationData ? { authenticationData } : undefined))
                     }
+                    
                 } else {
                     throw `O summary "${summary}"do controller "${service.controllerName}" está indefinido!`
                 }
@@ -67,28 +72,44 @@ const CreateAPIEndpointsService = ({
             
         }
 
-        const _CallbackWebSocket = (ws, request) => {
+        const _CallbackWebSocketMiddleware = (ws, request) => {
 
             const params = getAllParams(request)
             
             if(!parameters){
                 service[summary](ws)
             }else if(Object.keys(params).length == 1 && parameters.length == 1){
-                service[summary](ws, params[Object.keys(params)[0]])
+                service[summary](ws, params[Object.keys(params)[0]], authenticationData ? { authenticationData } : undefined)
             }else{
-                service[summary](ws, params)
+                service[summary](ws, params, authenticationData ? { authenticationData } : undefined)
             }
         }
 
-        const _GetCallbackFunction = () => 
-            method.toLowerCase() === "ws"
-            ? _CallbackWebSocket
-            :_Callback
+        
+        const _ForwardRaweRequestMiddleware = async (request, response, next) => {
+            try{
+                if(service[summary]){
+                    service[summary](request, response, next)
+                } else {
+                    throw `O summary "${summary}"do controller "${service.controllerName}" está indefinido!`
+                }
+            }catch(e){
+                next(e)
+            }
+        }
+
+        const _GetCallbackMiddlewareFunction = () => 
+            forwardRawRequest
+            ? _ForwardRaweRequestMiddleware
+            : method.toLowerCase() === "ws"
+                ? _CallbackWebSocketMiddleware
+                : _CallbackMiddleware
+        
         
         if(needsAuth)
-            router[method.toLowerCase()](path, authenticationService.GetMiddleware(), _GetCallbackFunction()) 
+            router[method.toLowerCase()](path, authenticationService.GetMiddleware(), _GetCallbackMiddlewareFunction()) 
         else
-            router[method.toLowerCase()](path, _GetCallbackFunction())
+            router[method.toLowerCase()](path, _GetCallbackMiddlewareFunction())
 
 
         if(!service[summary])
