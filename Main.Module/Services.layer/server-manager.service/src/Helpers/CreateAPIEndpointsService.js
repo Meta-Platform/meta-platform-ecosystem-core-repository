@@ -73,11 +73,13 @@ const CreateAPIEndpointsService = ({
         }
 
         const _CallbackWebSocketMiddleware = (ws, request) => {
-
+            
             const params = getAllParams(request)
+
+            const { authenticationData } = request
             
             if(!parameters){
-                service[summary](ws)
+                service[summary](ws, authenticationData ? { authenticationData } : undefined)
             }else if(Object.keys(params).length == 1 && parameters.length == 1){
                 service[summary](ws, params[Object.keys(params)[0]], authenticationData ? { authenticationData } : undefined)
             }else{
@@ -107,7 +109,10 @@ const CreateAPIEndpointsService = ({
         
         
         if(needsAuth)
-            router[method.toLowerCase()](path, authenticationService.GetMiddleware(), _GetCallbackMiddlewareFunction()) 
+            if(method.toLowerCase() === "ws")
+                router[method.toLowerCase()](path, authenticationService.GetWebSocketMiddleware(), _GetCallbackMiddlewareFunction()) 
+            else
+                router[method.toLowerCase()](path, authenticationService.GetMiddleware(), _GetCallbackMiddlewareFunction()) 
         else
             router[method.toLowerCase()](path, _GetCallbackMiddlewareFunction())
 

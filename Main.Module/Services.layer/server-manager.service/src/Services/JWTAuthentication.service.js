@@ -31,9 +31,21 @@ const JWTAuthenticationService = (params) => {
             })
         }
     }
+
+    const GetWebSocketMiddleware = () => (ws, request, next) => {
+        try{
+            const token = ExtractTokenByRequest(request)
+            request.authenticationData = jwt.verify(token, secretKey)
+            next()
+        }catch(e){
+            next(e)
+        }
+    }
+
     onReady()
     return {
-        GetMiddleware
+        GetMiddleware,
+        GetWebSocketMiddleware
     }
 }
 
