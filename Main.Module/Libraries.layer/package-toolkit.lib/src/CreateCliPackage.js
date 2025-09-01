@@ -1,16 +1,16 @@
-
 const { resolve } = require("path")
 
-const EXT_TYPE = "lib"
+const EXT_TYPE = "cli"
 
 const CreateBasePackage = require("./Helpers/CreateBasePackage")
 
-const CreateLibPackage = async ({
+const CreateCliPackage = async ({
     packageName,
     workingDirPath,
     author,
     PKG_CONF_DIRNAME_METADATA
 }) => {
+
     const namespace = `${packageName}.${EXT_TYPE}`
     const basePath = resolve(workingDirPath, namespace)
 
@@ -20,6 +20,6 @@ const CreateLibPackage = async ({
         author,
         PKG_CONF_DIRNAME_METADATA
     })
-    
+	
 }
-module.exports = CreateLibPackage
+module.exports = CreateCliPackage

@@ -6,11 +6,11 @@
         {
             "namespace": "CreateNewPackage",
             "path": "Commands/CreateNewPackage.command",
-            "command": "create [namespace]",
+            "command": "create [packageName]",
             "description": "Meu comando",
             "parameters": [
                 {
-                    "key": "namespace",
+                    "key": "packageName",
                     "paramType": "positional",
                     "valueType": "string",
                     "describe": "Namespace do pacote"
