@@ -1,0 +1,18 @@
+{
+    "commands": [
+        {
+            "namespace": "CreateNewPackage",
+            "path": "Commands/CreateNewPackage.command",
+            "command": "create [namespace]",
+            "description": "Meu comando",
+            "parameters": [
+                {
+                    "key": "namespace",
+                    "paramType": "positional",
+                    "valueType": "string",
+                    "describe": "Namespace do pacote"
+                }
+            ]
+        }
+    ]
+}

@@ -40,5 +40,11 @@
         "executable":"eco-panel",
         "packageNamespace":"Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.webapp",
         "supervisorSocketFileName":"eco-panel.sock"
+    },
+    {
+        "appType":"CLI",
+        "executable":"mypkg",
+        "packageNamespace":"Main.Module/Application.layer/package-toolkit.cli",
+        "supervisorSocketFileName":"package-toolkit.sock"
     }
 ]

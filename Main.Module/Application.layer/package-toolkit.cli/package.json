@@ -1,0 +1,9 @@
+{
+  "name": "package-toolkit.cli",
+  "version": "0.0.1",
+  "description": "Aplicação usada para criação, edição e exploração de pacotes",
+  "author": "Kaio Cezar <kadisk.shark@gmail.com>",
+  "dependencies": {
+    "inquirer": "^12.9.4"
+  }
+}

@@ -1,0 +1,8 @@
+{
+    "executables":[
+        {
+            "dependency": "@//command-group",
+            "executableName": "mypkg"
+        }
+    ]
+}
