@@ -20,6 +20,8 @@ const CreateLibPackage = async ({
         author,
         PKG_CONF_DIRNAME_METADATA
     })
+
+    return basePath
     
 }
 module.exports = CreateLibPackage
