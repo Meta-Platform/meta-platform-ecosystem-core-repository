@@ -1,0 +1,9 @@
+{
+    "name": "package-toolkit.lib",
+    "version": "0.0.1",
+    "author": "Kaio Cezar <kadisk.shark@gmail.com>",
+    "license": "BSD-3-Clause",
+    "dependencies": {
+        "colors": "^1.4.0"
+    }
+}
