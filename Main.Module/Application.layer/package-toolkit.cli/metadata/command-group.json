@@ -1,4 +1,7 @@
 {
+    "bound-params": [
+        "packageToolkitLib"
+    ],
     "commands": [
         {
             "namespace": "CreateNewPackage",
@@ -12,6 +15,9 @@
                     "valueType": "string",
                     "describe": "Namespace do pacote"
                 }
+            ],
+            "parametersToLoad": [
+                "packageToolkitLib"
             ]
         }
     ]
