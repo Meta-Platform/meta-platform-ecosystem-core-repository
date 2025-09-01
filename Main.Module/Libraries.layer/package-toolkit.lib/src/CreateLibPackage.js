@@ -22,17 +22,34 @@ const GITIGNORE_CONTENT = `
 node_modules
 `
 
-const CreateMetadata = async ({packageBasePath, PKG_CONF_DIRNAME_METADATA}) => {
+const CreatePackageMetadataFile = async({
+    namespace,
+    metadataDirPath
+}) => {
+    const filename = "package.json"
+    const content = {
+        namespace: `@/${namespace}`
+    }
+    const filePath = resolve(metadataDirPath, filename)
+    await WriteObjectToFile(filePath, content)
+}
+
+const CreateMetadata = async ({
+    namespace,
+    packageBasePath,
+    PKG_CONF_DIRNAME_METADATA
+}) => {
     const metadataDirPath = resolve(packageBasePath, PKG_CONF_DIRNAME_METADATA)
     await mkdir(metadataDirPath, { recursive: true })
+    await CreatePackageMetadataFile({ metadataDirPath, namespace })
 }
 
 const CreateLibPackage = async ({
     namespace,
     workingDirPath,
     author,
-    license,
-    PKG_CONF_DIRNAME_METADATA
+    PKG_CONF_DIRNAME_METADATA,
+    loggerEmitter
 }) => {
 
     const basePath = resolve(workingDirPath, `${namespace}.${EXT_TYPE}`)
@@ -47,11 +64,10 @@ const CreateLibPackage = async ({
             message: `O diretório base do pacote foi criado em ${colors.bold(srcPath)}`
         })
 
-    const nodejsPackageJsonFilePath = revolve(basePath, NODEJS_PACKAGE_JSON_FILENAME)
+    const nodejsPackageJsonFilePath = resolve(basePath, NODEJS_PACKAGE_JSON_FILENAME)
 
     const nodejsPackageJsonContent = {
         author,
-        license,
         ...NODEJS_PACKAGE_JSON_CONTENT
     }
 
@@ -60,6 +76,7 @@ const CreateLibPackage = async ({
     await CreateUtf8TextFile(gitignoreFilePath, GITIGNORE_CONTENT)
 
     await CreateMetadata({
+        namespace,
         packageBasePath: basePath,
         PKG_CONF_DIRNAME_METADATA
     })

@@ -1,13 +1,20 @@
 const inquirer = require('inquirer').default
 
-const CreateNewPackageCommand = async ({ args, startupParams, params }) => {
-    console.log(startupParams)
-    console.log(params)
 
+const AUTHOR = "Kaio Cezar <kadisk.shark@gmail.com>"
+
+const CreateNewPackageCommand = async ({ args, startupParams, params }) => {
+   
+    const { PKG_CONF_DIRNAME_METADATA } = startupParams
+    
+    const { packageToolkitLib } = params
+    
     try {
         const { namespace } = args
 
         if(namespace === undefined) throw "O namespace é obrigatório"
+
+        const CreateLibPackage = packageToolkitLib.require("CreateLibPackage")
 
         const { packageType } = await inquirer.prompt([
             {
@@ -19,8 +26,15 @@ const CreateNewPackageCommand = async ({ args, startupParams, params }) => {
             }
         ])
 
-        if(packageType === "lib"){
+        const workingDirPath = process.cwd()
 
+        if(packageType === "lib"){
+            await CreateLibPackage({
+                namespace,
+                workingDirPath,
+                author: AUTHOR,
+                PKG_CONF_DIRNAME_METADATA
+            })
         }
 
     } catch (error) {
