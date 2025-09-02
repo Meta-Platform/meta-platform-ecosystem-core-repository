@@ -1,9 +1,15 @@
 const { resolve } = require("path")
 
+const { 
+    mkdir
+} = require('node:fs/promises')
+
+const FILE_EXT = "js"
 const EXT_TYPE = "cli"
 
 const CreateBasePackage = require("./Helpers/CreateBasePackage")
 const WriteObjectToFile = require("./Utils/WriteObjectToFile")
+const CreateUtf8TextFile = require("./Utils/CreateUtf8TextFile")
 
 const CreateCliBootMetadataFile = async ({
     metadataDirPath,
@@ -45,8 +51,42 @@ const CreateCommandGroupMetadataFile = async ({
     await WriteObjectToFile(filePath, content)
 }
 
+const CreateCommandJSFile = async ({ commandsDirPath, namespace}) => {
+
+    const fileName = `${namespace}.command.${FILE_EXT}`
+    const filePath = resolve(commandsDirPath, fileName)
+
+    const content = `
+
+const ${namespace} = async ({ args, startupParams, params }) => {
+   
+    
+}
+
+module.exports = ${namespace}
+`
+    await CreateUtf8TextFile(filePath, content)
+    
+}
+
+const CreateAllCommandJSFile = async ({
+    executablesDefinition,
+    commandsDirPath
+}) => {
+    const fileCreatedPromises = executablesDefinition
+            .reduce((acc, { commands: commandsDef }) => {
+                const fileCreatedPromises = commandsDef
+                    .map(({ namespace }) => {
+                        return CreateCommandJSFile({ commandsDirPath, namespace })
+                    })
+                return [...acc, ...fileCreatedPromises ]
+            }, [])
+
+    await Promise.all(fileCreatedPromises)
+}
 
 const CreateCommandsStruct = async ({
+    srcPath,
     metadataDirPath,
     executablesDefinition
 }) => {
@@ -58,6 +98,14 @@ const CreateCommandsStruct = async ({
 
     await CreateCommandGroupMetadataFile({
         metadataDirPath,
+        executablesDefinition
+    })
+
+    const commandsDirPath = resolve(srcPath, "Commands")
+    await mkdir(commandsDirPath, { recursive: true })
+
+    await CreateAllCommandJSFile({
+        commandsDirPath,
         executablesDefinition
     })
 
@@ -75,6 +123,7 @@ const CreateCliPackage = async ({
     const basePath = resolve(workingDirPath, namespace)
 
     const {
+        srcPath,
         metadataDirPath
     } = await CreateBasePackage({
         basePath,
@@ -86,6 +135,7 @@ const CreateCliPackage = async ({
 
     //executablesDefinition
     await CreateCommandsStruct({
+        srcPath,
         metadataDirPath,
         executablesDefinition
     })
