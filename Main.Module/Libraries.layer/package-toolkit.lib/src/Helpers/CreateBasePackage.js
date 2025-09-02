@@ -6,7 +6,6 @@ const {
 const WriteObjectToFile = require("../Utils/WriteObjectToFile")
 const CreateUtf8TextFile = require("../Utils/CreateUtf8TextFile")
 
-
 const NODEJS_PACKAGE_JSON_FILENAME = "package.json"
 
 const NODEJS_PACKAGE_JSON_CONTENT = {
@@ -19,8 +18,7 @@ const GITIGNORE_FILENAME = ".gitignore"
 const GITIGNORE_CONTENT = `
 node_modules
 `
-
-const CreateMetadata = require("./CreateMetadata")
+const CreateMetadataStruct = require("./CreateMetadataStruct")
 
 const CreateBasePackage = async ({
     basePath,
@@ -45,7 +43,7 @@ const CreateBasePackage = async ({
     const gitignoreFilePath = resolve(basePath, GITIGNORE_FILENAME)
     await CreateUtf8TextFile(gitignoreFilePath, GITIGNORE_CONTENT)
 
-    await CreateMetadata({
+    await CreateMetadataStruct({
         namespace,
         packageBasePath: basePath,
         PKG_CONF_DIRNAME_METADATA
