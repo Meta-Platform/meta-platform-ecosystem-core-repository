@@ -13,6 +13,8 @@ const CreateMetadataStruct = async ({
     const metadataDirPath = resolve(packageBasePath, PKG_CONF_DIRNAME_METADATA)
     await mkdir(metadataDirPath, { recursive: true })
     await CreatePackageMetadataFile({ metadataDirPath, namespace })
+
+    return metadataDirPath
 }
 
 module.exports = CreateMetadataStruct

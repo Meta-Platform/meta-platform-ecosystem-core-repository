@@ -4,20 +4,44 @@
     ],
     "commands": [
         {
-            "namespace": "CreateNewPackage",
-            "path": "Commands/CreateNewPackage.command",
-            "command": "create [packageName]",
-            "description": "Meu comando",
-            "parameters": [
+            "namespace": "CreatePackage",
+            "command": "create",
+            "description": "Criar um pacote",
+            "children": [
                 {
-                    "key": "packageName",
-                    "paramType": "positional",
-                    "valueType": "string",
-                    "describe": "Namespace do pacote"
+                    "namespace": "CreateLibraryPackage",
+                    "path": "Commands/CreateLibraryPackage.command",
+                    "command": "library [packageName]",
+                    "description": "Criar uma biblioteca",
+                    "parameters": [
+                        {
+                            "key": "packageName",
+                            "paramType": "positional",
+                            "valueType": "string",
+                            "describe": "Namespace do pacote"
+                        }
+                    ],
+                    "parametersToLoad": [
+                        "packageToolkitLib"
+                    ]
+                },
+                {
+                    "namespace": "CreateCommandlinePackage",
+                    "path": "Commands/CreateCommandlinePackage.command",
+                    "command": "commandline [packageName]",
+                    "description": "Criar um pacote de linha de comando",
+                    "parameters": [
+                        {
+                            "key": "packageName",
+                            "paramType": "positional",
+                            "valueType": "string",
+                            "describe": "Namespace do pacote"
+                        }
+                    ],
+                    "parametersToLoad": [
+                        "packageToolkitLib"
+                    ]
                 }
-            ],
-            "parametersToLoad": [
-                "packageToolkitLib"
             ]
         }
     ]

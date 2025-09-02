@@ -43,11 +43,16 @@ const CreateBasePackage = async ({
     const gitignoreFilePath = resolve(basePath, GITIGNORE_FILENAME)
     await CreateUtf8TextFile(gitignoreFilePath, GITIGNORE_CONTENT)
 
-    await CreateMetadataStruct({
+    const metadataDirPath = await CreateMetadataStruct({
         namespace,
         packageBasePath: basePath,
         PKG_CONF_DIRNAME_METADATA
     })
+
+    return {
+        srcPath,
+        metadataDirPath
+    }
 	
 }
 module.exports = CreateBasePackage
