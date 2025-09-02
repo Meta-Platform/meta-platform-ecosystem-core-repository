@@ -6,6 +6,10 @@ const IsValidExecutableName = (str) => {
     return /^[a-z0-9-_]+$/.test(str)
 }
 
+const IsCamelCase = (str) => {
+    return /^[A-Z][A-Za-z0-9]*$/.test(str)
+}
+
 const CreateCommandlinePackageCommand = async ({ args, startupParams, params }) => {
    
     const { PKG_CONF_DIRNAME_METADATA } = startupParams
@@ -37,7 +41,8 @@ const CreateCommandlinePackageCommand = async ({ args, startupParams, params }) 
 
         const executablesDefinitionForCreate = [
             {
-                executableName: newExecutableName
+                executableName: newExecutableName,
+                commands: []
             }
         ]
 
@@ -46,9 +51,74 @@ const CreateCommandlinePackageCommand = async ({ args, startupParams, params }) 
                     type: 'confirm',
                     name: 'wantCommand',
                     message: `Deseja criar um novo comando para [${executablesDefinitionForCreate[0].executableName}]?`,
-                    default: false
+                    default: true
                 }
             ])
+
+        if(wantCommand){
+            
+            while(true){
+                
+                const { newComandNamespace } = await inquirer.prompt([
+                    {
+                        type: 'input',
+                        name: 'newComandNamespace',
+                        message: `[${executablesDefinitionForCreate[0].executableName}] Digite o namespace (padrão CamelCase) do comando (ex: ListDirectory, DoSomething, CreateFile, Execute):`,
+                        validate: (input) => {
+                            if (!IsCamelCase(input)) {
+                                return 'O namespace do comando deve estar em CamelCase (ex: ListDirectory, DoSomething, CreateFile, Execute).'
+                            }
+                            return true
+                        }
+                    }
+                ])
+
+                const { newComand } = await inquirer.prompt([
+                    {
+                        type: 'input',
+                        name: 'newComand',
+                        message: `[${executablesDefinitionForCreate[0].executableName}][${newComandNamespace}] Digite o comando (ex: create [table], list):`,
+                        validate: (input) => {
+                            if (!input || input==="") {
+                                return 'O comando não poder vazio.'
+                            }
+                            return true
+                        }
+                    }
+                ])
+
+                const { newDescription } = await inquirer.prompt([
+                    {
+                        type: 'input',
+                        name: 'newDescription',
+                        message: `[${executablesDefinitionForCreate[0].executableName}][${newComandNamespace}][${newComand}] Digite uma breve descrição do comando (ex: Executar um ambiente):`,
+                        validate: (input) => {
+                            if (!input || input==="") {
+                                return 'O a descrição do comando não poder vazio.'
+                            }
+                            return true
+                        }
+                    }
+                ])
+
+                executablesDefinitionForCreate[0].commands.push({
+                    namespace: newComandNamespace,
+                    command: newComand,
+                    description: newDescription
+                })
+                
+                const { wantCommand } = await inquirer.prompt([
+                    {
+                        type: 'confirm',
+                        name: 'wantCommand',
+                        message: `Deseja criar mais um comando para [${executablesDefinitionForCreate[0].executableName}]?`,
+                        default: true
+                    }
+                ])
+
+                if(!wantCommand) break
+            }
+        }
 
         await CreateCliPackage({
             packageName,
