@@ -13,7 +13,7 @@ const CreateServiceJSFile = async ({ servicesDirPath, namespace, params, boundPa
 
     const content = `
 
-const ${namespace} = (params) => {
+const ${namespace}Service = (params) => {
 
 const {
 ${paramsBlock}
@@ -24,7 +24,7 @@ ${paramsBlock}
     
 }
 
-module.exports = ${namespace}
+module.exports = ${namespace}Service
 `
     await CreateUtf8TextFile(filePath, content)
     

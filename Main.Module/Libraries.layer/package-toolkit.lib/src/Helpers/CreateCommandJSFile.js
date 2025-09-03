@@ -11,12 +11,12 @@ const CreateCommandJSFile = async ({ commandsDirPath, namespace}) => {
 
     const content = `
 
-const ${namespace} = async ({ args, startupParams, params }) => {
+const ${namespace}Command = async ({ args, startupParams, params }) => {
    
     
 }
 
-module.exports = ${namespace}
+module.exports = ${namespace}Command
 `
     await CreateUtf8TextFile(filePath, content)
     
