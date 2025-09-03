@@ -41,6 +41,23 @@
                     "parametersToLoad": [
                         "packageToolkitLib"
                     ]
+                },
+                {
+                    "namespace": "CreateServicesPackage",
+                    "path": "Commands/CreateServicesPackage.command",
+                    "command": "services [packageName]",
+                    "description": "Criar um pacote de serviços",
+                    "parameters": [
+                        {
+                            "key": "packageName",
+                            "paramType": "positional",
+                            "valueType": "string",
+                            "describe": "Namespace do pacote"
+                        }
+                    ],
+                    "parametersToLoad": [
+                        "packageToolkitLib"
+                    ]
                 }
             ]
         }

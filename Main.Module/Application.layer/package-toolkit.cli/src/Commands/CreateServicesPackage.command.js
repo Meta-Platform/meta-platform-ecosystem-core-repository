@@ -6,7 +6,7 @@ const IsCamelCase = (str) => {
     return /^[A-Z][A-Za-z0-9]*$/.test(str)
 }
 
-const CreateServicePackageCommand = async ({ args, startupParams, params }) => {
+const CreateServicesPackageCommand = async ({ args, startupParams, params }) => {
    
     const { PKG_CONF_DIRNAME_METADATA } = startupParams
     
@@ -17,22 +17,33 @@ const CreateServicePackageCommand = async ({ args, startupParams, params }) => {
 
         if(packageName === undefined) throw "O packageName é obrigatório"
 
-        const CreateServicePackage = packageToolkitLib.require("CreateServicePackage")
+        const CreateServicesPackage = packageToolkitLib.require("CreateServicesPackage")
 
         const workingDirPath = process.cwd()
 
-        const packagePath = await CreateLibPackage({
+
+        const servicesDefinition = []
+
+        const { wantService } = await inquirer.prompt([
+            {
+                type: 'confirm',
+                name: 'wantService',
+                message: 'Deseja deseja adicionar um serviço ao seu pacote?',
+                default: true
+            }
+        ])
+
+        const packagePath = await CreateServicesPackage({
             packageName,
+            servicesDefinition,
             workingDirPath,
             author: AUTHOR,
             PKG_CONF_DIRNAME_METADATA
         })
-
-       
 
     } catch (error) {
         throw error
     }
 }
 
-module.exports = CreateServicePackageCommand
+module.exports = CreateServicesPackageCommand
