@@ -22,6 +22,8 @@ ${paramsBlock}
 
     onReady()
     
+
+    return {}
 }
 
 module.exports = ${namespace}Service
