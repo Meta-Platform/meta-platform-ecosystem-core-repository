@@ -153,8 +153,6 @@ const CreateServicesPackageCommand = async ({ args, startupParams, params }) => 
             }
         }
 
-        console.log(servicesDefinition)
-
         const packagePath = await CreateServicesPackage({
             packageName,
             servicesDefinition,
