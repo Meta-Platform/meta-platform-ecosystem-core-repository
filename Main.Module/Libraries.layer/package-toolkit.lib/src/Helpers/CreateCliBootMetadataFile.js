@@ -8,12 +8,13 @@ const CreateCliBootMetadataFile = async ({
 }) => {
     const filename = "boot.json"
     const content = {
-        "executables":executablesDefinition.map(({executableName}) => {
-            return {
-                "dependency": "@//command-group",
-                executableName
-            }
-        })
+        "executables":executablesDefinition
+            .map(({executableName}) => {
+                return {
+                    "dependency": "@//command-group",
+                    executableName
+                }
+            })
     }
     const filePath = resolve(metadataDirPath, filename)
     await WriteObjectToFile(filePath, content)

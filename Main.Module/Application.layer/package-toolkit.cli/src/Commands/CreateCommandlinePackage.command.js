@@ -59,14 +59,14 @@ const CreateCommandlinePackageCommand = async ({ args, startupParams, params }) 
             
             while(true){
                 
-                const { newComandNamespace } = await inquirer.prompt([
+                const { newCommandNamespace } = await inquirer.prompt([
                     {
                         type: 'input',
-                        name: 'newComandNamespace',
-                        message: `[${executablesDefinitionForCreate[0].executableName}] Digite o namespace (padrão CamelCase) do comando (ex: ListDirectory, DoSomething, CreateFile, Execute):`,
+                        name: 'newCommandNamespace',
+                        message: `[${executablesDefinitionForCreate[0].executableName}] Digite o namespace (padrão CamelCase) do comando:`,
                         validate: (input) => {
                             if (!IsCamelCase(input)) {
-                                return 'O namespace do comando deve estar em CamelCase (ex: ListDirectory, DoSomething, CreateFile, Execute).'
+                                return 'O namespace do comando deve estar em CamelCase (ex: ListDirectory, DoSomething, CreateFile, Execute, etc...).'
                             }
                             return true
                         }
@@ -77,7 +77,7 @@ const CreateCommandlinePackageCommand = async ({ args, startupParams, params }) 
                     {
                         type: 'input',
                         name: 'newComand',
-                        message: `[${executablesDefinitionForCreate[0].executableName}][${newComandNamespace}] Digite o comando (ex: create [table], list):`,
+                        message: `[${executablesDefinitionForCreate[0].executableName}][${newComandNamespace}] Digite o comando:`,
                         validate: (input) => {
                             if (!input || input==="") {
                                 return 'O comando não poder vazio.'
@@ -91,10 +91,10 @@ const CreateCommandlinePackageCommand = async ({ args, startupParams, params }) 
                     {
                         type: 'input',
                         name: 'newDescription',
-                        message: `[${executablesDefinitionForCreate[0].executableName}][${newComandNamespace}][${newComand}] Digite uma breve descrição do comando (ex: Executar um ambiente):`,
+                        message: `[${executablesDefinitionForCreate[0].executableName}][${newComandNamespace}][${newComand}] Digite uma breve descrição do comando:`,
                         validate: (input) => {
                             if (!input || input==="") {
-                                return 'O a descrição do comando não poder vazio.'
+                                return 'A descrição do comando não poder vazio.'
                             }
                             return true
                         }

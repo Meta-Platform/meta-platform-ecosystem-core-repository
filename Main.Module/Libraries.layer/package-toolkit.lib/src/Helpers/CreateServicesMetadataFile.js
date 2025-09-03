@@ -7,7 +7,16 @@ const CreateServicesMetadataFile = async ({
     servicesDefinition
 }) => {
     const filename = "services.json"
-    const content = []
+    const content = servicesDefinition
+    .map(({ namespace, params, boundParams}) => {
+        return {
+            namespace,
+            path: `Services/${namespace}.service`,
+            ...Object.keys(boundParams).length > 0 ? { "bound-params": boundParams } : {},
+            ...Object.keys(params).length > 0 ? { params } : {}
+        }
+
+    })
     const filePath = resolve(metadataDirPath, filename)
     await WriteObjectToFile(filePath, content)
 }
