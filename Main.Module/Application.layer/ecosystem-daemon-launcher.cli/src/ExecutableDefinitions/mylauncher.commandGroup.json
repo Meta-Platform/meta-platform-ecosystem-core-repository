@@ -1,8 +1,0 @@
-[
-    {
-        "namespace": "DaemonLaunch",
-        "path": "Commands/DaemonLaunch.command",
-        "isMainCommand": true,
-        "description": "Iniciar um novo daemon"
-    }
-]

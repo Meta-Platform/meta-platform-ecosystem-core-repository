@@ -24,12 +24,6 @@
         "supervisorSocketFileName":"executor.sock"
     },
     {
-        "appType":"CLI",
-        "executable":"mylauncher",
-        "packageNamespace":"Main.Module/Application.layer/ecosystem-daemon-launcher.cli",
-        "supervisorSocketFileName":"launcher.sock"
-    },
-    {
         "appType":"APP",
         "executable":"super-dash",
         "packageNamespace":"Main.Module/Application.layer/SupervisorControlDashboard.group/supervisor-control-dashboard.webapp",
