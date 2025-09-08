@@ -62,8 +62,7 @@ const RepositoryManagerService = (params) => {
     const ListPackages = async () => {
         const _ListPackages = repositoryUtilitiesLib.require("ListPackages")
         const packageList = await _ListPackages({
-            
-            
+            installDataDirPath: absolutInstallDataDirPath,
             REPOS_CONF_FILENAME_REPOS_DATA,
             REPOS_CONF_EXT_MODULE_DIR,
             REPOS_CONF_EXT_LAYER_DIR,
