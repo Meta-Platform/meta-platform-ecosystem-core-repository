@@ -1,6 +1,11 @@
 const GetPackageIconPathByPackagePath = require("../Commons/GetPackageIconPathByPackagePath")
-
+const path = require("path")
+const os = require('os')
 const { resolve } = require("path")
+
+const ConvertPathToAbsolutPath = (_path) => path
+    .join(_path)
+    .replace('~', os.homedir())
 
 const FindPackage = (listPackages, params) => 
     listPackages.find((package) => {
@@ -40,7 +45,7 @@ const GetPackageDependencyGraph = (metadataHierarchy) => {
 const RepositoryManagerService = (params) => {
 
     const {
-        ECO_DIRPATH_INSTALL_DATA,
+        installDataDirPath,
         REPOS_CONF_FILENAME_REPOS_DATA,
         REPOS_CONF_EXT_MODULE_DIR,
         REPOS_CONF_EXT_LAYER_DIR,
@@ -52,10 +57,13 @@ const RepositoryManagerService = (params) => {
         onReady
     } = params
 
+    const absolutInstallDataDirPath = ConvertPathToAbsolutPath(installDataDirPath)
+
     const ListPackages = async () => {
         const _ListPackages = repositoryUtilitiesLib.require("ListPackages")
         const packageList = await _ListPackages({
-            installDataDirPath: ECO_DIRPATH_INSTALL_DATA,
+            
+            
             REPOS_CONF_FILENAME_REPOS_DATA,
             REPOS_CONF_EXT_MODULE_DIR,
             REPOS_CONF_EXT_LAYER_DIR,
@@ -127,7 +135,7 @@ const RepositoryManagerService = (params) => {
     const ListRepositories = () => {
         const _ListRepositories = repositoryUtilitiesLib.require("ListRepositories")
         const repositoryList = _ListRepositories({
-            ECO_DIRPATH_INSTALL_DATA,
+            installDataDirPath: absolutInstallDataDirPath,
             REPOS_CONF_FILENAME_REPOS_DATA,
         })
 
@@ -137,7 +145,7 @@ const RepositoryManagerService = (params) => {
     const ListModules = () => {
         const _ListModules = repositoryUtilitiesLib.require("ListModules")
         const moduleList = _ListModules({
-            ECO_DIRPATH_INSTALL_DATA,
+            installDataDirPath: absolutInstallDataDirPath,
             REPOS_CONF_FILENAME_REPOS_DATA,
             REPOS_CONF_EXT_MODULE_DIR
         })
@@ -148,7 +156,7 @@ const RepositoryManagerService = (params) => {
     const ListLayers = () => {
         const _ListLayers = repositoryUtilitiesLib.require("ListLayers")
         const layerList = _ListLayers({
-            ECO_DIRPATH_INSTALL_DATA,
+            installDataDirPath: absolutInstallDataDirPath,
             REPOS_CONF_FILENAME_REPOS_DATA,
             REPOS_CONF_EXT_MODULE_DIR,
             REPOS_CONF_EXT_LAYER_DIR
@@ -162,7 +170,7 @@ const RepositoryManagerService = (params) => {
         await RegisterRepositoryInstallation({
             namespace, 
             path, 
-            ECO_DIRPATH_INSTALL_DATA,
+            installDataDirPath: absolutInstallDataDirPath,
             REPOS_CONF_FILENAME_REPOS_DATA
         })
         return {}
