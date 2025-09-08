@@ -6,7 +6,7 @@ const CreateUtf8TextFile = require("../Utils/CreateUtf8TextFile")
 
 const CreateServiceJSFile = async ({ servicesDirPath, namespace, params, boundParams }) => {
 
-    const fileName = `${namespace}.command.${FILE_EXT}`
+    const fileName = `${namespace}.service.${FILE_EXT}`
     const filePath = resolve(servicesDirPath, fileName)
 
      const paramsBlock = [...params, ...boundParams].map(p => `        ${p},`).join("\n")
