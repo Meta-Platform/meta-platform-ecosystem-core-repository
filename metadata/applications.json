@@ -25,12 +25,6 @@
     },
     {
         "appType":"APP",
-        "executable":"super-dash",
-        "packageNamespace":"Main.Module/Application.layer/SupervisorControlDashboard.group/supervisor-control-dashboard.webapp",
-        "supervisorSocketFileName":"super-dash.sock"
-    },
-    {
-        "appType":"APP",
         "executable":"eco-panel",
         "packageNamespace":"Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.webapp",
         "supervisorSocketFileName":"eco-panel.sock"
