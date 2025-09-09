@@ -1,6 +1,6 @@
 const EventEmitter = require('node:events')
 const ExecutionStatusTypes = require("./ExecutionStatusTypes")
-const TaskStatusTypes = require("../../../../../../EssentialRepo/Runtime.Module/Executor.layer/task-executor.lib/src/TaskStatusTypes")
+const TaskStatusTypes = require("./TaskStatusTypes")
 
 const EXECUTION_STATUS_CHANGE = Symbol()
 
