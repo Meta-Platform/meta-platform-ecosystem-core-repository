@@ -75,7 +75,11 @@ const GetRequest = ({
                 })
                 res.on('end', () => {
                     if (res.statusCode >= 200 && res.statusCode < 300) 
-                        resolve(JSON.parse(data))
+                        try{
+                            resolve(JSON.parse(data))
+                        }catch(e){
+                            resolve(data)
+                        }
                     else
                         reject(new Error(`HTTP status ${res.statusCode}: ${data}`))
                 })

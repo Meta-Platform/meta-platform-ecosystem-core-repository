@@ -52,7 +52,7 @@ const CommandExecutor = async ({
         })
         loggerEmitter 
         && loggerEmitter.emit("log", {sourceName: "CommandExecutor", type:"success", message:"Conectado ao Ecosystem Daemon!"})
-        await CommandFunction({APIs}, loggerEmitter)
+        return await CommandFunction({APIs}, loggerEmitter)
     } catch(e){
    
         if(e.erroredSysCall === "connect"){
