@@ -77,7 +77,7 @@ const CreateCommandlinePackageCommand = async ({ args, startupParams, params }) 
                     {
                         type: 'input',
                         name: 'newComand',
-                        message: `[${executablesDefinitionForCreate[0].executableName}][${newComandNamespace}] Digite o comando:`,
+                        message: `[${executablesDefinitionForCreate[0].executableName}][${newCommandNamespace}] Digite o comando:`,
                         validate: (input) => {
                             if (!input || input==="") {
                                 return 'O comando não poder vazio.'
@@ -91,7 +91,7 @@ const CreateCommandlinePackageCommand = async ({ args, startupParams, params }) 
                     {
                         type: 'input',
                         name: 'newDescription',
-                        message: `[${executablesDefinitionForCreate[0].executableName}][${newComandNamespace}][${newComand}] Digite uma breve descrição do comando:`,
+                        message: `[${executablesDefinitionForCreate[0].executableName}][${newCommandNamespace}][${newComand}] Digite uma breve descrição do comando:`,
                         validate: (input) => {
                             if (!input || input==="") {
                                 return 'A descrição do comando não poder vazio.'
@@ -102,7 +102,7 @@ const CreateCommandlinePackageCommand = async ({ args, startupParams, params }) 
                 ])
 
                 executablesDefinitionForCreate[0].commands.push({
-                    namespace: newComandNamespace,
+                    namespace: newCommandNamespace,
                     command: newComand,
                     description: newDescription
                 })
