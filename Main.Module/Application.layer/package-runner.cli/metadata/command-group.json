@@ -1,10 +1,28 @@
 {
+    "bound-params": [
+        "repositoryConfigHandlerLib",
+        "environmentHandlerLib",
+        "dependencyGraphBuilderLib",
+        "metadataHierarchyHandlerLib",
+        "resolvePackageNameLib",
+        "repositoryUtilitiesLib",
+        "jsonFileUtilitiesLib",
+        "executionParamsGeneratorLib",
+        "applicationInstanceLib",
+        "installNodejsPackageDependenciesLib",
+        "nodejsPackageLib",
+        "serviceInstanceLib",
+        "endpointInstanceLib",
+        "commandApplicationLib",
+        "taskExecutorLib"
+    ],
 	"commands": [
 		{
             "namespace": "RunPackage",
             "path": "Commands/RunPackage.command",
             "command": "package [packagePath]",
             "description": "Executar um pacote",
+            "isNotStopAllTasks": true,
             "parameters": [
                 {
                     "key": "packagePath",
@@ -12,6 +30,23 @@
                     "valueType": "string",
                     "describe": "caminho do pacote"
                 }
+            ],
+            "parametersToLoad": [
+                "repositoryConfigHandlerLib",
+                "environmentHandlerLib",
+                "dependencyGraphBuilderLib",
+                "metadataHierarchyHandlerLib",
+                "resolvePackageNameLib",
+                "repositoryUtilitiesLib",
+                "jsonFileUtilitiesLib",
+                "executionParamsGeneratorLib",
+                "applicationInstanceLib",
+                "installNodejsPackageDependenciesLib",
+                "nodejsPackageLib",
+                "serviceInstanceLib",
+                "endpointInstanceLib",
+                "commandApplicationLib",
+                "taskExecutorLib"
             ]
         }
 	]

@@ -1,7 +1,8 @@
 const { resolve, join } = require("path")
 const crypto = require('crypto')
-
+const os = require('os')
 const colors = require("colors")
+const EventEmitter = require('events')
 
 const ConvertToHashSHA256 = (token) => 
     crypto
@@ -11,6 +12,15 @@ const ConvertToHashSHA256 = (token) =>
 
 const ExecutionDataState = require("../Helpers/ExecutionDataState")
 const GetIsolateExecutionParameters = require("../Helpers/GetIsolateExecutionParameters")
+const PrintDataLog = require("../Helpers/PrintDataLog")
+const GetColorLogByStatus = require("../Helpers/GetColorLogByStatus")
+
+ const GetFormattedMessage = (taskId, status, objectLoaderType) => {
+    return `[${taskId}] [${objectLoaderType}] ${colors[GetColorLogByStatus(status)](status)}`
+}
+
+const ConvertPathToAbsolutPath = (_path) => join(_path)
+    .replace('~', os.homedir())
 
 const RunPackageCommand = async ({ args, startupParams, params }) => {
     
@@ -72,6 +82,18 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
         taskLoaders
     })
 
+    const loggerEmitter = new EventEmitter()
+    loggerEmitter.on("log", (dataLog) => PrintDataLog(dataLog))
+
+    taskExecutor
+        .AddTaskStatusListener(({taskId, status, objectLoaderType}) => {
+            loggerEmitter && loggerEmitter.emit("log", {
+                        sourceName: "TaskExecutor",
+                        type: "info",
+                        message: GetFormattedMessage(taskId, status, objectLoaderType)
+                    })
+        })
+
     const absolutInstallDataDirPath = ConvertPathToAbsolutPath(installDataDirPath)
 
     const _GetRootNamespace = (metadataHierarchy) => {
@@ -116,7 +138,8 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
     try{
         await PrepareRepositoriesFileJson({
             installDataDirPath:absolutInstallDataDirPath,
-            REPOS_CONF_FILENAME_REPOS_DATA
+            REPOS_CONF_FILENAME_REPOS_DATA,
+            loggerEmitter
         })
         const absolutePackagePath = resolve(process.cwd(), packagePath)
         const startupParamsPath = resolve(absolutePackagePath, PKG_CONF_DIRNAME_METADATA, "startup-params.json")
@@ -141,10 +164,11 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
         const localPath =  _GetEnvironmentsPath()
         const environmentPath = await CreateEnvironment({
             environmentName, 
-            localPath
+            localPath,
+            loggerEmitter
         })
 
-        await PrepareDataDir({ environmentPath, EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES})
+        await PrepareDataDir({ environmentPath, EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES, loggerEmitter})
         await _WriteMetadataGraphFile(environmentPath, metadataHierarchy)
     
         if(!executionState.CheckIfExecutionCanBeRegistered(environmentPath)){
@@ -161,7 +185,6 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
             throw `O ambiente ${environmentPath} já esta em execução`
         }
 
-        return {}
     }catch(e){
 
         console.log(e)
