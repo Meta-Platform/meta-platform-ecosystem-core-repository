@@ -51,7 +51,7 @@ const CommandExecutor = async ({
             mainApplicationSocketPath
         })
         loggerEmitter 
-        && loggerEmitter.emit("log", {sourceName: "CommandExecutor", type:"success", message:"Conectado ao Ecosystem Daemon!"})
+        && loggerEmitter.emit("log", {sourceName: "CommandExecutor", type:"success", message:"Conectado ao "+mainApplicationSocketPath})
         return await CommandFunction({APIs}, loggerEmitter)
     } catch(e){
    
