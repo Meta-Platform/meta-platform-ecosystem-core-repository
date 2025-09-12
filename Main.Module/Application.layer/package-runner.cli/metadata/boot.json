@@ -1,88 +1,25 @@
 {
-	"params" : [
-		"PKG_CONF_DIRNAME_METADATA",
-		"installDataDirPath",
-		"REPOS_CONF_FILENAME_REPOS_DATA",
-		"REPOS_CONF_EXT_GROUP_DIR",
-		"REPOS_CONF_EXT_MODULE_DIR",
-		"REPOS_CONF_EXT_LAYER_DIR",
-		"EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES",
-		"ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA",
-		"REPOS_CONF_EXTLIST_PKG_TYPE"
-    ],
-	"services": [
+	"executables": [
 		{
-            "namespace":"@@/standard-task-executor-machine-service",
-            "dependency": "@/task-executor-machine.service/services/StandardTaskExecutorMachineService",
+			"dependency": "@//command-group",
+			"executableName": "run",
             "bound-params": {
+                "repositoryConfigHandlerLib": "@/repository-config-handler.lib",
+                "environmentHandlerLib": "@/environment-handler.lib",
+                "dependencyGraphBuilderLib":"@/dependency-graph-builder.lib",
+                "metadataHierarchyHandlerLib": "@/metadata-hierarchy-handler.lib",
+                "resolvePackageNameLib": "@/resolve-package-name.lib",
+                "repositoryUtilitiesLib":"@/repository-utilities.lib",
+                "jsonFileUtilitiesLib": "@/json-file-utilities.lib",
+                "executionParamsGeneratorLib": "@/execution-params-generator.lib",
                 "applicationInstanceLib":"@/application-instance.lib",
                 "installNodejsPackageDependenciesLib":"@/install-nodejs-package-dependencies.lib",
                 "nodejsPackageLib":"@/nodejs-package.lib",
                 "serviceInstanceLib":"@/service-instance.lib",
                 "endpointInstanceLib":"@/endpoint-instance.lib",
                 "commandApplicationLib":"@/command-application.lib",
-                "taskExecutorLib": "@/task-executor.lib",
-                "utilitiesLib": "@/utilities.lib"
+                "taskExecutorLib": "@/task-executor.lib"
             }
-        },
-		{
-            "namespace":"@@/environment-runtime-service",
-            "dependency": "@/environment-runtime-manager.service/services/EnvironmentRuntimeService",
-            "bound-params": {
-                "taskExecutorMachineService": "@@/standard-task-executor-machine-service",
-                "jsonFileUtilitiesLib": "@/json-file-utilities.lib",
-                "executionParamsGeneratorLib": "@/execution-params-generator.lib"
-            },
-            "params": {
-                "EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES": "{{EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES}}",
-                "ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA": "{{ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA}}"
-            }
-        },
-		{
-            "namespace":"@@/repository-manager",
-            "dependency": "@/repository-manager.service/services/RepositoryManagerService",
-            "bound-params": {
-                "repositoryUtilitiesLib":"@/repository-utilities.lib",
-                "dependencyGraphBuilderLib": "@/dependency-graph-builder.lib"
-            },
-            "params": {
-                "installDataDirPath":"{{installDataDirPath}}",
-                "REPOS_CONF_FILENAME_REPOS_DATA":"{{REPOS_CONF_FILENAME_REPOS_DATA}}",
-                "REPOS_CONF_EXT_MODULE_DIR":"{{REPOS_CONF_EXT_MODULE_DIR}}",
-                "REPOS_CONF_EXT_LAYER_DIR":"{{REPOS_CONF_EXT_LAYER_DIR}}",
-                "REPOS_CONF_EXT_GROUP_DIR":"{{REPOS_CONF_EXT_GROUP_DIR}}",
-                "REPOS_CONF_EXTLIST_PKG_TYPE":"{{REPOS_CONF_EXTLIST_PKG_TYPE}}",
-                "PKG_CONF_DIRNAME_METADATA": "{{PKG_CONF_DIRNAME_METADATA}}"
-            }
-        },
-		{
-            "namespace":"@@/ecosystem-manager",
-            "dependency": "@/ecosystem-manager.service/services/EcosystemManager",
-            "bound-params": {
-                "repositoryConfigHandlerLib": "@/repository-config-handler.lib",
-                "environmentHandlerLib": "@/environment-handler.lib",
-                "dependencyGraphBuilderLib":"@/dependency-graph-builder.lib",
-                "repositoryManagerService": "@@/repository-manager",
-                "environmentRuntimeService": "@@/environment-runtime-service",
-                "metadataHierarchyHandlerLib": "@/metadata-hierarchy-handler.lib",
-                "resolvePackageNameLib": "@/resolve-package-name.lib",
-                "jsonFileUtilitiesLib": "@/json-file-utilities.lib"
-
-            },
-            "params": {
-                "PKG_CONF_DIRNAME_METADATA":"{{PKG_CONF_DIRNAME_METADATA}}",
-                "ECO_DIRPATH_INSTALL_DATA":"{{installDataDirPath}}",
-                "REPOS_CONF_FILENAME_REPOS_DATA":"{{REPOS_CONF_FILENAME_REPOS_DATA}}",
-                "REPOS_CONF_EXT_GROUP_DIR":"{{REPOS_CONF_EXT_GROUP_DIR}}",
-                "EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES": "{{EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES}}",
-                "ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA": "{{ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA}}"
-            }
-        }
-	],
-	"executables": [
-		{
-			"dependency": "@//command-group",
-			"executableName": "run"
 		}
 	]
 }
