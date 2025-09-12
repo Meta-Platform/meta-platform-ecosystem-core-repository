@@ -34,5 +34,13 @@
         "executable":"mypkg",
         "packageNamespace":"Main.Module/Application.layer/package-toolkit.cli",
         "supervisorSocketFileName":"package-toolkit.sock"
+    },
+    {
+        "appType":"CLI",
+        "executable":"run",
+        "packageNamespace":"Main.Module/Application.layer/package-runner.cli",
+        "supervisorSocketFileName":"package-runner.sock"
     }
+
+    
 ]
