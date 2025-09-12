@@ -1,0 +1,18 @@
+{
+	"commands": [
+		{
+            "namespace": "RunPackage",
+            "path": "Commands/RunPackage.command",
+            "command": "package [packagePath]",
+            "description": "Executar um pacote",
+            "parameters": [
+                {
+                    "key": "packagePath",
+                    "paramType": "positional",
+                    "valueType": "string",
+                    "describe": "caminho do pacote"
+                }
+            ]
+        }
+	]
+}
