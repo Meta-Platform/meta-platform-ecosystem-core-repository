@@ -2,12 +2,12 @@
     {
         "namespace": "HTTPServerService",
         "path": "Services/HTTPServer.service",
-        "bound-params":["?authenticationService"],
+        "bound-params":["?middlewareService"],
         "params": ["name", "port"]
     },
     {
-        "namespace": "JWTAuthenticationService",
-        "path": "Services/JWTAuthentication.service",
+        "namespace": "JWTVerifierMiddlewareService",
+        "path": "Services/JWTVerifierMiddleware.service",
         "params": ["secretKey"]
     }
 ]

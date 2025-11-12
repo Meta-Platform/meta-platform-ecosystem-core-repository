@@ -18,7 +18,7 @@ const HTTPServerService = (params) => {
         port,
         onReady,
         onClose,
-        authenticationService
+        middlewareService
     } = params
 
     const app = express()
@@ -49,7 +49,7 @@ const HTTPServerService = (params) => {
             service, 
             apiTemplate,
             needsAuth,
-            authenticationService
+            middlewareService
         })
 
         serviceList.push(apiEndpointsService)

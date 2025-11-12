@@ -13,7 +13,7 @@ const ExtractTokenByRequest = (request) => {
     } else return null
 }
 
-const JWTAuthenticationService = (params) => {
+const JWTVerifierMiddlewareService = (params) => {
 
     const {
         secretKey,
@@ -49,4 +49,4 @@ const JWTAuthenticationService = (params) => {
     }
 }
 
-module.exports = JWTAuthenticationService
+module.exports = JWTVerifierMiddlewareService

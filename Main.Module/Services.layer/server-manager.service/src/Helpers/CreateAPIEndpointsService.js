@@ -25,7 +25,7 @@ const CreateAPIEndpointsService = ({
     service,
     apiTemplate,
     needsAuth,
-    authenticationService
+    middlewareService
 }) => {
 
     const summariesNotFound = []
@@ -110,9 +110,9 @@ const CreateAPIEndpointsService = ({
         
         if(needsAuth)
             if(method.toLowerCase() === "ws")
-                router[method.toLowerCase()](path, authenticationService.GetWebSocketMiddleware(), _GetCallbackMiddlewareFunction()) 
+                router[method.toLowerCase()](path, middlewareService.GetWebSocketMiddleware(), _GetCallbackMiddlewareFunction()) 
             else
-                router[method.toLowerCase()](path, authenticationService.GetMiddleware(), _GetCallbackMiddlewareFunction()) 
+                router[method.toLowerCase()](path, middlewareService.GetMiddleware(), _GetCallbackMiddlewareFunction()) 
         else
             router[method.toLowerCase()](path, _GetCallbackMiddlewareFunction())
 
