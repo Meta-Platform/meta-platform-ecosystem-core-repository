@@ -64,7 +64,7 @@ const CreateAPIEndpointsService = ({
                     }
                     
                 } else {
-                    throw `O summary "${summary}"do controller "${service.controllerName}" está indefinido!`
+                    throw `O summary "${summary}" do controller "${service.controllerName}" está indefinido!`
                 }
             }catch(e){
                 next(e)
@@ -93,7 +93,7 @@ const CreateAPIEndpointsService = ({
                 if(service[summary]){
                     service[summary](request, response, next)
                 } else {
-                    throw `O summary "${summary}"do controller "${service.controllerName}" está indefinido!`
+                    throw `O summary "${summary}" do controller "${service.controllerName}" está indefinido!`
                 }
             }catch(e){
                 next(e)
