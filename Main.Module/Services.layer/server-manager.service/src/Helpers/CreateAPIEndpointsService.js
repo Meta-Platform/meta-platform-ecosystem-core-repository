@@ -108,7 +108,7 @@ const CreateAPIEndpointsService = ({
                 : _CallbackMiddleware
         
         
-        if(needsAuth)
+        if(needsAuth === true)
             if(method.toLowerCase() === "ws")
                 router[method.toLowerCase()](path, middlewareService.GetWebSocketMiddleware(), _GetCallbackMiddlewareFunction()) 
             else

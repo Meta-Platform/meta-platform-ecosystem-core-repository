@@ -5,7 +5,6 @@ const ReadJsonFile = (path) => {
         const jsonString = fs.readFileSync(path, {encoding:'utf8'})
         return JSON.parse(jsonString)
       } catch (err) {
-        console.log(err)
         return undefined
       }
 }
