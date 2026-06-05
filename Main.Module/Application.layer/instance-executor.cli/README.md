@@ -32,5 +32,5 @@ do ecossistema. Comunica-se com a aplicação principal pelo socket
 Parâmetros de boot: `platformApplicationSocketPath`, `httpServerManagerEndpoint`,
 `REPOS_CONF_EXT_GROUP_DIR`.
 
-> Veja o [Guia de Início Rápido](../../../../../docs/GUIA-INICIO-RAPIDO.md#6-executar-pacotes-executor--pkg-exec)
+> Veja o [Guia de Início Rápido](https://github.com/Meta-Platform/.github/blob/main/docs/GUIA-INICIO-RAPIDO.md#6-executar-pacotes-executor--pkg-exec)
 > e o [README do repositório](../../../README.md).

@@ -5,8 +5,8 @@ instâncias, os painéis de controle (web) e os serviços de runtime (servidor H
 task executor, gerenciamento de repositórios, ambientes e supervisão).
 
 > Para a organização geral, veja a
-> [Arquitetura](../../docs/ARQUITETURA.md). Para os conceitos formais, o
-> [Open Standard](../../Meta-Platform/meta-platform-open-standard/README.md).
+> [Arquitetura](https://github.com/Meta-Platform/.github/blob/main/docs/ARQUITETURA.md). Para os conceitos formais, o
+> [Open Standard](https://github.com/Meta-Platform/meta-platform-open-standard/blob/main/README.md).
 
 Os executáveis publicados por este repositório estão em
 [`metadata/applications.json`](./metadata/applications.json).

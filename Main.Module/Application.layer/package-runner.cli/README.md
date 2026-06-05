@@ -29,5 +29,5 @@ Reúne as libs de runtime e de metadados necessárias para executar um pacote:
 `@/command-application.lib`, `@/task-executor.lib`.
 
 > Para execução isolada de baixo nível fora do ecossistema, veja também o
-> [Package Executor](../../../../../Meta-Platform/meta-platform-package-executor-command-line/README.md).
+> [Package Executor](https://github.com/Meta-Platform/meta-platform-package-executor-command-line/blob/main/README.md).
 > [README do repositório](../../../README.md).

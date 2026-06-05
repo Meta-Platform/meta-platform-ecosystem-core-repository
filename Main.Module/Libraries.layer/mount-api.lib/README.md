@@ -21,5 +21,5 @@ ecossistema. É injetada como `mountApiLib` na CLI `repository-explorer.cli`
 
 Apenas `metadata/package.json` (namespace) — sem `bound-params`.
 
-> Consulte a [Arquitetura](../../../../../docs/ARQUITETURA.md) e o
+> Consulte a [Arquitetura](https://github.com/Meta-Platform/.github/blob/main/docs/ARQUITETURA.md) e o
 > [README do repositório](../../../README.md).

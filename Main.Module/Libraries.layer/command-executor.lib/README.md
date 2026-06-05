@@ -23,5 +23,5 @@ nas CLIs `instance-executor.cli` (`executor`) e `repository-explorer.cli`
 Esta lib só declara o seu `metadata/package.json` (namespace) — não possui
 `bound-params`.
 
-> Consulte a [Arquitetura](../../../../../docs/ARQUITETURA.md) e o
+> Consulte a [Arquitetura](https://github.com/Meta-Platform/.github/blob/main/docs/ARQUITETURA.md) e o
 > [README do repositório](../../../README.md).

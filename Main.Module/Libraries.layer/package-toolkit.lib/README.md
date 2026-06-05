@@ -24,5 +24,5 @@ Biblioteca de **scaffolding de pacotes**: cria a estrutura de novos pacotes
 
 Apenas `metadata/package.json` (namespace) — sem `bound-params`.
 
-> Veja também o [Guia: Criar um Pacote](../../../../../docs/GUIA-CRIAR-PACOTE.md)
+> Veja também o [Guia: Criar um Pacote](https://github.com/Meta-Platform/.github/blob/main/docs/GUIA-CRIAR-PACOTE.md)
 > e o [README do repositório](../../../README.md).

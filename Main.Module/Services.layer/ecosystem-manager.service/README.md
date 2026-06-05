@@ -22,5 +22,5 @@ Parâmetros (`params`): `PKG_CONF_DIRNAME_METADATA`, `ECO_DIRPATH_INSTALL_DATA`,
 `ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA`.
 
 > Consumido pela aplicação `ecosystem-instance-manager.app` (`executor-manager`).
-> Veja a [Arquitetura](../../../../../docs/ARQUITETURA.md) e o
+> Veja a [Arquitetura](https://github.com/Meta-Platform/.github/blob/main/docs/ARQUITETURA.md) e o
 > [README do repositório](../../../README.md).

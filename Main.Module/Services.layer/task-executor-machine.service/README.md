@@ -21,6 +21,6 @@ Dependências (`bound-params`) — as libs de runtime do `essential-repository`:
 `@/nodejs-package.lib`, `@/service-instance.lib`, `@/endpoint-instance.lib`,
 `@/command-application.lib`, `@/task-executor.lib`, `@/utilities.lib`.
 
-> Veja os [Tipos de Object Loader](../../../../../Meta-Platform/meta-platform-open-standard/concepts/tipos-de-object-loader.md)
-> e o [Execution Params Standard](../../../../../Meta-Platform/meta-platform-open-standard/specifications/packages/execution-params-standard.md).
+> Veja os [Tipos de Object Loader](https://github.com/Meta-Platform/meta-platform-open-standard/blob/main/concepts/tipos-de-object-loader.md)
+> e o [Execution Params Standard](https://github.com/Meta-Platform/meta-platform-open-standard/blob/main/specifications/packages/execution-params-standard.md).
 > [README do repositório](../../../README.md).
