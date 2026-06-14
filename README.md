@@ -34,7 +34,7 @@ mywizard install --profile release-standard   # inclui EssentialRepo + Ecosystem
 ## Uso rápido
 
 ```bash
-start-instance-manager                       # sobe o gerenciador de instâncias
+executor-manager                             # sobe o gerenciador de instâncias
 supervisor status instance-manager.sock      # supervisão
 executor tasks                               # tarefas no task executor
 eco-panel                                    # painel de controle do ecossistema (web)
@@ -109,7 +109,7 @@ Ver os READMEs de cada package (comandos e exemplos por executável) e o
 
 ## Troubleshooting
 
-- **`start-instance-manager` não encontrado** → garanta `EcosystemData/executables`
+- **`executor-manager` não encontrado** → garanta `EcosystemData/executables`
   no `PATH`.
 - **`supervisor status` falha** → o processo correspondente precisa estar rodando
   (cria o socket em `EcosystemData/supervisor-sockets/`). Ver

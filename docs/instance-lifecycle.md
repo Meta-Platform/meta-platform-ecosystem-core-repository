@@ -40,7 +40,7 @@ tem um `ExecutionStatus` (`STARTING → RUNNING`/`ERROR`). Ambos são observáve
 ## Operando o ciclo
 
 ```bash
-start-instance-manager                    # sobe a instância principal
+executor-manager                          # sobe a instância principal
 supervisor status instance-manager.sock   # acompanha
 executor environments                     # ambientes em execução
 executor tasks                            # tarefas no task executor
