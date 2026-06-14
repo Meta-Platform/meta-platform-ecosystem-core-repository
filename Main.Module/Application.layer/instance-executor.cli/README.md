@@ -16,9 +16,8 @@ do ecossistema. Comunica-se com a aplicação principal pelo socket
 | Comando | Descrição |
 |---------|-----------|
 | `executor package [path]` | Executa um pacote. |
-| `executor env [path]` | Executa um ambiente. |
-| `executor stop` | Para a execução de tarefas, pacotes e ambiente. |
-| `executor env [executionId]` | Lista tarefas carregadas no task executor principal. |
+| `executor env [path]` | Executa um ambiente a partir de um caminho. |
+| `executor stop env [executionId]` | Para um ambiente em execução. |
 | `executor tasks` | Lista tarefas carregadas no task executor global. |
 | `executor environments` | Lista ambientes em execução. |
 | `executor monitor` | Monitora a atividade do Task Executor. |

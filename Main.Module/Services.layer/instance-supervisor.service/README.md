@@ -19,5 +19,5 @@ Parâmetros (`params`): `ecosystemDefaultsFileRelativePath`.
 
 > Usado pelos painéis (`ecosystem-control-panel`,
 > `instance-executor-control-panel`). A interface de supervisão de baixo nível é
-> a do [Package Executor RPC](https://github.com/Meta-Platform/meta-platform-open-standard/blob/main/specifications/package-executor-rpc.md).
+> a do [Package Executor RPC Standard](https://github.com/Meta-Platform/meta-platform-open-standard/blob/main/specifications/package-executor-rpc-standard.md).
 > Veja o [README do repositório](../../../README.md).
