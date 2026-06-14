@@ -13,6 +13,10 @@ Como o ecossistema **prepara e executa** os ambientes de execução
   encapsula uma **máquina de execução de tarefas**; recebe o plano e instancia
   cada unidade via os **task loaders** (object loaders) do
   [essential-repository](https://github.com/Meta-Platform/meta-platform-essential-repository).
+  É também o ponto onde os loaders são **registrados** (mapa `objectLoaderType →
+  loader`); ver o
+  [README do serviço](../Main.Module/Services.layer/task-executor-machine.service/README.md)
+  e o [Guia: como criar e usar um Object Loader](https://github.com/Meta-Platform/meta-platform-essential-repository/blob/main/Runtime.Module/Executor.layer/task-executor.lib/docs/guia-criar-object-loader.md).
 
 ## Artefatos no ambiente
 
