@@ -21,6 +21,29 @@ Dependências (`bound-params`) — as libs de runtime do `essential-repository`:
 `@/nodejs-package.lib`, `@/service-instance.lib`, `@/endpoint-instance.lib`,
 `@/command-application.lib`, `@/task-executor.lib`, `@/utilities.lib`.
 
+## Registro dos object loaders
+
+Este serviço é **o ponto onde os object loaders são registrados**: cada lib de
+loader recebida em `bound-params` é mapeada para um `objectLoaderType` num
+dicionário `taskLoaders` passado ao `TaskExecutor` (ver
+[`StandardTaskExecutorMachine.service.js`](./src/Services/StandardTaskExecutorMachine.service.js)):
+
+```javascript
+const taskLoaders = {
+    'install-nodejs-package-dependencies' : installNodejsPackageDependenciesLib.require("InstallNodejsPackageDependencies.taskLoader"),
+    'nodejs-package'                      : nodejsPackageLib.require("NodeJSPackage.taskLoader"),
+    'command-application'                 : commandApplicationLib.require("CommandApplication.taskLoader"),
+    'application-instance'                : applicationInstanceLib.require("ApplicationInstance.taskLoader"),
+    'service-instance'                    : serviceInstanceLib.require("ServiceInstance.taskLoader"),
+    'endpoint-instance'                   : endpointInstanceLib.require("EndpointInstance.taskLoader")
+}
+```
+
+Para **adicionar um novo loader** à plataforma, inclua a lib nas `bound-params` e
+adicione a entrada correspondente neste mapa. O passo a passo de implementação
+está no
+[Guia: como criar e usar um Object Loader](https://github.com/Meta-Platform/meta-platform-essential-repository/blob/main/Runtime.Module/Executor.layer/task-executor.lib/docs/guia-criar-object-loader.md).
+
 > Veja os [Tipos de Object Loader](https://github.com/Meta-Platform/meta-platform-open-standard/blob/main/concepts/tipos-de-object-loader.md)
 > e o [Execution Params Standard](https://github.com/Meta-Platform/meta-platform-open-standard/blob/main/specifications/packages/execution-params-standard.md).
 > [README do repositório](../../../README.md).
