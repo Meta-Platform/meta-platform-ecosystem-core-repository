@@ -1,6 +1,5 @@
 {
     "port":"9084",
-    "serverName":"RuntimeManagerWebserviceInstance",
-    "supervisorSocketsDirPath": "~/meta-platform-repo/EcosystemData/supervisor-sockets"
+    "serverName":"RuntimeManagerWebserviceInstance"
 }
 

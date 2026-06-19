@@ -88,10 +88,10 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
     taskExecutor
         .AddTaskStatusListener(({taskId, status, objectLoaderType}) => {
             loggerEmitter && loggerEmitter.emit("log", {
-                        sourceName: "TaskExecutor",
-                        type: "info",
-                        message: GetFormattedMessage(taskId, status, objectLoaderType)
-                    })
+                sourceName: "TaskExecutor",
+                type: "info",
+                message: GetFormattedMessage(taskId, status, objectLoaderType)
+            })
         })
 
     const absolutInstallDataDirPath = ConvertPathToAbsolutPath(installDataDirPath)
@@ -115,7 +115,7 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
         return environmentName
     }
 
-    const _GetEnvironmentsPath = () => {
+    const _GetEnvironmentsPath = () => { 
         //TODO Parametrizar
         const GLOBAL_RT_ENV_DIRNAME = "environments"
         return join(absolutInstallDataDirPath, GLOBAL_RT_ENV_DIRNAME)

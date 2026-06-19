@@ -2,13 +2,13 @@
     {
         "appType":"APP",
         "executable":"executor-manager",
-        "packageNamespace":"Main.Module/Application.layer/ecosystem-instance-manager.app",
+        "packageNamespace":"Main.Module/InstanceManagerApplication.layer/ecosystem-instance-manager.app",
         "supervisorSocketFileName":"instance-manager.sock"
     },
     {
         "appType":"APP",
         "executable":"executor-panel",
-        "packageNamespace":"Main.Module/Application.layer/InstanceExecutorControlPanel.group/instance-executor-control-panel.webapp",
+        "packageNamespace":"Main.Module/InstanceManagerApplication.layer/InstanceExecutorControlPanel.group/instance-executor-control-panel.webapp",
         "supervisorSocketFileName":"executor-panel.sock"
     },
     {
@@ -20,7 +20,7 @@
     {
         "appType":"CLI",
         "executable":"executor",
-        "packageNamespace":"Main.Module/Application.layer/instance-executor.cli",
+        "packageNamespace":"Main.Module/InstanceManagerApplication.layer/instance-executor.cli",
         "supervisorSocketFileName":"executor.sock"
     },
     {
@@ -32,13 +32,13 @@
     {
         "appType":"CLI",
         "executable":"mypkg",
-        "packageNamespace":"Main.Module/Application.layer/package-toolkit.cli",
+        "packageNamespace":"Main.Module/PackageApplication.layer/package-toolkit.cli",
         "supervisorSocketFileName":"package-toolkit.sock"
     },
     {
         "appType":"CLI",
         "executable":"run",
-        "packageNamespace":"Main.Module/Application.layer/package-runner.cli",
+        "packageNamespace":"Main.Module/PackageApplication.layer/package-runner.cli",
         "supervisorSocketFileName":"package-runner.sock"
     }
 

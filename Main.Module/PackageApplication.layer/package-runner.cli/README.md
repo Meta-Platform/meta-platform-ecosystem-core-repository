@@ -11,6 +11,8 @@ CLI que **executa um pacote** de forma autossuficiente, montando localmente toda
 a cadeia de runtime (geração de `execution-params` + *task executor* + object
 loaders) sem depender da aplicação gerenciadora de instâncias.
 
+Ele é uma camada acima do package-executor (pkg)
+
 ## Comandos (`metadata/command-group.json`)
 
 | Comando | Descrição |

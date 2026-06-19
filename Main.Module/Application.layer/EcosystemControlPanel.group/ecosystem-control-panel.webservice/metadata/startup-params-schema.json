@@ -8,14 +8,10 @@
     },
     "serverName": {
       "type": "string"
-    },
-    "supervisorSocketsDirPath": {
-      "type": "string"
     }
   },
   "required": [
     "port",
-    "serverName",
-    "supervisorSocketsDirPath"
+    "serverName"
   ]
 }
