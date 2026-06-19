@@ -1,48 +1,67 @@
 import * as React from "react"
 
-import { 
+import {
     ListItem,
     ListHeader,
-    ListDescription,
     ListContent,
     List
  } from "semantic-ui-react"
 
+const boxStyle = {
+    marginLeft: "10px",
+    color: "rgb(98 98 98)",
+    backgroundColor: "#e8e8e8",
+    padding: "10px",
+    wordBreak: "break-all" as const
+}
 
-const RenderValue = ({value}) => {
+const listStyle = {
+    margin: "0px 15px 0px 15px",
+    backgroundColor: "#e8e8e8",
+    color: "rgb(98 98 98)",
+    padding: "10px"
+}
 
-    if(!value) return "UNDEFINED"
+// Renderiza qualquer valor com segurança. Objetos/arrays são percorridos
+// recursivamente — nunca renderiza um objeto cru como filho React (o que
+// quebrava o detalhe da task com campos aninhados como executionData).
+const RenderValue = ({ value }:any) => {
 
-    if(typeof value === "string")
-        return <div style={{ marginLeft:"10px", color:"rgb(98 98 98)", backgroundColor: "#e8e8e8", padding:"10px" }}>{value}</div>
+    if(value === null || value === undefined)
+        return <span style={{ marginLeft: "10px", color: "#9b9b9b" }}>—</span>
 
-    if(Array.isArray(value))
-        return  <List divided relaxed style={{ margin:"0px 15px 0px 15px", backgroundColor: "#e8e8e8", color:"rgb(98 98 98)", padding:"10px" }}>
-                    {
-                        Object.keys(value)
-                        .map((property) => 
-                            <ListItem>
-                                <ListContent>{value[property]}</ListContent>
-                            </ListItem>)
-                    }
-                </List>
+    if(typeof value === "string" || typeof value === "number" || typeof value === "boolean")
+        return <div style={boxStyle}>{String(value)}</div>
+
+    if(Array.isArray(value)){
+        if(value.length === 0)
+            return <div style={boxStyle}>[]</div>
+        return <List divided relaxed style={listStyle}>
+            {
+                value.map((item:any, index:number) =>
+                    <ListItem key={index}>
+                        <ListContent>
+                            <RenderValue value={item}/>
+                        </ListContent>
+                    </ListItem>)
+            }
+        </List>
+    }
 
     if(typeof value === "object")
-        return  <List divided relaxed style={{ margin:"0px 15px 0px 15px", backgroundColor: "#e8e8e8", color:"rgb(98 98 98)", padding:"10px" }}>
-                    {
-                        Object.keys(value)
-                        .map((property) => 
-                            <ListItem>
-                                <ListContent>
-                                    <ListHeader style={{ color:"rgb(98 98 98)" }}>{property}</ListHeader>
-                                    <ListDescription style={{ color:"rgb(98 98 98)" }}>{value[property]}</ListDescription>
-                                </ListContent>
-                            </ListItem>)
-                    }
-                </List>
+        return <List divided relaxed style={listStyle}>
+            {
+                Object.keys(value).map((property:string, index:number) =>
+                    <ListItem key={index}>
+                        <ListContent>
+                            <ListHeader style={{ color: "rgb(98 98 98)" }}>{property}</ListHeader>
+                            <RenderValue value={value[property]}/>
+                        </ListContent>
+                    </ListItem>)
+            }
+        </List>
 
-    return <div style={{ marginLeft:"10px", color:"rgb(98 98 98)", backgroundColor: "#e8e8e8", padding:"10px" }}>{value}</div>
-
+    return <div style={boxStyle}>{String(value)}</div>
 }
 
 export default RenderValue

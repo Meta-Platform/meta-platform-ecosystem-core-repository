@@ -5,6 +5,33 @@
 			"summary": "GetDefaultEcosystemParameters",
 			"method": "GET",
 			"path": "/ecosystem-default-params"
+		},
+		{
+			"summary": "ListConfigFiles",
+			"method": "GET",
+			"path": "/config-files"
+		},
+		{
+			"summary": "GetConfigFile",
+			"method": "POST",
+			"path": "/config-file",
+			"parameters": [
+				{
+					"name": "configFileName",
+					"in": "body",
+					"type": "string",
+					"required": true
+				}
+			]
+		},
+		{
+			"summary": "SaveConfigFile",
+			"method": "POST",
+			"path": "/save-config-file",
+			"parameters": [
+				{ "name": "configFileName", "in": "body", "type": "string", "required": true },
+				{ "name": "content", "in": "body", "type": "object", "required": true }
+			]
 		}
 	]
 }

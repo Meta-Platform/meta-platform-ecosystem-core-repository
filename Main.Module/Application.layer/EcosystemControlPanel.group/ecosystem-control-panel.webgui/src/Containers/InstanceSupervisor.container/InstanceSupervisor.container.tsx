@@ -16,13 +16,15 @@ import {
  } from "semantic-ui-react"
 
 import qs from "query-string"
-import { 
+import {
 	useLocation,
 	useNavigate
   } from "react-router-dom"
 
-import SocketFileList from "../../Lists/SocketFile.list"
 import GetAPI from "../../Utils/GetAPI"
+import CopyValue from "../../Components/CopyValue"
+import AppModal from "../../Components/AppModal"
+import { ShortId } from "../../Utils/Format"
 import Tasks from "./Tasks"
 
 import QueryParamsActionsCreator from "../../Actions/QueryParams.actionsCreator"
@@ -50,6 +52,7 @@ const InstanceSupervisorContainer = ({
 	const [monitoringStateKeySelected, setSocketFileNameSelected] = useState<string>()
 	const [taskIdSelected, setTaskIdSelected] = useState<number>()
 	const [taskInformationSelected, setTaskInformationSelected] = useState<any>()
+	const [isConfirmKillOpen, setIsConfirmKillOpen] = useState(false)
 
 	const location = useLocation()
   	const navigate = useNavigate()
@@ -62,25 +65,7 @@ const InstanceSupervisorContainer = ({
 		})
 
 	useEffect(() => {
-
-		if(Object.keys(queryParams).length > 0){
-
-			const {
-				socketFileName:socketFileNameQueryParams, 
-				taskId:taskIdQueryParams
-			} = queryParams
-
-			const newQueryParmas = {
-				...(socketFileNameQueryParams ? { socketFileName: socketFileNameQueryParams } : {}),
-				//@ts-ignore
-				...(taskIdQueryParams ? { taskId: parseInt(taskIdQueryParams) } : {})
-			}
-
-			SetQueryParams(newQueryParmas)
-		}
-		
 		updateSocketFileList()
-
 	}, [])
 
 	useEffect(() => {
@@ -88,14 +73,16 @@ const InstanceSupervisorContainer = ({
 		const search = qs.stringify(QueryParams)
 		navigate({search: `?${search}`})
 
-		if(Object.keys(QueryParams).length > 0){
+		// sincroniza nos DOIS sentidos: quando o param sai da URL (ex.: clicar
+		// em "overview" no sidebar), a seleção interna precisa ser limpa —
+		// senão o painel ficava preso no detalhe e o overview "parava".
+		setSocketFileNameSelected(QueryParams.monitoringStateKey || undefined)
 
-			if(QueryParams.socketFileName)
-				setSocketFileNameSelected(QueryParams.socketFileName)
-
-			if(QueryParams.taskId !== undefined)
-				setTaskIdSelected(QueryParams.taskId)
-
+		if(QueryParams.taskId !== undefined)
+			setTaskIdSelected(QueryParams.taskId)
+		else {
+			setTaskIdSelected(undefined)
+			setTaskInformationSelected(undefined)
 		}
 
 	}, [QueryParams])
@@ -170,13 +157,13 @@ const InstanceSupervisorContainer = ({
 
 	const mainPanes = [
 		{
-			menuItem: <MenuItem key='tasks' style={{background: "aliceblue"}}>
+			menuItem: <MenuItem key='tasks'>
 							tasks
 							<Label>{instanceTaskListCurrent.length}</Label>
 					</MenuItem>,
-		   render: () => 
-			<TabPane style={{background: "aliceblue"}}>
-				<Tasks 
+		   render: () =>
+			<TabPane>
+				<Tasks
 					taskId={taskIdSelected}
 					instanceTaskList={instanceTaskListCurrent}
 					taskInformation={taskInformationSelected}
@@ -185,21 +172,21 @@ const InstanceSupervisorContainer = ({
 			</TabPane>
 		},
 		{
-			menuItem: <MenuItem key='startup arguments' style={{background: "gainsboro"}}>
-							startup arguments		
+			menuItem: <MenuItem key='startup arguments'>
+							startup arguments
 						</MenuItem>,
 			render: () =>
-				<TabPane style={{background: "gainsboro"}}>
-					<StartupArguments 
+				<TabPane>
+					<StartupArguments
 						startupArguments={startupArgumentsCurrent}/>
 				</TabPane>
 		},
 		{
-			menuItem: <MenuItem key='instance process information' style={{background: "plum"}}>
-							instance process information		
+			menuItem: <MenuItem key='instance process information'>
+							instance process information
 						</MenuItem>,
 			render: () =>
-				<TabPane style={{background: "plum"}}>
+				<TabPane>
 					<InstanceProcessInformation
 						processInformation={instanceProcessInformationCurrent}/>
 				</TabPane>
@@ -213,39 +200,48 @@ const InstanceSupervisorContainer = ({
 	}
 
 	return monitoringStateKeySelected
-		? <Segment style={{margin:"15px", background: "antiquewhite"}}>
-				<Grid columns="two" divided>
-					<Column width={3}>
-						<SocketFileList
-							list={monitoringKeyList}
-							onSelect={handleSelectInstance}
-							socketFileSelected={monitoringStateKeySelected}/>
-					</Column>
-					<Column width={13}>
-						<Menu>
-							<MenuItem>
-								<Button icon color="red" onClick={() => handleKillInstance()}>
-									<Icon name='close'/>
-									kill instance
-								</Button>
-							</MenuItem>
-							<MenuMenu position='right'>
-								<MenuItem>
-									<Button icon onClick={() => handleBackTOverview()}>
-										<Icon name='arrow left'/>
-										go back
-									</Button>
-								</MenuItem>
-							</MenuMenu>
-						</Menu>
-						<Tab panes={mainPanes} />
-					</Column>
-				</Grid>
+		? <Segment style={{margin:"15px"}}>
+				<Menu>
+					<MenuItem>
+						<Button icon onClick={() => handleBackTOverview()}>
+							<Icon name='arrow left'/>
+							overview
+						</Button>
+					</MenuItem>
+					<MenuItem>
+						<Icon name="microchip"/>
+						<span style={{ fontFamily: "monospace", marginLeft: "6px" }} title={monitoringStateKeySelected}>{ShortId(monitoringStateKeySelected, 8, 6)}</span>
+						<CopyValue value={monitoringStateKeySelected}/>
+					</MenuItem>
+					<MenuMenu position='right'>
+						<MenuItem>
+							<Button icon color="red" basic onClick={() => setIsConfirmKillOpen(true)}>
+								<Icon name='close'/>
+								kill instance
+							</Button>
+						</MenuItem>
+					</MenuMenu>
+				</Menu>
+				<Tab panes={mainPanes} />
+
+				<AppModal
+					variant="danger"
+					open={isConfirmKillOpen}
+					header="Encerrar instância"
+					confirmText="encerrar instância"
+					confirmIcon="close"
+					onCancel={() => setIsConfirmKillOpen(false)}
+					onConfirm={() => { setIsConfirmKillOpen(false); KillInstance() }}>
+					<p>Encerrar a instância <code>{ShortId(monitoringStateKeySelected, 10, 8)}</code>?</p>
+					<p style={{ color: "#9f3a38" }}>
+						<Icon name="warning sign"/> Ação <strong>destrutiva e irreversível</strong>: mata o processo do package executor e todas as suas tasks.
+					</p>
+				</AppModal>
 			</Segment>
-		: <OverviewSocketPanel 
+		: <OverviewSocketPanel
 			onSelect={handleSelectInstance}
 			supervisorAPI={_GetSupervisorAPI()}/>
-	
+
 }
 
 

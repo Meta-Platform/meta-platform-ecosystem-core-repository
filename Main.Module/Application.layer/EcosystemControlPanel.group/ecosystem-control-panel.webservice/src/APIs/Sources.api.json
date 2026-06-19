@@ -37,6 +37,47 @@
 					"required": true
 				}
 			]
+		},
+		{
+			"summary": "InstallRepository",
+			"method": "POST",
+			"path": "/install-repository",
+			"parameters": [
+				{ "in": "body", "name": "repositoryNamespace", "type": "string", "required": true },
+				{ "in": "body", "name": "sourceType", "type": "string", "required": true },
+				{ "in": "body", "name": "executables", "type": "array", "required": false }
+			]
+		},
+		{
+			"summary": "ChangeRepositorySource",
+			"method": "POST",
+			"path": "/change-repository-source",
+			"parameters": [
+				{ "in": "body", "name": "repositoryNamespace", "type": "string", "required": true },
+				{ "in": "body", "name": "sourceType", "type": "string", "required": true }
+			]
+		},
+		{
+			"summary": "RegisterNewSource",
+			"method": "POST",
+			"path": "/register-source",
+			"parameters": [
+				{ "in": "body", "name": "repositoryNamespace", "type": "string", "required": true },
+				{ "in": "body", "name": "sourceType", "type": "string", "required": true },
+				{ "in": "body", "name": "localPath", "type": "string", "required": false },
+				{ "in": "body", "name": "repoName", "type": "string", "required": false },
+				{ "in": "body", "name": "repoOwner", "type": "string", "required": false },
+				{ "in": "body", "name": "fileId", "type": "string", "required": false }
+			]
+		},
+		{
+			"summary": "RemoveSource",
+			"method": "POST",
+			"path": "/remove-source",
+			"parameters": [
+				{ "in": "body", "name": "repositoryNamespace", "type": "string", "required": true },
+				{ "in": "body", "name": "sourceType", "type": "string", "required": true }
+			]
 		}
 	]
 }

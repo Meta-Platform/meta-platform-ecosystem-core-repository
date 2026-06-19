@@ -1,0 +1,23 @@
+{
+	"name": "Executables",
+	"endpoints": [
+		{
+			"summary": "ListExecutables",
+			"method": "GET",
+			"path": "/executables"
+		},
+		{
+			"summary": "GetExecutableInformation",
+			"method": "POST",
+			"path": "/executable-information",
+			"parameters": [
+				{
+					"name": "executableName",
+					"in": "body",
+					"type": "string",
+					"required": true
+				}
+			]
+		}
+	]
+}

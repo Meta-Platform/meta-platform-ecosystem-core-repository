@@ -4,6 +4,7 @@ import { Provider }                     from "react-redux"
 import { combineReducers, createStore } from "redux"
 
 import "semantic-ui-css/semantic.css"
+import "./Styles/CorporateTheme.css"
 
 import PagesMapper from "./Mappers/Pages.mapper"
 

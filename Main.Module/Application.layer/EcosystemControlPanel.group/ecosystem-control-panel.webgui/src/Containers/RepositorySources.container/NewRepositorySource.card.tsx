@@ -53,7 +53,7 @@ const NewRepositorySourceCard = ({
 
     return <Card style={{"width":"400px", "padding":"15px", "border":"2px solid blue"}}>
                 <strong style={{"fontSize": "large", color:"write"}}>new repository</strong>
-                <Segment style={{"backgroundColor": "blanchedalmond"}}>
+                <Segment style={{"backgroundColor": "#f6f7f9"}}>
                     <Form>
                         <FormField>
                             <label>repository namespace</label>

@@ -50,6 +50,24 @@
             }
         },
         {
+            "url": "/executables",
+            "type": "controller",
+            "params": {
+                "api-template": "APIs/Executables.api.json",
+                "controller": "Controllers/Executables.controller",
+                "controller-params":{
+                    "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
+                }
+            },
+            "bound-params": {
+                "serverService":"serverService",
+                "controller-params":{
+                    "ecosystemdataHandlerService":"ecosystemdataHandlerService",
+                    "jsonFileUtilitiesLib": "jsonFileUtilitiesLib"
+                }
+            }
+        },
+        {
             "url": "/environments",
             "type": "controller",
             "params": {
@@ -103,6 +121,25 @@
                 "controller-params":{
                     "ecosystemdataHandlerService":"ecosystemdataHandlerService",
                     "jsonFileUtilitiesLib": "jsonFileUtilitiesLib"
+                }
+            }
+        },
+        {
+            "url": "/host-actions",
+            "type": "controller",
+            "params": {
+                "api-template": "APIs/HostActions.api.json",
+                "controller": "Controllers/HostActions.controller",
+                "controller-params":{
+                    "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
+                }
+            },
+            "bound-params": {
+                "serverService":"serverService",
+                "controller-params":{
+                    "ecosystemdataHandlerService":"ecosystemdataHandlerService",
+                    "jsonFileUtilitiesLib": "jsonFileUtilitiesLib",
+                    "notificationHubService": "notificationHubService"
                 }
             }
         },

@@ -7,48 +7,30 @@ import {
 	Divider
  } from "semantic-ui-react"
 
-import RenderValue from "./RenderValue"
-
-const GetColorByStatus = (status) => {
-	switch(status){
-		case "ACTIVE":
-			return "green"
-		case "FAILURE":
-			return "red"
-		case "STARTING":
-			return "blue"
-		case "AWAITING_PRECONDITIONS":
-			return "teal"
-		default:
-			return "orange"
-	}
-}
+import StatusBadge from "./StatusBadge"
+import KeyValuePanel from "./KeyValuePanel"
 
 const StaticParametersInformation = ({ staticParameters }) => {
     return <Segment>
-                <strong style={{ fontSize: "1.3rem" }}>static parameters</strong>
+                <strong style={{ fontSize: "1.1rem" }}>static parameters</strong>
                 <Divider/>
-                    {
-                        Object.keys(staticParameters)
-                        .map((paramName, key) =>
-                        <div key={key} style={{marginBottom:"10px"}}>
-                            <strong>{paramName}</strong>
-                            <RenderValue value={staticParameters[paramName]}/>
-                        </div>)
-                    }
+                <KeyValuePanel data={staticParameters}/>
             </Segment>
 }
 
 const RenderContentRules = ({rules}) => {
 
-    const andRules = rules["&&"]
+    const andRules = (rules && rules["&&"]) || []
 
-    return <div style={{padding:"15px", backgroundColor: "antiquewhite"}}>
+    if(andRules.length === 0)
+        return <div style={{padding:"15px", backgroundColor: "#f6f7f9", color:"#999"}}>sem regras</div>
+
+    return <div style={{padding:"15px", backgroundColor: "#f6f7f9"}}>
         {
             andRules
-            .map((rule:any, key) => 
-                <div key={key} style={{marginBottom:"10px"}}>
-                    <strong>{rule.property} = </strong>{rule["="]}
+            .map((rule:any, key) =>
+                <div key={key} style={{marginBottom:"10px", wordBreak:"break-all"}}>
+                    <strong>{rule.property} = </strong>{String(rule["="])}
                     {
                         key < andRules.length - 1
                         && <Divider horizontal>and</Divider>
@@ -71,16 +53,9 @@ const ActivationRulesInformation = ({ activationRules }) => {
 const LinkedParametersInformation = ({ linkedParameters }) => {
 
     return <Segment>
-                <strong style={{ fontSize: "1.3rem" }}>linked parameters</strong>
+                <strong style={{ fontSize: "1.1rem" }}>linked parameters</strong>
                 <Divider/>
-                    {
-                        Object.keys(linkedParameters)
-                        .map((paramName, key) => 
-                            <div key={key} style={{marginBottom:"10px"}}>
-                                <strong>{paramName}</strong>
-                                <RenderValue value={linkedParameters[paramName]}/>
-                            </div>)
-                    }
+                <KeyValuePanel data={linkedParameters}/>
             </Segment>
 }
 
@@ -92,7 +67,7 @@ const AgentLinkRulesInformation = ({ agentLinkRules }) => {
                     {
                         agentLinkRules
                         .map((linkRule, key) => 
-                            <Segment key={key} style={{marginBottom:"15px", backgroundColor:"aliceblue"}}>
+                            <Segment key={key} style={{marginBottom:"15px", backgroundColor:"#f6f7f9"}}>
                                 <strong>{linkRule.referenceName}</strong>
                                 <Divider/>
                                 <RenderContentRules rules={linkRule.requirement}/>
@@ -107,11 +82,11 @@ const TaskInformation = ({
 	taskInformation
 }:any) => {
     
-	return <Segment style={{backgroundColor: "#f4f4f4"}}>
+	return <Segment>
                 <Header as='h1' textAlign='center'>
                     <Header.Content>
                         Task ID {taskInformation.taskId}
-                        <Label color={GetColorByStatus(taskInformation.status)}>{taskInformation.status}</Label>
+                        <StatusBadge status={taskInformation.status} size="medium"/>
                         {
                             taskInformation.pTaskId
                             && <Label>Parent Task ID {taskInformation.pTaskId}</Label>

@@ -10,6 +10,7 @@ const EnvironmentsController = (params) => {
     } = params
 
     const ReadJsonFile = jsonFileUtilitiesLib.require("ReadJsonFile")
+    const WriteObjectToFile = jsonFileUtilitiesLib.require("WriteObjectToFile")
 
     const _GetEcosystemDefaults = async () => {
         const ecosystemDefaultFilePath = path.resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaultsFileRelativePath)
@@ -39,11 +40,26 @@ const EnvironmentsController = (params) => {
         return executionPlan
     }
 
+    // Altera os detalhes das tasks: sobrescreve o execution-params.json (o plano
+    // de execução) do environment. A confirmação é feita na UI — afeta a próxima
+    // execução deste environment (não a instância já em execução).
+    const SaveExecutionParams = async ({ environmentName, executionParams }) => {
+
+        const ecosystemDefaults = await _GetEcosystemDefaults()
+
+        const enviromentPath = path.resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaults.ECOSYSTEMDATA_CONF_DIRNAME_EXECUTION_DATA_DIR, environmentName)
+        const executionPlanFilePath = path.resolve(enviromentPath, ecosystemDefaults.ECOSYSTEMDATA_CONF_FILENAME_EXECUTION_PLAN_DATA)
+
+        await WriteObjectToFile(executionPlanFilePath, executionParams)
+        return { environmentName, saved: true }
+    }
+
     return {
         controllerName : "EnvironmentsController",
         ListEnvironments: environmentHandlerService.ListEnvironments,
         GetMetadataHierarchy,
-        GetExecutionParams
+        GetExecutionParams,
+        SaveExecutionParams
     }
 }
 

@@ -7,20 +7,30 @@ import {
 } from "semantic-ui-react"
 
 import MetadataHierarchyDiagram from "./MetadataHierarchyDiagram"
-//import ExecutionPlanDiagram from "./ExecutionPlanDiagram"
-//<ExecutionPlanDiagram executionParams={executionParams}/>
+import ExecutionPlanView from "./ExecutionPlanView"
+import ExecutionPlanDiagram from "./ExecutionPlanDiagram"
+
 const EnvironmentDetailsTab = ({
     metadataHierarchy,
-    executionParams
+    executionParams,
+    onSaveExecutionParams
 }) => {
 
     const panes = [
         {
             menuItem: 'execution plan',
             render: () => <TabPane>
+                <ExecutionPlanView
+                    executionParams={executionParams}
+                    onSaveExecutionParams={onSaveExecutionParams}/>
+            </TabPane>
+        },
+        {
+            menuItem: 'diagram',
+            render: () => <TabPane>
                 {
                     executionParams
-                    ? <span>sdfgdfg</span>
+                    ? <ExecutionPlanDiagram executionParams={executionParams}/>
                     : <Loader/>
                 }
             </TabPane>

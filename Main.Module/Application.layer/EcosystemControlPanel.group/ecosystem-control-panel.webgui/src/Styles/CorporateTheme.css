@@ -1,0 +1,214 @@
+/*
+ * Tema corporativo / clean para o Ecosystem Control Panel.
+ * Canvas em tom de cinza, superfícies brancas elevadas, bordas sutis e
+ * tipografia neutra. Sobrepõe o semantic-ui-css padrão.
+ */
+
+:root {
+    --eco-canvas:    #eef0f3;
+    --eco-surface:   #ffffff;
+    --eco-surface-2: #f6f7f9;
+    --eco-surface-3: #eceef1;
+    --eco-border:    #e3e6ea;
+    --eco-border-2:  #d7dbe0;
+    --eco-text:      #2b2f33;
+    --eco-muted:     #6b7177;
+    --eco-accent:    #3a6ea5;
+    --eco-radius:    8px;
+    --eco-shadow:    0 1px 2px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .04);
+}
+
+html, body, #gui {
+    background: var(--eco-canvas) !important;
+    color: var(--eco-text);
+}
+
+body {
+    font-family: "Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ---- superfícies (segments / cards) ---- */
+.ui.segment {
+    border: 1px solid var(--eco-border) !important;
+    box-shadow: var(--eco-shadow) !important;
+    border-radius: var(--eco-radius) !important;
+    background: var(--eco-surface);
+}
+.ui.placeholder.segment {
+    background: var(--eco-surface-2);
+}
+.ui.card,
+.ui.cards > .card {
+    box-shadow: var(--eco-shadow) !important;
+    border: 1px solid var(--eco-border) !important;
+    border-radius: var(--eco-radius) !important;
+}
+.ui.card:hover,
+.ui.cards > .card:hover {
+    box-shadow: 0 2px 8px rgba(16, 24, 40, .10) !important;
+}
+
+/* ---- top bar ---- */
+.ui.menu {
+    box-shadow: none;
+    border-radius: 0;
+}
+.ui.attached.menu,
+.ui.borderless.menu {
+    background: var(--eco-surface);
+}
+
+/* ---- faixa de cabeçalho do card ----
+ * O primeiro Header (ou Menu secondary usado como toolbar) dentro de um Segment
+ * vira uma faixa destacada do conteúdo: fundo levemente cinza, borda inferior e
+ * ocupando a largura do card. Aplica-se a todos os painéis de forma consistente.
+ */
+.ui.segment > .ui.header:first-child,
+.ui.segment > .ui.secondary.menu:first-child {
+    margin: -1em -1em 1em -1em !important;
+    padding: 0.7em 1em !important;
+    background: var(--eco-surface-2);
+    border-bottom: 1px solid var(--eco-border) !important;
+    border-top-left-radius: var(--eco-radius);
+    border-top-right-radius: var(--eco-radius);
+}
+.ui.segment > .ui.secondary.menu:first-child { border-radius: var(--eco-radius) var(--eco-radius) 0 0; }
+.ui.segment > .ui.header:first-child .sub.header { margin-top: 2px; }
+
+/* ---- headers / tipografia ---- */
+.ui.header { color: var(--eco-text); }
+.ui.header .sub.header { color: var(--eco-muted); }
+code {
+    background: var(--eco-surface-3);
+    border-radius: 4px;
+    padding: 1px 5px;
+    color: #3a4047;
+}
+
+/* ---- tabelas (estilo planilha corporativa) ---- */
+.ui.table {
+    border: 1px solid var(--eco-border) !important;
+    border-radius: var(--eco-radius);
+    color: var(--eco-text);
+}
+.ui.table thead th {
+    background: var(--eco-surface-2) !important;
+    color: var(--eco-muted) !important;
+    font-weight: 600;
+    text-transform: none;
+    border-bottom: 1px solid var(--eco-border-2) !important;
+}
+.ui.table tbody tr:hover {
+    background: #f3f6fa !important;
+}
+.ui.striped.table tbody tr:nth-child(2n) {
+    background: var(--eco-surface-2);
+}
+.ui.table tr.active,
+.ui.table td.active {
+    background: #e8f0fa !important;
+    box-shadow: inset 3px 0 0 var(--eco-accent);
+}
+
+/* ---- abas (secondary pointing) ---- */
+.ui.secondary.pointing.menu {
+    border-bottom: 1px solid var(--eco-border);
+}
+.ui.secondary.pointing.menu .item {
+    color: var(--eco-muted);
+}
+.ui.secondary.pointing.menu .active.item {
+    color: var(--eco-accent);
+    border-color: var(--eco-accent);
+}
+.ui.tab.segment,
+.ui.bottom.attached.segment.active.tab {
+    background: var(--eco-surface);
+}
+
+/* ---- accordion / navigator ---- */
+.ui.styled.accordion {
+    box-shadow: none;
+    border: 1px solid var(--eco-border);
+    border-radius: var(--eco-radius);
+    background: var(--eco-surface);
+}
+.ui.styled.accordion .title {
+    color: var(--eco-text);
+    border-top: 1px solid var(--eco-border);
+}
+.ui.list .item .header { color: var(--eco-text); }
+
+/* ---- sidebar navigator compacto (aproveita melhor o espaço) ---- */
+.eco-navigator { font-size: .9em; }
+.eco-navigator .ui.styled.accordion,
+.eco-navigator .ui.styled.accordion .accordion { border-radius: 6px; }
+.eco-navigator .ui.styled.accordion .title {
+    padding: 6px 10px !important;
+    font-size: .95em;
+}
+.eco-navigator .ui.styled.accordion .content {
+    padding: 2px 6px 6px 6px !important;
+}
+.eco-navigator .ui.list { margin: 0 !important; }
+.eco-navigator .ui.list > .item,
+.eco-navigator .ui.list .list > .item {
+    padding: 2px 4px !important;
+    line-height: 1.25 !important;
+}
+.eco-navigator .ui.list .list {
+    padding-left: 10px !important;
+    margin: 0 !important;
+}
+.eco-navigator .ui.list .item .header { font-weight: 500; }
+.eco-navigator .ui.label.circular { padding: 2px 5px !important; }
+
+/* ---- inputs ---- */
+.ui.input > input,
+.ui.selection.dropdown {
+    border-radius: 6px;
+    border-color: var(--eco-border-2);
+}
+.ui.input > input:focus {
+    border-color: var(--eco-accent);
+}
+
+/* ---- labels mais discretas ---- */
+.ui.basic.label {
+    border-color: var(--eco-border-2);
+    color: var(--eco-muted);
+    background: var(--eco-surface-2);
+}
+
+/* ---- foco visível (teclado) ---- */
+.ui.button:focus-visible,
+.ui.list .item:focus-visible,
+.ui.menu .item:focus-visible,
+a:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible,
+.ui.table tbody tr:focus-visible {
+    outline: 2px solid var(--eco-accent) !important;
+    outline-offset: 1px;
+    border-radius: 4px;
+}
+
+/* ---- cabeçalho de tabela fixo (sticky) em containers roláveis ---- */
+.ui.table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+/* botão desabilitado com contraste claro de "desabilitado" (não parecer bug) */
+.ui.button:disabled,
+.ui.disabled.button {
+    opacity: 0.5 !important;
+}
+
+/* ---- scrollbars sutis ---- */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: #c7ccd2; border-radius: 6px; border: 2px solid var(--eco-canvas); }
+*::-webkit-scrollbar-thumb:hover { background: #aeb4bb; }
+*::-webkit-scrollbar-track { background: transparent; }

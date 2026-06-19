@@ -31,6 +31,15 @@
 					"required": true
 				}
 			]
+		},
+		{
+			"summary": "SaveExecutionParams",
+			"method": "POST",
+			"path": "/save-execution-params",
+			"parameters": [
+				{ "name": "environmentName", "in": "body", "type": "string", "required": true },
+				{ "name": "executionParams", "in": "body", "type": "array", "required": true }
+			]
 		}
 	]
 }

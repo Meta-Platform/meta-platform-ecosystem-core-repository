@@ -2,152 +2,208 @@ import * as React from "react"
 import { useState, useEffect } from "react"
 
 import {
+    Button,
+    Icon,
     Loader,
-    Segment,
     Menu,
     MenuMenu,
     MenuItem,
-    Button,
-    CardGroup
+    Modal,
+    Segment
 } from "semantic-ui-react"
 
 import GetAPI from "../../Utils/GetAPI"
 
-import SourceParamsTable from "./SourceParams.table"
-
-import RepositorySourceCard from "./RepositorySource.card"
+import SourcesListTable        from "./SourcesList.table"
+import RegisterSourceModal     from "./RegisterSource.modal"
 import NewRepositorySourceCard from "./NewRepositorySource.card"
 
-const GroupSources = (sourceList) => {
-
-    return sourceList.reduce((acc, source) => {
-
-        if(!acc[source.repositoryNamespace]){
+const GroupSources = (sourceList) =>
+    sourceList.reduce((acc, source) => {
+        if(!acc[source.repositoryNamespace])
             acc[source.repositoryNamespace] = []
-        }
-
         acc[source.repositoryNamespace].push(source)
-
         return acc
     }, {})
-}
 
 const RepositorySourcesContainer = ({ serverManagerInformation }:any) => {
 
-    const [ sourceList, setSourceList ] = useState<any[]>([])
+    const [ sourceList, setSourceList ]             = useState<any[]>([])
     const [ activeSourceList, setActiveSourceList ] = useState<any[]>([])
-    const [ isLoading, setIsLoading ] = useState(true)
+    const [ isLoading, setIsLoading ]               = useState(true)
 
-    const [ groupedSources, setGroupedSources] = useState({})
+    const [ newRepoMode, setNewRepoMode ]           = useState(false)
+    const [ registerModalNamespace, setRegisterModalNamespace ] = useState<string | undefined>()
+    const [ isRegisterModalOpen, setIsRegisterModalOpen ]       = useState(false)
+    const [ isRegistering, setIsRegistering ]       = useState(false)
+    const [ confirmRemove, setConfirmRemove ]       = useState<any>()
 
-    const [ sourceDataListSwitchSourceSelected, setSourceDataListSwitchSourceSelected ] = useState<any[]>()
+    // { namespace, action, sourceType } da ação de escrita em andamento
+    const [ busyAction, setBusyAction ]             = useState<any>()
 
-    const [ newRepoMode, setNewRepoMode ] = useState(false)
+    const _GetSourcesAPI = () =>
+        GetAPI({ apiName: "Sources", serverManagerInformation })
 
-    const _GetSourcesAPI = () => 
-        GetAPI({ 
-            apiName:"Sources",  
-            serverManagerInformation 
-        })
-    
     useEffect(() => {
         updateAllList()
     }, [])
 
-
-    const updateAllList = () => {
-        fetchSourceList()
-        fetchActiveSourceList()
+    const updateAllList = async () => {
+        await Promise.all([ fetchSourceList(), fetchActiveSourceList() ])
+        setIsLoading(false)
     }
-    
+
     const fetchSourceList = async () => {
         try {
-            const api = _GetSourcesAPI()
-            const response = await api.ListSources()
-            const sourceList = response.data
-            setSourceList(sourceList)
-            setGroupedSources(GroupSources(sourceList))
-            setIsLoading(false)
-
-        }catch(e){
-            console.log(e)
-        }
+            const response = await _GetSourcesAPI().ListSources()
+            setSourceList(response.data)
+        } catch(e) { console.log(e) }
     }
 
     const fetchActiveSourceList = async () => {
         try {
-            const api = _GetSourcesAPI()
-            const response = await api.ListActiveSources()
-            const activeSourceList = response.data
-            setActiveSourceList(activeSourceList)
-        }catch(e){
+            const response = await _GetSourcesAPI().ListActiveSources()
+            setActiveSourceList(response.data)
+        } catch(e) { console.log(e) }
+    }
+
+    // Executa uma ação de escrita, marcando o estado de "busy" e atualizando as
+    // listas ao final. O progresso detalhado chega pelo painel de Notifications.
+    const runAction = async (busy, apiCall) => {
+        try {
+            setBusyAction(busy)
+            await apiCall()
+            await updateAllList()
+        } catch(e) {
             console.log(e)
+        } finally {
+            setBusyAction(undefined)
         }
     }
 
-    const CreateNamespace = async (namespace) => {
-        try{
-            const api = _GetSourcesAPI()
-            await api.CreateNewRepositoryNamespace({repositoryNamespace: namespace})
-            updateAllList()
+    const handleInstall = (repositoryNamespace, sourceType) =>
+        runAction({ namespace: repositoryNamespace, action: "install", sourceType },
+            () => _GetSourcesAPI().InstallRepository({ repositoryNamespace, sourceType }))
+
+    const handleChangeSource = (repositoryNamespace, sourceType) =>
+        runAction({ namespace: repositoryNamespace, action: "change", sourceType },
+            () => _GetSourcesAPI().ChangeRepositorySource({ repositoryNamespace, sourceType }))
+
+    const handleUpdate = (repositoryNamespace) =>
+        runAction({ namespace: repositoryNamespace, action: "update" },
+            () => _GetSourcesAPI().UpdateRepository({ repositoryNamespace }))
+
+    const handleConfirmRemoveSource = () => {
+        const { repositoryNamespace, sourceType } = confirmRemove
+        setConfirmRemove(undefined)
+        runAction({ namespace: repositoryNamespace, action: "removeSource", sourceType },
+            () => _GetSourcesAPI().RemoveSource({ repositoryNamespace, sourceType }))
+    }
+
+    const handleCreateNamespace = async (repositoryNamespace) => {
+        try {
+            await _GetSourcesAPI().CreateNewRepositoryNamespace({ repositoryNamespace })
+            await updateAllList()
             setNewRepoMode(false)
-        }catch(e){
+        } catch(e) { console.log(e) }
+    }
+
+    const handleRegisterSource = async (registerArgs) => {
+        try {
+            setIsRegistering(true)
+            await _GetSourcesAPI().RegisterNewSource(registerArgs)
+            await updateAllList()
+            setIsRegisterModalOpen(false)
+        } catch(e) {
             console.log(e)
+        } finally {
+            setIsRegistering(false)
         }
     }
 
-    const handleOpenSwitchSource = (repositoryNamespace) => {
-        const sourceListFilteredByRepositoryNamespace = sourceList
-        .filter((sourceData) => sourceData.repositoryNamespace === repositoryNamespace)
-        setSourceDataListSwitchSourceSelected(sourceListFilteredByRepositoryNamespace)
+    const openRegisterModal = (namespace?:string) => {
+        setRegisterModalNamespace(namespace)
+        setIsRegisterModalOpen(true)
     }
 
-    const handleCloseSwitchSource = () => setSourceDataListSwitchSourceSelected(undefined)
+    const groupedSources = GroupSources(sourceList)
 
-    const handleAddNewRepository = () => setNewRepoMode(true)
+    const getActiveSourceType = (repositoryNamespace) => {
+        const active = activeSourceList.find((a) => a.repositoryNamespace === repositoryNamespace)
+        return active && active.sourceData && active.sourceData.sourceType
+    }
 
-    const handleCreateRepositoryNamespace = (repositoryNamespace) => CreateNamespace(repositoryNamespace)
+    const isInstalled = (repositoryNamespace) =>
+        activeSourceList.some((a) => a.repositoryNamespace === repositoryNamespace)
 
     return <>
-                <Menu style={{margin:"1em", "backgroundColor": "honeydew"}} >
-                    <MenuMenu position='right'>
-                        {
-                            !newRepoMode && <MenuItem>
-                                <Button icon primary onClick={handleAddNewRepository}>
-                                    add new repository namespace 
-                                </Button>
-                            </MenuItem>
-                        }
-                    </MenuMenu>
-                </Menu>
-                <Segment style={{margin:"1em", "backgroundColor": "honeydew"}}>
-                    {
-                        isLoading 
-                        ? <Loader active style={{margin: "50px"}}/>
-                        :<div style={{ overflow: 'auto', height:"77vh", "padding":"10px" }}>
-                            <CardGroup>
-                                {
-                                    newRepoMode
-                                    && <NewRepositorySourceCard 
-                                        onCancel={() => setNewRepoMode(false)}
-                                        onCreateRepositoryNamespace={handleCreateRepositoryNamespace}/>
-                                }
-                                {
-                                    Object.keys(groupedSources)
-                                    .map((repositoryNamespace) =>
-                                        <RepositorySourceCard
-                                            serverManagerInformation={serverManagerInformation}
-                                            onOpenSwitchSource={handleOpenSwitchSource}
-                                            activeSourceList={activeSourceList}
-                                            repositoryNamespace={repositoryNamespace}/>)
-                                }
-                            </CardGroup>
-                            
-                        </div>
-                    }
-                </Segment>
-               
-            </>
+        <Menu style={{ margin: "1em" }}>
+            <MenuMenu position="right">
+                <MenuItem>
+                    <Button icon primary onClick={() => openRegisterModal(undefined)}>
+                        <Icon name="feed"/> register source
+                    </Button>
+                </MenuItem>
+                <MenuItem>
+                    <Button icon onClick={() => setNewRepoMode(true)} disabled={newRepoMode}>
+                        <Icon name="plus"/> add namespace
+                    </Button>
+                </MenuItem>
+            </MenuMenu>
+        </Menu>
+
+        <Segment style={{ margin: "1em" }}>
+            {
+                newRepoMode &&
+                <div style={{ marginBottom: "12px", maxWidth: "440px" }}>
+                    <NewRepositorySourceCard
+                        onCancel={() => setNewRepoMode(false)}
+                        onCreateRepositoryNamespace={handleCreateNamespace}/>
+                </div>
+            }
+            {
+                isLoading
+                ? <Loader active style={{ margin: "50px" }}/>
+                : <div style={{ overflow: "auto", maxHeight: "72vh" }}>
+                    <SourcesListTable
+                        groupedSources={groupedSources}
+                        getActiveSourceType={getActiveSourceType}
+                        isInstalled={isInstalled}
+                        busyAction={busyAction}
+                        onInstall={handleInstall}
+                        onChangeSource={handleChangeSource}
+                        onRemoveSource={(ns, st) => setConfirmRemove({ repositoryNamespace: ns, sourceType: st })}
+                        onUpdate={handleUpdate}
+                        onRegisterSourceForNamespace={openRegisterModal}/>
+                </div>
+            }
+        </Segment>
+
+        {
+            isRegisterModalOpen &&
+            <RegisterSourceModal
+                namespaceOptions={Object.keys(groupedSources)}
+                defaultNamespace={registerModalNamespace}
+                isRegistering={isRegistering}
+                onCancel={() => setIsRegisterModalOpen(false)}
+                onRegister={handleRegisterSource}/>
+        }
+
+        {
+            confirmRemove &&
+            <Modal size="mini" open={true} onClose={() => setConfirmRemove(undefined)}>
+                <Modal.Header><Icon name="trash" color="red"/> Remover fonte</Modal.Header>
+                <Modal.Content>
+                    Remover a fonte <strong>{confirmRemove.sourceType}</strong> do namespace
+                    <strong> {confirmRemove.repositoryNamespace}</strong>? Isso altera o <code>sources.json</code>.
+                </Modal.Content>
+                <Modal.Actions>
+                    <Button onClick={() => setConfirmRemove(undefined)}>cancelar</Button>
+                    <Button color="red" onClick={handleConfirmRemoveSource}>remover</Button>
+                </Modal.Actions>
+            </Modal>
+        }
+    </>
 }
 
 export default RepositorySourcesContainer

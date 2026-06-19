@@ -12,13 +12,14 @@ const SegmentTaskStyled = styled(Segment)`
     justify-content: space-between;
     align-items: center;
     background-color: ${({ isSelected }) =>
-        isSelected ? "antiquewhite" : "white"} !important;
+        isSelected ? "#e8f0fa" : "#ffffff"} !important;
     border: ${({ isSelected }) =>
-        isSelected ? "1px solid rgb(34 36 38 / 66%)" : "1px solid #afafaf"} !important;
+        isSelected ? "1px solid #3a6ea5" : "1px solid #e3e6ea"} !important;
+    border-radius: 6px !important;
 
     &:hover {
-        background-color: antiquewhite !important;
-        border: 1px solid rgb(34 36 38 / 66%) !important;
+        background-color: #f3f6fa !important;
+        border: 1px solid #b9c4d1 !important;
     }
 `
 
