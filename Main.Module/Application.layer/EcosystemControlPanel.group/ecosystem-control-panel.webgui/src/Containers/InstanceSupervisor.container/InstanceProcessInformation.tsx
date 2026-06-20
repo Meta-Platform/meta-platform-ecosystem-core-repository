@@ -1,11 +1,9 @@
 import * as React from "react"
 
-import { Segment } from "semantic-ui-react"
-
 import KeyValuePanel from "../../Components/KeyValuePanel"
 
 const InstanceProcessInformation = ({
     processInformation
-}) => <Segment><KeyValuePanel data={processInformation}/></Segment>
+}) => <div style={{ padding: "4px 2px" }}><KeyValuePanel data={processInformation}/></div>
 
 export default InstanceProcessInformation

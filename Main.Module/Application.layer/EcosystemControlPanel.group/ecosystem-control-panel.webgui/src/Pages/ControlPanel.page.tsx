@@ -290,7 +290,8 @@ const ControlPanelPage = ({
 				return <ExecutablesContainer
 							serverManagerInformation={HTTPServerManager}
 							selectedExecutableName={QueryParams.executableName}
-							onSelectExecutable={(name:string) => AddQueryParam("executableName", name)}/>
+							onSelectExecutable={(name:string) => AddQueryParam("executableName", name)}
+							onClearExecutable={() => RemoveQueryParam("executableName")}/>
 			case "config files":
 				return <ConfigFilesContainer
 							serverManagerInformation={HTTPServerManager}

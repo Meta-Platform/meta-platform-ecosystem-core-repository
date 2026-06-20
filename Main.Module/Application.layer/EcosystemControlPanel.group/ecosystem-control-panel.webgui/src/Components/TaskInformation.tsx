@@ -1,123 +1,89 @@
 import * as React from "react"
 
-import { 
-	Segment, 
+import {
+	Button,
 	Header,
+	Icon,
 	Label,
-	Divider
+	Segment,
+	Tab,
+	TabPane,
+	Table
  } from "semantic-ui-react"
 
 import StatusBadge from "./StatusBadge"
 import KeyValuePanel from "./KeyValuePanel"
 
-const StaticParametersInformation = ({ staticParameters }) => {
-    return <Segment>
-                <strong style={{ fontSize: "1.1rem" }}>static parameters</strong>
-                <Divider/>
-                <KeyValuePanel data={staticParameters}/>
-            </Segment>
+// Regras (&&) renderizadas na MESMA tabela chave-valor do KeyValuePanel,
+// para padronizar a aparência de todas as abas do detalhe.
+const RulesTable = ({ rules }:any) => {
+	const andRules = (rules && rules["&&"]) || []
+	if(andRules.length === 0)
+		return <span style={{ color: "#999" }}>sem regras</span>
+	return <Table basic compact unstackable style={{ tableLayout: "fixed", width: "100%" }}>
+		<Table.Body>
+			{
+				andRules.map((rule:any, key:number) =>
+					<Table.Row key={key}>
+						<Table.Cell style={{ width: "45%", verticalAlign: "top", wordBreak: "break-all" }}>
+							<strong style={{ fontFamily: "monospace", fontSize: ".82em", color: "#444" }}>{rule.property}</strong>
+						</Table.Cell>
+						<Table.Cell style={{ overflow: "hidden" }}>
+							<code style={{ wordBreak: "break-all" }}>{String(rule["="])}</code>
+						</Table.Cell>
+					</Table.Row>)
+			}
+		</Table.Body>
+	</Table>
 }
 
-const RenderContentRules = ({rules}) => {
+const TaskInformation = ({ taskInformation, onClose }:any) => {
 
-    const andRules = (rules && rules["&&"]) || []
+	// Cada seção vira uma aba — só aparecem as que têm dados, evitando um
+	// painel muito comprido com tudo empilhado.
+	const panes:any[] = []
+	if(taskInformation.staticParameters)
+		panes.push({ menuItem: "params", render: () => <TabPane style={{ border: "none", padding: "8px 2px" }}><KeyValuePanel data={taskInformation.staticParameters}/></TabPane> })
+	if(taskInformation.linkedParameters)
+		panes.push({ menuItem: "linked", render: () => <TabPane style={{ border: "none", padding: "8px 2px" }}><KeyValuePanel data={taskInformation.linkedParameters}/></TabPane> })
+	if(taskInformation.activationRules)
+		panes.push({ menuItem: "activation", render: () => <TabPane style={{ border: "none", padding: "8px 2px" }}><RulesTable rules={taskInformation.activationRules}/></TabPane> })
+	if(taskInformation.agentLinkRules && taskInformation.agentLinkRules.length > 0)
+		panes.push({
+			menuItem: "agent links",
+			render: () => <TabPane style={{ border: "none", padding: "8px 2px" }}>
+				{
+					taskInformation.agentLinkRules.map((linkRule:any, key:number) =>
+						<div key={key} style={{ marginBottom: "10px" }}>
+							<div style={{ fontFamily: "monospace", fontSize: ".82em", marginBottom: "4px" }}>{linkRule.referenceName}</div>
+							<RulesTable rules={linkRule.requirement}/>
+						</div>)
+				}
+			</TabPane>
+		})
 
-    if(andRules.length === 0)
-        return <div style={{padding:"15px", backgroundColor: "#f6f7f9", color:"#999"}}>sem regras</div>
+	return <div style={{ padding: "14px 16px" }}>
+		<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+			<Header as="h3" style={{ margin: 0 }}>
+				<Header.Content>
+					Task ID {taskInformation.taskId}
+					<StatusBadge status={taskInformation.status} size="small"/>
+					{ taskInformation.pTaskId !== undefined && taskInformation.pTaskId !== null &&
+						<Label size="mini" style={{ marginLeft: "4px" }}>parent {taskInformation.pTaskId}</Label> }
+					<Header.Subheader>{taskInformation.objectLoaderType}</Header.Subheader>
+				</Header.Content>
+			</Header>
+			{ onClose && <Button icon basic size="mini" title="fechar detalhe" onClick={onClose} style={{ flex: "0 0 auto" }}><Icon name="close"/></Button> }
+		</div>
 
-    return <div style={{padding:"15px", backgroundColor: "#f6f7f9"}}>
-        {
-            andRules
-            .map((rule:any, key) =>
-                <div key={key} style={{marginBottom:"10px", wordBreak:"break-all"}}>
-                    <strong>{rule.property} = </strong>{String(rule["="])}
-                    {
-                        key < andRules.length - 1
-                        && <Divider horizontal>and</Divider>
-                    }
-                </div>
-                )
-        }
-    </div>
-}
-
-const ActivationRulesInformation = ({ activationRules }) => {
-    return <Segment>
-                <strong style={{ fontSize: "1.3rem" }}>activation rules</strong>
-                <Divider/>
-                <RenderContentRules rules={activationRules}/>
-            </Segment>
-}
-
-
-const LinkedParametersInformation = ({ linkedParameters }) => {
-
-    return <Segment>
-                <strong style={{ fontSize: "1.1rem" }}>linked parameters</strong>
-                <Divider/>
-                <KeyValuePanel data={linkedParameters}/>
-            </Segment>
-}
-
-const AgentLinkRulesInformation = ({ agentLinkRules }) => {
-
-    return <Segment>
-                <strong style={{ fontSize: "1.3rem" }}>agent link rules</strong>
-                <Divider/>
-                    {
-                        agentLinkRules
-                        .map((linkRule, key) => 
-                            <Segment key={key} style={{marginBottom:"15px", backgroundColor:"#f6f7f9"}}>
-                                <strong>{linkRule.referenceName}</strong>
-                                <Divider/>
-                                <RenderContentRules rules={linkRule.requirement}/>
-                            </Segment>)
-                    }
-            </Segment>
-}
-
-
-
-const TaskInformation = ({
-	taskInformation
-}:any) => {
-    
-	return <Segment>
-                <Header as='h1' textAlign='center'>
-                    <Header.Content>
-                        Task ID {taskInformation.taskId}
-                        <StatusBadge status={taskInformation.status} size="medium"/>
-                        {
-                            taskInformation.pTaskId
-                            && <Label>Parent Task ID {taskInformation.pTaskId}</Label>
-                        }
-                        <Header.Subheader>
-                            {taskInformation.objectLoaderType}
-                        </Header.Subheader>
-                    </Header.Content>
-                </Header>
-                {
-                    taskInformation.activationRules
-                    && <ActivationRulesInformation
-                            activationRules={taskInformation.activationRules} />
-                }
-                {
-                    taskInformation.staticParameters
-                    && <StaticParametersInformation
-                            staticParameters={taskInformation.staticParameters} />
-                }
-                {
-                    taskInformation.linkedParameters
-                    && <LinkedParametersInformation
-                            linkedParameters={taskInformation.linkedParameters} />
-                }
-                {
-                    taskInformation.agentLinkRules
-                    && taskInformation.agentLinkRules.length > 0
-                    && <AgentLinkRulesInformation
-                        agentLinkRules={taskInformation.agentLinkRules} />
-                }
-            </Segment>
+		{
+			panes.length > 0 &&
+			<Tab
+				menu={{ secondary: true, pointing: true, size: "small" }}
+				panes={panes}
+				style={{ marginTop: "10px" }}/>
+		}
+	</div>
 }
 
 export default TaskInformation

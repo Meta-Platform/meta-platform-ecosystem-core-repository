@@ -53,7 +53,7 @@ const SourcesListTable = ({
                         onClick={() => toggle(ns)}
                         style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px", cursor: "pointer" }}>
                         <Icon name={isOpen ? "caret down" : "caret right"} style={{ color: "#999" }}/>
-                        <Icon name="database" style={{ color: "#7b8794" }}/>
+                        <Icon name="cubes" style={{ color: "#7b8794" }}/>
                         <strong style={{ flex: 1 }}>{ns}</strong>
                         {
                             installed

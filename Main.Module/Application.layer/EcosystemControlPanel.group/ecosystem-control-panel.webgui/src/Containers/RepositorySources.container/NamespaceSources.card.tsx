@@ -37,7 +37,7 @@ const NamespaceSourcesCard = ({
     return <Card style={{ width: "440px" }}>
         <Card.Content>
             <Card.Header>
-                <Icon name="database"/> {repositoryNamespace}
+                <Icon name="cubes"/> {repositoryNamespace}
                 {
                     isInstalled
                     ? <Label color="green" size="tiny" style={{ marginLeft: "8px" }}>installed</Label>

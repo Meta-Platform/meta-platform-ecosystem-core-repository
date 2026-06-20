@@ -72,6 +72,7 @@ const EcosystemNavigator = ({
 
     const [ openSections, setOpenSections ] = useState<any>({ instances: true, environments: false })
     const [ openGroups, setOpenGroups ]     = useState<any>({})
+    const [ openExecGroups, setOpenExecGroups ] = useState<any>({})
     const [ navFilter, setNavFilter ]       = useState<string>("")
 
     const _GetSupervisorAPI = () =>
@@ -183,7 +184,7 @@ const EcosystemNavigator = ({
                                 active={selection.monitoringStateKey === monitoringStateKey}
                                 onClick={() => onNavigate({ panel: "instance supervisor", params: { monitoringStateKey } })}>
                                 <List.Content>
-                                    <Icon name="circle" size="small" color={GetStatusColor(info.status)}/>
+                                    <Icon name="plug" size="small" color={GetStatusColor(info.status)}/>
                                     <span title={monitoringStateKey}>{socketName}</span>
                                 </List.Content>
                             </List.Item>
@@ -194,97 +195,72 @@ const EcosystemNavigator = ({
 
             { /* Executables (executables/) — 2º nó, irmão de repos/ no EcosystemData */ }
             <Accordion.Title
-                active={isActivePanel("executables")}
-                onClick={() => onNavigate({ panel: "executables", params: { executableName: undefined } })}>
+                active={openSections.executables}
+                onClick={() => { toggleSection("executables"); onNavigate({ panel: "executables", params: { executableName: undefined } }) }}>
                 <Icon name="dropdown"/>
                 <SectionTitle iconName="terminal" label="Executables"
                     count={executableList.filter((e:any) => !e.isDebug).length}/>
             </Accordion.Title>
-            <Accordion.Content active={isActivePanel("executables") || filtering}>
-                <List selection size="small">
-                    {
-                        filteredExecutables
-                        .sort((a:any, b:any) => a.executableName.localeCompare(b.executableName))
-                        .map((executable:any, key:number) =>
-                            <List.Item
-                                key={key}
-                                active={selection.executableName === executable.executableName}
-                                onClick={() => onNavigate({ panel: "executables", params: { executableName: executable.executableName } })}>
-                                <List.Content>
-                                    <List.Header>
-                                        <Icon name="terminal"/> {executable.executableName}
-                                        <Label size="mini" color={executable.type === "cli" ? "teal" : "blue"} style={{ marginLeft: "5px" }}>{executable.type}</Label>
-                                    </List.Header>
-                                </List.Content>
-                            </List.Item>)
-                    }
-                    <List.Item onClick={() => setShowDebugExecutables(!showDebugExecutables)} style={{ cursor: "pointer" }}>
-                        <List.Content>
-                            <span style={{ color: "#999", fontSize: ".9em" }}>
-                                <Icon name={showDebugExecutables ? "eye slash" : "eye"}/>
-                                {showDebugExecutables ? "ocultar -dbg" : "mostrar -dbg"}
-                            </span>
-                        </List.Content>
-                    </List.Item>
-                </List>
+            <Accordion.Content active={openSections.executables || filtering}>
+                {
+                    [
+                        { type: "application", label: "Application / Daemon", icon: "desktop"  },
+                        { type: "cli",         label: "Command Line",        icon: "terminal" }
+                    ].map((group:any) => {
+                        const items = filteredExecutables
+                            .filter((e:any) => e.type === group.type)
+                            .sort((a:any, b:any) => a.executableName.localeCompare(b.executableName))
+                        if(items.length === 0) return null
+                        const isOpen = openExecGroups[group.type] || filtering
+                        return <div key={group.type} style={{ marginBottom: "4px" }}>
+                            <div
+                                onClick={() => setOpenExecGroups({ ...openExecGroups, [group.type]: !openExecGroups[group.type] })}
+                                style={{ padding: "4px 6px 2px", color: "#8a9099", fontSize: ".75em", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".03em", cursor: "pointer", userSelect: "none" }}>
+                                <Icon name={isOpen ? "caret down" : "caret right"}/>
+                                <Icon name={group.icon}/> {group.label}
+                                <Label circular size="mini" style={{ marginLeft: "5px" }}>{items.length}</Label>
+                            </div>
+                            {
+                                isOpen &&
+                                <List selection size="small">
+                                    {
+                                        items.map((executable:any, key:number) =>
+                                            <List.Item
+                                                key={key}
+                                                active={selection.executableName === executable.executableName}
+                                                onClick={() => onNavigate({ panel: "executables", params: { executableName: executable.executableName } })}>
+                                                <List.Content>
+                                                    <List.Header style={{ paddingLeft: "14px" }}><Icon name={group.icon}/> {executable.executableName}</List.Header>
+                                                </List.Content>
+                                            </List.Item>)
+                                    }
+                                </List>
+                            }
+                        </div>
+                    })
+                }
+                <div onClick={() => setShowDebugExecutables(!showDebugExecutables)} style={{ cursor: "pointer", padding: "4px 6px", color: "#999", fontSize: ".85em" }}>
+                    <Icon name={showDebugExecutables ? "eye slash" : "eye"}/>
+                    {showDebugExecutables ? "ocultar -dbg" : "mostrar -dbg"}
+                </div>
             </Accordion.Content>
 
-            { /* Environments (agrupados por identidade de pacote) */ }
+            { /* Environments — não lista (são muitos); abre um painel com a lista */ }
             <Accordion.Title
-                active={openSections.environments}
-                onClick={() => toggleSection("environments")}>
-                <Icon name="dropdown"/>
-                <SectionTitle iconName="sitemap" label="Environments" count={Object.keys(groupedEnvironments).length}/>
+                active={isActivePanel("environments")}
+                onClick={() => onNavigate({ panel: "environments", params: { environmentName: undefined } })}>
+                <Icon name="dropdown" style={{ visibility: "hidden" }}/>
+                <SectionTitle iconName="sitemap" label="Environments" count={environmentNameList.length}/>
             </Accordion.Title>
-            <Accordion.Content active={openSections.environments || filtering}>
-                <List size="small">
-                    {
-                        Object.keys(groupedEnvironments).sort().map((packageIdentity:string, key:number) => {
-                            const instances = groupedEnvironments[packageIdentity]
-                            const isOpen = openGroups[packageIdentity] || filtering
-                            return <List.Item key={key}>
-                                <List.Content>
-                                    <List.Header
-                                        style={{ cursor: "pointer" }}
-                                        onClick={() => toggleGroup(packageIdentity)}>
-                                        <Icon name={isOpen ? "folder open" : "folder"}/>
-                                        {packageIdentity}
-                                        <Label circular size="mini" style={{ marginLeft: "6px" }}>{instances.length}</Label>
-                                    </List.Header>
-                                    {
-                                        isOpen && <List.List>
-                                            {
-                                                instances.map((environmentName:string, k:number) =>
-                                                    <List.Item
-                                                        key={k}
-                                                        active={selection.environmentName === environmentName}
-                                                        onClick={() => onNavigate({ panel: "environments", params: { environmentName } })}
-                                                        style={{ cursor: "pointer" }}>
-                                                        <List.Content>
-                                                            <Icon name="cube"/>
-                                                            <span style={{ fontFamily: "monospace" }} title={environmentName}>
-                                                                {ShortHash(ExtractEnvironmentHash(environmentName))}
-                                                            </span>
-                                                        </List.Content>
-                                                    </List.Item>)
-                                            }
-                                        </List.List>
-                                    }
-                                </List.Content>
-                            </List.Item>
-                        })
-                    }
-                </List>
-            </Accordion.Content>
 
             { /* Repositories & Packages (repos/, sources.json) — lista de repos */ }
             <Accordion.Title
-                active={isActivePanel("repositories")}
-                onClick={() => onNavigate({ panel: "repositories", params: { tab: selection.tab || "packages" } })}>
+                active={openSections.repositories}
+                onClick={() => { toggleSection("repositories"); onNavigate({ panel: "repositories", params: { tab: selection.tab || "packages" } }) }}>
                 <Icon name="dropdown"/>
-                <SectionTitle iconName="database" label="Repositories & Packages" count={repoNamespaceList.length}/>
+                <SectionTitle iconName="cubes" label="Repositories & Packages" count={repoNamespaceList.length}/>
             </Accordion.Title>
-            <Accordion.Content active={isActivePanel("repositories") || filtering}>
+            <Accordion.Content active={openSections.repositories || filtering}>
                 <List selection size="small">
                     {
                         filteredRepoNames.map((repositoryNamespace:string, key:number) =>
@@ -293,7 +269,7 @@ const EcosystemNavigator = ({
                                 active={selection.repo === repositoryNamespace}
                                 onClick={() => onNavigate({ panel: "repositories", params: { repo: repositoryNamespace, tab: selection.tab || "packages" } })}>
                                 <List.Content>
-                                    <List.Header><Icon name="database"/> {repositoryNamespace}</List.Header>
+                                    <List.Header><Icon name="cubes"/> {repositoryNamespace}</List.Header>
                                 </List.Content>
                             </List.Item>)
                     }
@@ -302,12 +278,12 @@ const EcosystemNavigator = ({
 
             { /* Config Files */ }
             <Accordion.Title
-                active={isActivePanel("config files")}
-                onClick={() => onNavigate({ panel: "config files", params: { configFileName: undefined } })}>
+                active={openSections.configFiles}
+                onClick={() => { toggleSection("configFiles"); onNavigate({ panel: "config files", params: { configFileName: undefined } }) }}>
                 <Icon name="dropdown"/>
                 <SectionTitle iconName="cogs" label="Config Files" count={configFileList.length}/>
             </Accordion.Title>
-            <Accordion.Content active={isActivePanel("config files") || filtering}>
+            <Accordion.Content active={openSections.configFiles || filtering}>
                 <List selection size="small">
                     {
                         filteredConfigFiles.map((configFileName:string, key:number) =>

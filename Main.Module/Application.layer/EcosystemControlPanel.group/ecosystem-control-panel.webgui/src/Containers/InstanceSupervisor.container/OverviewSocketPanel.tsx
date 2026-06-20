@@ -77,12 +77,12 @@ const SocketCard = ({ supervisorAPI, monitoringStateKey, filePath, status, onSel
 
 	return <Card
 		fluid
-		onClick={isConnected ? () => onSelect(monitoringStateKey) : undefined}
-		style={{ cursor: isConnected ? "pointer" : "default", opacity: isConnected ? 1 : 0.65, margin: 0 }}>
+		onClick={() => onSelect(monitoringStateKey)}
+		style={{ cursor: "pointer", opacity: isConnected ? 1 : 0.75, margin: 0 }}>
 		<Card.Content style={{ padding: "10px 12px" }}>
 			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
 				<span style={{ fontWeight: 700 }}>
-					<Icon name="microchip" style={{ color: "#888" }}/> {GetSocketName(filePath)}
+					<Icon name="plug" style={{ color: "#888" }}/> {GetSocketName(filePath)}
 				</span>
 				<StatusBadge status={status}/>
 			</div>

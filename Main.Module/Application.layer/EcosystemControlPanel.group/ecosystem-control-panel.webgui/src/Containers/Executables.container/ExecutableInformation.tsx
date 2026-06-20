@@ -8,6 +8,7 @@ import {
     List,
     Modal,
     Segment,
+    Tab,
     Table,
     Loader,
     Icon
@@ -15,7 +16,15 @@ import {
 
 import GetAPI from "../../Utils/GetAPI"
 import EmptyState from "../../Components/EmptyState"
+import KeyValuePanel from "../../Components/KeyValuePanel"
+import CopyValue from "../../Components/CopyValue"
 import { toastSuccess, toastError, errorMessage } from "../../Utils/toast"
+
+// Cabeçalho de seção leve (evita o "icon header" do Semantic que amplia o ícone).
+const SectionHeader = ({ icon, children }:any) =>
+    <div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 700, fontSize: "1rem", color: "#3a4047", borderBottom: "1px solid #eef0f2", paddingBottom: "6px", margin: "16px 0 8px" }}>
+        <Icon name={icon} style={{ fontSize: "1em", margin: 0 }}/> {children}
+    </div>
 
 // Barra de ações de host para o pacote do executável: executar, abrir VSCode
 // e abrir terminal no diretório do pacote.
@@ -36,7 +45,7 @@ const HostActionsBar = ({ serverManagerInformation, packageDirPath }:any) => {
     if(!packageDirPath) return null
 
     return <>
-        <Button.Group size="small" style={{ marginTop: "8px" }}>
+        <Button.Group size="small" style={{ flex: "0 0 auto" }}>
             <Button primary loading={busy === "run"} onClick={() => setConfirmRun(true)}>
                 <Icon name="play"/> run
             </Button>
@@ -66,19 +75,47 @@ const HostActionsBar = ({ serverManagerInformation, packageDirPath }:any) => {
     </>
 }
 
-const CommandRow = ({ command, depth = 0 }:any) => {
-    const children = command.children || []
+// Exibe cada comando como ele é chamado na linha de comando:
+//   $ executor package [path]
+// + descrição e parâmetros, para o usuário saber como executar.
+const CommandRow = ({ command, prefix, depth = 0 }:any) => {
+    const children   = command.children || []
+    const commandStr = command.command || command.namespace || ""
+    const invocation = `${prefix} ${commandStr}`.trim()
+    const parameters = command.parameters || []
+    const childPrefix = `${prefix} ${commandStr.split(" ")[0]}`.trim()
+
     return <>
-        <Table.Row>
-            <Table.Cell style={{ paddingLeft: `${12 + depth * 24}px` }}>
-                <Icon name={children.length > 0 ? "folder" : "terminal"}/>
-                <code>{command.command || command.namespace}</code>
-            </Table.Cell>
-            <Table.Cell>{command.description}</Table.Cell>
-        </Table.Row>
+        <div style={{ marginLeft: depth * 16, marginBottom: "14px", borderLeft: depth > 0 ? "2px solid #eef0f2" : "none", paddingLeft: depth > 0 ? "12px" : 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <div style={{
+                    flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: "8px",
+                    background: "#f3f4f6", border: "1px solid #e6e8eb", padding: "6px 10px", borderRadius: "6px",
+                    fontFamily: "monospace", fontSize: ".88em", color: "#2d333a", overflow: "auto"
+                }}>
+                    <span style={{ color: "#aab1b9", flex: "0 0 auto" }}>$</span>
+                    <span style={{ whiteSpace: "nowrap" }}>{prefix} <strong>{commandStr}</strong></span>
+                </div>
+                <CopyValue value={invocation}/>
+            </div>
+            { command.description && <div style={{ color: "#666", margin: "5px 0 0 2px", fontSize: ".92em" }}>{command.description}</div> }
+            {
+                parameters.length > 0 &&
+                <div style={{ margin: "4px 0 0 2px" }}>
+                    {
+                        parameters.map((p:any, k:number) =>
+                            <div key={k} style={{ fontSize: ".82em", color: "#8a9099", margin: "1px 0", wordBreak: "break-word" }}>
+                                <span style={{ fontFamily: "monospace", color: "#586069" }}>{p.paramType === "positional" ? `[${p.key}]` : `--${p.key}`}</span>
+                                <span style={{ margin: "0 6px", color: "#bbb" }}>{p.valueType}{p.paramType !== "positional" ? " · option" : ""}</span>
+                                { p.describe && <span>— {p.describe}</span> }
+                            </div>)
+                    }
+                </div>
+            }
+        </div>
         {
             children.map((child:any, key:number) =>
-                <CommandRow key={key} command={child} depth={depth + 1}/>)
+                <CommandRow key={key} command={child} prefix={childPrefix} depth={depth + 1}/>)
         }
     </>
 }
@@ -102,23 +139,11 @@ const ExecutableInformation = ({ executableInformation, serverManagerInformation
         supervisorSocketPath,
         commandGroup,
         boot,
+        startupParams,
         package: packageMetadata
     } = executableInformation
 
-    return <Segment>
-        <Header>
-            <Icon name="terminal"/>
-            <Header.Content>
-                {executableName}
-                <Label size="tiny" color={type === "cli" ? "teal" : "blue"} style={{ marginLeft: "8px" }}>{type}</Label>
-                { isDebug && <Label size="tiny" color="grey">debug</Label> }
-            </Header.Content>
-        </Header>
-
-        <HostActionsBar
-            serverManagerInformation={serverManagerInformation}
-            packageDirPath={executableInformation.packageDirPath}/>
-
+    const infoPane = () => <Tab.Pane>
         <List relaxed size="small">
             <List.Item>
                 <List.Icon name="folder outline" verticalAlign="middle"/>
@@ -128,7 +153,7 @@ const ExecutableInformation = ({ executableInformation, serverManagerInformation
                 </List.Content>
             </List.Item>
             <List.Item>
-                <List.Icon name="database" verticalAlign="middle"/>
+                <List.Icon name="cubes" verticalAlign="middle"/>
                 <List.Content>
                     <List.Header>repository</List.Header>
                     <List.Description style={{ wordBreak: "break-all" }}>{repositoryPath}</List.Description>
@@ -153,30 +178,47 @@ const ExecutableInformation = ({ executableInformation, serverManagerInformation
                 </List.Item>
             }
         </List>
-
         {
-            commandGroup && Array.isArray(commandGroup.commands)
-            ? <>
-                <Header as="h4" dividing>Commands ({commandGroup.commands.length})</Header>
-                <Table basic="very" compact>
-                    <Table.Header>
-                        <Table.Row>
-                            <Table.HeaderCell>command</Table.HeaderCell>
-                            <Table.HeaderCell>description</Table.HeaderCell>
-                        </Table.Row>
-                    </Table.Header>
-                    <Table.Body>
-                        {
-                            commandGroup.commands.map((command:any, key:number) =>
-                                <CommandRow key={key} command={command}/>)
-                        }
-                    </Table.Body>
-                </Table>
+            startupParams && Object.keys(startupParams).length > 0 && <>
+                <SectionHeader icon="sliders horizontal">Startup params ({Object.keys(startupParams).length})</SectionHeader>
+                <KeyValuePanel data={startupParams}/>
             </>
-            : boot
-                ? <BootManifestView boot={boot}/>
-                : <span style={{ color: "#bbb" }}>sem manifesto (boot.json) para este pacote</span>
         }
+    </Tab.Pane>
+
+    const panes:any[] = [
+        { menuItem: { key: "info", content: <span><Icon name="info circle"/> info</span> }, render: infoPane }
+    ]
+    if(commandGroup && Array.isArray(commandGroup.commands))
+        panes.push({
+            menuItem: { key: "commands", content: <span><Icon name="terminal"/> commands ({commandGroup.commands.length})</span> },
+            render: () => <Tab.Pane>
+                <div style={{ marginTop: "4px" }}>
+                    { commandGroup.commands.map((command:any, key:number) => <CommandRow key={key} command={command} prefix={executableName}/>) }
+                </div>
+            </Tab.Pane>
+        })
+    else if(boot)
+        panes.push({
+            menuItem: { key: "manifest", content: <span><Icon name="cubes"/> manifest</span> },
+            render: () => <Tab.Pane><BootManifestView boot={boot}/></Tab.Pane>
+        })
+
+    return <Segment>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+            <Header style={{ margin: 0 }}>
+                <Icon name="terminal"/>
+                <Header.Content>
+                    {executableName}
+                    <Label size="tiny" color={type === "cli" ? "teal" : "blue"} style={{ marginLeft: "8px" }}>{type}</Label>
+                    { isDebug && <Label size="tiny" color="grey">debug</Label> }
+                </Header.Content>
+            </Header>
+            <HostActionsBar
+                serverManagerInformation={serverManagerInformation}
+                packageDirPath={executableInformation.packageDirPath}/>
+        </div>
+        <Tab menu={{ secondary: true, pointing: true }} panes={panes} style={{ marginTop: "12px" }}/>
     </Segment>
 }
 
@@ -184,7 +226,6 @@ const ExecutableInformation = ({ executableInformation, serverManagerInformation
 // PackageDeveloper: mostrar o interior do pacote por tipo). Para apps/web:
 // params, services e endpoints; para CLI: executáveis declarados.
 const BootManifestView = ({ boot }:any) => {
-    const params    = Array.isArray(boot.params) ? boot.params : []
     const services  = Array.isArray(boot.services) ? boot.services : []
     const endpoints = Array.isArray(boot.endpoints) ? boot.endpoints : []
     const executables = Array.isArray(boot.executables) ? boot.executables : []
@@ -192,7 +233,7 @@ const BootManifestView = ({ boot }:any) => {
     return <>
         {
             executables.length > 0 && <>
-                <Header as="h4" dividing><Icon name="terminal"/> Executables ({executables.length})</Header>
+                <SectionHeader icon="terminal">Executables ({executables.length})</SectionHeader>
                 <List bulleted>
                     { executables.map((e:any, k:number) =>
                         <List.Item key={k}>{e.executableName} — <i style={{ color: "#888" }}>{e.dependency}</i></List.Item>) }
@@ -200,17 +241,8 @@ const BootManifestView = ({ boot }:any) => {
             </>
         }
         {
-            params.length > 0 && <>
-                <Header as="h4" dividing><Icon name="sliders horizontal"/> Params ({params.length})</Header>
-                <div>
-                    { params.map((p:string, k:number) =>
-                        <Label key={k} basic size="small" style={{ margin: "2px" }}>{p}</Label>) }
-                </div>
-            </>
-        }
-        {
             services.length > 0 && <>
-                <Header as="h4" dividing><Icon name="cogs"/> Services ({services.length})</Header>
+                <SectionHeader icon="cogs">Services ({services.length})</SectionHeader>
                 <List divided size="small">
                     { services.map((s:any, k:number) =>
                         <List.Item key={k}>
@@ -225,7 +257,7 @@ const BootManifestView = ({ boot }:any) => {
         }
         {
             endpoints.length > 0 && <>
-                <Header as="h4" dividing><Icon name="plug"/> Endpoints ({endpoints.length})</Header>
+                <SectionHeader icon="plug">Endpoints ({endpoints.length})</SectionHeader>
                 <List divided size="small">
                     { endpoints.map((e:any, k:number) =>
                         <List.Item key={k}>
@@ -239,8 +271,8 @@ const BootManifestView = ({ boot }:any) => {
             </>
         }
         {
-            params.length === 0 && services.length === 0 && endpoints.length === 0 && executables.length === 0 &&
-            <span style={{ color: "#bbb" }}>boot.json sem services/endpoints/params declarados</span>
+            services.length === 0 && endpoints.length === 0 && executables.length === 0 &&
+            <span style={{ color: "#bbb" }}>boot.json sem services/endpoints declarados</span>
         }
     </>
 }

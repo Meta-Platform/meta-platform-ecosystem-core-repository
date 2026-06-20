@@ -109,7 +109,15 @@ const InstanceMonitoringManager = (params) => {
     const GetStartupArguments   = async (monitoringStateKey) =>           await _CallRPC(monitoringStateKey, "GetStartupArguments")
     const GetProcessInformation = async (monitoringStateKey) =>           await _CallRPC(monitoringStateKey, "GetProcessInformation")
     const KillInstance          = async (monitoringStateKey) =>           await _CallRPC(monitoringStateKey, "KillInstance")
-    
+
+    // Retorna o stream de log do processo (package-executor) via socket.
+    // O client expõe GetLogStreaming() (RPC LogStreaming do daemon) que emite
+    // eventos 'data'/'error'. Quem consome deve cancelar/destruir ao encerrar.
+    const GetLogStreaming = (monitoringStateKey) => {
+        const communicationClient = _GetConnectionClient(monitoringStateKey)
+        return communicationClient.GetLogStreaming()
+    }
+
     const monitoringObject = {
         OverviewChangeListener,
         GetMonitoringKeysReady,
@@ -118,6 +126,7 @@ const InstanceMonitoringManager = (params) => {
         GetTaskInformation,
         GetStartupArguments,
         GetProcessInformation,
+        GetLogStreaming,
         KillInstance
     }
         

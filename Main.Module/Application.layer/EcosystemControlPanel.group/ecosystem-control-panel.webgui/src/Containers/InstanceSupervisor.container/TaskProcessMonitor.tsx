@@ -93,9 +93,9 @@ const SummaryBar = ({ taskList }:any) => {
 const COLUMNS = [
     { key: "taskId",           label: "TID",    width: 1 },
     { key: "pTaskId",          label: "PTID",   width: 1 },
-    { key: "name",             label: "name",   width: 6 },
-    { key: "objectLoaderType", label: "type",   width: 4 },
-    { key: "status",           label: "status", width: 2 }
+    { key: "name",             label: "name",   width: 5 },
+    { key: "objectLoaderType", label: "type",   width: 6 },
+    { key: "status",           label: "status", width: 3 }
 ]
 
 // Pré-ordem da árvore pai→filhos (espelha application-instance → service/endpoint).
@@ -122,12 +122,15 @@ const BuildTreeOrder = (taskList:any[]) => {
 
 const TaskNameCell = ({ task, depth = 0 }:any) => {
     const detail = GetTaskDetail(task)
-    return <Table.Cell style={{ paddingLeft: `${12 + depth * 22}px` }}>
-        { depth > 0 && <Icon name="level up alternate" rotated="clockwise" style={{ color: "#bbb" }}/> }
-        <Icon name={GetIconByLoaderType(task.objectLoaderType)} style={{ color: "#888" }}/>
-        <strong>{GetTaskName(task)}</strong>
-        { detail && <span style={{ color: "#999", marginLeft: "6px" }}>{detail}</span> }
-        { task.hasChildTasks && <Label size="mini" circular style={{ marginLeft: "6px" }}>parent</Label> }
+    const name = GetTaskName(task)
+    return <Table.Cell style={{ paddingLeft: `${12 + depth * 22}px`, maxWidth: 0 }} title={`${name}${detail ? "  ·  " + detail : ""}`}>
+        <div style={{ display: "flex", alignItems: "center", gap: "4px", overflow: "hidden" }}>
+            { depth > 0 && <Icon name="level up alternate" rotated="clockwise" style={{ color: "#bbb", flex: "0 0 auto" }}/> }
+            <Icon name={GetIconByLoaderType(task.objectLoaderType)} style={{ color: "#888", flex: "0 0 auto" }}/>
+            <strong style={{ whiteSpace: "nowrap", flex: "0 0 auto" }}>{name}</strong>
+            { detail && <span style={{ color: "#999", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{detail}</span> }
+            { task.hasChildTasks && <Label size="mini" circular style={{ flex: "0 0 auto" }}>parent</Label> }
+        </div>
     </Table.Cell>
 }
 
@@ -181,7 +184,9 @@ const TaskProcessMonitor = ({
             <StatusCell task={task}/>
             <Table.Cell style={{ fontFamily: "monospace", color: "#888" }}>{task.pTaskId ?? "—"}</Table.Cell>
             <TaskNameCell task={task} depth={depth}/>
-            <Table.Cell style={{ color: "#100085" }} title={task.objectLoaderType}>{LoaderAlias(task.objectLoaderType)}</Table.Cell>
+            <Table.Cell style={{ color: "#100085", overflow: "hidden" }} title={task.objectLoaderType}>
+                <span style={{ display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontFamily: "monospace", fontSize: ".92em" }}>{task.objectLoaderType}</span>
+            </Table.Cell>
             <Table.Cell><StatusBadge status={task.status}/></Table.Cell>
         </Table.Row>
 
@@ -202,25 +207,22 @@ const TaskProcessMonitor = ({
     }
 
     return <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
-            <SummaryBar taskList={instanceTaskList}/>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <Checkbox
-                    toggle
-                    label="tree view"
-                    checked={treeView}
-                    onChange={() => setTreeView(!treeView)}/>
-                <Input
-                    icon="search"
-                    size="small"
-                    placeholder="filtrar tasks..."
-                    value={filterValue}
-                    onChange={(e, { value }) => setFilterValue(value)}/>
-            </div>
+        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", flexWrap: "wrap", gap: "12px", marginBottom: "10px" }}>
+            <Checkbox
+                toggle
+                label="tree view"
+                checked={treeView}
+                onChange={() => setTreeView(!treeView)}/>
+            <Input
+                icon="search"
+                size="small"
+                placeholder="filtrar tasks..."
+                value={filterValue}
+                onChange={(e, { value }) => setFilterValue(value)}/>
         </div>
 
         <div style={{ overflow: "auto", maxHeight: "78vh", border: "1px solid #e0e0e0", borderRadius: "4px" }}>
-            <Table sortable={!treeView} celled compact selectable striped style={{ fontSize: ".9em" }}>
+            <Table sortable={!treeView} compact selectable striped unstackable style={{ fontSize: ".9em", tableLayout: "fixed", width: "100%", border: "none" }}>
                 <Table.Header>
                     <Table.Row>
                         {

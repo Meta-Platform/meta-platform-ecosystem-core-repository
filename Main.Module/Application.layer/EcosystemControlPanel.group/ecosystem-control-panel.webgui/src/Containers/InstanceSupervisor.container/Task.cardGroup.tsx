@@ -1,61 +1,44 @@
 import * as React from "react"
 
-import { CardGroup } from "semantic-ui-react"
-
 import TaskInfoCard from "./TaskInfo.card"
 
-const TaskCardGroup = ({tasklist}) => {
+// Faixa compacta com os destaques da instância (Application Instance e Server
+// Manager Service), ocupando pouca altura acima do monitor de tasks.
+const TaskCardGroup = ({ tasklist, onSelectTask }:any) => {
 
 	const _GetApplicationInstanceCardData = () => {
-
-		const data = tasklist.find(({objectLoaderType}) => objectLoaderType === "application-instance")
-
-		if(data){
-			return {
-				taskId: data.taskId,
-				label: "Application Instance Task",
-				status: data.status,
-				descriptionContent: <>
-					<i style={{"color": "grey"}}>namespace</i><br/>
-					<strong>{data.staticParameters.namespace}</strong>
-				</>
-			}
-		}
-		
-	}
-
-	const _GetServerManagerCardDataCardData = () => {
-		const data = tasklist
-			.find(({objectLoaderType, staticParameters}) => objectLoaderType === "service-instance" && staticParameters?.path === "Services/HTTPServer.service")
-
-		if(data){
-
-			const getURL = () => {
-				if(isNaN(data.staticParameters.port)) return data.staticParameters.port
-				else return <a href={`http://localhost:${data.staticParameters.port}`}>http://localhost:{data.staticParameters.port}</a>
-			}
-			
-			return {
-				taskId: data.taskId,
-				label: "Server Manager Service Task",
-				status: data.status,
-				descriptionContent: <>
-					<i style={{"color": "grey"}}>server name</i><br/>
-					<strong>{data.staticParameters.name}</strong><br/>
-					<strong>{getURL()}</strong>
-				</>
-			}
+		const data = tasklist.find(({objectLoaderType}:any) => objectLoaderType === "application-instance")
+		if(!data) return undefined
+		return {
+			taskId: data.taskId,
+			label: "Application Instance",
+			status: data.status,
+			icon: "cube",
+			info: data.staticParameters?.namespace
 		}
 	}
 
-	const applicationInstanceCardData = _GetApplicationInstanceCardData()
-	const serverManagerCardData = _GetServerManagerCardDataCardData()
+	const _GetServerManagerCardData = () => {
+		const data = tasklist.find(({objectLoaderType, staticParameters}:any) =>
+			objectLoaderType === "service-instance" && staticParameters?.path === "Services/HTTPServer.service")
+		if(!data) return undefined
+		const port = data.staticParameters?.port
+		const url = isNaN(port) ? port : `localhost:${port}`
+		return {
+			taskId: data.taskId,
+			label: "Server Manager",
+			status: data.status,
+			icon: "server",
+			info: `${data.staticParameters?.name || ""}${url ? ` · ${url}` : ""}`
+		}
+	}
 
-	return <CardGroup>
-                {applicationInstanceCardData && <TaskInfoCard data={applicationInstanceCardData}/>}
-                {serverManagerCardData && <TaskInfoCard data={serverManagerCardData}/>}
-        </CardGroup>
+	const cards = [ _GetApplicationInstanceCardData(), _GetServerManagerCardData() ].filter(Boolean)
+	if(cards.length === 0) return null
+
+	return <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "10px" }}>
+		{ cards.map((data:any, key:number) => <TaskInfoCard key={key} data={data} onSelect={onSelectTask}/>) }
+	</div>
 }
-
 
 export default TaskCardGroup

@@ -182,12 +182,16 @@ const ConfigFilesContainer = ({ serverManagerInformation, configFileName }:any) 
             isLoading
             ? <ListSkeleton lines={10}/>
             : (() => {
-                const renderRow = (key:string) => {
+                const renderRow = (key:string, stripPrefix?:string) => {
                     const isEditingThis = editingKey === key
                     const editable = canEdit && IsScalar(currentContent[key])
+                    const prefix = stripPrefix !== undefined ? stripPrefix : GetPrefix(key)
+                    const shortName = (prefix && key.startsWith(prefix + "_")) ? key.slice(prefix.length + 1) : key
                     return <Table.Row key={key} active={isEditingThis}>
                         <Table.Cell>
-                            <Icon name="key" style={{ color: "#aaa" }}/> <strong style={{ fontFamily: "monospace", fontSize: ".92em" }}>{key}</strong>
+                            <Icon name="key" style={{ color: "#aaa" }}/>
+                            <span style={{ color: "#bbb", fontFamily: "monospace", fontSize: ".92em" }}>*_</span>
+                            <strong title={key} style={{ fontFamily: "monospace", fontSize: ".92em" }}>{shortName}</strong>
                         </Table.Cell>
                         <Table.Cell width={2}><ValueTypeBadge value={currentContent[key]}/></Table.Cell>
                         <Table.Cell>
@@ -227,6 +231,36 @@ const ConfigFilesContainer = ({ serverManagerInformation, configFileName }:any) 
                 }, {})
                 const groupNames = Object.keys(groups).sort()
 
+                // Dentro de um grupo, sub-agrupa pelos 2 primeiros tokens do
+                // restante (ex.: CONF_DIRNAME, CONF_FILENAME) quando houver >=2
+                // chaves; as que não repetem ficam numa lista normal abaixo.
+                const buildSubGroups = (groupName:string, groupKeys:string[]) => {
+                    const subPrefixOf = (k:string) => {
+                        if(!k.startsWith(groupName + "_")) return null
+                        const tokens = k.slice(groupName.length + 1).split("_")
+                        if(tokens.length <= 2) return null
+                        return tokens.slice(0, 2).join("_")
+                    }
+                    const counts:any = {}
+                    groupKeys.forEach((k) => { const sp = subPrefixOf(k); if(sp) counts[sp] = (counts[sp] || 0) + 1 })
+                    const subGroups:any[] = []
+                    const flat:string[] = []
+                    const seen:any = {}
+                    groupKeys.forEach((k) => {
+                        const sp = subPrefixOf(k)
+                        if(sp && counts[sp] >= 2){
+                            if(!seen[sp]){ seen[sp] = []; subGroups.push({ subPrefix: sp, keys: seen[sp] }) }
+                            seen[sp].push(k)
+                        } else flat.push(k)
+                    })
+                    return { subGroups, flat }
+                }
+
+                const renderTable = (rowKeys:string[], stripPrefix:string) =>
+                    <Table basic striped compact unstackable style={{ marginTop: "4px" }}>
+                        <Table.Body>{ rowKeys.map((k:string) => renderRow(k, stripPrefix)) }</Table.Body>
+                    </Table>
+
                 return <>
                     <Input
                         icon="search"
@@ -247,12 +281,29 @@ const ConfigFilesContainer = ({ serverManagerInformation, configFileName }:any) 
                                     <Label circular size="mini">{groups[groupName].length}</Label>
                                 </div>
                                 {
-                                    !isClosed &&
-                                    <Table celled striped compact style={{ marginTop: "4px" }}>
-                                        <Table.Body>
-                                            { groups[groupName].map((k:string) => renderRow(k)) }
-                                        </Table.Body>
-                                    </Table>
+                                    !isClosed && (() => {
+                                        const { subGroups, flat } = buildSubGroups(groupName, groups[groupName])
+                                        return <div style={{ marginTop: "4px" }}>
+                                            {
+                                                subGroups.map((sg:any) => {
+                                                    const subKey = `${groupName}/${sg.subPrefix}`
+                                                    const subClosed = closedGroups[subKey]
+                                                    return <div key={subKey} style={{ marginLeft: "16px", marginTop: "6px" }}>
+                                                        <div
+                                                            onClick={() => setClosedGroups({ ...closedGroups, [subKey]: !subClosed })}
+                                                            style={{ display: "flex", alignItems: "center", gap: "6px", padding: "4px 8px", cursor: "pointer", background: "#f6f7f9", borderRadius: "6px" }}>
+                                                            <Icon name={subClosed ? "caret right" : "caret down"} style={{ color: "#999" }}/>
+                                                            <span style={{ color: "#bbb", fontFamily: "monospace", fontSize: ".82em" }}>*_</span>
+                                                            <strong style={{ fontFamily: "monospace", fontSize: ".86em" }}>{sg.subPrefix}</strong>
+                                                            <Label circular size="mini">{sg.keys.length}</Label>
+                                                        </div>
+                                                        { !subClosed && renderTable(sg.keys, `${groupName}_${sg.subPrefix}`) }
+                                                    </div>
+                                                })
+                                            }
+                                            { flat.length > 0 && renderTable(flat, groupName) }
+                                        </div>
+                                    })()
                                 }
                             </div>
                         })

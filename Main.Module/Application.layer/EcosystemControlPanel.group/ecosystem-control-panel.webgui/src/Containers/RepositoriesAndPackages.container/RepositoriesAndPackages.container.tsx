@@ -14,6 +14,7 @@ import {
     MenuItem,
     Modal,
     Segment,
+    Tab,
     Popup
 } from "semantic-ui-react"
 
@@ -37,6 +38,13 @@ const SOURCE_PARAM_SUMMARY = (source:any) => {
     if(source.sourceType === "GITHUB_RELEASE") return `${source.repositoryOwner || ""}/${source.repositoryName || ""}`
     if(source.sourceType === "GOOGLE_DRIVE")   return source.fileId
     return ""
+}
+
+// Ícone por tipo de fonte do repositório.
+const SOURCE_ICON:any = {
+    LOCAL_FS      : "folder open",
+    GITHUB_RELEASE: "github",
+    GOOGLE_DRIVE  : "google drive"
 }
 
 const RepositoriesAndPackagesContainer = ({
@@ -143,7 +151,7 @@ const RepositoriesAndPackagesContainer = ({
                 sources.map((source:any, key:number) => {
                     const isActive = installed && source.sourceType === activeSourceType
                     return <Segment key={key} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px", background: isActive ? "#f4fbf5" : undefined }}>
-                        <Icon name={isActive ? "check circle" : "feed"} color={isActive ? "green" : "grey"}/>
+                        <Icon name={SOURCE_ICON[source.sourceType] || "database"} color={isActive ? "green" : "grey"} fitted style={{ flex: "0 0 auto", margin: 0, fontSize: "1.15em" }}/>
                         <span style={{ width: "120px", fontWeight: 500 }}>{source.sourceType}</span>
                         <span style={{ flex: 1, color: "#888", fontFamily: "monospace", fontSize: ".82em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={SOURCE_PARAM_SUMMARY(source)}>{SOURCE_PARAM_SUMMARY(source)}</span>
                         { isActive && <Label color="green" size="mini">active</Label> }
@@ -236,7 +244,7 @@ const RepositoriesAndPackagesContainer = ({
 
     return <Segment style={{ margin: "15px" }}>
         <Menu secondary>
-            <MenuItem><Header as="h4" style={{ margin: 0 }}><Icon name="database"/> Repositories & Packages</Header></MenuItem>
+            <MenuItem><Header as="h4" style={{ margin: 0 }}><Icon name="cubes"/> Repositories & Packages</Header></MenuItem>
             <Menu.Menu position="right">
                 <MenuItem><Button size="small" primary onClick={() => { setRegisterModalNamespace(undefined); setIsRegisterModalOpen(true) }}><Icon name="feed"/> register source</Button></MenuItem>
                 <MenuItem><Button size="small" onClick={() => setIsAddNamespaceOpen(true)}><Icon name="plus"/> add namespace</Button></MenuItem>
@@ -247,24 +255,27 @@ const RepositoriesAndPackagesContainer = ({
             repoSelected
             ? <div>
                 <Breadcrumbs items={[ "Repositories & Packages", repoSelected, activeTab ]}/>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Header as="h4" style={{ margin: 0 }}>
-                        <Icon name="database" color={isInstalled(repoSelected) ? "green" : "grey"}/>
-                        {repoSelected}
-                        <span style={{ color: "#aaa", fontSize: ".7em", marginLeft: "8px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                        <Icon name="cubes" color={isInstalled(repoSelected) ? "green" : "grey"} fitted style={{ flex: "0 0 auto", fontSize: "1.3em" }}/>
+                        <strong style={{ fontSize: "1.1em" }}>{repoSelected}</strong>
+                        <span style={{ color: "#aaa", fontSize: ".8em", whiteSpace: "nowrap" }}>
                             { isInstalled(repoSelected) ? `installed · ${getActiveSourceType(repoSelected)}` : "not installed" }
                         </span>
-                    </Header>
+                    </div>
                     {
                         isInstalled(repoSelected) &&
                         <Button size="mini" basic loading={isBusy(repoSelected, "update")} onClick={() => handleUpdate(repoSelected)}><Icon name="refresh"/> update repository</Button>
                     }
                 </div>
-                <Menu pointing secondary>
-                    <MenuItem active={activeTab === "packages"} onClick={() => onChangeTab && onChangeTab("packages")}><Icon name="cube"/> Packages</MenuItem>
-                    <MenuItem active={activeTab === "sources"} onClick={() => onChangeTab && onChangeTab("sources")}><Icon name="feed"/> Sources</MenuItem>
-                </Menu>
-                { activeTab === "sources" ? renderSourcesPanel(repoSelected) : renderPackagesPanel(repoSelected) }
+                <Tab
+                    menu={{ secondary: true, pointing: true }}
+                    activeIndex={activeTab === "sources" ? 1 : 0}
+                    onTabChange={(e:any, { activeIndex }:any) => onChangeTab && onChangeTab(activeIndex === 1 ? "sources" : "packages")}
+                    panes={[
+                        { menuItem: { key: "packages", content: <span><Icon name="cube"/> Packages</span> }, render: () => <Tab.Pane>{renderPackagesPanel(repoSelected)}</Tab.Pane> },
+                        { menuItem: { key: "sources",  content: <span><Icon name="feed"/> Sources</span> },  render: () => <Tab.Pane>{renderSourcesPanel(repoSelected)}</Tab.Pane> }
+                    ]}/>
             </div>
             : <div style={{ color: "#bbb", padding: "20px" }}>selecione um repositório na árvore à esquerda</div>
         }

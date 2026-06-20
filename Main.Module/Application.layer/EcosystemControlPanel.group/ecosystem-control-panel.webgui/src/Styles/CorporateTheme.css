@@ -111,6 +111,24 @@ code {
     box-shadow: inset 3px 0 0 var(--eco-accent);
 }
 
+/* tabelas "basic" (key-value, regras): SEM borda externa, COM divisória interna */
+.ui.basic.table {
+    border: none !important;
+    box-shadow: none !important;
+}
+.ui.basic.table tbody tr:not(:last-child) > td {
+    border-bottom: 1px solid #eef0f2;
+}
+
+/* conteúdo das abas (TabPane) sem borda/sombra — visual limpo */
+.ui.tab.segment,
+.ui.attached.tab.segment,
+.ui.bottom.attached.segment.tab {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 12px 2px;
+}
+
 /* ---- abas (secondary pointing) ---- */
 .ui.secondary.pointing.menu {
     border-bottom: 1px solid var(--eco-border);

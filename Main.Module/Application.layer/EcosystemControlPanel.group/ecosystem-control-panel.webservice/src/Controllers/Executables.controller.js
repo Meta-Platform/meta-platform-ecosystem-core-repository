@@ -95,7 +95,8 @@ const ExecutablesController = (params) => {
             packageDirPath,
             boot         : await _TryReadMetadata("boot.json"),
             package      : await _TryReadMetadata("package.json"),
-            commandGroup : await _TryReadMetadata("command-group.json")
+            commandGroup : await _TryReadMetadata("command-group.json"),
+            startupParams: await _TryReadMetadata("startup-params.json")
         }
     }
 

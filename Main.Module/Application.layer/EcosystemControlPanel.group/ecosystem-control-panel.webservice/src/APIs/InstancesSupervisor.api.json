@@ -86,8 +86,19 @@
 					"required": true
 				}
 			]
+		},
+		{
+			"summary": "LogStreaming",
+			"method": "WS",
+			"path": "/log-streaming/:monitoringStateKey",
+			"parameters": [
+				{
+					"name": "monitoringStateKey",
+					"in": "path",
+					"type": "string",
+					"required": true
+				}
+			]
 		}
-
-		
 	]
 }

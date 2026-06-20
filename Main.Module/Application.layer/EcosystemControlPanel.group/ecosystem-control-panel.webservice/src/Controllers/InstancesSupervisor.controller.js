@@ -38,6 +38,29 @@ const InstancesSupervisorController = (params) => {
         })
     }
 
+    // Streaming de log do processo via socket: conecta no LogStreaming do
+    // package-executor e repassa cada mensagem para o websocket do navegador.
+    const LogStreaming = (ws, monitoringStateKey) => {
+        let logStreaming
+        const _safeSend = (payload) => { try { ws.send(JSON.stringify(payload)) } catch(e){} }
+        const _cleanup = () => {
+            try {
+                if(!logStreaming) return
+                if(typeof logStreaming.cancel === "function") logStreaming.cancel()
+                else if(typeof logStreaming.destroy === "function") logStreaming.destroy()
+            } catch(e){}
+        }
+        try {
+            logStreaming = instanceMonitoringManager.GetLogStreaming(monitoringStateKey)
+            logStreaming.on("data",  (logData) => _safeSend(logData))
+            logStreaming.on("error", (error)  => _safeSend({ message: `[erro] ${(error && error.message) || error}` }))
+            logStreaming.on("end",   ()        => _safeSend({ message: "[stream encerrado]" }))
+        } catch(e) {
+            _safeSend({ message: `[erro] ${(e && e.message) || e}` })
+        }
+        ws.on && ws.on("close", _cleanup)
+    }
+
     const controllerServiceObject = {
         controllerName         : "InstancesSupervisorController",
         ListMonitoringKeys     : instanceMonitoringManager.GetMonitoringKeysReady,
@@ -47,7 +70,8 @@ const InstancesSupervisorController = (params) => {
         GetStartupArguments    : instanceMonitoringManager.GetStartupArguments,
         GetProcessInformation  : instanceMonitoringManager.GetProcessInformation,
         KillInstance           : instanceMonitoringManager.KillInstance,
-        InstanceOverviewChange
+        InstanceOverviewChange,
+        LogStreaming
     }
     return Object.freeze(controllerServiceObject)
     

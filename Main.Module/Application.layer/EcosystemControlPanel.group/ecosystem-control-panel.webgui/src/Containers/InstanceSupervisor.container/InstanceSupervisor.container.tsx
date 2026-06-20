@@ -24,6 +24,7 @@ import {
 import GetAPI from "../../Utils/GetAPI"
 import CopyValue from "../../Components/CopyValue"
 import AppModal from "../../Components/AppModal"
+import EmptyState from "../../Components/EmptyState"
 import { ShortId } from "../../Utils/Format"
 import Tasks from "./Tasks"
 
@@ -38,6 +39,7 @@ const Column = Grid.Column
 import OverviewSocketPanel from "./OverviewSocketPanel"
 import StartupArguments from "./StartupArguments"
 import InstanceProcessInformation from "./InstanceProcessInformation"
+import LogStreaming from "./LogStreaming"
 
 const InstanceSupervisorContainer = ({
 	HTTPServerManager,
@@ -53,6 +55,8 @@ const InstanceSupervisorContainer = ({
 	const [taskIdSelected, setTaskIdSelected] = useState<number>()
 	const [taskInformationSelected, setTaskInformationSelected] = useState<any>()
 	const [isConfirmKillOpen, setIsConfirmKillOpen] = useState(false)
+	const [overview, setOverview] = useState<any>()
+	const [activeMainTab, setActiveMainTab] = useState(0)
 
 	const location = useLocation()
   	const navigate = useNavigate()
@@ -126,12 +130,17 @@ const InstanceSupervisorContainer = ({
 		.then(({data}:any) => setTaskInformationSelected(data))
 
 
-	const updateSocketFileList = () => 
+	const updateSocketFileList = () =>
 		_GetSupervisorAPI()
 			.ListMonitoringKeys()
 			.then(({data}:any) => {
-				setMonitoringKeyList(data) 
+				setMonitoringKeyList(data)
 			})
+
+	// status do socket selecionado (para detectar instância indisponível)
+	useEffect(() => {
+		_GetSupervisorAPI().Overview().then(({data}:any) => setOverview(data)).catch(() => setOverview({}))
+	}, [monitoringStateKeySelected])
 	
 	const resetTaskSelection = () => {
 		setTaskIdSelected(undefined)
@@ -156,41 +165,14 @@ const InstanceSupervisorContainer = ({
 	const handleKillInstance = () => KillInstance()
 
 	const mainPanes = [
-		{
-			menuItem: <MenuItem key='tasks'>
-							tasks
-							<Label>{instanceTaskListCurrent.length}</Label>
-					</MenuItem>,
-		   render: () =>
-			<TabPane>
-				<Tasks
-					taskId={taskIdSelected}
-					instanceTaskList={instanceTaskListCurrent}
-					taskInformation={taskInformationSelected}
-					onSelectTask={handleSelectTask}
-				/>
-			</TabPane>
-		},
-		{
-			menuItem: <MenuItem key='startup arguments'>
-							startup arguments
-						</MenuItem>,
-			render: () =>
-				<TabPane>
-					<StartupArguments
-						startupArguments={startupArgumentsCurrent}/>
-				</TabPane>
-		},
-		{
-			menuItem: <MenuItem key='instance process information'>
-							instance process information
-						</MenuItem>,
-			render: () =>
-				<TabPane>
-					<InstanceProcessInformation
-						processInformation={instanceProcessInformationCurrent}/>
-				</TabPane>
-		}
+		{ label: <>tasks <Label size="mini" circular>{instanceTaskListCurrent.length}</Label></>,
+		  render: () => <Tasks taskId={taskIdSelected} instanceTaskList={instanceTaskListCurrent} taskInformation={taskInformationSelected} onSelectTask={handleSelectTask} onCloseTask={resetTaskSelection}/> },
+		{ label: "startup arguments",
+		  render: () => <StartupArguments startupArguments={startupArgumentsCurrent}/> },
+		{ label: "instance process information",
+		  render: () => <InstanceProcessInformation processInformation={instanceProcessInformationCurrent}/> },
+		{ label: <><Icon name="terminal"/> logs</>,
+		  render: () => <LogStreaming monitoringStateKey={monitoringStateKeySelected} HTTPServerManager={HTTPServerManager}/> }
 	]
 
 	const handleBackTOverview = () => {
@@ -199,30 +181,44 @@ const InstanceSupervisorContainer = ({
 		RemoveQueryParam("monitoringStateKey")
 	}
 
+	const selectedStatus = overview ? overview[monitoringStateKeySelected]?.status : undefined
+	const isUnavailable = overview !== undefined && selectedStatus !== "CONNECTED"
+
 	return monitoringStateKeySelected
 		? <Segment style={{margin:"15px"}}>
-				<Menu>
-					<MenuItem>
-						<Button icon onClick={() => handleBackTOverview()}>
-							<Icon name='arrow left'/>
-							overview
-						</Button>
-					</MenuItem>
-					<MenuItem>
-						<Icon name="microchip"/>
-						<span style={{ fontFamily: "monospace", marginLeft: "6px" }} title={monitoringStateKeySelected}>{ShortId(monitoringStateKeySelected, 8, 6)}</span>
+				<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", borderBottom: "2px solid #f0f1f3", marginBottom: "12px", paddingBottom: "2px" }}>
+					<Button basic icon size="small" onClick={() => handleBackTOverview()} title="voltar ao overview"><Icon name="arrow left"/></Button>
+					<span style={{ display: "flex", alignItems: "center" }}>
+						<Icon name="plug" color={isUnavailable ? "red" : undefined}/>
+						<span style={{ fontFamily: "monospace", marginLeft: "4px", fontSize: ".9em" }} title={monitoringStateKeySelected}>{ShortId(monitoringStateKeySelected, 8, 6)}</span>
 						<CopyValue value={monitoringStateKeySelected}/>
-					</MenuItem>
-					<MenuMenu position='right'>
-						<MenuItem>
-							<Button icon color="red" basic onClick={() => setIsConfirmKillOpen(true)}>
-								<Icon name='close'/>
-								kill instance
-							</Button>
-						</MenuItem>
-					</MenuMenu>
-				</Menu>
-				<Tab panes={mainPanes} />
+					</span>
+					{
+						!isUnavailable &&
+						<Menu secondary pointing style={{ margin: 0, border: "none", flex: 1, minWidth: "240px" }}>
+							{
+								mainPanes.map((pane:any, index:number) =>
+									<MenuItem key={index} active={activeMainTab === index} onClick={() => setActiveMainTab(index)}>{pane.label}</MenuItem>)
+							}
+						</Menu>
+					}
+					{
+						!isUnavailable &&
+						<Button color="red" basic icon size="small" onClick={() => setIsConfirmKillOpen(true)} style={{ marginLeft: "auto" }} title="kill instance"><Icon name="close"/> kill</Button>
+					}
+				</div>
+				{
+					isUnavailable
+					? <EmptyState
+						icon={<Icon.Group size="huge" style={{ color: "#cfd3d7" }}>
+							<Icon name="plug"/>
+							<Icon corner name="dont" color="red"/>
+						</Icon.Group>}
+						title="Instância indisponível"
+						description="O socket de supervisão não está respondendo — a instância não está em execução ou foi encerrada. Não há tasks para inspecionar."
+						action={<Button basic icon labelPosition="left" onClick={() => handleBackTOverview()}><Icon name="arrow left"/> voltar ao overview</Button>}/>
+					: <div style={{ padding: "4px 2px" }}>{mainPanes[activeMainTab].render()}</div>
+				}
 
 				<AppModal
 					variant="danger"

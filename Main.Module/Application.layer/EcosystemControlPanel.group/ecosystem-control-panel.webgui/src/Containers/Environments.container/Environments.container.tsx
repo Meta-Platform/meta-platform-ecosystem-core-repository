@@ -2,7 +2,7 @@ import * as React from "react"
 import { useState, useEffect } from "react"
 import { connect }            from "react-redux"
 import { bindActionCreators } from "redux"
-import { Header, Icon, Label, Loader, Segment } from "semantic-ui-react"
+import { Button, Header, Icon, Input, Label, Segment, Table } from "semantic-ui-react"
 import qs from "query-string"
 import {
 	useNavigate
@@ -11,125 +11,210 @@ import {
 import QueryParamsActionsCreator from "../../Actions/QueryParams.actionsCreator"
 import GetAPI from "../../Utils/GetAPI"
 import Breadcrumbs from "../../Components/Breadcrumbs"
+import ListSkeleton from "../../Components/Skeleton"
+import EmptyState from "../../Components/EmptyState"
 import { ShortId } from "../../Utils/Format"
 import { toastSuccess, toastError, errorMessage } from "../../Utils/toast"
 
 import EnvironmentDetailsTab from "./EnvironmentDetailsTab"
 
-const ExtractPackageIdentity = environmentName => {
+const ExtractPackageIdentity = (environmentName:string) => {
     const index = environmentName.lastIndexOf('-')
     return index !== -1 ? environmentName.slice(0, index) : environmentName
 }
 
-const ExtractEnvironmentHash = environmentName => {
+const ExtractEnvironmentHash = (environmentName:string) => {
     const index = environmentName.lastIndexOf('-')
     return index !== -1 ? environmentName.slice(index + 1) : environmentName
 }
 
-// A seleção do environment é feita pela árvore na sidebar (EcosystemNavigator).
-// Este painel mostra apenas os detalhes do environment selecionado.
+const ExtractType = (identity:string) => {
+    const i = identity.lastIndexOf(".")
+    return i !== -1 ? identity.slice(i + 1) : ""
+}
+
+// Como há muitos environments, o menu Environments NÃO os lista na sidebar.
+// Este painel mostra a lista (agrupada por identidade de pacote, pois mudar o
+// pacote de lugar gera novo hash) e, ao selecionar, os detalhes.
+const GroupByIdentity = (names:string[]) =>
+    names.reduce((acc:any, name:string) => {
+        const id = ExtractPackageIdentity(name)
+        ;(acc[id] = acc[id] || []).push(name)
+        return acc
+    }, {})
+
 const EnvironmentsContainer = ({
     HTTPServerManager,
     AddQueryParam,
+    RemoveQueryParam,
     QueryParams
  }:any) => {
 
-    const [ environmentNameSelected, setEnvironmentNameSelected ] = useState<string>()
+    const [ environmentNameList, setEnvironmentNameList ] = useState<string[]>([])
+    const [ isLoadingList, setIsLoadingList ] = useState(true)
+    const [ filterValue, setFilterValue ] = useState<string>("")
+    const [ openGroups, setOpenGroups ] = useState<any>({})
 
+    const [ environmentNameSelected, setEnvironmentNameSelected ] = useState<string>()
     const [ metadataHierarchySelected, setMetadataHierarchySelected] = useState()
     const [ executionParamsSelected, setExecutionParamsSelected] = useState()
 
   	const navigate = useNavigate()
 
-    useEffect(() => {
+    useEffect(() => { fetchEnvironmentsList() }, [])
 
+    useEffect(() => {
         setMetadataHierarchySelected(undefined)
         setExecutionParamsSelected(undefined)
 		if(environmentNameSelected){
-			AddQueryParam("environmentName", environmentNameSelected)
             fetchMetadataHierarchy()
             fetchExecutionParams()
         }
-
 	}, [environmentNameSelected])
 
-
     useEffect(() => {
-
 		const search = qs.stringify(QueryParams)
 		navigate({search: `?${search}`})
-
-		if(QueryParams.environmentName)
-			setEnvironmentNameSelected(QueryParams.environmentName)
-
+        // sincroniza nos dois sentidos (voltar para a lista limpa o param)
+		setEnvironmentNameSelected(QueryParams.environmentName || undefined)
 	}, [QueryParams])
 
     const getEnviromentAPI = () =>
-        GetAPI({
-            apiName:"Environments",
-            serverManagerInformation:HTTPServerManager
-        })
+        GetAPI({ apiName:"Environments", serverManagerInformation:HTTPServerManager })
+
+    const fetchEnvironmentsList = async () => {
+        try {
+            const response = await getEnviromentAPI().ListEnvironments()
+            setEnvironmentNameList(response.data)
+        } catch(e) { console.log(e) } finally { setIsLoadingList(false) }
+    }
 
     const fetchExecutionParams = async () => {
-        const api = getEnviromentAPI()
-        const response = await api.GetExecutionParams({environmentName: environmentNameSelected})
+        const response = await getEnviromentAPI().GetExecutionParams({environmentName: environmentNameSelected})
         setExecutionParamsSelected(response.data)
     }
 
     const fetchMetadataHierarchy = async () => {
-        const api = getEnviromentAPI()
-        const response = await api.GetMetadataHierarchy({environmentName: environmentNameSelected})
+        const response = await getEnviromentAPI().GetMetadataHierarchy({environmentName: environmentNameSelected})
         setMetadataHierarchySelected(response.data)
     }
 
-    // Salva o plano de execução editado (alterar detalhes de tarefas) e recarrega.
-    const handleSaveExecutionParams = async (executionParams) => {
+    const handleSaveExecutionParams = async (executionParams:any) => {
         try {
-            const api = getEnviromentAPI()
-            await api.SaveExecutionParams({ environmentName: environmentNameSelected, executionParams })
+            await getEnviromentAPI().SaveExecutionParams({ environmentName: environmentNameSelected, executionParams })
             await fetchExecutionParams()
             toastSuccess("Plano de execução salvo")
-        } catch(e) {
-            toastError(errorMessage(e))
-            throw e
-        }
+        } catch(e) { toastError(errorMessage(e)); throw e }
     }
 
-    if(!environmentNameSelected)
-        return <Segment placeholder style={{ margin: "15px", minHeight: "300px" }}>
-            <Header icon textAlign="center" style={{ color: "grey" }}>
-                <Icon name="sitemap"/>
-                Selecione um environment na árvore <strong>Environments</strong> à esquerda
-                <Header.Subheader>
-                    cada environment é uma execução isolada (pacote + hash do caminho)
-                </Header.Subheader>
-            </Header>
+    const selectEnvironment = (name:string) => AddQueryParam("environmentName", name)
+    const backToList = () => RemoveQueryParam("environmentName")
+
+    // ---- DETALHE ----
+    if(environmentNameSelected)
+        return <Segment style={{ margin: "15px" }}>
+            <Breadcrumbs items={[ "Environments", ExtractPackageIdentity(environmentNameSelected), ShortId(ExtractEnvironmentHash(environmentNameSelected), 8, 6) ]}/>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <Header>
+                    <Icon name="sitemap"/>
+                    <Header.Content>
+                        {ExtractPackageIdentity(environmentNameSelected)}
+                        <Label size="tiny" style={{ marginLeft: "8px", fontFamily: "monospace" }}>{ShortId(ExtractEnvironmentHash(environmentNameSelected), 10, 8)}</Label>
+                        <Header.Subheader style={{ wordBreak: "break-all" }}>environments / {environmentNameSelected}</Header.Subheader>
+                    </Header.Content>
+                </Header>
+                <Button size="small" basic icon labelPosition="left" onClick={backToList}>
+                    <Icon name="arrow left"/> lista
+                </Button>
+            </div>
+            <EnvironmentDetailsTab
+                metadataHierarchy={metadataHierarchySelected}
+                executionParams={executionParamsSelected}
+                onSaveExecutionParams={handleSaveExecutionParams}/>
         </Segment>
 
+    // ---- LISTA ----
+    const filtered = environmentNameList.filter((n) => !filterValue || n.toLowerCase().includes(filterValue.toLowerCase()))
+    const grouped = GroupByIdentity(filtered)
+    const identities = Object.keys(grouped).sort()
+
     return <Segment style={{ margin: "15px" }}>
-        <Breadcrumbs items={[ "Environments", ExtractPackageIdentity(environmentNameSelected), ShortId(ExtractEnvironmentHash(environmentNameSelected), 8, 6) ]}/>
         <Header>
             <Icon name="sitemap"/>
             <Header.Content>
-                {ExtractPackageIdentity(environmentNameSelected)}
-                <Label size="tiny" style={{ marginLeft: "8px", fontFamily: "monospace" }}>
-                    {ExtractEnvironmentHash(environmentNameSelected)}
-                </Label>
-                <Header.Subheader style={{ wordBreak: "break-all" }}>
-                    environments / {environmentNameSelected}
-                </Header.Subheader>
+                Environments
+                <Header.Subheader>execuções isoladas (pacote + hash do caminho)</Header.Subheader>
             </Header.Content>
         </Header>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "10px" }}>
+            <Label size="large"><Icon name="sitemap"/> {environmentNameList.length} environments</Label>
+            <Label basic>{identities.length} pacotes</Label>
+            <Input icon="search" size="small" placeholder="filtrar environments..." value={filterValue}
+                onChange={(e, { value }) => setFilterValue(value)} style={{ marginLeft: "auto" }}/>
+        </div>
 
-        <EnvironmentDetailsTab
-            metadataHierarchy={metadataHierarchySelected}
-            executionParams={executionParamsSelected}
-            onSaveExecutionParams={handleSaveExecutionParams}/>
+        {
+            isLoadingList
+            ? <ListSkeleton lines={10}/>
+            : identities.length === 0
+                ? <EmptyState icon="sitemap" title="Nenhum environment" description="Execute um pacote para gerar um environment."/>
+                : <div style={{ overflow: "auto", maxHeight: "72vh" }}>
+                    <Table celled striped compact>
+                        <Table.Header>
+                            <Table.Row>
+                                <Table.HeaderCell width={8}>package</Table.HeaderCell>
+                                <Table.HeaderCell width={2}>type</Table.HeaderCell>
+                                <Table.HeaderCell width={3}>instances</Table.HeaderCell>
+                                <Table.HeaderCell width={3}></Table.HeaderCell>
+                            </Table.Row>
+                        </Table.Header>
+                        <Table.Body>
+                            {
+                                identities.map((identity:string, gi:number) => {
+                                    const instances = grouped[identity]
+                                    const isOpen = openGroups[identity]
+                                    const rows:any[] = []
+                                    rows.push(
+                                        <Table.Row key={`g-${gi}`} style={{ cursor: instances.length > 1 ? "pointer" : "default" }}
+                                            onClick={() => instances.length > 1 ? setOpenGroups({ ...openGroups, [identity]: !isOpen }) : selectEnvironment(instances[0])}>
+                                            <Table.Cell>
+                                                { instances.length > 1 && <Icon name={isOpen ? "caret down" : "caret right"} style={{ color: "#999" }}/> }
+                                                <Icon name="cube" style={{ color: "#888" }}/> <strong>{identity}</strong>
+                                            </Table.Cell>
+                                            <Table.Cell><Label size="mini">{ExtractType(identity)}</Label></Table.Cell>
+                                            <Table.Cell>{instances.length}</Table.Cell>
+                                            <Table.Cell textAlign="right">
+                                                {
+                                                    instances.length === 1 &&
+                                                    <span style={{ color: "#3a6ea5" }}>abrir <Icon name="arrow right"/></span>
+                                                }
+                                            </Table.Cell>
+                                        </Table.Row>
+                                    )
+                                    if(instances.length > 1 && isOpen)
+                                        instances.forEach((name:string, ii:number) =>
+                                            rows.push(
+                                                <Table.Row key={`i-${gi}-${ii}`} style={{ cursor: "pointer" }} onClick={() => selectEnvironment(name)}>
+                                                    <Table.Cell style={{ paddingLeft: "34px", fontFamily: "monospace", color: "#666" }}>
+                                                        <Icon name="hashtag" style={{ color: "#bbb" }}/> {ShortId(ExtractEnvironmentHash(name), 12, 8)}
+                                                    </Table.Cell>
+                                                    <Table.Cell/>
+                                                    <Table.Cell/>
+                                                    <Table.Cell textAlign="right"><span style={{ color: "#3a6ea5" }}>abrir <Icon name="arrow right"/></span></Table.Cell>
+                                                </Table.Row>))
+                                    return rows
+                                })
+                            }
+                        </Table.Body>
+                    </Table>
+                </div>
+        }
     </Segment>
 }
 
 const mapDispatchToProps = (dispatch:any) => bindActionCreators({
-	AddQueryParam    : QueryParamsActionsCreator.AddQueryParam
+	AddQueryParam    : QueryParamsActionsCreator.AddQueryParam,
+	RemoveQueryParam : QueryParamsActionsCreator.RemoveQueryParam
 }, dispatch)
 
 const mapStateToProps = ({HTTPServerManager, QueryParams}:any) => ({

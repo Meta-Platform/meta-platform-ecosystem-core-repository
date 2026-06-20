@@ -1,11 +1,9 @@
 import * as React from "react"
 
-import { Segment } from "semantic-ui-react"
-
 import KeyValuePanel from "../../Components/KeyValuePanel"
 
 const StartupArguments = ({
     startupArguments
-}) => <Segment><KeyValuePanel data={startupArguments}/></Segment>
+}) => <div style={{ padding: "4px 2px" }}><KeyValuePanel data={startupArguments}/></div>
 
 export default StartupArguments

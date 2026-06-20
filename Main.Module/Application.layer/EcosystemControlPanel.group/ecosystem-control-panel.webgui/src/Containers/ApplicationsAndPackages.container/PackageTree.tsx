@@ -141,7 +141,7 @@ const PackageTree = ({ packageList, isLoading }:any) => {
         }
         <Grid divided>
             <Grid.Column width={5}>
-                <Header as="h5"><Icon name="database"/> Repositories</Header>
+                <Header as="h5"><Icon name="cubes"/> Repositories</Header>
                 <List selection size="small">
                     {
                         repoNames.map((repoName:string, key:number) =>
@@ -152,7 +152,7 @@ const PackageTree = ({ packageList, isLoading }:any) => {
                                 <List.Content floated="right">
                                     <Label circular size="mini">{repoCounts[repoName]}</Label>
                                 </List.Content>
-                                <List.Icon name="database" color={repoSelected === repoName ? "blue" : "grey"}/>
+                                <List.Icon name="cubes" color={repoSelected === repoName ? "blue" : "grey"}/>
                                 <List.Content>
                                     <List.Header>{repoName}</List.Header>
                                 </List.Content>
