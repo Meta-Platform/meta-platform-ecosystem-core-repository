@@ -2,12 +2,22 @@ import * as React from "react"
 import { useState } from "react"
 
 import {
-    Checkbox,
+    Button,
     Icon,
     Input,
     Label,
     Table
 } from "semantic-ui-react"
+
+// Ordem do pipeline de loaders (deps → pacotes → instâncias → serviços/endpoints).
+const LOADER_ORDER = [
+    "install-nodejs-package-dependencies",
+    "nodejs-package",
+    "application-instance",
+    "service-instance",
+    "endpoint-instance",
+    "command-application"
+]
 
 import StatusBadge, { GetStatusColor, GetSeverityRank } from "../../Components/StatusBadge"
 import { LoaderAlias } from "../../Utils/LoaderType"
@@ -150,7 +160,8 @@ const TaskProcessMonitor = ({
     const [ sortColumn, setSortColumn ]       = useState<string>("status")
     const [ sortDirection, setSortDirection ] = useState<"ascending" | "descending">("ascending")
     const [ filterValue, setFilterValue ]     = useState<string>("")
-    const [ treeView, setTreeView ]           = useState<boolean>(false)
+    // visão unificada: lista (flat) | hierarquia (parent→filhos) | por loader
+    const [ viewMode, setViewMode ]           = useState<"flat" | "tree" | "loader">("tree")
 
     const _GetSortableValue = (task:any, column:string) => {
         if(column === "name")   return GetTaskName(task).toString().toLowerCase()
@@ -160,7 +171,7 @@ const TaskProcessMonitor = ({
     }
 
     const handleSort = (column:string) => {
-        if(treeView) return
+        if(viewMode !== "flat") return
         if(sortColumn === column){
             setSortDirection(sortDirection === "ascending" ? "descending" : "ascending")
         } else {
@@ -191,10 +202,33 @@ const TaskProcessMonitor = ({
         </Table.Row>
 
     let rows:any[]
-    if(treeView){
+    if(viewMode === "tree"){
+        // hierarquia: cada filho aninhado sob o pai (pTaskId) = relação de dependência
         rows = BuildTreeOrder(instanceTaskList)
             .filter(({ task }) => matchesFilter(task))
             .map(({ task, depth }, index) => renderRow(task, depth, index))
+    } else if(viewMode === "loader"){
+        // agrupado pelo object loader, na ordem do pipeline de execução
+        const filtered = instanceTaskList.filter(matchesFilter)
+        const groups:any = {}
+        filtered.forEach((t:any) => { (groups[t.objectLoaderType] = groups[t.objectLoaderType] || []).push(t) })
+        const orderedLoaders = [
+            ...LOADER_ORDER.filter((l) => groups[l]),
+            ...Object.keys(groups).filter((l) => !LOADER_ORDER.includes(l))
+        ]
+        rows = []
+        let idx = 0
+        orderedLoaders.forEach((loader:string) => {
+            rows.push(
+                <Table.Row key={`g-${loader}`} style={{ background: "#eef1f4" }}>
+                    <Table.Cell colSpan={5} style={{ fontFamily: "monospace", fontWeight: 700, fontSize: ".9em", color: "#3a4047" }}>
+                        <Icon name={GetIconByLoaderType(loader)} style={{ color: "#7b8794" }}/> {loader}
+                        <Label circular size="mini" style={{ marginLeft: "6px" }}>{groups[loader].length}</Label>
+                    </Table.Cell>
+                </Table.Row>
+            )
+            groups[loader].sort((a:any, b:any) => a.taskId - b.taskId).forEach((t:any) => rows.push(renderRow(t, 0, idx++)))
+        })
     } else {
         const sorted = [...instanceTaskList.filter(matchesFilter)].sort((a:any, b:any) => {
             const va = _GetSortableValue(a, sortColumn)
@@ -207,12 +241,12 @@ const TaskProcessMonitor = ({
     }
 
     return <div>
-        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", flexWrap: "wrap", gap: "12px", marginBottom: "10px" }}>
-            <Checkbox
-                toggle
-                label="tree view"
-                checked={treeView}
-                onChange={() => setTreeView(!treeView)}/>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", marginBottom: "10px" }}>
+            <Button.Group size="mini">
+                <Button active={viewMode === "flat"}   onClick={() => setViewMode("flat")}><Icon name="list"/> lista</Button>
+                <Button active={viewMode === "tree"}   onClick={() => setViewMode("tree")}><Icon name="sitemap"/> hierarquia</Button>
+                <Button active={viewMode === "loader"} onClick={() => setViewMode("loader")}><Icon name="boxes"/> por loader</Button>
+            </Button.Group>
             <Input
                 icon="search"
                 size="small"
@@ -222,7 +256,7 @@ const TaskProcessMonitor = ({
         </div>
 
         <div style={{ overflow: "auto", maxHeight: "78vh", border: "1px solid #e0e0e0", borderRadius: "4px" }}>
-            <Table sortable={!treeView} compact selectable striped unstackable style={{ fontSize: ".9em", tableLayout: "fixed", width: "100%", border: "none" }}>
+            <Table sortable={viewMode === "flat"} compact selectable unstackable style={{ fontSize: ".9em", tableLayout: "fixed", width: "100%", border: "none" }}>
                 <Table.Header>
                     <Table.Row>
                         {
@@ -230,7 +264,7 @@ const TaskProcessMonitor = ({
                                 <Table.HeaderCell
                                     key={column.key}
                                     width={column.width as any}
-                                    sorted={!treeView && sortColumn === column.key ? sortDirection : undefined}
+                                    sorted={viewMode === "flat" && sortColumn === column.key ? sortDirection : undefined}
                                     onClick={() => handleSort(column.key)}
                                     style={{ position: "sticky", top: 0, zIndex: 1 }}>
                                     {column.label}

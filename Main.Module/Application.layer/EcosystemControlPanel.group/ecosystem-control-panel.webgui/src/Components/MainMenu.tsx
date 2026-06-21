@@ -18,6 +18,7 @@ const MainMenu = ({
     ecosystemdataPath,
     onClickOpenEcosystemDataPathModal,
     onClickOpenNotificationPanel,
+    onClickLogo,
     showSidebarToggle,
     onToggleSidebar
 }) => {
@@ -36,7 +37,7 @@ const MainMenu = ({
                         <Icon name="bars" size="large"/>
                     </MenuItem>
                 }
-                <MenuItem header>
+                <MenuItem header onClick={() => onClickLogo && onClickLogo()} style={{ cursor: onClickLogo ? "pointer" : undefined }} title="início">
                     <Icon name="cube" size="large"/>
                     <span style={{ fontWeight: 700, fontSize: "1.05em", marginLeft: "4px" }}>Ecosystem Panel</span>
                 </MenuItem>

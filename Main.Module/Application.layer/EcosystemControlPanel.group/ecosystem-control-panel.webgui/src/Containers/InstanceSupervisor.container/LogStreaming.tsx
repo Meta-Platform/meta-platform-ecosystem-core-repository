@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react"
 import { Button, Checkbox, Icon, Label } from "semantic-ui-react"
 
 import GetAPI from "../../Utils/GetAPI"
+import CopyValue from "../../Components/CopyValue"
+import { ShortId } from "../../Utils/Format"
 
 // Remove sequências ANSI (cores/escape) já que é um visualizador de texto puro.
 const StripAnsi = (s:string) => s.replace(/\x1b\[[0-9;]*[A-Za-z]/g, "")
@@ -20,7 +22,7 @@ const ExtractMessage = (raw:any):string => {
 // Visualizador de log do processo via socket: abre o WebSocket LogStreaming do
 // supervisor (que repassa o LogStreaming do package-executor) e mostra as linhas
 // num terminal escuro com auto-scroll.
-const LogStreaming = ({ monitoringStateKey, HTTPServerManager }:any) => {
+const LogStreaming = ({ monitoringStateKey, HTTPServerManager, fill = false, onActivity, onStatusChange, reconnectSignal, socketName, visible = true }:any) => {
 
     const [ lines, setLines ]       = useState<string[]>([])
     const [ status, setStatus ]     = useState<"connecting" | "open" | "closed">("connecting")
@@ -30,12 +32,16 @@ const LogStreaming = ({ monitoringStateKey, HTTPServerManager }:any) => {
     const bodyRef   = useRef<HTMLDivElement>(null)
     const autoRef   = useRef(true)
     autoRef.current = autoScroll
+    const activityRef = useRef(onActivity)
+    activityRef.current = onActivity
 
-    const _append = (text:string) =>
+    const _append = (text:string) => {
         setLines((prev) => {
             const next = [...prev, ...StripAnsi(text).split("\n")]
             return next.length > 5000 ? next.slice(next.length - 5000) : next
         })
+        activityRef.current && activityRef.current()
+    }
 
     const connect = () => {
         disconnect()
@@ -54,10 +60,17 @@ const LogStreaming = ({ monitoringStateKey, HTTPServerManager }:any) => {
         }
     }
 
+    // cleanup do socket (sem mexer no status — usado em reconexão/unmount)
     const disconnect = () => {
         const ws = socketRef.current
         socketRef.current = null
-        if(ws) { ws.onmessage = null; ws.onclose = null; try { ws.close() } catch(e){} }
+        if(ws) { ws.onmessage = null; ws.onclose = null; ws.onerror = null; try { ws.close() } catch(e){} }
+    }
+
+    // desconexão manual (botão): encerra E marca como desconectado na UI/dock
+    const handleDisconnect = () => {
+        disconnect()
+        setStatus("closed")
     }
 
     // Ao trocar de socket/instância: limpa o terminal e reconecta no novo log
@@ -72,6 +85,22 @@ const LogStreaming = ({ monitoringStateKey, HTTPServerManager }:any) => {
         if(autoRef.current && bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight
     }, [lines])
 
+    // ao tornar-se visível (maximizar), rola para o último log se auto-scroll
+    useEffect(() => {
+        if(visible && autoRef.current)
+            requestAnimationFrame(() => { if(bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight })
+    }, [visible])
+
+    // reporta o status de conexão para quem hospeda (ex.: dock)
+    useEffect(() => { onStatusChange && onStatusChange(status) }, [status])
+
+    // reconexão acionada externamente (botão do dock)
+    const firstSignalRef = useRef(true)
+    useEffect(() => {
+        if(firstSignalRef.current){ firstSignalRef.current = false; return }
+        connect()
+    }, [reconnectSignal])
+
     const statusMeta:any = {
         connecting: { color: "yellow", icon: "spinner",      text: "conectando" },
         open:       { color: "green",  icon: "circle",       text: "conectado" },
@@ -79,17 +108,19 @@ const LogStreaming = ({ monitoringStateKey, HTTPServerManager }:any) => {
     }
     const sm = statusMeta[status]
 
-    return <div>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", flexWrap: "wrap" }}>
-            <Label color={sm.color} size="small"><Icon name={sm.icon} loading={status === "connecting"}/> {sm.text}</Label>
-            <Label basic size="small">{lines.length} linhas</Label>
+    return <div style={fill ? { display: "flex", flexDirection: "column", height: "100%" } : undefined}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", flexWrap: "wrap", flex: "0 0 auto" }}>
+            <Label color={sm.color} size="small" className={status === "open" ? "eco-log-live" : undefined}><Icon name={sm.icon} loading={status === "connecting"}/> {sm.text}</Label>
+            { socketName && <span style={{ fontWeight: 600 }}><Icon name="plug" style={{ color: "#7b8794" }}/> {socketName}</span> }
+            <span style={{ fontFamily: "monospace", fontSize: ".82em", color: "#8a9099" }} title={monitoringStateKey}>{ShortId(monitoringStateKey, 8, 6)}</span>
+            <CopyValue value={monitoringStateKey}/>
+            <Label basic size="small"><Icon name="list"/> {lines.length} linhas</Label>
             <Checkbox toggle label="auto-scroll" checked={autoScroll} onChange={() => setAutoScroll(!autoScroll)} style={{ marginLeft: "6px" }}/>
-            <div style={{ marginLeft: "auto", display: "flex", gap: "6px" }}>
-                <Button size="mini" basic icon labelPosition="left" onClick={() => setLines([])}><Icon name="erase"/> limpar</Button>
+            <div style={{ marginLeft: "auto" }}>
                 {
                     status === "open"
-                    ? <Button size="mini" basic color="red" icon labelPosition="left" onClick={disconnect}><Icon name="stop"/> parar</Button>
-                    : <Button size="mini" basic color="blue" icon labelPosition="left" onClick={connect}><Icon name="plug"/> reconectar</Button>
+                    ? <Button size="mini" basic color="red" icon labelPosition="left" onClick={handleDisconnect}><Icon name="plug"/> desconectar</Button>
+                    : <Button size="mini" basic color="blue" icon labelPosition="left" onClick={connect}><Icon name="redo"/> reconectar</Button>
                 }
             </div>
         </div>
@@ -97,7 +128,8 @@ const LogStreaming = ({ monitoringStateKey, HTTPServerManager }:any) => {
             ref={bodyRef}
             style={{
                 background: "#1e2127", color: "#d7dbe0", fontFamily: "monospace", fontSize: ".82em",
-                lineHeight: 1.45, padding: "10px 12px", borderRadius: "6px", height: "62vh",
+                lineHeight: 1.45, padding: "10px 12px", borderRadius: "6px",
+                height: fill ? "auto" : "62vh", flex: fill ? 1 : undefined, minHeight: fill ? 0 : undefined,
                 overflow: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word"
             }}>
             {

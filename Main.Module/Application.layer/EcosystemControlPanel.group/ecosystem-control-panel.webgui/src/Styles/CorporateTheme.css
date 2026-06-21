@@ -5,17 +5,17 @@
  */
 
 :root {
-    --eco-canvas:    #eef0f3;
-    --eco-surface:   #ffffff;
-    --eco-surface-2: #f6f7f9;
-    --eco-surface-3: #eceef1;
-    --eco-border:    #e3e6ea;
-    --eco-border-2:  #d7dbe0;
-    --eco-text:      #2b2f33;
-    --eco-muted:     #6b7177;
+    --eco-canvas:    #a8b0bb;
+    --eco-surface:   #f2f4f7;
+    --eco-surface-2: #e7ebef;
+    --eco-surface-3: #dce1e6;
+    --eco-border:    #c7ced5;
+    --eco-border-2:  #b7bfc7;
+    --eco-text:      #272b30;
+    --eco-muted:     #636a71;
     --eco-accent:    #3a6ea5;
     --eco-radius:    8px;
-    --eco-shadow:    0 1px 2px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .04);
+    --eco-shadow:    0 1px 2px rgba(16, 24, 40, .10), 0 1px 3px rgba(16, 24, 40, .07);
 }
 
 html, body, #gui {
@@ -56,7 +56,7 @@ body {
 }
 .ui.attached.menu,
 .ui.borderless.menu {
-    background: var(--eco-surface);
+    background: var(--eco-surface-2);
 }
 
 /* ---- faixa de cabeçalho do card ----
@@ -91,6 +91,7 @@ code {
     border: 1px solid var(--eco-border) !important;
     border-radius: var(--eco-radius);
     color: var(--eco-text);
+    background: transparent !important;
 }
 .ui.table thead th {
     background: var(--eco-surface-2) !important;
@@ -100,7 +101,7 @@ code {
     border-bottom: 1px solid var(--eco-border-2) !important;
 }
 .ui.table tbody tr:hover {
-    background: #f3f6fa !important;
+    background: rgba(0, 0, 0, .04) !important;
 }
 .ui.striped.table tbody tr:nth-child(2n) {
     background: var(--eco-surface-2);
@@ -118,6 +119,17 @@ code {
 }
 .ui.basic.table tbody tr:not(:last-child) > td {
     border-bottom: 1px solid #eef0f2;
+}
+
+/* indicador de log stream "ao vivo": pulsa para dar sensação de realtime */
+@keyframes eco-log-pulse {
+    0%   { opacity: 1;   transform: scale(1); }
+    50%  { opacity: .35; transform: scale(.82); }
+    100% { opacity: 1;   transform: scale(1); }
+}
+.eco-log-live {
+    animation: eco-log-pulse 1.1s ease-in-out infinite;
+    transform-origin: center;
 }
 
 /* conteúdo das abas (TabPane) sem borda/sombra — visual limpo */

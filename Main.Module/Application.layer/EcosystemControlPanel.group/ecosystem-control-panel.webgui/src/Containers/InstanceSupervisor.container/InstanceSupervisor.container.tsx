@@ -39,7 +39,7 @@ const Column = Grid.Column
 import OverviewSocketPanel from "./OverviewSocketPanel"
 import StartupArguments from "./StartupArguments"
 import InstanceProcessInformation from "./InstanceProcessInformation"
-import LogStreaming from "./LogStreaming"
+import { openLogWindow, subscribeLogWindows } from "../../Utils/logWindows"
 
 const InstanceSupervisorContainer = ({
 	HTTPServerManager,
@@ -56,6 +56,9 @@ const InstanceSupervisorContainer = ({
 	const [taskInformationSelected, setTaskInformationSelected] = useState<any>()
 	const [isConfirmKillOpen, setIsConfirmKillOpen] = useState(false)
 	const [overview, setOverview] = useState<any>()
+	const [logKeys, setLogKeys] = useState<string[]>([])
+
+	useEffect(() => subscribeLogWindows((ws:any[]) => setLogKeys(ws.map((w) => w.monitoringStateKey))), [])
 	const [activeMainTab, setActiveMainTab] = useState(0)
 
 	const location = useLocation()
@@ -170,10 +173,13 @@ const InstanceSupervisorContainer = ({
 		{ label: "startup arguments",
 		  render: () => <StartupArguments startupArguments={startupArgumentsCurrent}/> },
 		{ label: "instance process information",
-		  render: () => <InstanceProcessInformation processInformation={instanceProcessInformationCurrent}/> },
-		{ label: <><Icon name="terminal"/> logs</>,
-		  render: () => <LogStreaming monitoringStateKey={monitoringStateKeySelected} HTTPServerManager={HTTPServerManager}/> }
+		  render: () => <InstanceProcessInformation processInformation={instanceProcessInformationCurrent}/> }
 	]
+
+	const _GetSocketName = (key:string) => {
+		const fp = overview && overview[key] && overview[key].filePath
+		return fp ? (fp.split("/").pop() || "").replace(/\.sock$/, "") : ShortId(key, 8, 6)
+	}
 
 	const handleBackTOverview = () => {
 		resetTaskSelection()
@@ -204,7 +210,22 @@ const InstanceSupervisorContainer = ({
 					}
 					{
 						!isUnavailable &&
-						<Button color="red" basic icon size="small" onClick={() => setIsConfirmKillOpen(true)} style={{ marginLeft: "auto" }} title="kill instance"><Icon name="close"/> kill</Button>
+						<Button
+							basic icon size="small"
+							color={logKeys.includes(monitoringStateKeySelected) ? "green" : "blue"}
+							onClick={() => openLogWindow({ monitoringStateKey: monitoringStateKeySelected, socketName: _GetSocketName(monitoringStateKeySelected) })}
+							style={{ marginLeft: "auto" }}
+							title={logKeys.includes(monitoringStateKeySelected) ? "ver log stream aberto" : "abrir log stream do processo"}>
+							{
+								logKeys.includes(monitoringStateKeySelected)
+								? <><Icon name="eye"/> ver log</>
+								: <><Icon name="terminal"/> log stream</>
+							}
+						</Button>
+					}
+					{
+						!isUnavailable &&
+						<Button color="red" basic icon size="small" onClick={() => setIsConfirmKillOpen(true)} title="kill instance"><Icon name="close"/> kill</Button>
 					}
 				</div>
 				{

@@ -1,14 +1,7 @@
 import * as React from "react"
-import {
-	TabPane,
-	Tab
- } from "semantic-ui-react"
-
-import TaskGroupByLoaderContainer from "../../Containers/TaskGroupByLoader.container"
 
 import TaskInformation from "../../Components/TaskInformation"
 
-import TaskCardGroup from "./Task.cardGroup"
 import TaskProcessMonitor from "./TaskProcessMonitor"
 
 const Tasks = ({
@@ -18,34 +11,16 @@ const Tasks = ({
     onSelectTask,
     onCloseTask
 }) => {
-	const taskViewPanes = [
-		{
-			menuItem: 'monitor', render: () =>
-			<TabPane style={{background: "#f6f7f8"}}>
-				<TaskProcessMonitor
-					instanceTaskList={instanceTaskList}
-					taskId={taskId}
-					onSelectTask={onSelectTask}/>
-			</TabPane>
-		},
-		{
-			menuItem: 'group by loader', render: () =>
-			<TabPane>
-				<TaskGroupByLoaderContainer
-					instanceTaskList={instanceTaskList}
-					taskId={taskId}
-					onSelectTask={onSelectTask}/>
-			</TabPane>
-		}
-	]
 
 	const isDetailOpen = taskId !== undefined && !!taskInformation
 
-	// A tabela ocupa a largura cheia; o detalhe abre como off-canvas (drawer)
-	// pela direita, sobrepondo o conteúdo — sem espremer o monitor.
+	// Visão única (sem tabs): a lista de tasks com modos lista/hierarquia/loader.
+	// O detalhe abre como off-canvas (drawer) pela direita.
 	return <div>
-		<TaskCardGroup tasklist={instanceTaskList} onSelectTask={onSelectTask}/>
-		<Tab menu={{ secondary: true, pointing: true }} panes={taskViewPanes} />
+		<TaskProcessMonitor
+			instanceTaskList={instanceTaskList}
+			taskId={taskId}
+			onSelectTask={onSelectTask}/>
 
 		{
 			isDetailOpen && <>

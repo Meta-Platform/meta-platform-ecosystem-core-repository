@@ -13,6 +13,7 @@ import {
 import GetAPI       from "../Utils/GetAPI"
 import useWebSocket from "../Hooks/useWebSocket"
 import { GetStatusColor } from "./StatusBadge"
+import { subscribeLogWindows } from "../Utils/logWindows"
 
 // O nome de um environment segue o padrão "<package-name>.<type>-<hash>".
 // Quando o pacote muda de lugar no filesystem, um novo hash (logo, um novo
@@ -74,6 +75,9 @@ const EcosystemNavigator = ({
     const [ openGroups, setOpenGroups ]     = useState<any>({})
     const [ openExecGroups, setOpenExecGroups ] = useState<any>({})
     const [ navFilter, setNavFilter ]       = useState<string>("")
+    const [ logKeys, setLogKeys ]           = useState<string[]>([])
+
+    useEffect(() => subscribeLogWindows((ws:any[]) => setLogKeys(ws.map((w) => w.monitoringStateKey))), [])
 
     const _GetSupervisorAPI = () =>
         GetAPI({ apiName: "InstancesSupervisor", serverManagerInformation })
@@ -159,22 +163,15 @@ const EcosystemNavigator = ({
 
         <Accordion fluid styled style={{ fontSize: ".95em" }}>
 
-            { /* Instances (supervisor sockets) */ }
+            { /* Instances — clique abre o Overview e lista os sockets */ }
             <Accordion.Title
                 active={openSections.instances}
-                onClick={() => toggleSection("instances")}>
+                onClick={() => { toggleSection("instances"); onNavigate({ panel: "instance supervisor", params: { monitoringStateKey: undefined } }) }}>
                 <Icon name="dropdown"/>
                 <SectionTitle iconName="server" label="Instances" count={Object.keys(overview).length}/>
             </Accordion.Title>
             <Accordion.Content active={openSections.instances || filtering}>
                 <List selection size="small">
-                    <List.Item
-                        active={isActivePanel("instance supervisor") && !selection.monitoringStateKey}
-                        onClick={() => onNavigate({ panel: "instance supervisor", params: { monitoringStateKey: undefined } })}>
-                        <List.Content>
-                            <List.Header><Icon name="th"/> overview</List.Header>
-                        </List.Content>
-                    </List.Item>
                     {
                         filteredOverviewKeys.map((monitoringStateKey:string, key:number) => {
                             const info = overview[monitoringStateKey] || {}
@@ -186,6 +183,7 @@ const EcosystemNavigator = ({
                                 <List.Content>
                                     <Icon name="plug" size="small" color={GetStatusColor(info.status)}/>
                                     <span title={monitoringStateKey}>{socketName}</span>
+                                    { logKeys.includes(monitoringStateKey) && <Icon name="terminal" size="small" color="blue" className="eco-log-live" style={{ marginLeft: "6px" }} title="log stream ao vivo"/> }
                                 </List.Content>
                             </List.Item>
                         })

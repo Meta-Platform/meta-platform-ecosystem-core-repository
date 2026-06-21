@@ -44,11 +44,13 @@ import EcosystemDataPathModal           from "../Modals/EcosystemDataPath.modal"
 import useWebSocket from "../Hooks/useWebSocket"
 
 import MainMenu from "../Components/MainMenu"
+import WelcomePanel from "../Components/WelcomePanel"
 import ToastContainer from "../Components/ToastContainer"
+import LogDock from "../Components/LogDock"
 
 import QueryParamsActionsCreator from "../Actions/QueryParams.actionsCreator"
 
-const DEFAULT_PANEL = "instance supervisor"
+const DEFAULT_PANEL = "welcome"
 
 const useNotificationManager = (serverManagerInformation) => {
 
@@ -277,6 +279,8 @@ const ControlPanelPage = ({
 
 	const renderActivePanel = () => {
 		switch(activeItem){
+			case "welcome":
+				return <WelcomePanel onNavigate={handleNavigate} ecosystemdataPath={ecosystemdataPathSelected}/>
 			case "environments":
 				return <EnvironmentsContainer serverManagerInformation={HTTPServerManager}/>
 			case "repositories":
@@ -310,6 +314,7 @@ const ControlPanelPage = ({
 						ecosystemdataPath={ecosystemdataPathSelected}
 						onClickOpenEcosystemDataPathModal={handleOpenEcosystemDataModal}
 						onClickOpenNotificationPanel={handleOpenNotificationPanel}
+						onClickLogo={() => handleNavigate({ panel: "welcome" })}
 						showSidebarToggle={isNarrow}
 						onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}/>
 					<Grid style={{ maxWidth: "1840px", margin: "0 auto" }}>
@@ -367,6 +372,7 @@ const ControlPanelPage = ({
 					 	onClose={() => handleCloseEcosystemDataModal()}/>
 
 					<ToastContainer/>
+					<LogDock/>
 			</div>
 
 }
