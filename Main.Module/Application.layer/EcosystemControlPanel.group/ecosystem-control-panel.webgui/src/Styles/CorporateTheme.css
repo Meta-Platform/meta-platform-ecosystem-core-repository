@@ -5,7 +5,7 @@
  */
 
 :root {
-    --eco-canvas:    #a8b0bb;
+    --eco-canvas:    #dfdfdf;
     --eco-surface:   #f2f4f7;
     --eco-surface-2: #e7ebef;
     --eco-surface-3: #dce1e6;
@@ -66,12 +66,17 @@ body {
  */
 .ui.segment > .ui.header:first-child,
 .ui.segment > .ui.secondary.menu:first-child {
-    margin: -1em -1em 1em -1em !important;
-    padding: 0.7em 1em !important;
+    margin: -1rem -1rem 1em -1rem !important;
+    padding: 0.7em 1rem !important;
     background: var(--eco-surface-2);
     border-bottom: 1px solid var(--eco-border) !important;
     border-top-left-radius: var(--eco-radius);
     border-top-right-radius: var(--eco-radius);
+}
+/* o ícone do header não pode inflar/empurrar o conteúdo da faixa */
+.ui.segment > .ui.header:first-child > .icon {
+    font-size: 1.5em;
+    margin-right: .5rem;
 }
 .ui.segment > .ui.secondary.menu:first-child { border-radius: var(--eco-radius) var(--eco-radius) 0 0; }
 .ui.segment > .ui.header:first-child .sub.header { margin-top: 2px; }
