@@ -32,11 +32,27 @@ const RenderValue = (value:any) => {
     </span>
 }
 
+// Rótulo da chave (monospace, discreto) — usado no modo empilhado.
+const KeyLabel = ({ children }:any) =>
+    <div style={{ fontFamily: "monospace", fontSize: ".78em", color: "#8a9099", fontWeight: 600, marginBottom: "2px", wordBreak: "break-all" }}>{children}</div>
+
 // Painel chave-valor compacto que respeita a largura do container (não vaza).
-const KeyValuePanel = ({ data }:any) => {
+// `stacked`: nome do parâmetro ACIMA do valor (otimiza espaço horizontal, ideal
+// para o off-canvas estreito); padrão: duas colunas (nome ao lado do valor).
+const KeyValuePanel = ({ data, stacked = false }:any) => {
     const keys = Object.keys(data || {}).filter((k) => data[k] !== undefined && data[k] !== null && data[k] !== "")
     if(keys.length === 0)
         return <span style={{ color: "#bbb" }}>sem dados</span>
+    if(stacked)
+        return <div>
+            {
+                keys.map((key:string, index:number) =>
+                    <div key={index} style={{ padding: "8px 0", borderBottom: index < keys.length - 1 ? "1px solid #d7dce1" : "none" }}>
+                        <KeyLabel>{key}</KeyLabel>
+                        <div style={{ minWidth: 0 }}>{RenderValue(data[key])}</div>
+                    </div>)
+            }
+        </div>
     return <Table basic compact unstackable style={{ tableLayout: "fixed", width: "100%" }}>
         <Table.Body>
             {

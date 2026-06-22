@@ -7,34 +7,27 @@ import {
 	Label,
 	Segment,
 	Tab,
-	TabPane,
-	Table
+	TabPane
  } from "semantic-ui-react"
 
 import StatusBadge from "./StatusBadge"
 import KeyValuePanel from "./KeyValuePanel"
 
-// Regras (&&) renderizadas na MESMA tabela chave-valor do KeyValuePanel,
-// para padronizar a aparência de todas as abas do detalhe.
+// Regras (&&) empilhadas (propriedade ACIMA do valor), padronizadas com o modo
+// stacked do KeyValuePanel para otimizar o espaço estreito do off-canvas.
 const RulesTable = ({ rules }:any) => {
 	const andRules = (rules && rules["&&"]) || []
 	if(andRules.length === 0)
 		return <span style={{ color: "#999" }}>sem regras</span>
-	return <Table basic compact unstackable style={{ tableLayout: "fixed", width: "100%" }}>
-		<Table.Body>
-			{
-				andRules.map((rule:any, key:number) =>
-					<Table.Row key={key}>
-						<Table.Cell style={{ width: "45%", verticalAlign: "top", wordBreak: "break-all" }}>
-							<strong style={{ fontFamily: "monospace", fontSize: ".82em", color: "#444" }}>{rule.property}</strong>
-						</Table.Cell>
-						<Table.Cell style={{ overflow: "hidden" }}>
-							<code style={{ wordBreak: "break-all" }}>{String(rule["="])}</code>
-						</Table.Cell>
-					</Table.Row>)
-			}
-		</Table.Body>
-	</Table>
+	return <div>
+		{
+			andRules.map((rule:any, key:number) =>
+				<div key={key} style={{ padding: "8px 0", borderBottom: key < andRules.length - 1 ? "1px solid #d7dce1" : "none" }}>
+					<div style={{ fontFamily: "monospace", fontSize: ".78em", color: "#8a9099", fontWeight: 600, marginBottom: "2px", wordBreak: "break-all" }}>{rule.property}</div>
+					<code style={{ wordBreak: "break-all" }}>{String(rule["="])}</code>
+				</div>)
+		}
+	</div>
 }
 
 const TaskInformation = ({ taskInformation, onClose }:any) => {
@@ -43,15 +36,15 @@ const TaskInformation = ({ taskInformation, onClose }:any) => {
 	// painel muito comprido com tudo empilhado.
 	const panes:any[] = []
 	if(taskInformation.staticParameters)
-		panes.push({ menuItem: "params", render: () => <TabPane style={{ border: "none", padding: "8px 2px" }}><KeyValuePanel data={taskInformation.staticParameters}/></TabPane> })
+		panes.push({ menuItem: "params", render: () => <TabPane style={{ border: "none", padding: "10px 14px" }}><KeyValuePanel data={taskInformation.staticParameters} stacked/></TabPane> })
 	if(taskInformation.linkedParameters)
-		panes.push({ menuItem: "linked", render: () => <TabPane style={{ border: "none", padding: "8px 2px" }}><KeyValuePanel data={taskInformation.linkedParameters}/></TabPane> })
+		panes.push({ menuItem: "linked", render: () => <TabPane style={{ border: "none", padding: "10px 14px" }}><KeyValuePanel data={taskInformation.linkedParameters} stacked/></TabPane> })
 	if(taskInformation.activationRules)
-		panes.push({ menuItem: "activation", render: () => <TabPane style={{ border: "none", padding: "8px 2px" }}><RulesTable rules={taskInformation.activationRules}/></TabPane> })
+		panes.push({ menuItem: "activation", render: () => <TabPane style={{ border: "none", padding: "10px 14px" }}><RulesTable rules={taskInformation.activationRules}/></TabPane> })
 	if(taskInformation.agentLinkRules && taskInformation.agentLinkRules.length > 0)
 		panes.push({
 			menuItem: "agent links",
-			render: () => <TabPane style={{ border: "none", padding: "8px 2px" }}>
+			render: () => <TabPane style={{ border: "none", padding: "10px 14px" }}>
 				{
 					taskInformation.agentLinkRules.map((linkRule:any, key:number) =>
 						<div key={key} style={{ marginBottom: "10px" }}>

@@ -31,6 +31,22 @@ const ExtractEnvironmentHash = (environmentName:string) => {
 
 const ShortHash = (hash:string) => hash.length > 10 ? `${hash.slice(0, 10)}…` : hash
 
+// Executável interno de baixo nível do ecossistema — oculto no navegador.
+const IGNORED_EXECUTABLES = ["execute-application", "execute-command-line-application"]
+// também ignora os correspondentes -dbg
+const IsIgnoredExecutable = (executableName:string) => IGNORED_EXECUTABLES.includes(executableName.replace(/-dbg$/, ""))
+
+// nome curto do repositório a partir do caminho completo (REPOSITORY_PATH)
+const RepoName = (repositoryPath:string) => {
+    if(!repositoryPath) return "—"
+    return repositoryPath.split("/").filter(Boolean).pop() || repositoryPath
+}
+
+const EXEC_TYPE_GROUPS = [
+    { type: "application", label: "Application / Daemon", icon: "desktop"  },
+    { type: "cli",         label: "Command Line",        icon: "terminal" }
+]
+
 // Nome legível da instância a partir do caminho do socket de supervisão
 // (ex.: .../supervisor-sockets/eco-panel.sock -> "eco-panel").
 const GetSocketName = (filePath:string) => {
@@ -74,6 +90,7 @@ const EcosystemNavigator = ({
     const [ openSections, setOpenSections ] = useState<any>({ instances: true, environments: false })
     const [ openGroups, setOpenGroups ]     = useState<any>({})
     const [ openExecGroups, setOpenExecGroups ] = useState<any>({})
+    const [ openExecRepos, setOpenExecRepos ]   = useState<any>({})
     const [ navFilter, setNavFilter ]       = useState<string>("")
     const [ logKeys, setLogKeys ]           = useState<string[]>([])
 
@@ -142,7 +159,20 @@ const EcosystemNavigator = ({
     const filteredOverviewKeys = Object.keys(overview)
         .filter((k) => matchNav(`${GetSocketName(overview[k]?.filePath)} ${k}`))
     const filteredExecutables = executableList
-        .filter((e:any) => (showDebugExecutables || !e.isDebug) && matchNav(`${e.executableName} ${e.type}`))
+        .filter((e:any) => !IsIgnoredExecutable(e.executableName) && (showDebugExecutables || !e.isDebug) && matchNav(`${e.executableName} ${e.type} ${RepoName(e.repositoryPath)}`))
+    // agrupa os executáveis por tipo (1º nível: Application / Command Line) e,
+    // dentro de cada tipo, por repositório (2º nível).
+    const execTypeGroups = EXEC_TYPE_GROUPS.map((group:any) => {
+        const items = filteredExecutables.filter((e:any) => e.type === group.type)
+        const byRepo:any = {}
+        items.forEach((e:any) => {
+            const repo = RepoName(e.repositoryPath)
+            if(!byRepo[repo]) byRepo[repo] = { repo, repositoryPath: e.repositoryPath, items: [] }
+            byRepo[repo].items.push(e)
+        })
+        const repoGroups = Object.values(byRepo).sort((a:any, b:any) => a.repo.localeCompare(b.repo))
+        return { ...group, items, repoGroups }
+    })
     const filteredEnvNames = environmentNameList.filter((n:string) => matchNav(n))
     const groupedEnvironments = GroupEnvironmentsByPackageIdentity(filteredEnvNames)
     const filteredRepoNames = repoNamespaceList.filter((n:string) => matchNav(n))
@@ -197,42 +227,58 @@ const EcosystemNavigator = ({
                 onClick={() => { toggleSection("executables"); onNavigate({ panel: "executables", params: { executableName: undefined } }) }}>
                 <Icon name="dropdown"/>
                 <SectionTitle iconName="terminal" label="Executables"
-                    count={executableList.filter((e:any) => !e.isDebug).length}/>
+                    count={executableList.filter((e:any) => !IsIgnoredExecutable(e.executableName) && !e.isDebug).length}/>
             </Accordion.Title>
             <Accordion.Content active={openSections.executables || filtering}>
                 {
-                    [
-                        { type: "application", label: "Application / Daemon", icon: "desktop"  },
-                        { type: "cli",         label: "Command Line",        icon: "terminal" }
-                    ].map((group:any) => {
-                        const items = filteredExecutables
-                            .filter((e:any) => e.type === group.type)
-                            .sort((a:any, b:any) => a.executableName.localeCompare(b.executableName))
-                        if(items.length === 0) return null
-                        const isOpen = openExecGroups[group.type] || filtering
+                    execTypeGroups.map((group:any) => {
+                        if(group.items.length === 0) return null
+                        const typeOpen = openExecGroups[group.type] || filtering
                         return <div key={group.type} style={{ marginBottom: "4px" }}>
                             <div
                                 onClick={() => setOpenExecGroups({ ...openExecGroups, [group.type]: !openExecGroups[group.type] })}
-                                style={{ padding: "4px 6px 2px", color: "#8a9099", fontSize: ".75em", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".03em", cursor: "pointer", userSelect: "none" }}>
-                                <Icon name={isOpen ? "caret down" : "caret right"}/>
+                                style={{ padding: "4px 6px 2px", color: "#5a6470", fontSize: ".8em", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".03em", cursor: "pointer", userSelect: "none" }}>
+                                <Icon name={typeOpen ? "caret down" : "caret right"}/>
                                 <Icon name={group.icon}/> {group.label}
-                                <Label circular size="mini" style={{ marginLeft: "5px" }}>{items.length}</Label>
+                                <Label circular size="mini" style={{ marginLeft: "5px" }}>{group.items.length}</Label>
                             </div>
                             {
-                                isOpen &&
-                                <List selection size="small">
+                                typeOpen &&
+                                <div style={{ paddingLeft: "10px" }}>
                                     {
-                                        items.map((executable:any, key:number) =>
-                                            <List.Item
-                                                key={key}
-                                                active={selection.executableName === executable.executableName}
-                                                onClick={() => onNavigate({ panel: "executables", params: { executableName: executable.executableName } })}>
-                                                <List.Content>
-                                                    <List.Header style={{ paddingLeft: "14px" }}><Icon name={group.icon}/> {executable.executableName}</List.Header>
-                                                </List.Content>
-                                            </List.Item>)
+                                        group.repoGroups.map((repoGroup:any) => {
+                                            const repoKey = `${group.type}::${repoGroup.repo}`
+                                            const repoOpen = openExecRepos[repoKey] || filtering
+                                            const items = repoGroup.items.sort((a:any, b:any) => a.executableName.localeCompare(b.executableName))
+                                            return <div key={repoGroup.repo} style={{ marginBottom: "2px" }}>
+                                                <div
+                                                    onClick={() => setOpenExecRepos({ ...openExecRepos, [repoKey]: !openExecRepos[repoKey] })}
+                                                    title={repoGroup.repositoryPath}
+                                                    style={{ padding: "3px 6px 2px", color: "#8a9099", fontSize: ".78em", fontWeight: 600, cursor: "pointer", userSelect: "none" }}>
+                                                    <Icon name={repoOpen ? "caret down" : "caret right"}/>
+                                                    <Icon name="cubes"/> {repoGroup.repo}
+                                                    <Label circular size="mini" style={{ marginLeft: "5px" }}>{items.length}</Label>
+                                                </div>
+                                                {
+                                                    repoOpen &&
+                                                    <List selection size="small">
+                                                        {
+                                                            items.map((executable:any, key:number) =>
+                                                                <List.Item
+                                                                    key={key}
+                                                                    active={selection.executableName === executable.executableName}
+                                                                    onClick={() => onNavigate({ panel: "executables", params: { executableName: executable.executableName } })}>
+                                                                    <List.Content>
+                                                                        <List.Header style={{ paddingLeft: "14px" }}><Icon name={group.icon}/> {executable.executableName}</List.Header>
+                                                                    </List.Content>
+                                                                </List.Item>)
+                                                        }
+                                                    </List>
+                                                }
+                                            </div>
+                                        })
                                     }
-                                </List>
+                                </div>
                             }
                         </div>
                     })

@@ -7,10 +7,25 @@ import GetAPI from "../../Utils/GetAPI"
 import ListSkeleton from "../../Components/Skeleton"
 import ExecutableInformation from "./ExecutableInformation"
 
-const GROUPS = [
-    { type: "application", label: "Application / Daemon", icon: "desktop" },
-    { type: "cli",         label: "Command Line",        icon: "terminal" }
-]
+// Executável de baixo nível interno do ecossistema — não deve aparecer no painel.
+const IGNORED_EXECUTABLES = ["execute-application", "execute-command-line-application"]
+// também ignora os correspondentes -dbg
+const IsIgnoredExecutable = (executableName:string) => IGNORED_EXECUTABLES.includes(executableName.replace(/-dbg$/, ""))
+
+// ícone por tipo de executável (cada card mantém a pista do seu tipo)
+const TYPE_ICON:any = { cli: "terminal", application: "desktop" }
+
+// nome curto do repositório a partir do caminho completo (REPOSITORY_PATH)
+const RepoName = (repositoryPath:string) => {
+    if(!repositoryPath) return "—"
+    return repositoryPath.split("/").filter(Boolean).pop() || repositoryPath
+}
+
+// nome do pacote que provê o executável = último segmento do PACKAGE_REPO_PATH
+const PackageName = (packageRepoPath:string) => {
+    if(!packageRepoPath) return ""
+    return packageRepoPath.split("/").filter(Boolean).pop() || ""
+}
 
 const ExecutablesContainer = ({ serverManagerInformation, selectedExecutableName, onSelectExecutable, onClearExecutable }:any) => {
 
@@ -57,21 +72,33 @@ const ExecutablesContainer = ({ serverManagerInformation, selectedExecutableName
             }
         </Segment>
 
-    // ---- GRADE DE CARDS ----
+    // ---- GRADE DE CARDS (agrupada por repositório) ----
     const visible = executableList.filter((e:any) =>
+        !IsIgnoredExecutable(e.executableName) &&
         (showDebug || !e.isDebug) &&
-        (!filterValue || `${e.executableName} ${e.type}`.toLowerCase().includes(filterValue.toLowerCase())))
+        (!filterValue || `${e.executableName} ${e.type} ${RepoName(e.repositoryPath)}`.toLowerCase().includes(filterValue.toLowerCase())))
+
+    // agrupa os executáveis pelo repositório a que pertencem
+    const groupsByRepo:any = {}
+    visible.forEach((e:any) => {
+        const repo = RepoName(e.repositoryPath)
+        if(!groupsByRepo[repo]) groupsByRepo[repo] = { repo, repositoryPath: e.repositoryPath, items: [] }
+        groupsByRepo[repo].items.push(e)
+    })
+    const repoGroups = Object.values(groupsByRepo).sort((a:any, b:any) => a.repo.localeCompare(b.repo))
+
+    const totalCount = executableList.filter((e:any) => !IsIgnoredExecutable(e.executableName) && !e.isDebug).length
 
     return <Segment style={{ margin: "15px" }}>
         <Header>
             <Icon name="terminal"/>
             <Header.Content>
                 Executables
-                <Header.Subheader>executáveis instalados em /executables</Header.Subheader>
+                <Header.Subheader>executáveis instalados em /executables, agrupados por repositório</Header.Subheader>
             </Header.Content>
         </Header>
         <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px", flexWrap: "wrap" }}>
-            <Label size="large"><Icon name="terminal"/> {executableList.filter((e:any) => !e.isDebug).length} executables</Label>
+            <Label size="large"><Icon name="terminal"/> {totalCount} executables</Label>
             <Checkbox toggle label="mostrar -dbg" checked={showDebug} onChange={() => setShowDebug(!showDebug)}/>
             <Input icon="search" size="small" placeholder="filtrar..." value={filterValue}
                 onChange={(e, { value }) => setFilterValue(value)} style={{ marginLeft: "auto" }}/>
@@ -80,14 +107,11 @@ const ExecutablesContainer = ({ serverManagerInformation, selectedExecutableName
         {
             isListLoading
             ? <ListSkeleton lines={8}/>
-            : GROUPS.map((group:any) => {
-                const items = visible
-                    .filter((e:any) => e.type === group.type)
-                    .sort((a:any, b:any) => a.executableName.localeCompare(b.executableName))
-                if(items.length === 0) return null
-                return <div key={group.type} style={{ marginBottom: "16px" }}>
-                    <div style={{ color: "#8a9099", fontSize: ".8em", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".03em", marginBottom: "6px" }}>
-                        <Icon name={group.icon}/> {group.label} <Label circular size="mini">{items.length}</Label>
+            : repoGroups.map((group:any) => {
+                const items = group.items.sort((a:any, b:any) => a.executableName.localeCompare(b.executableName))
+                return <div key={group.repo} style={{ marginBottom: "16px" }}>
+                    <div style={{ color: "#8a9099", fontSize: ".8em", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".03em", marginBottom: "6px" }} title={group.repositoryPath}>
+                        <Icon name="cubes"/> {group.repo} <Label circular size="mini">{items.length}</Label>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "10px" }}>
                         {
@@ -95,10 +119,17 @@ const ExecutablesContainer = ({ serverManagerInformation, selectedExecutableName
                                 <Card key={key} fluid onClick={() => onSelectExecutable(executable.executableName)} style={{ margin: 0, cursor: "pointer" }}>
                                     <Card.Content style={{ padding: "10px 12px" }}>
                                         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                            <Icon name={group.icon} style={{ color: "#7b8794" }}/>
+                                            <Icon name={TYPE_ICON[executable.type] || "file"} style={{ color: "#7b8794" }} title={executable.type}/>
                                             <span style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{executable.executableName}</span>
                                             { executable.isDebug && <Label size="mini" color="grey">dbg</Label> }
                                         </div>
+                                        {
+                                            PackageName(executable.packageRepoPath) &&
+                                            <div style={{ marginTop: "3px", paddingLeft: "22px", fontSize: ".74em", color: "#9aa0a6", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                                                title={executable.packageRepoPath}>
+                                                <Icon name="cube" style={{ fontSize: ".9em", color: "#b5bbc1" }}/> {PackageName(executable.packageRepoPath)}
+                                            </div>
+                                        }
                                     </Card.Content>
                                 </Card>)
                         }

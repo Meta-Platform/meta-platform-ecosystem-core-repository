@@ -126,6 +126,25 @@ code {
     border-bottom: 1px solid #eef0f2;
 }
 
+/* link de ação em tabela (ex.: "log", "inspecionar"): parece um botão sutil,
+ * com hover claro para sinalizar que é clicável. */
+.eco-action-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    transition: background .12s ease, border-color .12s ease;
+}
+.eco-action-link:hover {
+    background: var(--eco-surface-2);
+    border-color: var(--eco-border);
+}
+.eco-action-link:active {
+    background: var(--eco-surface-3);
+}
+
 /* indicador de log stream "ao vivo": pulsa para dar sensação de realtime */
 @keyframes eco-log-pulse {
     0%   { opacity: 1;   transform: scale(1); }
@@ -135,6 +154,17 @@ code {
 .eco-log-live {
     animation: eco-log-pulse 1.1s ease-in-out infinite;
     transform-origin: center;
+}
+
+/* pulso só na cor/opacidade (sem alterar tamanho) — para rótulos com texto,
+ * ex.: o "conectado" do log stream. */
+@keyframes eco-color-pulse {
+    0%   { opacity: 1; }
+    50%  { opacity: .5; }
+    100% { opacity: 1; }
+}
+.eco-pulse-color {
+    animation: eco-color-pulse 1.1s ease-in-out infinite;
 }
 
 /* conteúdo das abas (TabPane) sem borda/sombra — visual limpo */

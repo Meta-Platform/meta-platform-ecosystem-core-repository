@@ -114,13 +114,13 @@ const SocketRow = ({ supervisorAPI, monitoringStateKey, filePath, status, onSele
 		<Table.Cell textAlign="right" onClick={(e:any) => e.stopPropagation()}>
 			{
 				isConnected &&
-				<a title={logOpen ? "ver log stream aberto" : "abrir log stream"}
+				<a className="eco-action-link" title={logOpen ? "ver log stream aberto" : "abrir log stream"}
 					onClick={() => openLogWindow({ monitoringStateKey, socketName })}
-					style={{ color: logOpen ? "#21862e" : "#3a6ea5", cursor: "pointer", marginRight: "12px", fontSize: ".85em", whiteSpace: "nowrap", fontWeight: logOpen ? 600 : 400 }}>
+					style={{ color: logOpen ? "#21862e" : "#3a6ea5", cursor: "pointer", marginRight: "8px", fontSize: ".85em", whiteSpace: "nowrap", fontWeight: logOpen ? 600 : 400 }}>
 					<Icon name={logOpen ? "eye" : "terminal"}/> {logOpen ? "ver log" : "log"}
 				</a>
 			}
-			<a onClick={() => onSelect(monitoringStateKey)} style={{ color: "#3a6ea5", cursor: "pointer", fontSize: ".85em", whiteSpace: "nowrap" }}>
+			<a className="eco-action-link" onClick={() => onSelect(monitoringStateKey)} style={{ color: "#3a6ea5", cursor: "pointer", fontSize: ".85em", whiteSpace: "nowrap" }}>
 				inspecionar <Icon name="arrow right"/>
 			</a>
 		</Table.Cell>

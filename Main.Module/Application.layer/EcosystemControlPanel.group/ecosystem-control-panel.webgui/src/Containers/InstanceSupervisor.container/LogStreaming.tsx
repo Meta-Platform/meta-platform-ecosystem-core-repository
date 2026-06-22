@@ -110,7 +110,7 @@ const LogStreaming = ({ monitoringStateKey, HTTPServerManager, fill = false, onA
 
     return <div style={fill ? { display: "flex", flexDirection: "column", height: "100%" } : undefined}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", flexWrap: "wrap", flex: "0 0 auto" }}>
-            <Label color={sm.color} size="small" className={status === "open" ? "eco-log-live" : undefined}><Icon name={sm.icon} loading={status === "connecting"}/> {sm.text}</Label>
+            <Label color={sm.color} size="small" className={status === "open" ? "eco-pulse-color" : undefined}><Icon name={sm.icon} loading={status === "connecting"}/> {sm.text}</Label>
             { socketName && <span style={{ fontWeight: 600 }}><Icon name="plug" style={{ color: "#7b8794" }}/> {socketName}</span> }
             <span style={{ fontFamily: "monospace", fontSize: ".82em", color: "#8a9099" }} title={monitoringStateKey}>{ShortId(monitoringStateKey, 8, 6)}</span>
             <CopyValue value={monitoringStateKey}/>
