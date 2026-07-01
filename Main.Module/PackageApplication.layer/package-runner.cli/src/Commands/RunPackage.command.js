@@ -53,7 +53,8 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
         nodejsPackageLib,
         serviceInstanceLib,
         endpointInstanceLib,
-        commandApplicationLib, 
+        desktopWindowInstanceLib,
+        commandApplicationLib,
         taskExecutorLib,
         executionParamsGeneratorLib
     } = params
@@ -64,7 +65,8 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
         'command-application'                 : commandApplicationLib.require("CommandApplication.taskLoader"),
         'application-instance'                : applicationInstanceLib.require("ApplicationInstance.taskLoader"),
         'service-instance'                    : serviceInstanceLib.require("ServiceInstance.taskLoader"),
-        'endpoint-instance'                   : endpointInstanceLib.require("EndpointInstance.taskLoader")
+        'endpoint-instance'                   : endpointInstanceLib.require("EndpointInstance.taskLoader"),
+        'desktop-window-instance'             : desktopWindowInstanceLib.require("DesktopWindowInstance.taskLoader")
     }
     const ReadJsonFile                                 = jsonFileUtilitiesLib.require("ReadJsonFile")
     const BuildMetadataHierarchy                       = dependencyGraphBuilderLib.require("BuildMetadataHierarchy")

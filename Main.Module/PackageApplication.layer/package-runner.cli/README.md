@@ -28,7 +28,8 @@ Reúne as libs de runtime e de metadados necessárias para executar um pacote:
 `@/json-file-utilities.lib`, `@/execution-params-generator.lib`,
 `@/application-instance.lib`, `@/install-nodejs-package-dependencies.lib`,
 `@/nodejs-package.lib`, `@/service-instance.lib`, `@/endpoint-instance.lib`,
-`@/command-application.lib`, `@/task-executor.lib`.
+`@/desktop-window-instance.lib`, `@/command-application.lib`,
+`@/task-executor.lib`.
 
 > Para execução isolada de baixo nível fora do ecossistema, veja também o
 > [Package Executor](https://github.com/Meta-Platform/meta-platform-package-executor-command-line/blob/main/README.md).

@@ -19,7 +19,8 @@ execução (`execution-params`) e o executa instanciando cada unidade através d
 Dependências (`bound-params`) — as libs de runtime do `essential-repository`:
 `@/application-instance.lib`, `@/install-nodejs-package-dependencies.lib`,
 `@/nodejs-package.lib`, `@/service-instance.lib`, `@/endpoint-instance.lib`,
-`@/command-application.lib`, `@/task-executor.lib`, `@/utilities.lib`.
+`@/desktop-window-instance.lib`, `@/command-application.lib`,
+`@/task-executor.lib`, `@/utilities.lib`.
 
 ## Registro dos object loaders
 
@@ -35,7 +36,8 @@ const taskLoaders = {
     'command-application'                 : commandApplicationLib.require("CommandApplication.taskLoader"),
     'application-instance'                : applicationInstanceLib.require("ApplicationInstance.taskLoader"),
     'service-instance'                    : serviceInstanceLib.require("ServiceInstance.taskLoader"),
-    'endpoint-instance'                   : endpointInstanceLib.require("EndpointInstance.taskLoader")
+    'endpoint-instance'                   : endpointInstanceLib.require("EndpointInstance.taskLoader"),
+    'desktop-window-instance'             : desktopWindowInstanceLib.require("DesktopWindowInstance.taskLoader")
 }
 ```
 

@@ -17,6 +17,7 @@
                 "nodejsPackageLib":"@/nodejs-package.lib",
                 "serviceInstanceLib":"@/service-instance.lib",
                 "endpointInstanceLib":"@/endpoint-instance.lib",
+                "desktopWindowInstanceLib":"@/desktop-window-instance.lib",
                 "commandApplicationLib":"@/command-application.lib",
                 "taskExecutorLib": "@/task-executor.lib"
             }

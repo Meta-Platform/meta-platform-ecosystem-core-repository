@@ -39,7 +39,8 @@ ecosystem-manager.service
    → environment-runtime-manager.service (prepara ambiente, gera execution-params)
        → task-executor-machine.service (executa o plano)
            → object loaders: install-nodejs-package-dependencies, nodejs-package,
-             application-instance, service-instance, endpoint-instance, command-application
+             application-instance, service-instance, endpoint-instance, command-application,
+             desktop-window-instance
                → Package Instance
 ```
 

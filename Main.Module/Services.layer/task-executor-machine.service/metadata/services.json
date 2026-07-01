@@ -8,6 +8,7 @@
             "nodejsPackageLib",
             "serviceInstanceLib",
             "endpointInstanceLib",
+            "desktopWindowInstanceLib",
             "commandApplicationLib",
             "taskExecutorLib",
             "utilitiesLib"

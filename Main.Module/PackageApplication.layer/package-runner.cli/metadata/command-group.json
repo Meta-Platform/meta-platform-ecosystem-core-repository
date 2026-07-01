@@ -13,6 +13,7 @@
         "nodejsPackageLib",
         "serviceInstanceLib",
         "endpointInstanceLib",
+        "desktopWindowInstanceLib",
         "commandApplicationLib",
         "taskExecutorLib"
     ],
@@ -45,6 +46,7 @@
                 "nodejsPackageLib",
                 "serviceInstanceLib",
                 "endpointInstanceLib",
+                "desktopWindowInstanceLib",
                 "commandApplicationLib",
                 "taskExecutorLib"
             ]
