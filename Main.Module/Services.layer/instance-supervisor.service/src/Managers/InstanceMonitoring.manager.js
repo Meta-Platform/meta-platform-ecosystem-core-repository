@@ -46,12 +46,34 @@ const InstanceMonitoringManager = (params) => {
         let socketFileNameList = []
 
         const __ChangeList = (newList) => {
+            const addedSockets = newList.filter((socketFileName) => !socketFileNameList.includes(socketFileName))
+            const removedSockets = socketFileNameList.filter((socketFileName) => !newList.includes(socketFileName))
             socketFileNameList = newList
             NotifyEvent({
                 origin: "InstanceMonitoringManager",
                 type:"message",
                 content: `A lista de sockets foi atualizada para ${colors.bold(newList.join(", "))}`
             })
+            addedSockets.forEach((socketFileName) => NotifyEvent({
+                origin: "InstanceMonitoringManager",
+                type: "socket",
+                content: {
+                    event: "created",
+                    title: "Novo socket detectado",
+                    message: `Socket ${socketFileName} foi detectado e será monitorado.`,
+                    socketFileName
+                }
+            }))
+            removedSockets.forEach((socketFileName) => NotifyEvent({
+                origin: "InstanceMonitoringManager",
+                type: "socket",
+                content: {
+                    event: "removed",
+                    title: "Socket removido",
+                    message: `Socket ${socketFileName} saiu da lista de supervisão.`,
+                    socketFileName
+                }
+            }))
         }
 
         const __HandlerSocketDirectoryChange = (newSocketFileNameList) => {
@@ -94,14 +116,32 @@ const InstanceMonitoringManager = (params) => {
 
     const _GetConnectionClient = (monitoringStateKey) => {
         const socketMonitoringState = GetSocketMonitoringState(monitoringStateKey)
+        if(!socketMonitoringState) return undefined
+        if(socketMonitoringState.GetCommunicationStatus() !== "CONNECTED") return undefined
         const communicationClient = socketMonitoringState.GetCommunicationClient()
         return communicationClient
     }
 
+    const _GetUnavailableFallback = (fname) => {
+        if(fname === "ListTasks") return []
+        if(fname === "GetTask") return undefined
+        if(fname === "GetStartupArguments") return {}
+        if(fname === "GetProcessInformation") return {}
+        if(fname === "KillInstance") return false
+        return undefined
+    }
+
     const _CallRPC = async (monitoringStateKey, fname, fArgs) => {
         const communicationClient = _GetConnectionClient(monitoringStateKey)
-        const responseData = await communicationClient[fname](fArgs)
-        return responseData
+        if(!communicationClient || typeof communicationClient[fname] !== "function") {
+            return _GetUnavailableFallback(fname)
+        }
+        try {
+            const responseData = await communicationClient[fname](fArgs)
+            return responseData
+        } catch(e) {
+            return _GetUnavailableFallback(fname)
+        }
     }
 
     const ListInstanceTasks     = async (monitoringStateKey) =>           await _CallRPC(monitoringStateKey, "ListTasks")

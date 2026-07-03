@@ -13,6 +13,8 @@ import {
     Segment
 } from "semantic-ui-react"
 
+import PackageIcon from "../../Components/PackageIcon"
+
 // Cor por tipo de pacote (extensão), como num package explorer de IDE.
 const GetExtColor = (ext:string):any => {
     switch(ext){
@@ -52,7 +54,7 @@ const INDENT = 16
 export const PackageKey = (pkg:any) =>
     `${pkg.namespaceRepo}/${pkg.moduleName}/${pkg.layerName}/${pkg.parentGroup || ""}/${pkg.packageName}.${pkg.ext}`
 
-const PackageLeaf = ({ pkg, selectedKey, onSelectPackage }:any) => {
+const PackageLeaf = ({ pkg, selectedKey, onSelectPackage, serverManagerInformation }:any) => {
     const selectable = !!onSelectPackage
     const isSelected = selectable && selectedKey === PackageKey(pkg)
     return <div
@@ -62,13 +64,13 @@ const PackageLeaf = ({ pkg, selectedKey, onSelectPackage }:any) => {
             cursor: selectable ? "pointer" : "default", borderRadius: "4px",
             background: isSelected ? "#e8f0fa" : undefined
         }}>
-        <Icon name="file code outline" style={{ color: "#888" }}/>
+        <PackageIcon packageData={pkg} serverManagerInformation={serverManagerInformation} size={16}/>
         <span>{pkg.packageName}</span>
         <Label size="mini" color={GetExtColor(pkg.ext)} style={{ marginLeft: "6px" }}>{pkg.ext}</Label>
     </div>
 }
 
-const TreeNode = ({ name, node, defaultOpen, selectedKey, onSelectPackage }:any) => {
+const TreeNode = ({ name, node, defaultOpen, selectedKey, onSelectPackage, serverManagerInformation }:any) => {
     const [ open, setOpen ] = useState<boolean>(defaultOpen)
 
     const childNames = Object.keys(node.__children).sort()
@@ -78,7 +80,7 @@ const TreeNode = ({ name, node, defaultOpen, selectedKey, onSelectPackage }:any)
     return <div>
         <div
             onClick={() => setOpen(!open)}
-            style={{ padding: "3px 4px", cursor: "pointer", display: "flex", alignItems: "center", userSelect: "none" }}>
+            style={{ padding: "3px 4px", cursor: "pointer", display: "flex", alignItems: "center", userSelect: "text" }}>
             <Icon name={open ? "caret down" : "caret right"} style={{ color: "#999", width: "14px", flex: "0 0 auto" }}/>
             <Icon name={open ? "folder open" : "folder"} color="yellow"/>
             <strong style={{ color: "#333" }}>{name}</strong>
@@ -93,9 +95,15 @@ const TreeNode = ({ name, node, defaultOpen, selectedKey, onSelectPackage }:any)
                         node={node.__children[childName]}
                         defaultOpen={false}
                         selectedKey={selectedKey}
-                        onSelectPackage={onSelectPackage}/>) }
+                        onSelectPackage={onSelectPackage}
+                        serverManagerInformation={serverManagerInformation}/>) }
                 { packages.map((pkg:any, key:number) =>
-                    <PackageLeaf key={key} pkg={pkg} selectedKey={selectedKey} onSelectPackage={onSelectPackage}/>) }
+                    <PackageLeaf
+                        key={key}
+                        pkg={pkg}
+                        selectedKey={selectedKey}
+                        onSelectPackage={onSelectPackage}
+                        serverManagerInformation={serverManagerInformation}/>) }
             </div>
         }
     </div>
@@ -111,7 +119,7 @@ const CountByRepo = (packageList:any[]) =>
 // Master-detail: lista de repositórios à esquerda; árvore (Module>Layer>Group>
 // Package) do repositório selecionado à direita. Navega-se pelo repo escolhido,
 // sem despejar tudo de uma vez.
-const PackageTree = ({ packageList, isLoading }:any) => {
+const PackageTree = ({ packageList, isLoading, serverManagerInformation }:any) => {
 
     const [ filterValue, setFilterValue ]   = useState<string>("")
     const [ repoSelected, setRepoSelected ] = useState<string>()
@@ -178,7 +186,8 @@ const PackageTree = ({ packageList, isLoading }:any) => {
                                 key={moduleName}
                                 name={moduleName}
                                 node={repoNode.__children[moduleName]}
-                                defaultOpen={true}/>)
+                                defaultOpen={true}
+                                serverManagerInformation={serverManagerInformation}/>)
                         : <div style={{ color: "#bbb", padding: "20px" }}>selecione um repositório</div>
                     }
                 </div>

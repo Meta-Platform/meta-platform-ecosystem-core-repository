@@ -1,6 +1,7 @@
 import styled from "styled-components"
 import * as React from "react"
 import { Segment, Loader, Dimmer, Divider } from "semantic-ui-react"
+import PackageIcon from "../../Components/PackageIcon"
 
 const GridContainer = styled.div`
   display: flex;
@@ -28,13 +29,16 @@ const FlexibleSegment = styled(Segment)`
   }
 `
 
-const PackageDataGrid = ({ packageList }) =>
+const PackageDataGrid = ({ packageList, serverManagerInformation }) =>
 	<GridContainer>
 		{packageList.map((packageInformation) => (
 			<FlexibleSegment key={packageInformation.packageName}>
-				<h3 style={{ margin: "0 0 8px 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-					{packageInformation.packageName}.{packageInformation.ext}
-				</h3>
+				<div style={{ display: "flex", alignItems: "center", gap: "8px", margin: "0 0 8px 0", minWidth: 0 }}>
+					<PackageIcon packageData={packageInformation} serverManagerInformation={serverManagerInformation} size={24}/>
+					<h3 style={{ margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+						{packageInformation.packageName}.{packageInformation.ext}
+					</h3>
+				</div>
 				<p style={{ margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
 					<i>{`${packageInformation.moduleName}.${packageInformation.layerName}${packageInformation.parentGroup ? `.${packageInformation.parentGroup}` : ""}`}</i>
 				</p>
@@ -51,7 +55,7 @@ const GroupByNamespaceRepo = (packageList) => packageList
 		return acc
 	}, {})
 
-const PackageList = ({ isLoading, packageList }) =>{
+const PackageList = ({ isLoading, packageList, serverManagerInformation }) =>{
 
 	const groupedPackageInformation = GroupByNamespaceRepo(packageList)
 
@@ -67,7 +71,7 @@ const PackageList = ({ isLoading, packageList }) =>{
 					.map(namespaceRepo => <>
 						<h2>{namespaceRepo} ({groupedPackageInformation[namespaceRepo].length})</h2>
 						<Divider style={{"marginTop":"0px"}}/>
-						<PackageDataGrid packageList={groupedPackageInformation[namespaceRepo]} />
+						<PackageDataGrid packageList={groupedPackageInformation[namespaceRepo]} serverManagerInformation={serverManagerInformation} />
 					</>)
 				}
 			</Segment>

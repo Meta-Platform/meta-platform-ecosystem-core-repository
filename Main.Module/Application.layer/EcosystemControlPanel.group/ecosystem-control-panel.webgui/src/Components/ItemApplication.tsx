@@ -1,15 +1,17 @@
 import * as React from "react"
 
 import {
-    Icon,
     Card,
 	CardContent,
 	CardHeader,
 	CardMeta
 } from "semantic-ui-react"
 
+import PackageIcon from "./PackageIcon"
+
 const ItemApplication = ({
     applicationData,
+    serverManagerInformation
 }) => {
 
     const {
@@ -24,7 +26,10 @@ const ItemApplication = ({
 
     return <Card style={{"width":"300px"}}>
                 <CardContent>
-                    <CardHeader><Icon name='terminal' /> {executable}</CardHeader>
+                    <CardHeader style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                        <PackageIcon packageData={applicationData.packageData} serverManagerInformation={serverManagerInformation} size={22} fallbackIcon="terminal"/>
+                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{executable}</span>
+                    </CardHeader>
                     <CardMeta>{getPackageNamespaceBase()}</CardMeta>
                 </CardContent>
             </Card>

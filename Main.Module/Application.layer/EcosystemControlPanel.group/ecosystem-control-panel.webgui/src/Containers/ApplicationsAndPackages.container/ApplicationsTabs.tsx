@@ -25,7 +25,7 @@ const GroupDataListByRepositoryNamespace = (applicationList) => {
     }, {})
 }
 
-const ApplicationDataCardGroup = ({applicationList}) => {
+const ApplicationDataCardGroup = ({applicationList, serverManagerInformation}) => {
 
     const applicationDataGrouped = GroupDataListByRepositoryNamespace(applicationList)
 
@@ -38,7 +38,7 @@ const ApplicationDataCardGroup = ({applicationList}) => {
                     {
                         applicationDataGrouped[repositoryNamespace]
                         .map((applicationData:any, key) => 
-                            <ItemApplication key={key} applicationData={applicationData}/>)
+                            <ItemApplication key={key} applicationData={applicationData} serverManagerInformation={serverManagerInformation}/>)
                     }
                 </CardGroup> 
             </>)
@@ -50,7 +50,8 @@ const ApplicationDataCardGroup = ({applicationList}) => {
 
 const ApplicationsTabs = ({
     isLoading,
-    installedApplicationList
+    installedApplicationList,
+    serverManagerInformation
 }) => {
 
     const applicationListByRepo =
@@ -71,14 +72,16 @@ const ApplicationsTabs = ({
             menuItem: 'standard aplication',
             render: () => <TabPane attached={false} style={{"backgroundColor": "mistyrose"}}> 
                                 <ApplicationDataCardGroup applicationList={installedApplicationList
-                                        .filter(({appType}) => appType === "APP")} />
+                                        .filter(({appType}) => appType === "APP")}
+                                    serverManagerInformation={serverManagerInformation} />
                         </TabPane>,
         },
         {
             menuItem: 'command line application',
             render: () => <TabPane attached={false} style={{"backgroundColor": "mintcream"}}>
                                 <ApplicationDataCardGroup applicationList={installedApplicationList
-                                        .filter(({appType}) => appType === "CLI")} />
+                                        .filter(({appType}) => appType === "CLI")}
+                                    serverManagerInformation={serverManagerInformation} />
                         </TabPane>,
         }
     ]

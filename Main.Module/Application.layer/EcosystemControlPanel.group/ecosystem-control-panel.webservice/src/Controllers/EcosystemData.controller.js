@@ -6,7 +6,8 @@ const EcosystemDataController = (params) => {
 
     return {
         controllerName : "EcosystemDataController",
-        GetEcosystemDataPath: ecosystemdataHandlerService.GetEcosystemDataPath
+        GetEcosystemDataPath: ecosystemdataHandlerService.GetEcosystemDataPath,
+        SetEcosystemDataPath: (path) => ecosystemdataHandlerService.SetEcosystemDataPath(path)
     }
 }
 

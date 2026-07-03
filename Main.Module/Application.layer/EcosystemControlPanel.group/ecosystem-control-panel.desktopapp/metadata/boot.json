@@ -1,8 +1,9 @@
 {
     "params" : [
-        "port", 
+        "port",
         "serverName",
         "serverManagerUrl",
+        "windowUrl",
         "RT_ENV_GENERATED_DIR_NAME",
         "installDataDirPath",
         "panelStateFilePath",
@@ -110,6 +111,17 @@
             },
             "params":{
                 "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
+            }
+        }
+    ],
+    "windows": [
+        {
+            "title": "Ecosystem Control Panel",
+            "url": "{{windowUrl}}",
+            "width": 1280,
+            "height": 800,
+            "bound-params":{
+                "serverService": "@@/server-service"
             }
         }
     ]

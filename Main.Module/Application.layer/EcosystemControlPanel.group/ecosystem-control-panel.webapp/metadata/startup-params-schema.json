@@ -22,6 +22,9 @@
     "installDataDirPath": {
       "type": "string"
     },
+    "panelStateFilePath": {
+      "type": "string"
+    },
     "ecosystemDefaultsFileRelativePath":{
       "type": "string"
     },

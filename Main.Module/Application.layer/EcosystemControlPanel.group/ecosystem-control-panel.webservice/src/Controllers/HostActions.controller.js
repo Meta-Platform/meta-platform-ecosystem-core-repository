@@ -52,6 +52,55 @@ const HostActionsController = (params) => {
         }
     }
 
+    const RunPackageStreaming = async (ws, encodedPackagePath) => {
+        const packagePath = decodeURIComponent(encodedPackagePath)
+        const executablesDirPath = await _GetExecutablesDirPath()
+        const env = { ...process.env, PATH: `${executablesDirPath}:${process.env.PATH}` }
+        const commandPath = path.resolve(executablesDirPath, "run")
+        let child
+
+        const _Send = (payload) => {
+            try { ws.send(JSON.stringify(payload)) } catch(e) {}
+        }
+
+        const _Close = () => {
+            try { ws.close() } catch(e) {}
+        }
+
+        try {
+            _Send({ type: "status", status: "starting", message: `run package ${packagePath}` })
+            child = spawn(commandPath, ["package", packagePath], {
+                cwd: ecosystemdataHandlerService.GetEcosystemDataPath(),
+                env
+            })
+
+            child.stdout.on("data", (chunk) => _Send({ type: "stdout", message: chunk.toString() }))
+            child.stderr.on("data", (chunk) => _Send({ type: "stderr", message: chunk.toString() }))
+            child.on("error", (error) => {
+                _Notify("HostActions.RunPackageStreaming", "error", `Falha ao executar ${packagePath}: ${error.message || error}`)
+                _Send({ type: "error", message: error.message || String(error) })
+                _Close()
+            })
+            child.on("spawn", () => {
+                _Notify("HostActions.RunPackageStreaming", "info", `Executando pacote com terminal: ${packagePath}`)
+                _Send({ type: "status", status: "running", message: "processo iniciado" })
+            })
+            child.on("close", (code, signal) => {
+                _Send({ type: "status", status: "closed", exitCode: code, signal, message: `processo finalizado${code !== null ? ` com código ${code}` : ""}${signal ? ` (${signal})` : ""}` })
+                _Close()
+            })
+        } catch(e) {
+            _Notify("HostActions.RunPackageStreaming", "error", `Falha ao executar ${packagePath}: ${e.message || e}`)
+            _Send({ type: "error", message: e.message || String(e) })
+            _Close()
+        }
+
+        ws.on && ws.on("close", () => {
+            if(child && !child.killed)
+                child.kill()
+        })
+    }
+
     const OpenVSCode = async ({ targetPath }) => {
         try {
             await _SpawnDetached("code", [targetPath], { env: process.env })
@@ -87,6 +136,7 @@ const HostActionsController = (params) => {
     return {
         controllerName : "HostActionsController",
         RunPackage,
+        RunPackageStreaming,
         OpenVSCode,
         OpenTerminal
     }

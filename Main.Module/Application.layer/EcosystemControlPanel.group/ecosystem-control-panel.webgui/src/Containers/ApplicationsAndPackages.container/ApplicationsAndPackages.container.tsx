@@ -94,7 +94,8 @@ const ApplicationsAndPackagesContainer = ({ serverManagerInformation, QueryParam
 			<TabPane style={{background: "aliceblue"}}>
 				<ApplicationsTabs
                     isLoading={isApplicationListLoading}
-                    installedApplicationList={(installedApplicationListFiltered || installedApplicationList)}/>
+                    installedApplicationList={(installedApplicationListFiltered || installedApplicationList)}
+                    serverManagerInformation={serverManagerInformation}/>
 			</TabPane>
 		},
         {
@@ -105,7 +106,8 @@ const ApplicationsAndPackagesContainer = ({ serverManagerInformation, QueryParam
 			<TabPane style={{background: "lightsteelblue"}}>
 				<PackageList 
                     packageList={installedPackageList}
-                    isLoading={isPackageListLoading}/>
+                    isLoading={isPackageListLoading}
+                    serverManagerInformation={serverManagerInformation}/>
 			</TabPane>
 		}
 	]

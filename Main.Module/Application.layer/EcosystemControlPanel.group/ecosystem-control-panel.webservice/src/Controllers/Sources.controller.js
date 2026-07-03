@@ -72,6 +72,13 @@ const SourcesController = (params) => {
         return loggerEmitter
     }
 
+    const _NotifyStructured = ({ origin, type, title, message, data }) =>
+        NotifyEvent({
+            origin,
+            type,
+            content: { title, message, ...(data ? { data } : {}) }
+        })
+
     const _ExtractSourceData = ({ repositoryNamespace, sourceType, sourcesData }) => {
         const sourcesList = sourcesData[repositoryNamespace] || []
         const sourceData = sourcesList.find((source) => source.sourceType === sourceType)
@@ -141,6 +148,14 @@ const SourcesController = (params) => {
             ecosystemDefaults,
             loggerEmitter: _BuildLoggerEmitter("SourcesController.UpdateRepository")
         })
+
+        _NotifyStructured({
+            origin: "SourcesController.UpdateRepository",
+            type: "package",
+            title: "Pacotes atualizados",
+            message: `Os pacotes do repositório ${repositoryNamespace} foram atualizados pela fonte ${sourceData.sourceType}.`,
+            data: { repositoryNamespace, sourceType: sourceData.sourceType }
+        })
     }
 
     const CreateNewRepositoryNamespace = async (repositoryNamespace) => {
@@ -155,6 +170,13 @@ const SourcesController = (params) => {
             }
 
             await _WriteConfigFile("REPOS_CONF_FILENAME_SOURCE_DATA", newSourceData)
+            _NotifyStructured({
+                origin: "SourcesController.CreateNewRepositoryNamespace",
+                type: "source",
+                title: "Namespace criado",
+                message: `Namespace ${repositoryNamespace} criado para cadastro de fontes.`,
+                data: { repositoryNamespace }
+            })
 
         } else {
             throw `O namespace ${repositoryNamespace} já esta cadastrado!`
@@ -178,6 +200,14 @@ const SourcesController = (params) => {
             ecosystemDefaults,
             loggerEmitter: _BuildLoggerEmitter("SourcesController.InstallRepository")
         })
+
+        _NotifyStructured({
+            origin: "SourcesController.InstallRepository",
+            type: "package",
+            title: "Pacotes instalados",
+            message: `Repositório ${repositoryNamespace} instalado pela fonte ${sourceType}.`,
+            data: { repositoryNamespace, sourceType, executables }
+        })
     }
 
     // Troca a fonte usada por um repositório já instalado.
@@ -195,6 +225,14 @@ const SourcesController = (params) => {
             installDataDirPath: ecosystemdataHandlerService.GetEcosystemDataPath(),
             ecosystemDefaults,
             loggerEmitter: _BuildLoggerEmitter("SourcesController.ChangeRepositorySource")
+        })
+
+        _NotifyStructured({
+            origin: "SourcesController.ChangeRepositorySource",
+            type: "source",
+            title: "Fonte ativa alterada",
+            message: `Repositório ${repositoryNamespace} agora usa a fonte ${sourceType}.`,
+            data: { repositoryNamespace, sourceType }
         })
     }
 
@@ -220,6 +258,14 @@ const SourcesController = (params) => {
         }
 
         await _WriteConfigFile("REPOS_CONF_FILENAME_SOURCE_DATA", newSourcesData)
+
+        _NotifyStructured({
+            origin: "SourcesController.RegisterNewSource",
+            type: "source",
+            title: "Fonte registrada",
+            message: `Fonte ${sourceType} registrada no namespace ${repositoryNamespace}.`,
+            data: { repositoryNamespace, sourceType }
+        })
 
         NotifyEvent({
             origin: "SourcesController.RegisterNewSource",
@@ -251,6 +297,14 @@ const SourcesController = (params) => {
         }
 
         await _WriteConfigFile("REPOS_CONF_FILENAME_SOURCE_DATA", newSourcesData)
+
+        _NotifyStructured({
+            origin: "SourcesController.RemoveSource",
+            type: "source",
+            title: "Fonte removida",
+            message: `Fonte ${sourceType} removida do namespace ${repositoryNamespace}.`,
+            data: { repositoryNamespace, sourceType }
+        })
 
         NotifyEvent({
             origin: "SourcesController.RemoveSource",

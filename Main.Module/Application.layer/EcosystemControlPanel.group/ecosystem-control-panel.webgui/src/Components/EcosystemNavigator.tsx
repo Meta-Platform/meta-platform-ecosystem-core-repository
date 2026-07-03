@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import {
     Accordion,
     Icon,
+    Image,
     Input,
     List,
     Label,
@@ -14,6 +15,7 @@ import GetAPI       from "../Utils/GetAPI"
 import useWebSocket from "../Hooks/useWebSocket"
 import { GetStatusColor } from "./StatusBadge"
 import { subscribeLogWindows } from "../Utils/logWindows"
+import GetExecutableIconURL from "../Utils/GetExecutableIconURL"
 
 // O nome de um environment segue o padrão "<package-name>.<type>-<hash>".
 // Quando o pacote muda de lugar no filesystem, um novo hash (logo, um novo
@@ -31,8 +33,34 @@ const ExtractEnvironmentHash = (environmentName:string) => {
 
 const ShortHash = (hash:string) => hash.length > 10 ? `${hash.slice(0, 10)}…` : hash
 
+const NormalizePath = (value:string) => (value || "").replace(/\\/g, "/").replace(/\/+$/, "")
+
+const GetParentDir = (filePath:string) => {
+    const normalized = NormalizePath(filePath)
+    const index = normalized.lastIndexOf("/")
+    return index > 0 ? normalized.slice(0, index) : ""
+}
+
+const GetCommonDirPrefix = (paths:string[]) => {
+    const normalized = paths
+        .map((p) => NormalizePath(p))
+        .filter(Boolean)
+    if(normalized.length === 0) return ""
+    const splitPaths = normalized.map((p) => p.split("/"))
+    const prefix:string[] = []
+    const first = splitPaths[0]
+    for(let i = 0; i < first.length; i++) {
+        const segment = first[i]
+        if(splitPaths.every((parts) => parts[i] === segment))
+            prefix.push(segment)
+        else
+            break
+    }
+    return prefix.length > 0 ? prefix.join("/") : ""
+}
+
 // Executável interno de baixo nível do ecossistema — oculto no navegador.
-const IGNORED_EXECUTABLES = ["execute-application", "execute-command-line-application"]
+const IGNORED_EXECUTABLES = ["execute-application", "execute-command-line-application", "execute-desktop-application"]
 // também ignora os correspondentes -dbg
 const IsIgnoredExecutable = (executableName:string) => IGNORED_EXECUTABLES.includes(executableName.replace(/-dbg$/, ""))
 
@@ -55,6 +83,17 @@ const GetSocketName = (filePath:string) => {
     return base.replace(/\.sock$/, "")
 }
 
+const ExecutableIcon = ({ executable, fallbackIcon, serverManagerInformation }:any) => {
+    const iconURL = executable.hasPackageIcon
+        ? GetExecutableIconURL({ serverManagerInformation, executableName: executable.executableName })
+        : undefined
+
+    if(iconURL)
+        return <Image src={iconURL} title="icone do pacote" style={{ width: "18px", height: "18px", objectFit: "contain", flex: "0 0 auto", margin: 0 }}/>
+
+    return <Icon name={fallbackIcon}/>
+}
+
 const GroupEnvironmentsByPackageIdentity = (environmentNameList:string[]) =>
     environmentNameList.reduce((groups:any, environmentName:string) => {
         const identity = ExtractPackageIdentity(environmentName)
@@ -64,11 +103,14 @@ const GroupEnvironmentsByPackageIdentity = (environmentNameList:string[]) =>
         return groups
     }, {})
 
+// Título de seção: layout flex para que o rótulo trunque com reticências e o
+// contador fique SEMPRE fixo à direita, na mesma linha (antes o badge quebrava
+// para a linha de baixo em sidebars estreitas).
 const SectionTitle = ({ iconName, label, count }:any) =>
-    <span>
-        <Icon name={iconName}/>
-        <strong>{label}</strong>
-        { count !== undefined && <Label circular size="mini" style={{ marginLeft: "6px" }}>{count}</Label> }
+    <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", minWidth: 0, flex: "1 1 auto", verticalAlign: "middle" }}>
+        <Icon name={iconName} style={{ flex: "0 0 auto", margin: 0 }}/>
+        <strong style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{label}</strong>
+        { count !== undefined && <Label circular size="mini" style={{ flex: "0 0 auto", margin: 0 }}>{count}</Label> }
     </span>
 
 const EcosystemNavigator = ({
@@ -87,7 +129,7 @@ const EcosystemNavigator = ({
     const [ showDebugExecutables, setShowDebugExecutables ] = useState<boolean>(false)
     const [ isLoading, setIsLoading ]               = useState(true)
 
-    const [ openSections, setOpenSections ] = useState<any>({ instances: true, environments: false })
+    const [ openSections, setOpenSections ] = useState<any>({ sockets: true, environments: false })
     const [ openGroups, setOpenGroups ]     = useState<any>({})
     const [ openExecGroups, setOpenExecGroups ] = useState<any>({})
     const [ openExecRepos, setOpenExecRepos ]   = useState<any>({})
@@ -158,6 +200,30 @@ const EcosystemNavigator = ({
 
     const filteredOverviewKeys = Object.keys(overview)
         .filter((k) => matchNav(`${GetSocketName(overview[k]?.filePath)} ${k}`))
+    const visibleOverviewKeys = filteredOverviewKeys.filter((monitoringStateKey) => overview[monitoringStateKey]?.status !== "UNAVAILABLE")
+    const hiddenUnavailableCount = filteredOverviewKeys.length - visibleOverviewKeys.length
+    // Raiz dos sockets de supervisão: o prefixo comum é calculado sobre os
+    // diretórios-pais (e não sobre os caminhos dos arquivos, senão o nome do
+    // .sock entra no prefixo e, com um único socket, o caminho absoluto acabava
+    // aparecendo no menu). O rótulo da raiz é o nome da pasta de supervisão; as
+    // subpastas aparecem com caminho relativo a ela — nunca o absoluto.
+    const overviewParentDirs = visibleOverviewKeys.map((monitoringStateKey) => GetParentDir(overview[monitoringStateKey]?.filePath)).filter(Boolean)
+    const socketsRootDir = GetCommonDirPrefix(overviewParentDirs)
+    const socketsRootLabel = socketsRootDir.split("/").filter(Boolean).pop() || "supervisor"
+    const overviewSocketGroups = visibleOverviewKeys.reduce((groups:any, monitoringStateKey:string) => {
+        const info = overview[monitoringStateKey] || {}
+        const parentDir = GetParentDir(info.filePath)
+        const relativeDir = socketsRootDir && parentDir.startsWith(socketsRootDir)
+            ? parentDir.slice(socketsRootDir.length).replace(/^\/+/, "")
+            : parentDir
+        const groupKey = relativeDir || "__root__"
+        const groupLabel = relativeDir || socketsRootLabel
+        if(!groups[groupKey])
+            groups[groupKey] = { groupKey, groupLabel, items: [] }
+        groups[groupKey].items.push(monitoringStateKey)
+        return groups
+    }, {})
+    const overviewSocketGroupList = Object.values(overviewSocketGroups).sort((a:any, b:any) => a.groupLabel.localeCompare(b.groupLabel))
     const filteredExecutables = executableList
         .filter((e:any) => !IsIgnoredExecutable(e.executableName) && (showDebugExecutables || !e.isDebug) && matchNav(`${e.executableName} ${e.type} ${RepoName(e.repositoryPath)}`))
     // agrupa os executáveis por tipo (1º nível: Application / Command Line) e,
@@ -178,7 +244,7 @@ const EcosystemNavigator = ({
     const filteredRepoNames = repoNamespaceList.filter((n:string) => matchNav(n))
     const filteredConfigFiles = configFileList.filter((n:string) => matchNav(n))
 
-    return <div className="eco-navigator" style={{ padding: "2px" }}>
+    return <div className="eco-navigator">
 
         { isLoading && <Loader active inline="centered" size="small" style={{ margin: "20px" }}/> }
 
@@ -191,40 +257,49 @@ const EcosystemNavigator = ({
             onChange={(e, { value }) => setNavFilter(value)}
             style={{ marginBottom: "6px" }}/>
 
-        <Accordion fluid styled style={{ fontSize: ".95em" }}>
+        <Accordion fluid styled>
 
-            { /* Instances — clique abre o Overview e lista os sockets */ }
+            { /* Sockets — clique abre o Overview e lista os sockets */ }
             <Accordion.Title
-                active={openSections.instances}
-                onClick={() => { toggleSection("instances"); onNavigate({ panel: "instance supervisor", params: { monitoringStateKey: undefined } }) }}>
+                active={openSections.sockets}
+                onClick={() => { toggleSection("sockets"); onNavigate({ panel: "instance supervisor", params: { monitoringStateKey: undefined } }) }}>
                 <Icon name="dropdown"/>
-                <SectionTitle iconName="server" label="Instances" count={Object.keys(overview).length}/>
+                <SectionTitle iconName="server" label="Sockets de supervisor" count={visibleOverviewKeys.length}/>
             </Accordion.Title>
-            <Accordion.Content active={openSections.instances || filtering}>
-                <List selection size="small">
-                    {
-                        filteredOverviewKeys.map((monitoringStateKey:string, key:number) => {
-                            const info = overview[monitoringStateKey] || {}
-                            const socketName = GetSocketName(info.filePath) || ShortHash(monitoringStateKey)
-                            return <List.Item
-                                key={key}
-                                active={selection.monitoringStateKey === monitoringStateKey}
-                                onClick={() => onNavigate({ panel: "instance supervisor", params: { monitoringStateKey } })}>
-                                <List.Content>
-                                    <Icon name="plug" size="small" color={GetStatusColor(info.status)}/>
-                                    <span title={monitoringStateKey}>{socketName}</span>
-                                    { logKeys.includes(monitoringStateKey) && <Icon name="terminal" size="small" color="blue" className="eco-log-live" style={{ marginLeft: "6px" }} title="log stream ao vivo"/> }
-                                </List.Content>
-                            </List.Item>
-                        })
-                    }
-                </List>
+            <Accordion.Content active={openSections.sockets || filtering}>
+                {
+                    overviewSocketGroupList.map((group:any) =>
+                        <div key={group.groupKey} style={{ marginBottom: "6px" }}>
+                            <div style={{ padding: "5px 6px", color: "#6a7480", fontSize: ".85em", fontWeight: 700, textTransform: "uppercase" }}>
+                                {group.groupLabel}
+                            </div>
+                            <List selection size="small" style={{ marginTop: 0 }}>
+                                {
+                                    group.items.map((monitoringStateKey:string, key:number) => {
+                                        const info = overview[monitoringStateKey] || {}
+                                        const socketName = GetSocketName(info.filePath) || ShortHash(monitoringStateKey)
+                                        return <List.Item
+                                            key={key}
+                                            active={selection.monitoringStateKey === monitoringStateKey}
+                                            onClick={() => onNavigate({ panel: "instance supervisor", params: { monitoringStateKey } })}>
+                                            <List.Content>
+                                                <Icon name="plug" size="small" color={GetStatusColor(info.status)}/>
+                                                <span title={monitoringStateKey}>{socketName}</span>
+                                                { logKeys.includes(monitoringStateKey) && <Icon name="terminal" size="small" color="blue" className="eco-log-live" style={{ marginLeft: "6px" }} title="log stream ao vivo"/> }
+                                            </List.Content>
+                                        </List.Item>
+                                        })
+                                }
+                            </List>
+                        </div>)
+                }
+                { hiddenUnavailableCount > 0 && <div style={{ color: "#7b8794", fontSize: ".85em", padding: "6px 6px 0" }}>{hiddenUnavailableCount} sockets indisponíveis ocultos</div> }
             </Accordion.Content>
 
             { /* Executables (executables/) — 2º nó, irmão de repos/ no EcosystemData */ }
             <Accordion.Title
                 active={openSections.executables}
-                onClick={() => { toggleSection("executables"); onNavigate({ panel: "executables", params: { executableName: undefined } }) }}>
+                onClick={() => { toggleSection("executables"); onNavigate({ panel: "executables", params: { executableName: undefined, executableType: undefined, executableRepo: undefined, executableStatus: undefined } }) }}>
                 <Icon name="dropdown"/>
                 <SectionTitle iconName="terminal" label="Executables"
                     count={executableList.filter((e:any) => !IsIgnoredExecutable(e.executableName) && !e.isDebug).length}/>
@@ -236,11 +311,15 @@ const EcosystemNavigator = ({
                         const typeOpen = openExecGroups[group.type] || filtering
                         return <div key={group.type} style={{ marginBottom: "4px" }}>
                             <div
-                                onClick={() => setOpenExecGroups({ ...openExecGroups, [group.type]: !openExecGroups[group.type] })}
-                                style={{ padding: "4px 6px 2px", color: "#5a6470", fontSize: ".8em", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".03em", cursor: "pointer", userSelect: "none" }}>
-                                <Icon name={typeOpen ? "caret down" : "caret right"}/>
-                                <Icon name={group.icon}/> {group.label}
-                                <Label circular size="mini" style={{ marginLeft: "5px" }}>{group.items.length}</Label>
+                                onClick={() => {
+                                    setOpenExecGroups({ ...openExecGroups, [group.type]: !openExecGroups[group.type] })
+                                    onNavigate({ panel: "executables", params: { executableType: group.type, executableRepo: undefined, executableName: undefined } })
+                                }}
+                                className={`eco-nav-subtitle ${selection.executableType === group.type && !selection.executableRepo ? "active" : ""}`}>
+                                <Icon name={typeOpen ? "caret down" : "caret right"} style={{ flex: "0 0 auto", margin: 0 }}/>
+                                <Icon name={group.icon} style={{ flex: "0 0 auto", margin: 0 }}/>
+                                <span style={{ flex: "1 1 auto", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{group.label}</span>
+                                <Label circular size="mini" style={{ flex: "0 0 auto", margin: 0 }}>{group.items.length}</Label>
                             </div>
                             {
                                 typeOpen &&
@@ -252,12 +331,16 @@ const EcosystemNavigator = ({
                                             const items = repoGroup.items.sort((a:any, b:any) => a.executableName.localeCompare(b.executableName))
                                             return <div key={repoGroup.repo} style={{ marginBottom: "2px" }}>
                                                 <div
-                                                    onClick={() => setOpenExecRepos({ ...openExecRepos, [repoKey]: !openExecRepos[repoKey] })}
+                                                    onClick={() => {
+                                                        setOpenExecRepos({ ...openExecRepos, [repoKey]: !openExecRepos[repoKey] })
+                                                        onNavigate({ panel: "executables", params: { executableType: group.type, executableRepo: repoGroup.repo, executableName: undefined } })
+                                                    }}
                                                     title={repoGroup.repositoryPath}
-                                                    style={{ padding: "3px 6px 2px", color: "#8a9099", fontSize: ".78em", fontWeight: 600, cursor: "pointer", userSelect: "none" }}>
-                                                    <Icon name={repoOpen ? "caret down" : "caret right"}/>
-                                                    <Icon name="cubes"/> {repoGroup.repo}
-                                                    <Label circular size="mini" style={{ marginLeft: "5px" }}>{items.length}</Label>
+                                                    className={`eco-nav-repo-title ${selection.executableType === group.type && selection.executableRepo === repoGroup.repo ? "active" : ""}`}>
+                                                    <Icon name={repoOpen ? "caret down" : "caret right"} style={{ flex: "0 0 auto", margin: 0 }}/>
+                                                    <Icon name="cubes" style={{ flex: "0 0 auto", margin: 0 }}/>
+                                                    <span style={{ flex: "1 1 auto", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{repoGroup.repo}</span>
+                                                    <Label circular size="mini" style={{ flex: "0 0 auto", margin: 0 }}>{items.length}</Label>
                                                 </div>
                                                 {
                                                     repoOpen &&
@@ -269,7 +352,13 @@ const EcosystemNavigator = ({
                                                                     active={selection.executableName === executable.executableName}
                                                                     onClick={() => onNavigate({ panel: "executables", params: { executableName: executable.executableName } })}>
                                                                     <List.Content>
-                                                                        <List.Header style={{ paddingLeft: "14px" }}><Icon name={group.icon}/> {executable.executableName}</List.Header>
+                                                                        <List.Header style={{ paddingLeft: "14px", display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
+                                                                            <ExecutableIcon executable={executable} fallbackIcon={group.icon} serverManagerInformation={serverManagerInformation}/>
+                                                                            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{executable.executableName}</span>
+                                                                            <Label size="mini" basic color={executable.isInstalled ? "green" : "grey"} style={{ marginLeft: "auto", flex: "0 0 auto" }}>
+                                                                                {executable.isInstalled ? "in" : "out"}
+                                                                            </Label>
+                                                                        </List.Header>
                                                                     </List.Content>
                                                                 </List.Item>)
                                                         }
@@ -283,7 +372,7 @@ const EcosystemNavigator = ({
                         </div>
                     })
                 }
-                <div onClick={() => setShowDebugExecutables(!showDebugExecutables)} style={{ cursor: "pointer", padding: "4px 6px", color: "#999", fontSize: ".85em" }}>
+                <div onClick={() => setShowDebugExecutables(!showDebugExecutables)} className="eco-nav-debug-toggle">
                     <Icon name={showDebugExecutables ? "eye slash" : "eye"}/>
                     {showDebugExecutables ? "ocultar -dbg" : "mostrar -dbg"}
                 </div>

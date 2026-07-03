@@ -24,6 +24,25 @@ const ExtractInstalledAplicationByRepoData = (repositoriesData) => {
     return installedApplicationsList
 }
 
+const BuildPackageDataFromNamespace = ({ repositoryNamespace, packageNamespace }) => {
+    const chunks = (packageNamespace || "").split("/")
+    const moduleName = (chunks[0] || "").replace(/\.Module$/, "")
+    const layerName = (chunks[1] || "").replace(/\.layer$/, "")
+    const groupChunk = chunks.length === 4 ? chunks[2] : undefined
+    const packageChunk = chunks[chunks.length - 1] || ""
+    const packageChunkParts = packageChunk.split(".")
+    const ext = packageChunkParts.pop()
+
+    return {
+        namespaceRepo: repositoryNamespace,
+        moduleName,
+        layerName,
+        ...(groupChunk ? { parentGroup: groupChunk.replace(/\.group$/, "") } : {}),
+        packageName: packageChunkParts.join("."),
+        ext
+    }
+}
+
 const ApplicationsAndPackagesController = (params) => {
 
     const { 
@@ -43,16 +62,36 @@ const ApplicationsAndPackagesController = (params) => {
         return repositoriesData
     }
 
+    const ListPackages = async () => {
+        const packageList = await repositoryManagerService.ListPackages()
+        return Promise.all(packageList.map(async (packageData) => ({
+            ...packageData,
+            hasPackageIcon: await repositoryManagerService.CheckPackageHasIcon(packageData)
+        })))
+    }
+
     const ListApplications = async () => {
         const repositoriesData = await _GetRepositoriesData()
         const installedApplicationsList = ExtractInstalledAplicationByRepoData(repositoriesData)
-        return installedApplicationsList
+        return Promise.all(installedApplicationsList.map(async (applicationData) => {
+            const packageData = BuildPackageDataFromNamespace(applicationData)
+            return {
+                ...applicationData,
+                packageData: {
+                    ...packageData,
+                    hasPackageIcon: await repositoryManagerService.CheckPackageHasIcon(packageData)
+                }
+            }
+        }))
     }
+
+    const GetPackageIcon = (params) => repositoryManagerService.GetPackageIconPath(params)
 
     return {
         controllerName : "ApplicationsAndPackagesController",
-        ListPackages : repositoryManagerService.ListPackages,
-        ListApplications
+        ListPackages,
+        ListApplications,
+        GetPackageIcon
     }
 }
 

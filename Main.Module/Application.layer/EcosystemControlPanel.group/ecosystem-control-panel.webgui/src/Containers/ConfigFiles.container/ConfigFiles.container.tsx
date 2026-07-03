@@ -82,6 +82,108 @@ const ConfirmSaveModal = ({ configFileName, paramName, newValue, onCancel, onCon
         </Modal.Actions>
     </Modal>
 
+const RegistryShell = ({ children }:any) =>
+    <div style={{
+        border: "1px solid #cfd6de",
+        borderRadius: "8px",
+        overflow: "hidden",
+        background: "#f8fafc",
+        boxShadow: "0 1px 2px rgba(15, 23, 42, .08)"
+    }}>
+        {children}
+    </div>
+
+const RegistryHeader = ({ title, subtitle, canEdit }:any) =>
+    <div style={{
+        padding: "12px 14px",
+        background: "#eef2f7",
+        borderBottom: "1px solid #cfd6de",
+        display: "flex",
+        alignItems: "center",
+        gap: "12px",
+        flexWrap: "wrap"
+    }}>
+        <div style={{
+            width: "34px",
+            height: "34px",
+            borderRadius: "8px",
+            background: canEdit ? "#ebf7ee" : "#eef2f7",
+            border: "1px solid #c7d0d9",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: canEdit ? "#1f7a3f" : "#596273",
+            flex: "0 0 auto"
+        }}>
+            <Icon name={canEdit ? "edit" : "file alternate outline"} style={{ margin: 0 }}/>
+        </div>
+        <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: "1.02rem", fontWeight: 800, color: "#28323f" }}>{title}</div>
+            <div style={{ color: "#66707d", fontSize: ".88rem", marginTop: "2px" }}>{subtitle}</div>
+        </div>
+        <Label basic color={canEdit ? "green" : "grey"} style={{ margin: 0 }}>
+            {canEdit ? "editável" : "somente leitura"}
+        </Label>
+    </div>
+
+const RegistryToolbar = ({ children }:any) =>
+    <div style={{
+        padding: "10px 14px",
+        borderBottom: "1px solid #e1e6ec",
+        background: "#fafbfc",
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        flexWrap: "wrap"
+    }}>
+        {children}
+    </div>
+
+const RegistryGroupHeader = ({ name, count, isClosed, onToggle }:any) =>
+    <div
+        onClick={onToggle}
+        style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "7px 10px",
+            cursor: "pointer",
+            background: isClosed ? "#f4f6f8" : "#eef3f8",
+            border: "1px solid #d7dee6",
+            borderRadius: "7px",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,.65)"
+        }}>
+        <Icon name={isClosed ? "caret right" : "caret down"} style={{ color: "#6c7784", margin: 0 }}/>
+        <Icon name="folder open outline" style={{ color: "#516171", margin: 0 }}/>
+        <strong style={{ color: "#2b3440", letterSpacing: 0 }}>{name}</strong>
+        <Label circular size="mini" style={{ marginLeft: "auto" }}>{count}</Label>
+    </div>
+
+const RegistrySubGroupHeader = ({ label, count, isClosed, onToggle }:any) =>
+    <div
+        onClick={onToggle}
+        style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "6px 10px",
+            cursor: "pointer",
+            background: "#f8fafc",
+            border: "1px solid #e0e6ee",
+            borderLeft: "3px solid #8ca0b8",
+            borderRadius: "6px"
+        }}>
+        <Icon name={isClosed ? "caret right" : "caret down"} style={{ color: "#7a8592", margin: 0 }}/>
+        <span style={{ color: "#71808f", fontFamily: "monospace", fontSize: ".8rem" }}>subkey</span>
+        <strong style={{ color: "#33404d", fontFamily: "monospace", fontSize: ".88rem" }}>{label}</strong>
+        <Label circular size="mini" style={{ marginLeft: "auto" }}>{count}</Label>
+    </div>
+
+const RegistryTable = ({ children }:any) =>
+    <Table basic="very" compact unstackable className="eco-registry-table" style={{ marginTop: 0, border: "none" }}>
+        {children}
+    </Table>
+
 const ConfigFilesContainer = ({ serverManagerInformation, configFileName }:any) => {
 
     const [ ecosystemDefaults, setEcosystemDefaults ] = useState<any>()
@@ -160,23 +262,29 @@ const ConfigFilesContainer = ({ serverManagerInformation, configFileName }:any) 
     }
 
     return <Segment style={{ margin: "15px" }}>
-        <Header>
-            <Icon name="cogs"/>
-            <Header.Content>
-                { GetConfigTitle(configFileName) }
-                <Header.Subheader>config-files / { configFileName || "ecosystem-defaults.json" }</Header.Subheader>
-            </Header.Content>
-        </Header>
-
-        <Message info icon size="small">
-            <Icon name="lock"/>
-            <Message.Content>
-                <Message.Header>Edição variável a variável</Message.Header>
-                { canEdit
-                    ? "Edite uma variável por vez (ícone de lápis). Cada alteração pede confirmação — pode impactar/quebrar o ecossistema."
-                    : "Selecione um arquivo na árvore para editar." }
-            </Message.Content>
-        </Message>
+        <RegistryShell>
+            <RegistryHeader
+                title={GetConfigTitle(configFileName)}
+                subtitle={`config-files / ${configFileName || "ecosystem-defaults.json"}`}
+                canEdit={canEdit}/>
+            <RegistryToolbar>
+                <Message info icon size="small" style={{ margin: 0, flex: "1 1 420px" }}>
+                    <Icon name="lock"/>
+                    <Message.Content>
+                        <Message.Header>editor de parâmetros</Message.Header>
+                        { canEdit
+                            ? "Edite um valor por vez. A confirmação é obrigatória porque essas chaves podem alterar o comportamento do ecossistema."
+                            : "Este arquivo é de referência. Abra outro arquivo para editar." }
+                    </Message.Content>
+                </Message>
+                <Input
+                    icon="search"
+                    size="small"
+                    placeholder="filtrar parâmetros..."
+                    value={filterValue}
+                    onChange={(e, { value }) => setFilterValue(value)}
+                    style={{ marginLeft: "auto", minWidth: "260px" }}/>
+            </RegistryToolbar>
 
         {
             isLoading
@@ -257,46 +365,34 @@ const ConfigFilesContainer = ({ serverManagerInformation, configFileName }:any) 
                 }
 
                 const renderTable = (rowKeys:string[], stripPrefix:string) =>
-                    <Table basic striped compact unstackable style={{ marginTop: "4px" }}>
+                    <RegistryTable>
                         <Table.Body>{ rowKeys.map((k:string) => renderRow(k, stripPrefix)) }</Table.Body>
-                    </Table>
+                    </RegistryTable>
 
                 return <>
-                    <Input
-                        icon="search"
-                        size="small"
-                        placeholder="filtrar parâmetros..."
-                        value={filterValue}
-                        onChange={(e, { value }) => setFilterValue(value)}
-                        style={{ marginBottom: "10px", maxWidth: "360px" }}/>
                     {
                         groupNames.map((groupName:string) => {
                             const isClosed = closedGroups[groupName]
-                            return <div key={groupName} style={{ marginBottom: "10px" }}>
-                                <div
-                                    onClick={() => setClosedGroups({ ...closedGroups, [groupName]: !isClosed })}
-                                    style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 8px", cursor: "pointer", background: "#f0f2f5", borderRadius: "6px" }}>
-                                    <Icon name={isClosed ? "caret right" : "caret down"} style={{ color: "#888" }}/>
-                                    <strong>{groupName}</strong>
-                                    <Label circular size="mini">{groups[groupName].length}</Label>
-                                </div>
+                            return <div key={groupName} style={{ margin: "12px 14px 0" }}>
+                                <RegistryGroupHeader
+                                    name={groupName}
+                                    count={groups[groupName].length}
+                                    isClosed={isClosed}
+                                    onToggle={() => setClosedGroups({ ...closedGroups, [groupName]: !isClosed })}/>
                                 {
                                     !isClosed && (() => {
                                         const { subGroups, flat } = buildSubGroups(groupName, groups[groupName])
-                                        return <div style={{ marginTop: "4px" }}>
+                                        return <div style={{ marginTop: "8px", paddingLeft: "10px", borderLeft: "2px solid #dbe2ea" }}>
                                             {
                                                 subGroups.map((sg:any) => {
                                                     const subKey = `${groupName}/${sg.subPrefix}`
                                                     const subClosed = closedGroups[subKey]
-                                                    return <div key={subKey} style={{ marginLeft: "16px", marginTop: "6px" }}>
-                                                        <div
-                                                            onClick={() => setClosedGroups({ ...closedGroups, [subKey]: !subClosed })}
-                                                            style={{ display: "flex", alignItems: "center", gap: "6px", padding: "4px 8px", cursor: "pointer", background: "#f6f7f9", borderRadius: "6px" }}>
-                                                            <Icon name={subClosed ? "caret right" : "caret down"} style={{ color: "#999" }}/>
-                                                            <span style={{ color: "#bbb", fontFamily: "monospace", fontSize: ".82em" }}>*_</span>
-                                                            <strong style={{ fontFamily: "monospace", fontSize: ".86em" }}>{sg.subPrefix}</strong>
-                                                            <Label circular size="mini">{sg.keys.length}</Label>
-                                                        </div>
+                                                    return <div key={subKey} style={{ marginTop: "8px" }}>
+                                                        <RegistrySubGroupHeader
+                                                            label={sg.subPrefix}
+                                                            count={sg.keys.length}
+                                                            isClosed={subClosed}
+                                                            onToggle={() => setClosedGroups({ ...closedGroups, [subKey]: !subClosed })}/>
                                                         { !subClosed && renderTable(sg.keys, `${groupName}_${sg.subPrefix}`) }
                                                     </div>
                                                 })
@@ -308,7 +404,7 @@ const ConfigFilesContainer = ({ serverManagerInformation, configFileName }:any) 
                             </div>
                         })
                     }
-                    { groupNames.length === 0 && <div style={{ color: "#bbb", padding: "16px" }}>nenhum parâmetro corresponde ao filtro</div> }
+                    { groupNames.length === 0 && <div style={{ color: "#66707d", padding: "16px 14px 18px" }}>nenhum parâmetro corresponde ao filtro</div> }
                 </>
             })()
         }
@@ -322,6 +418,7 @@ const ConfigFilesContainer = ({ serverManagerInformation, configFileName }:any) 
                 onCancel={() => setPendingSave(undefined)}
                 onConfirm={confirmSave}/>
         }
+        </RegistryShell>
     </Segment>
 }
 

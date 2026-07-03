@@ -4,7 +4,7 @@ import { Header, Icon, Segment } from "semantic-ui-react"
 // Tela de boas-vindas (home padrão do painel). Substitui o antigo overview de
 // cards como conteúdo principal: saudação + atalhos para cada seção.
 const SECTIONS = [
-    { panel: "instance supervisor", icon: "server",   title: "Instances",              desc: "Sockets de supervisão e tasks das instâncias em execução." },
+    { panel: "instance supervisor", icon: "server",   title: "Sockets",                desc: "Sockets de supervisão e tasks das instâncias em execução." },
     { panel: "executables",         icon: "terminal", title: "Executables",            desc: "Executáveis instalados — applications, daemons e CLIs." },
     { panel: "environments",        icon: "sitemap",  title: "Environments",           desc: "Ambientes de execução (pacote + hash do caminho)." },
     { panel: "repositories",        icon: "cubes",    title: "Repositories & Packages", desc: "Repositórios, fontes e pacotes instalados." },

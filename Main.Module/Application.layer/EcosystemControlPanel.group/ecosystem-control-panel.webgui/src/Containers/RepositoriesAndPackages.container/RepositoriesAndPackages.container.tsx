@@ -28,6 +28,7 @@ import ListSkeleton from "../../Components/Skeleton"
 import EmptyState from "../../Components/EmptyState"
 import { BuildPackageTree, TreeNode, PackageKey } from "../ApplicationsAndPackages.container/PackageTree"
 import CopyValue from "../../Components/CopyValue"
+import PackageIcon from "../../Components/PackageIcon"
 
 // Workspace unificado de Repositories & Packages (Sources + Packages juntos):
 // lista de repositórios à esquerda; à direita, sub-abas Sources e Packages do
@@ -187,8 +188,8 @@ const RepositoriesAndPackagesContainer = ({
             ["location", location]
         ]
         return <Segment>
-            <Header as="h5">
-                <Icon name="file code outline"/>
+            <Header as="h5" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <PackageIcon packageData={p} serverManagerInformation={serverManagerInformation} size={28}/>
                 <Header.Content>
                     {p.packageName}<Label size="mini" style={{ marginLeft: "6px" }}>{p.ext}</Label>
                     <Header.Subheader>{p.namespaceRepo}</Header.Subheader>
@@ -229,7 +230,8 @@ const RepositoriesAndPackagesContainer = ({
                                 node={repoNode.__children[moduleName]}
                                 defaultOpen={true}
                                 selectedKey={selectedKey}
-                                onSelectPackage={setSelectedPackage}/>)
+                                onSelectPackage={setSelectedPackage}
+                                serverManagerInformation={serverManagerInformation}/>)
                         : <div style={{ color: "#bbb", padding: "20px" }}>nenhum pacote instalado neste repositório</div>
                     }
                 </div>

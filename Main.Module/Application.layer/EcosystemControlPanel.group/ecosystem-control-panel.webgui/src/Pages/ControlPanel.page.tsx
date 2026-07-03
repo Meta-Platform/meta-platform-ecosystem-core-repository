@@ -3,8 +3,6 @@ import { useEffect, useState } from "react"
 import AnsiToHtml              from "ansi-to-html"
 import { connect }             from "react-redux"
 import {
-	Container,
-	Grid,
 	Loader,
 	Segment,
 	Header,
@@ -32,8 +30,6 @@ import EcosystemNavigator from "../Components/EcosystemNavigator"
 
 import GetAPI from "../Utils/GetAPI"
 
-const Column = Grid.Column
-
 import EnvironmentsContainer            from "../Containers/Environments.container"
 import RepositoriesAndPackagesContainer from "../Containers/RepositoriesAndPackages.container"
 import InstanceSupervisorContainer      from "../Containers/InstanceSupervisor.container"
@@ -52,6 +48,57 @@ import QueryParamsActionsCreator from "../Actions/QueryParams.actionsCreator"
 
 const DEFAULT_PANEL = "welcome"
 
+const NOTIFICATION_TYPE_PROPS:any = {
+	log       : { icon: "terminal", color: "grey" },
+	message   : { icon: "info circle", color: "blue" },
+	socket    : { icon: "plug", color: "teal" },
+	source    : { icon: "feed", color: "orange" },
+	package   : { icon: "cube", color: "violet" },
+	repository: { icon: "cubes", color: "green" },
+	error     : { icon: "warning sign", color: "red" }
+}
+
+const ToText = (value:any) => {
+	if(value === undefined || value === null) return ""
+	if(typeof value === "string") return value
+	if(typeof value.message === "string") return value.message
+	return JSON.stringify(value)
+}
+
+const GetNotificationPresentation = (payload:any) => {
+	const content = payload?.content
+	const logType = payload?.type === "log" ? content?.type : undefined
+	const semanticType = logType === "error" ? "error" : payload?.type || "message"
+	const props = NOTIFICATION_TYPE_PROPS[semanticType] || NOTIFICATION_TYPE_PROPS.message
+	const title =
+		content?.title ||
+		(payload?.type === "log" ? `${content?.sourceName || "Log"} · ${(content?.type || "info").toUpperCase()}` : semanticType)
+	const body = content?.message || ToText(content)
+
+	return {
+		...props,
+		type: semanticType,
+		title,
+		body,
+		origin: payload?.origin,
+		date: payload?.date
+	}
+}
+
+const ShouldShowDesktopNotification = (payload:any) =>
+	payload?.type !== "log" || payload?.content?.type === "error"
+
+const ShowDesktopNotification = (payload:any) => {
+	if(!ShouldShowDesktopNotification(payload)) return
+	const desktopNotifications = (window as any).electronNotifications
+	if(!desktopNotifications || !desktopNotifications.show) return
+
+	const notification = GetNotificationPresentation(payload)
+	try {
+		desktopNotifications.show({ title: notification.title, body: notification.body })
+	} catch(e) {}
+}
+
 const useNotificationManager = (serverManagerInformation) => {
 
 	const [ notificationStateList, setNotificationStateList ] = useState<any[]>([])
@@ -63,12 +110,14 @@ const useNotificationManager = (serverManagerInformation) => {
 			serverManagerInformation
 		})
 
-	const _ReceiveNotification = (notification) =>
+	const _ReceiveNotification = (notification) => {
+		ShowDesktopNotification(notification)
 		setNotificationStateList((currentList) => {
 			const newList = [ { wasSeen:false, payload:notification }, ...currentList ]
 			setNUnreadNotifications(newList.filter(({ wasSeen }) => !wasSeen).length)
 			return newList
 		})
+	}
 
 	const MarkAllAsSeen = () => {
 		setNotificationStateList((currentList) =>
@@ -91,82 +140,65 @@ const useNotificationManager = (serverManagerInformation) => {
 }
 
 
-const CardLog = ({
-	date,
-	type,
-	origin,
-	content
-}) => {
-
-	const messageHtml = ansiConverter.toHtml(content.message)
-
-	return <Segment style={{"margin": "8px 0", padding:"10px"}}>
-				<Label color="grey" size="small" attached='top right'>{date}</Label>
-				<strong style={{fontSize: "medium"}}>{type.toUpperCase()} - {content.type.toUpperCase()} - {content.sourceName}</strong><br/>
-				<Segment style={{"margin": "5px", padding:"8px", "color":"black"}}>
-					<p dangerouslySetInnerHTML={{ __html: messageHtml }}></p>
-				</Segment>
-				<strong style={{ fontSize: ".85em", color: "grey" }}>{origin}</strong>
-			</Segment>
-}
-
-
-
 const NotificationPanel = ({ onClose, notificationStateList }) => {
-	return <Segment style={{margin: "15px"}}>
-				<Button
-							circular
-							icon='close'
-							basic
-							floated="right"
-							onClick={onClose} />
-				<Header as='h3'>
-					<Icon name='bell outline' />
-					<Header.Content>Notifications</Header.Content>
-				</Header>
+	return <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+		<div style={{
+			height: "56px", flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "space-between",
+			padding: "0 14px", borderBottom: "1px solid #e7eaee", background: "#fff"
+		}}>
+			<Header as='h4' style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
+				<Icon name='bell outline' />
+				<Header.Content>Notifications</Header.Content>
+			</Header>
+			<Button circular icon='close' basic size="mini" onClick={onClose} />
+		</div>
 
-				<div style={{ overflow: 'auto', maxHeight:"76vh" }}>
-					{
-						notificationStateList.length === 0
-						&& <Segment placeholder textAlign="center" style={{ color: "grey" }}>
-							<Icon name="bell slash outline" size="large"/>
-							Sem notificações por enquanto
-						</Segment>
-					}
-					{
-						notificationStateList
-						.map((notification, key) => {
+		<div style={{ overflow: 'auto', flex: "1 1 auto", padding: "12px", background: "#f6f8fa" }}>
+			{
+				notificationStateList.length === 0
+				&& <Segment placeholder textAlign="center" style={{ color: "grey", minHeight: "160px" }}>
+					<Icon name="bell slash outline" size="large"/>
+					<div>Sem notificações por enquanto</div>
+				</Segment>
+			}
+			{
+				notificationStateList.map((notification, key) => {
+					const { wasSeen, payload } = notification
+					const view = GetNotificationPresentation(payload)
+					const messageHtml = ansiConverter.toHtml(view.body)
 
-							const {
-								wasSeen,
-								payload
-							} = notification
-
-							const {
-								type,
-								date,
-								origin,
-								content
-							} = payload
-
-							return <div key={key} style={{ opacity: wasSeen ? 0.7 : 1 }}>
-								{
-									type === "log"
-									? CardLog({ date, type, origin, content })
-									: <Segment style={{"margin": "8px 0", padding:"10px"}}>
-											<Label color="grey" size="small" attached='top right'>{date}</Label>
-											<strong style={{fontSize: "medium"}}>{type.toUpperCase()}</strong><br/>
-											<Segment style={{"margin": "5px", padding:"8px", "color":"black"}}>
-												<p dangerouslySetInnerHTML={{ __html:  ansiConverter.toHtml(typeof content === "string" ? content : JSON.stringify(content)) }}></p>
-											</Segment>
-											<strong style={{ fontSize: ".85em", color: "grey" }}>{origin}</strong>
-										</Segment>
-								}
+					return <div
+						key={key}
+						style={{
+							opacity: wasSeen ? 0.72 : 1,
+							background: "#fff",
+							border: "1px solid #e2e7ed",
+							borderLeft: `4px solid ${view.color === "red" ? "#db2828" : view.color === "orange" ? "#f2711c" : view.color === "green" ? "#21ba45" : view.color === "violet" ? "#6435c9" : view.color === "teal" ? "#00b5ad" : "#767676"}`,
+							borderRadius: "6px",
+							padding: "10px 12px",
+							marginBottom: "10px",
+							boxShadow: "0 1px 2px rgba(16,24,40,.04)"
+						}}>
+						<div style={{ display: "flex", alignItems: "flex-start", gap: "8px", minWidth: 0 }}>
+							<Icon name={view.icon} color={view.color} style={{ marginTop: "2px", flex: "0 0 auto" }}/>
+							<div style={{ minWidth: 0, flex: 1 }}>
+								<div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
+									<strong style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{view.title}</strong>
+									{ !wasSeen && <Label circular empty color="orange" size="mini" style={{ flex: "0 0 auto" }}/> }
+								</div>
+								<div style={{ color: "#4b5563", fontSize: ".9em", marginTop: "5px", wordBreak: "break-word" }}
+									dangerouslySetInnerHTML={{ __html: messageHtml }}/>
+								<div style={{ display: "flex", justifyContent: "space-between", gap: "8px", color: "#98a2b3", fontSize: ".78em", marginTop: "8px" }}>
+									<span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{view.origin || "system"}</span>
+									<span style={{ flex: "0 0 auto" }}>{view.date}</span>
+								</div>
 							</div>
-						})
-					}
-				</div>
-			</Segment>
+						</div>
+					</div>
+				})
+			}
+		</div>
+	</div>
 }
 
 const ControlPanelPage = ({
@@ -185,12 +217,17 @@ const ControlPanelPage = ({
 
 	const [ isOpenNotificationPanel, setIsOpenNotificationPanel] = useState(false)
 
-	// responsividade: abaixo de ~992px a sidebar vira drawer (overlay).
-	const [ isNarrow, setIsNarrow ] = useState<boolean>(typeof window !== "undefined" && window.innerWidth < 992)
+	// responsividade: abaixo de ~1100px a sidebar vira drawer (overlay),
+	// preservando espaço útil para os painéis em janelas menores.
+	const [ isNarrow, setIsNarrow ] = useState<boolean>(typeof window !== "undefined" && window.innerWidth < 1100)
 	const [ isSidebarOpen, setIsSidebarOpen ] = useState<boolean>(false)
 
 	useEffect(() => {
-		const onResize = () => setIsNarrow(window.innerWidth < 992)
+		const onResize = () => {
+			const nextIsNarrow = window.innerWidth < 1100
+			setIsNarrow(nextIsNarrow)
+			if(!nextIsNarrow) setIsSidebarOpen(false)
+		}
 		window.addEventListener("resize", onResize)
 		return () => window.removeEventListener("resize", onResize)
 	}, [])
@@ -243,6 +280,15 @@ const ControlPanelPage = ({
 		setIsLoading(false)
 	}
 
+	// Troca o endereço do EcosystemData e recarrega a UI, para que todos os
+	// painéis (que resolvem o path dinamicamente no backend) reaponte para o
+	// novo endereço.
+	const handleChangeEcosystemDataPath = async (newPath:string) => {
+		const api = _GetEcosystemdataAPI()
+		await api.SetEcosystemDataPath({ path: newPath })
+		window.location.reload()
+	}
+
 	// Navegação central a partir do EcosystemNavigator. Usa SetQueryParams
 	// (mesma primitiva idiomática dos outros painéis) para SUBSTITUIR toda a
 	// query pelo estado do destino — isso limpa de uma vez os params de seleção
@@ -274,7 +320,10 @@ const ControlPanelPage = ({
 		tab                : QueryParams.tab,
 		repo               : QueryParams.repo,
 		configFileName     : QueryParams.configFileName,
-		executableName     : QueryParams.executableName
+		executableName     : QueryParams.executableName,
+		executableType     : QueryParams.executableType,
+		executableRepo     : QueryParams.executableRepo,
+		executableStatus   : QueryParams.executableStatus
 	}
 
 	const renderActivePanel = () => {
@@ -294,6 +343,9 @@ const ControlPanelPage = ({
 				return <ExecutablesContainer
 							serverManagerInformation={HTTPServerManager}
 							selectedExecutableName={QueryParams.executableName}
+							selectedExecutableType={QueryParams.executableType}
+							selectedExecutableRepo={QueryParams.executableRepo}
+							selectedExecutableStatus={QueryParams.executableStatus}
 							onSelectExecutable={(name:string) => AddQueryParam("executableName", name)}
 							onClearExecutable={() => RemoveQueryParam("executableName")}/>
 			case "config files":
@@ -308,7 +360,7 @@ const ControlPanelPage = ({
 
 	return isLoading
 			? <Loader active style={{margin: "50px"}}/>
-			:<div>
+			:<div className="eco-control-shell">
 					<MainMenu
 						nUnreadNotifications={nUnreadNotifications}
 						ecosystemdataPath={ecosystemdataPathSelected}
@@ -317,32 +369,29 @@ const ControlPanelPage = ({
 						onClickLogo={() => handleNavigate({ panel: "welcome" })}
 						showSidebarToggle={isNarrow}
 						onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}/>
-					<Grid style={{ maxWidth: "1840px", margin: "0 auto" }}>
+					<div className="eco-control-body">
 						{
 							!isNarrow &&
-							<Column width={3}>
+							<aside className="eco-sidebar-fixed">
 								<EcosystemNavigator
 									serverManagerInformation={HTTPServerManager}
 									ecosystemdataPath={ecosystemdataPathSelected}
 									activeItem={activeItem}
 									selection={navigatorSelection}
 									onNavigate={handleNavigate}/>
-							</Column>
+							</aside>
 						}
-						<Column width={isNarrow ? 16 : 13}>
+						<main className={isNarrow ? "eco-main-content eco-main-content-full" : "eco-main-content"}>
 							{ renderActivePanel() }
-						</Column>
-					</Grid>
+						</main>
+					</div>
 
 					{
 						/* Sidebar como DRAWER em telas estreitas (tablet). */
 						isNarrow && isSidebarOpen && <>
 							<div onClick={() => setIsSidebarOpen(false)}
 								style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.35)", zIndex: 1500 }}/>
-							<div style={{
-								position: "fixed", top: 0, left: 0, bottom: 0, width: "280px", maxWidth: "85vw",
-								zIndex: 1600, background: "#fff", overflow: "auto", boxShadow: "3px 0 12px rgba(16,24,40,.18)", padding: "8px"
-							}}>
+							<div className="eco-sidebar-drawer">
 								<EcosystemNavigator
 									serverManagerInformation={HTTPServerManager}
 									ecosystemdataPath={ecosystemdataPathSelected}
@@ -359,7 +408,7 @@ const ControlPanelPage = ({
 						<div style={{
 							position: "fixed", top: "52px", right: 0, bottom: 0, width: "380px", maxWidth: "92vw",
 							zIndex: 1000, background: "#ffffff",
-							boxShadow: "-3px 0 12px rgba(16,24,40,.12)", borderLeft: "1px solid #e3e6ea", overflow: "auto"
+							boxShadow: "-3px 0 12px rgba(16,24,40,.12)", borderLeft: "1px solid #e3e6ea", overflow: "hidden"
 						}}>
 							<NotificationPanel
 								onClose={handleCloseNotificationPanel}
@@ -369,7 +418,8 @@ const ControlPanelPage = ({
 					<EcosystemDataPathModal
 						ecosystemdataPath={ecosystemdataPathSelected}
 					 	open={isEcosystemDataPathModalOpen}
-					 	onClose={() => handleCloseEcosystemDataModal()}/>
+					 	onClose={() => handleCloseEcosystemDataModal()}
+						onChangePath={handleChangeEcosystemDataPath}/>
 
 					<ToastContainer/>
 					<LogDock/>

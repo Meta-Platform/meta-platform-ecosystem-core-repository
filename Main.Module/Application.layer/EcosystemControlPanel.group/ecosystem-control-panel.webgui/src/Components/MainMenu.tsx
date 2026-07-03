@@ -23,13 +23,15 @@ const MainMenu = ({
     onToggleSidebar
 }) => {
     return <Menu
+                className="eco-main-menu"
                 borderless
                 style={{
                     borderRadius: 0,
                     margin: 0,
                     border: "none",
                     borderBottom: "1px solid #e8e8e8",
-                    boxShadow: "0 1px 2px rgba(0,0,0,.06)"
+                    boxShadow: "0 1px 2px rgba(0,0,0,.06)",
+                    minHeight: "var(--eco-topbar-height)"
                 }}>
                 {
                     showSidebarToggle &&
@@ -39,9 +41,9 @@ const MainMenu = ({
                 }
                 <MenuItem header onClick={() => onClickLogo && onClickLogo()} style={{ cursor: onClickLogo ? "pointer" : undefined }} title="início">
                     <Icon name="cube" size="large"/>
-                    <span style={{ fontWeight: 700, fontSize: "1.05em", marginLeft: "4px" }}>Ecosystem Panel</span>
+                    <span className="eco-main-menu-title">Ecosystem Panel</span>
                 </MenuItem>
-                <MenuItem>
+                <MenuItem className="eco-main-menu-path">
                     <Button
                         onClick={() => onClickOpenEcosystemDataPathModal()}
                         circular
@@ -50,15 +52,19 @@ const MainMenu = ({
                         size="mini"
                         title="change ecosystem"
                         style={{ marginRight: "8px" }}/>
-                    <code style={{ color: "#666", fontSize: ".85em" }}>{ecosystemdataPath}</code>
+                    <code title={ecosystemdataPath}>{ecosystemdataPath}</code>
                 </MenuItem>
                 <MenuMenu position="right">
                     <MenuItem onClick={onClickOpenNotificationPanel}>
-                        {
-                            nUnreadNotifications > 0
-                            ? <><Icon name="bell" /><Label color="orange" floating circular size="mini">{nUnreadNotifications}</Label></>
-                            : <Icon name="bell outline" />
-                        }
+                        <span className="eco-notification-button">
+                            <Icon name={nUnreadNotifications > 0 ? "bell" : "bell outline"} />
+                            {
+                                nUnreadNotifications > 0 &&
+                                <Label color="orange" circular size="mini" className="eco-notification-badge">
+                                    {nUnreadNotifications}
+                                </Label>
+                            }
+                        </span>
                     </MenuItem>
                     <Dropdown item icon="sliders horizontal" simple>
                         <DropdownMenu>

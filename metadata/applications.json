@@ -30,6 +30,12 @@
         "supervisorSocketFileName":"eco-panel.sock"
     },
     {
+        "appType":"DESKTOP",
+        "executable":"eco-panel-desktop",
+        "packageNamespace":"Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.desktopapp",
+        "supervisorSocketFileName":"eco-panel-desktop.sock"
+    },
+    {
         "appType":"CLI",
         "executable":"mypkg",
         "packageNamespace":"Main.Module/PackageApplication.layer/package-toolkit.cli",

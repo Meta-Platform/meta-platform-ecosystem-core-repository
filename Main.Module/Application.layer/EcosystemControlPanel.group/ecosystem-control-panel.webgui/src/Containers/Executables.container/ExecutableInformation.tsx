@@ -1,8 +1,9 @@
 import * as React from "react"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import {
     Button,
+    Checkbox,
     Header,
     Label,
     List,
@@ -11,14 +12,15 @@ import {
     Tab,
     Table,
     Loader,
-    Icon
+    Icon,
+    Image
 } from "semantic-ui-react"
 
-import GetAPI from "../../Utils/GetAPI"
+import GetExecutableIconURL from "../../Utils/GetExecutableIconURL"
 import EmptyState from "../../Components/EmptyState"
 import KeyValuePanel from "../../Components/KeyValuePanel"
 import CopyValue from "../../Components/CopyValue"
-import { toastSuccess, toastError, errorMessage } from "../../Utils/toast"
+import { openExecWindow } from "../../Utils/logWindows"
 
 // Cabeçalho de seção leve (evita o "icon header" do Semantic que amplia o ícone).
 const SectionHeader = ({ icon, children }:any) =>
@@ -26,47 +28,44 @@ const SectionHeader = ({ icon, children }:any) =>
         <Icon name={icon} style={{ fontSize: "1em", margin: 0 }}/> {children}
     </div>
 
-// Barra de ações de host para o pacote do executável: executar, abrir VSCode
-// e abrir terminal no diretório do pacote.
-const HostActionsBar = ({ serverManagerInformation, packageDirPath }:any) => {
+const ExecutablePackageIcon = ({ executableInformation, serverManagerInformation, size = 26, fallbackIcon = "terminal" }:any) => {
+    const iconURL = executableInformation?.hasPackageIcon
+        ? GetExecutableIconURL({ serverManagerInformation, executableName: executableInformation.executableName })
+        : undefined
 
-    const [ busy, setBusy ]                 = useState<string>()
+    if(iconURL)
+        return <Image src={iconURL} title="icone do pacote" style={{ width: `${size}px`, height: `${size}px`, objectFit: "contain", flex: "0 0 auto", margin: 0 }}/>
+
+    return <Icon name={fallbackIcon}/>
+}
+
+// Barra de ações do executável. Por enquanto, apenas APP e DESKTOP podem ser
+// disparados pela UI; CLI fica sem ação no detalhe.
+const HostActionsBar = ({ executableInformation, onRun }:any) => {
+
     const [ confirmRun, setConfirmRun ]     = useState(false)
 
-    const _GetAPI = () => GetAPI({ apiName: "HostActions", serverManagerInformation })
+    const packageDirPath = executableInformation?.packageDirPath
+    const appType = executableInformation?.appType
+    const canRun = appType === "APP" || appType === "DESKTOP"
 
-    const ACTION_MSG:any = { run: "Execução iniciada", vscode: "Abrindo VSCode", terminal: "Abrindo terminal" }
-    const run = async (action:string, call:any) => {
-        try { setBusy(action); await call(); toastSuccess(ACTION_MSG[action] || "ok") }
-        catch(e) { toastError(errorMessage(e)) }
-        finally { setBusy(undefined) }
-    }
-
-    if(!packageDirPath) return null
+    if(!packageDirPath || !canRun) return null
 
     return <>
-        <Button.Group size="small" style={{ flex: "0 0 auto" }}>
-            <Button primary loading={busy === "run"} onClick={() => setConfirmRun(true)}>
-                <Icon name="play"/> run
-            </Button>
-            <Button loading={busy === "vscode"} onClick={() => run("vscode", () => _GetAPI().OpenVSCode({ targetPath: packageDirPath }))}>
-                <Icon name="code"/> vscode
-            </Button>
-            <Button loading={busy === "terminal"} onClick={() => run("terminal", () => _GetAPI().OpenTerminal({ targetPath: packageDirPath }))}>
-                <Icon name="terminal"/> terminal
-            </Button>
-        </Button.Group>
+        <Button primary size="small" onClick={() => setConfirmRun(true)} style={{ flex: "0 0 auto" }}>
+            <Icon name="play"/> executar
+        </Button>
         {
             confirmRun &&
             <Modal size="small" open={true} onClose={() => setConfirmRun(false)}>
-                <Modal.Header><Icon name="play" color="green"/> Executar pacote</Modal.Header>
+                <Modal.Header><Icon name="play" color="green"/> Executar {executableInformation.executableName}</Modal.Header>
                 <Modal.Content>
-                    Executar <code>{packageDirPath}</code> via <code>run package</code>?
+                    Executar <code>{executableInformation.executableName}</code> via <code>run package</code>?
                     Isso inicia uma nova instância no ecossistema.
                 </Modal.Content>
                 <Modal.Actions>
                     <Button onClick={() => setConfirmRun(false)}>cancelar</Button>
-                    <Button color="green" onClick={() => { setConfirmRun(false); run("run", () => _GetAPI().RunPackage({ packagePath: packageDirPath })) }}>
+                    <Button color="green" onClick={() => { setConfirmRun(false); onRun() }}>
                         <Icon name="play"/> executar
                     </Button>
                 </Modal.Actions>
@@ -134,9 +133,11 @@ const ExecutableInformation = ({ executableInformation, serverManagerInformation
         executableName,
         type,
         isDebug,
+        isInstalled,
         packageRepoPath,
         repositoryPath,
         supervisorSocketPath,
+        supervisorSocketFileName,
         commandGroup,
         boot,
         startupParams,
@@ -146,7 +147,9 @@ const ExecutableInformation = ({ executableInformation, serverManagerInformation
     const infoPane = () => <Tab.Pane>
         <List relaxed size="small">
             <List.Item>
-                <List.Icon name="folder outline" verticalAlign="middle"/>
+                <List.Icon verticalAlign="middle">
+                    <ExecutablePackageIcon executableInformation={executableInformation} serverManagerInformation={serverManagerInformation} size={18} fallbackIcon="folder outline"/>
+                </List.Icon>
                 <List.Content>
                     <List.Header>package</List.Header>
                     <List.Description style={{ wordBreak: "break-all" }}>{packageRepoPath}</List.Description>
@@ -160,11 +163,11 @@ const ExecutableInformation = ({ executableInformation, serverManagerInformation
                 </List.Content>
             </List.Item>
             {
-                supervisorSocketPath && <List.Item>
+                (supervisorSocketPath || supervisorSocketFileName) && <List.Item>
                     <List.Icon name="plug" verticalAlign="middle"/>
                     <List.Content>
                         <List.Header>supervisor socket</List.Header>
-                        <List.Description style={{ wordBreak: "break-all" }}>{supervisorSocketPath}</List.Description>
+                        <List.Description style={{ wordBreak: "break-all" }}>{supervisorSocketPath || supervisorSocketFileName}</List.Description>
                     </List.Content>
                 </List.Item>
             }
@@ -206,17 +209,18 @@ const ExecutableInformation = ({ executableInformation, serverManagerInformation
 
     return <Segment>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-            <Header style={{ margin: 0 }}>
-                <Icon name="terminal"/>
+            <Header style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
+                <ExecutablePackageIcon executableInformation={executableInformation} serverManagerInformation={serverManagerInformation} size={32}/>
                 <Header.Content>
                     {executableName}
                     <Label size="tiny" color={type === "cli" ? "teal" : "blue"} style={{ marginLeft: "8px" }}>{type}</Label>
+                    <Label size="tiny" basic color={isInstalled ? "green" : "grey"}>{isInstalled ? "installed" : "not installed"}</Label>
                     { isDebug && <Label size="tiny" color="grey">debug</Label> }
                 </Header.Content>
             </Header>
             <HostActionsBar
-                serverManagerInformation={serverManagerInformation}
-                packageDirPath={executableInformation.packageDirPath}/>
+                executableInformation={executableInformation}
+                onRun={() => openExecWindow({ packageDirPath: executableInformation.packageDirPath, executableName })}/>
         </div>
         <Tab menu={{ secondary: true, pointing: true }} panes={panes} style={{ marginTop: "12px" }}/>
     </Segment>

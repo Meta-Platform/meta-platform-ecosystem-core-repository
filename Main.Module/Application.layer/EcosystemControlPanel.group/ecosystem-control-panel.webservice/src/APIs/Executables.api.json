@@ -18,6 +18,20 @@
 					"required": true
 				}
 			]
+		},
+		{
+			"summary": "GetExecutableIcon",
+			"method": "GET",
+			"path": "/executable-icon/:executableName",
+			"typeResponse": "file",
+			"parameters": [
+				{
+					"name": "executableName",
+					"in": "path",
+					"type": "string",
+					"required": true
+				}
+			]
 		}
 	]
 }

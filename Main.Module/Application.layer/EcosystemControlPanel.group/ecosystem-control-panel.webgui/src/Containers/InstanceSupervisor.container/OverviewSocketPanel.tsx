@@ -16,10 +16,34 @@ import CopyValue   from "../../Components/CopyValue"
 import { TruncateMiddle } from "../../Utils/Format"
 import { openLogWindow, subscribeLogWindows } from "../../Utils/logWindows"
 
+const NormalizePath = (value:string) => (value || "").replace(/\\/g, "/").replace(/\/+$/, "")
+
 const GetSocketName = (filePath:string) => {
 	if(!filePath) return ""
 	const base = filePath.split("/").pop() || filePath
 	return base.replace(/\.sock$/, "")
+}
+
+const GetParentDir = (filePath:string) => {
+	const normalized = NormalizePath(filePath)
+	const index = normalized.lastIndexOf("/")
+	return index > 0 ? normalized.slice(0, index) : ""
+}
+
+const GetCommonDirPrefix = (paths:string[]) => {
+	const normalized = paths.map((p) => NormalizePath(p)).filter(Boolean)
+	if(normalized.length === 0) return ""
+	const splitPaths = normalized.map((p) => p.split("/"))
+	const prefix:string[] = []
+	const first = splitPaths[0]
+	for(let i = 0; i < first.length; i++) {
+		const segment = first[i]
+		if(splitPaths.every((parts) => parts[i] === segment))
+			prefix.push(segment)
+		else
+			break
+	}
+	return prefix.length > 0 ? prefix.join("/") : ""
 }
 
 const HIGHLIGHT_KEYS = ["executableName", "serverName", "namespace", "package", "port", "uptime"]
@@ -156,12 +180,30 @@ const OverviewSocketPanel = ({
 		if(rank !== 0) return rank
 		return GetSocketName(overview[a]?.filePath).localeCompare(GetSocketName(overview[b]?.filePath))
 	})
+	// Prefixo comum calculado sobre os diretórios-pais (não sobre os arquivos),
+	// senão o nome do .sock entra no prefixo e o caminho absoluto vaza no rótulo.
+	const parentDirs = keys.map((k) => GetParentDir(overview[k]?.filePath)).filter(Boolean)
+	const commonDir = GetCommonDirPrefix(parentDirs)
+	const socketsRootLabel = commonDir.split("/").filter(Boolean).pop() || "supervisor"
+	const groupedKeys = keys.reduce((groups:any, monitoringStateKey:string) => {
+		const parentDir = GetParentDir(overview[monitoringStateKey]?.filePath)
+		const relativeDir = commonDir && parentDir.startsWith(commonDir)
+			? parentDir.slice(commonDir.length).replace(/^\/+/, "")
+			: parentDir
+		const groupKey = relativeDir || "__root__"
+		const groupLabel = relativeDir || socketsRootLabel
+		if(!groups[groupKey])
+			groups[groupKey] = { groupKey, groupLabel, items: [] }
+		groups[groupKey].items.push(monitoringStateKey)
+		return groups
+	}, {})
+	const groupedKeyList = Object.values(groupedKeys).sort((a:any, b:any) => a.groupLabel.localeCompare(b.groupLabel))
 	const connectedCount = keys.filter((k) => overview[k]?.status === "CONNECTED").length
 	const unavailableCount = keys.filter((k) => overview[k]?.status === "UNAVAILABLE").length
 
 	return <Segment style={{ margin: "15px" }}>
 		<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-			<h2 style={{ margin: 0, marginRight: "6px" }}><Icon name="server"/> Instances</h2>
+			<h2 style={{ margin: 0, marginRight: "6px" }}><Icon name="server"/> Sockets de supervisor</h2>
 			<Label color="green" size="small"><Icon name="check circle"/> {connectedCount} connected</Label>
 			{ unavailableCount > 0 && <Label color="red" size="small"><Icon name="warning circle"/> {unavailableCount} unavailable</Label> }
 			<Label size="small">{keys.length} sockets</Label>
@@ -181,15 +223,25 @@ const OverviewSocketPanel = ({
 				</Table.Header>
 				<Table.Body>
 					{
-						keys.map((monitoringStateKey:string, key:number) =>
-							<SocketRow
-								key={key}
-								supervisorAPI={supervisorAPI}
-								monitoringStateKey={monitoringStateKey}
-								filePath={overview[monitoringStateKey].filePath}
-								status={overview[monitoringStateKey].status}
-								logOpen={logKeys.includes(monitoringStateKey)}
-								onSelect={onSelect}/>)
+						groupedKeyList.map((group:any) =>
+							<React.Fragment key={group.groupKey}>
+								<Table.Row>
+									<Table.Cell colSpan={6} style={{ background: "#f4f7fa", color: "#586270", fontWeight: 700, textTransform: "uppercase", fontSize: ".84em" }}>
+										{group.groupLabel}
+									</Table.Cell>
+								</Table.Row>
+								{
+									group.items.map((monitoringStateKey:string, key:number) =>
+										<SocketRow
+											key={`${group.groupKey}-${key}`}
+											supervisorAPI={supervisorAPI}
+											monitoringStateKey={monitoringStateKey}
+											filePath={overview[monitoringStateKey].filePath}
+											status={overview[monitoringStateKey].status}
+											logOpen={logKeys.includes(monitoringStateKey)}
+											onSelect={onSelect}/>)
+								}
+							</React.Fragment>)
 					}
 				</Table.Body>
 			</Table>

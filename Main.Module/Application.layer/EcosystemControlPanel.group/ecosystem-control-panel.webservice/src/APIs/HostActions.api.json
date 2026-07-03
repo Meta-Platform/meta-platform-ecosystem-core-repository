@@ -10,6 +10,14 @@
 			]
 		},
 		{
+			"summary": "RunPackageStreaming",
+			"method": "WS",
+			"path": "/run-package-stream/:encodedPackagePath",
+			"parameters": [
+				{ "name": "encodedPackagePath", "in": "path", "type": "string", "required": true }
+			]
+		},
+		{
 			"summary": "OpenVSCode",
 			"method": "POST",
 			"path": "/open-vscode",

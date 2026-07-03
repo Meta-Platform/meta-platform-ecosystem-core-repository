@@ -5,6 +5,19 @@
 			"summary": "GetEcosystemDataPath",
 			"method": "GET",
 			"path": "/ecosystemdata-path"
+		},
+		{
+			"summary": "SetEcosystemDataPath",
+			"method": "POST",
+			"path": "/ecosystemdata-path",
+			"parameters": [
+				{
+					"in": "body",
+					"name": "path",
+					"type": "string",
+					"required": true
+				}
+			]
 		}
 	]
 }
