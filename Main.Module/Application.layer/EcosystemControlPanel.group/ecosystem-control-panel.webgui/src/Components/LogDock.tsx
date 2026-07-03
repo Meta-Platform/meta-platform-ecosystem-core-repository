@@ -159,30 +159,31 @@ const LogDock = ({ HTTPServerManager }:any) => {
                 visible={w.mode !== "minimized"}
                 fill/>
 
-    // barra de título com os controles de modo
-    const _renderHeader = (w:LogWindow, draggable:boolean, base?:FloatGeometry) =>
-        <div
-            onMouseDown={draggable && base ? (e:any) => { if((e.target as HTMLElement).closest("button")) return; _startDrag(w, base, e) } : undefined}
+    // barra de título com os controles de modo — colorida por tipo, para
+    // destacar a janela do restante da tela. Controles como ícones brancos.
+    const _renderHeader = (w:LogWindow, draggable:boolean, base?:FloatGeometry) => {
+        const headerBg = w.kind === "exec" ? "#b5651d" : "#34567d"
+        return <div
+            onMouseDown={draggable && base ? (e:any) => _startDrag(w, base, e) : undefined}
             style={{
-                display: "flex", alignItems: "center", gap: "6px", padding: "8px 12px",
-                borderBottom: "1px solid #eef0f2", background: "#f6f7f9", borderRadius: "8px 8px 0 0",
+                display: "flex", alignItems: "center", gap: "8px", padding: "7px 11px",
+                background: headerBg, color: "#fff", fontSize: ".82em",
+                borderBottom: "1px solid rgba(0,0,0,.20)",
+                borderRadius: w.mode === "offcanvas" ? "8px 0 0 0" : "7px 7px 0 0",
                 flex: "0 0 auto", cursor: draggable ? "move" : "default"
             }}>
-            <Icon name={w.kind === "exec" ? "play" : "terminal"} style={{ color: w.kind === "exec" ? "#d97706" : "#7b8794" }}/>
-            <strong style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={w.monitoringStateKey || w.executableName}>
+            <Icon name={w.kind === "exec" ? "play" : "terminal"} style={{ color: "#fff", opacity: .95, flex: "0 0 auto", margin: 0 }}/>
+            <strong style={{ flex: 1, minWidth: 0, fontWeight: 600, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={w.monitoringStateKey || w.executableName}>
                 { w.kind === "exec" ? "execução" : "runtime" } · {w.title}
             </strong>
-            {
-                w.mode !== "floating" &&
-                <Button size="mini" basic icon title="janela flutuante" onClick={() => floatWindow(w.id)}><Icon name="clone outline"/></Button>
-            }
-            {
-                w.mode !== "offcanvas" &&
-                <Button size="mini" basic icon title="ancorar à direita" onClick={() => dockRightWindow(w.id)}><Icon name="columns"/></Button>
-            }
-            <Button size="mini" basic icon title="minimizar" onClick={() => minimizeLogWindow(w.id)}><Icon name="window minimize outline"/></Button>
-            <Icon name="close" link title="fechar (perde o histórico)" style={{ color: "#cfd3d7", marginLeft: "4px" }} onClick={() => _requestClose(w.id)}/>
+            <span onMouseDown={(e:any) => e.stopPropagation()} style={{ display: "inline-flex", alignItems: "center", gap: "13px", flex: "0 0 auto" }}>
+                { w.mode !== "floating" && <Icon name="clone outline" link title="janela flutuante" style={{ color: "#fff", margin: 0 }} onClick={() => floatWindow(w.id)}/> }
+                { w.mode !== "offcanvas" && <Icon name="columns" link title="ancorar à direita" style={{ color: "#fff", margin: 0 }} onClick={() => dockRightWindow(w.id)}/> }
+                <Icon name="window minimize outline" link title="minimizar" style={{ color: "#fff", margin: 0 }} onClick={() => minimizeLogWindow(w.id)}/>
+                <Icon name="close" link title="fechar (perde o histórico)" style={{ color: "rgba(255,255,255,.85)", margin: 0 }} onClick={() => _requestClose(w.id)}/>
+            </span>
         </div>
+    }
 
     return <>
         {
@@ -217,8 +218,9 @@ const LogDock = ({ HTTPServerManager }:any) => {
                     style={{
                         position: "fixed", top: `${geo.y}px`, left: `${geo.x}px`,
                         width: `${geo.width}px`, height: `${geo.height}px`,
-                        zIndex: floatZ(w.id), background: "#fff", borderRadius: "8px",
-                        border: "1px solid #d7dce1", boxShadow: "0 10px 30px rgba(16,24,40,.28)",
+                        zIndex: floatZ(w.id), background: "#fff", borderRadius: "9px",
+                        border: "2px solid #8f99a6",
+                        boxShadow: "0 20px 50px rgba(16,24,40,.46), 0 4px 14px rgba(16,24,40,.30)",
                         display: "flex", flexDirection: "column", overflow: "hidden"
                     }}>
                     { _renderHeader(w, true, geo) }

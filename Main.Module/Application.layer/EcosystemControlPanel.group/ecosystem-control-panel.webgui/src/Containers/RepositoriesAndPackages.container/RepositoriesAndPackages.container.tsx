@@ -244,9 +244,8 @@ const RepositoriesAndPackagesContainer = ({
 
     if(isLoading) return <Segment style={{ margin: "15px" }}><ListSkeleton lines={10}/></Segment>
 
-    return <Segment style={{ margin: "15px" }}>
-        <Menu secondary>
-            <MenuItem><Header as="h4" style={{ margin: 0 }}><Icon name="cubes"/> Repositories & Packages</Header></MenuItem>
+    return <Segment style={{ margin: "10px" }}>
+        <Menu secondary style={{ margin: 0, minHeight: 0 }}>
             <Menu.Menu position="right">
                 <MenuItem><Button size="small" primary onClick={() => { setRegisterModalNamespace(undefined); setIsRegisterModalOpen(true) }}><Icon name="feed"/> register source</Button></MenuItem>
                 <MenuItem><Button size="small" onClick={() => setIsAddNamespaceOpen(true)}><Icon name="plus"/> add namespace</Button></MenuItem>

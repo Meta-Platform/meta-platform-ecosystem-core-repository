@@ -76,10 +76,17 @@ body {
     margin-left: 4px;
     white-space: nowrap;
 }
+.eco-main-menu-section {
+    white-space: nowrap;
+    flex: 0 0 auto;
+}
 .eco-main-menu-path {
     min-width: 0;
     flex: 1 1 auto !important;
     max-width: min(64vw, 980px);
+}
+@media (max-width: 640px) {
+    .eco-main-menu-section { display: none !important; }
 }
 .eco-main-menu-path code {
     color: #666;
@@ -471,6 +478,13 @@ input:focus-visible,
         margin-left: 6px !important;
         margin-right: 6px !important;
     }
+}
+
+/* Modais SEMPRE acima das janelas de runtime (dock 1490 / offcanvas 1500 /
+ * flutuantes 1501+). Sem isso, o dimmer do Semantic (z-index 1000) deixa o modal
+ * de confirmação atrás do terminal. */
+.ui.dimmer.modals.page {
+    z-index: 3000 !important;
 }
 
 /* ---- scrollbars sutis ---- */

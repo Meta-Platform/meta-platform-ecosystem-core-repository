@@ -201,9 +201,8 @@ const OverviewSocketPanel = ({
 	const connectedCount = keys.filter((k) => overview[k]?.status === "CONNECTED").length
 	const unavailableCount = keys.filter((k) => overview[k]?.status === "UNAVAILABLE").length
 
-	return <Segment style={{ margin: "15px" }}>
+	return <Segment style={{ margin: "10px" }}>
 		<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-			<h2 style={{ margin: 0, marginRight: "6px" }}><Icon name="server"/> Sockets de supervisor</h2>
 			<Label color="green" size="small"><Icon name="check circle"/> {connectedCount} connected</Label>
 			{ unavailableCount > 0 && <Label color="red" size="small"><Icon name="warning circle"/> {unavailableCount} unavailable</Label> }
 			<Label size="small">{keys.length} sockets</Label>

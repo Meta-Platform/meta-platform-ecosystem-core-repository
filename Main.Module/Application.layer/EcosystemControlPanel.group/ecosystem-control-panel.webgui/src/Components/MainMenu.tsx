@@ -16,6 +16,8 @@ import {
 const MainMenu = ({
     nUnreadNotifications,
     ecosystemdataPath,
+    activePanelTitle,
+    activePanelIcon,
     onClickOpenEcosystemDataPathModal,
     onClickOpenNotificationPanel,
     onClickLogo,
@@ -43,6 +45,16 @@ const MainMenu = ({
                     <Icon name="cube" size="large"/>
                     <span className="eco-main-menu-title">Ecosystem Panel</span>
                 </MenuItem>
+                {
+                    /* título da seção ativa — trazido dos cabeçalhos dos cards para
+                       cá, para não desperdiçar espaço vertical nos painéis. */
+                    activePanelTitle &&
+                    <MenuItem className="eco-main-menu-section">
+                        <Icon name="angle right" style={{ color: "#b7bfc7", margin: "0 2px 0 0" }}/>
+                        { activePanelIcon && <Icon name={activePanelIcon} style={{ color: "#3a6ea5", margin: "0 6px 0 0" }}/> }
+                        <span style={{ fontWeight: 700, whiteSpace: "nowrap" }}>{activePanelTitle}</span>
+                    </MenuItem>
+                }
                 <MenuItem className="eco-main-menu-path">
                     <Button
                         onClick={() => onClickOpenEcosystemDataPathModal()}

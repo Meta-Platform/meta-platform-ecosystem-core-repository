@@ -48,6 +48,16 @@ import QueryParamsActionsCreator from "../Actions/QueryParams.actionsCreator"
 
 const DEFAULT_PANEL = "welcome"
 
+// Título/ícone da seção ativa, mostrado no header superior (MainMenu) no lugar
+// dos cabeçalhos que ficavam dentro de cada card.
+const PANEL_TITLES:any = {
+	"instance supervisor": { title: "Sockets de supervisor",  icon: "server" },
+	"executables":         { title: "Executables",            icon: "terminal" },
+	"environments":        { title: "Environments",           icon: "sitemap" },
+	"repositories":        { title: "Repositories & Packages", icon: "cubes" },
+	"config files":        { title: "Config Files",           icon: "cogs" }
+}
+
 const NOTIFICATION_TYPE_PROPS:any = {
 	log       : { icon: "terminal", color: "grey" },
 	message   : { icon: "info circle", color: "blue" },
@@ -364,6 +374,8 @@ const ControlPanelPage = ({
 					<MainMenu
 						nUnreadNotifications={nUnreadNotifications}
 						ecosystemdataPath={ecosystemdataPathSelected}
+						activePanelTitle={PANEL_TITLES[activeItem]?.title}
+						activePanelIcon={PANEL_TITLES[activeItem]?.icon}
 						onClickOpenEcosystemDataPathModal={handleOpenEcosystemDataModal}
 						onClickOpenNotificationPanel={handleOpenNotificationPanel}
 						onClickLogo={() => handleNavigate({ panel: "welcome" })}

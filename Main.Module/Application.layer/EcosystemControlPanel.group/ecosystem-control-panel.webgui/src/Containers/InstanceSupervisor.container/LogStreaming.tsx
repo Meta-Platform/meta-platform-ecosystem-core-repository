@@ -109,14 +109,13 @@ const LogStreaming = ({ monitoringStateKey, HTTPServerManager, fill = false, onA
     const sm = statusMeta[status]
 
     return <div style={fill ? { display: "flex", flexDirection: "column", height: "100%" } : undefined}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", flexWrap: "wrap", flex: "0 0 auto" }}>
-            <Label color={sm.color} size="small" className={status === "open" ? "eco-pulse-color" : undefined}><Icon name={sm.icon} loading={status === "connecting"}/> {sm.text}</Label>
-            { socketName && <span style={{ fontWeight: 600 }}><Icon name="plug" style={{ color: "#7b8794" }}/> {socketName}</span> }
-            <span style={{ fontFamily: "monospace", fontSize: ".82em", color: "#8a9099" }} title={monitoringStateKey}>{ShortId(monitoringStateKey, 8, 6)}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", flexWrap: "nowrap", flex: "0 0 auto", fontSize: ".9em", minWidth: 0 }}>
+            <Label color={sm.color} size="small" className={status === "open" ? "eco-pulse-color" : undefined} style={{ flex: "0 0 auto" }}><Icon name={sm.icon} loading={status === "connecting"}/> {sm.text}</Label>
+            <span style={{ fontFamily: "monospace", fontSize: ".82em", color: "#8a9099", flex: "0 1 auto", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={monitoringStateKey}>{ShortId(monitoringStateKey, 8, 6)}</span>
             <CopyValue value={monitoringStateKey}/>
-            <Label basic size="small"><Icon name="list"/> {lines.length} linhas</Label>
-            <Checkbox toggle label="auto-scroll" checked={autoScroll} onChange={() => setAutoScroll(!autoScroll)} style={{ marginLeft: "6px" }}/>
-            <div style={{ marginLeft: "auto" }}>
+            <Label basic size="small" style={{ flex: "0 0 auto" }}><Icon name="list"/> {lines.length}</Label>
+            <Checkbox toggle label="auto-scroll" checked={autoScroll} onChange={() => setAutoScroll(!autoScroll)} style={{ flex: "0 0 auto" }}/>
+            <div style={{ marginLeft: "auto", flex: "0 0 auto" }}>
                 {
                     status === "open"
                     ? <Button size="mini" basic color="red" icon labelPosition="left" onClick={handleDisconnect}><Icon name="plug"/> desconectar</Button>

@@ -138,14 +138,7 @@ const EnvironmentsContainer = ({
     const grouped = GroupByIdentity(filtered)
     const identities = Object.keys(grouped).sort()
 
-    return <Segment style={{ margin: "15px" }}>
-        <Header>
-            <Icon name="sitemap"/>
-            <Header.Content>
-                Environments
-                <Header.Subheader>execuções isoladas (pacote + hash do caminho)</Header.Subheader>
-            </Header.Content>
-        </Header>
+    return <Segment style={{ margin: "10px" }}>
         <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "10px" }}>
             <Label size="large"><Icon name="sitemap"/> {environmentNameList.length} environments</Label>
             <Label basic>{identities.length} pacotes</Label>

@@ -93,35 +93,24 @@ const RegistryShell = ({ children }:any) =>
         {children}
     </div>
 
+// Faixa enxuta: sem o bloco de título grande (o nome da seção já está no header
+// superior). Mantém só um ícone, o nome do arquivo pequeno e o badge de estado.
 const RegistryHeader = ({ title, subtitle, canEdit }:any) =>
     <div style={{
-        padding: "12px 14px",
+        padding: "6px 12px",
         background: "#eef2f7",
         borderBottom: "1px solid #cfd6de",
         display: "flex",
         alignItems: "center",
-        gap: "12px",
+        gap: "10px",
         flexWrap: "wrap"
     }}>
-        <div style={{
-            width: "34px",
-            height: "34px",
-            borderRadius: "8px",
-            background: canEdit ? "#ebf7ee" : "#eef2f7",
-            border: "1px solid #c7d0d9",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: canEdit ? "#1f7a3f" : "#596273",
-            flex: "0 0 auto"
-        }}>
-            <Icon name={canEdit ? "edit" : "file alternate outline"} style={{ margin: 0 }}/>
+        <Icon name={canEdit ? "edit" : "file alternate outline"} style={{ color: canEdit ? "#1f7a3f" : "#596273", margin: 0, flex: "0 0 auto" }}/>
+        <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "baseline", gap: "8px", overflow: "hidden" }}>
+            <strong style={{ fontSize: ".92rem", color: "#28323f", whiteSpace: "nowrap" }}>{title}</strong>
+            <span style={{ color: "#8a9099", fontSize: ".82rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{subtitle}</span>
         </div>
-        <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontSize: "1.02rem", fontWeight: 800, color: "#28323f" }}>{title}</div>
-            <div style={{ color: "#66707d", fontSize: ".88rem", marginTop: "2px" }}>{subtitle}</div>
-        </div>
-        <Label basic color={canEdit ? "green" : "grey"} style={{ margin: 0 }}>
+        <Label basic color={canEdit ? "green" : "grey"} size="small" style={{ margin: 0, flex: "0 0 auto" }}>
             {canEdit ? "editável" : "somente leitura"}
         </Label>
     </div>

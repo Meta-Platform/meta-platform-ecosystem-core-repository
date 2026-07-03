@@ -139,19 +139,17 @@ const ExecutionStream = ({ packageDirPath, executableName, serverManagerInformat
     }
 
     return <div style={fill ? { display: "flex", flexDirection: "column", height: "100%" } : undefined}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", flexWrap: "wrap", flex: "0 0 auto" }}>
-            <Label color={sm.color} size="small"><Icon name={sm.icon} loading={status === "connecting"}/> {sm.text}</Label>
-            <span style={{ fontWeight: 600 }}><Icon name="play circle" style={{ color: "#d97706" }}/> {executableName}</span>
-            <Label basic size="small"><Icon name="list"/> {lines.length} linhas</Label>
-            <Checkbox toggle label="auto-scroll" checked={autoScroll} onChange={() => setAutoScroll(!autoScroll)} style={{ marginLeft: "6px" }}/>
-            <div style={{ marginLeft: "auto", display: "flex", gap: "6px" }}>
-                <Button size="mini" basic color={copyStatus === "failed" ? "red" : "orange"} icon labelPosition="left" onClick={copyLog} disabled={lines.length === 0}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", flexWrap: "nowrap", flex: "0 0 auto", fontSize: ".9em", minWidth: 0 }}>
+            <Label color={sm.color} size="small" style={{ flex: "0 0 auto" }}><Icon name={sm.icon} loading={status === "connecting"}/> {sm.text}</Label>
+            <Label basic size="small" style={{ flex: "0 0 auto" }}><Icon name="list"/> {lines.length}</Label>
+            <Checkbox toggle label="auto-scroll" checked={autoScroll} onChange={() => setAutoScroll(!autoScroll)} style={{ flex: "0 0 auto" }}/>
+            <div style={{ marginLeft: "auto", display: "flex", gap: "6px", flex: "0 0 auto" }}>
+                <Button size="mini" basic color={copyStatus === "failed" ? "red" : "orange"} icon title="copiar log" onClick={copyLog} disabled={lines.length === 0}>
                     <Icon name={copyStatus === "copied" ? "check" : copyStatus === "failed" ? "warning sign" : "copy"}/>
-                    {copyStatus === "copied" ? "copiado" : copyStatus === "failed" ? "falhou" : "copiar log"}
                 </Button>
                 {
                     status === "closed"
-                    ? <Button size="mini" basic color="orange" icon labelPosition="left" onClick={connect}><Icon name="redo"/> executar novamente</Button>
+                    ? <Button size="mini" basic color="orange" icon labelPosition="left" onClick={connect}><Icon name="redo"/> reexecutar</Button>
                     : <Button size="mini" basic color="red" icon labelPosition="left" onClick={handleStop}><Icon name="stop"/> parar</Button>
                 }
             </div>
