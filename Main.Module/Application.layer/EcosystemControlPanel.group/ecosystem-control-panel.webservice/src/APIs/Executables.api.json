@@ -32,6 +32,19 @@
 					"required": true
 				}
 			]
+		},
+		{
+			"summary": "InstallExecutable",
+			"method": "POST",
+			"path": "/install-executable",
+			"parameters": [
+				{
+					"name": "executableName",
+					"in": "body",
+					"type": "string",
+					"required": true
+				}
+			]
 		}
 	]
 }

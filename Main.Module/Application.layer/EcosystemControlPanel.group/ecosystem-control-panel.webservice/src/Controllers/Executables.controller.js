@@ -29,7 +29,9 @@ const ExecutablesController = (params) => {
     const {
         ecosystemdataHandlerService,
         ecosystemDefaultsFileRelativePath,
-        jsonFileUtilitiesLib
+        jsonFileUtilitiesLib,
+        ecosystemInstallUtilitiesLib,
+        notificationHubService
     } = params
 
     const ReadJsonFile = jsonFileUtilitiesLib.require("ReadJsonFile")
@@ -230,11 +232,76 @@ const ExecutablesController = (params) => {
         return packageIconPath
     }
 
+    // Instala um executável DECLARADO (o repositório já está instalado; aqui só
+    // criamos o script do executável no diretório global, via InstallApplication
+    // — a mesma primitiva usada pelo `repo install --executables`).
+    // Localiza InstallApplication: prefere a lib injetada no controller; se ela
+    // não vier no bag do endpoint (a resolução de libs para controllers é
+    // instável), faz fallback localizando a lib no filesystem via repositories.json.
+    const _RequireInstallApplication = async () => {
+        if(ecosystemInstallUtilitiesLib) {
+            try { return ecosystemInstallUtilitiesLib.require("Install/InstallApplication") } catch(e) {}
+        }
+        const repositoriesData = await _GetRepositoriesData()
+        for(const repositoryNamespace of Object.keys(repositoriesData)) {
+            const installationPath = repositoriesData[repositoryNamespace] && repositoriesData[repositoryNamespace].installationPath
+            if(!installationPath) continue
+            const candidate = path.join(installationPath, "Commons.Module", "Libraries.layer", "ecosystem-install-utilities.lib", "src", "Install", "InstallApplication.js")
+            try {
+                await access(candidate)
+                return require(candidate)
+            } catch(e) {}
+        }
+        throw new Error("ecosystem-install-utilities.lib (Install/InstallApplication) não encontrado em nenhum repositório instalado.")
+    }
+
+    const InstallExecutable = async (executableName) => {
+        const declaredExecutableList = await _ListDeclaredExecutables()
+        const declared = declaredExecutableList.find((executable) => executable.executableName === executableName)
+        if(!declared)
+            throw new Error(`Executável "${executableName}" não é declarado por nenhum repositório instalado.`)
+        if(!declared.appType)
+            throw new Error(`Executável "${executableName}" não declara appType (CLI/APP/DESKTOP).`)
+
+        const ecosystemDefaults = await _GetEcosystemDefaults()
+        const ecosystemDataPath = ecosystemdataHandlerService.GetEcosystemDataPath()
+        const supervisorSocketDirPath = path.resolve(ecosystemDataPath, ecosystemDefaults.ECOSYSTEMDATA_CONF_DIRNAME_SUPERVISOR_UNIX_SOCKET_DIR)
+
+        const InstallApplication = await _RequireInstallApplication()
+
+        // encaminha os logs da instalação para as notificações do painel
+        const loggerEmitter = {
+            emit: (event, payload) => {
+                if(event === "log" && notificationHubService && notificationHubService.NotifyEvent)
+                    notificationHubService.NotifyEvent({ origin: "InstallExecutable", type: "log", content: payload })
+            }
+        }
+
+        await InstallApplication({
+            namespace: declared.repositoryNamespace,
+            deployedRepoPath: declared.repositoryPath,
+            applicationData: {
+                appType: declared.appType,
+                executable: declared.executableName,
+                packageNamespace: declared.packageRepoPath,
+                supervisorSocketFileName: declared.supervisorSocketFileName
+            },
+            installDataDirPath: ecosystemDataPath,
+            ECOSYSTEMDATA_CONF_DIRNAME_GLOBAL_EXECUTABLES_DIR: ecosystemDefaults.ECOSYSTEMDATA_CONF_DIRNAME_GLOBAL_EXECUTABLES_DIR,
+            REPOS_CONF_FILENAME_REPOS_DATA: ecosystemDefaults.REPOS_CONF_FILENAME_REPOS_DATA,
+            supervisorSocketDirPath,
+            loggerEmitter
+        })
+
+        return { installed: true, executableName }
+    }
+
     return {
         controllerName : "ExecutablesController",
         ListExecutables,
         GetExecutableInformation,
-        GetExecutableIcon
+        GetExecutableIcon,
+        InstallExecutable
     }
 }
 

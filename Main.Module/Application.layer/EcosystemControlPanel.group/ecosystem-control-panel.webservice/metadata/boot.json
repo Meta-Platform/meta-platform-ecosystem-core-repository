@@ -53,7 +53,8 @@
                 "supervisorLib": "@/supervisor.lib",
                 "instanceMonitoringManager": "@@/instance-monitoring-manager-service",
                 "environmentHandlerService": "@@/environment-handler-service",
-                "jsonFileUtilitiesLib": "@/json-file-utilities.lib"
+                "jsonFileUtilitiesLib": "@/json-file-utilities.lib",
+                "ecosystemInstallUtilitiesLib": "@/ecosystem-install-utilities.lib"
             },
             "params":{
                 "installDataDirPath": "{{installDataDirPath}}",

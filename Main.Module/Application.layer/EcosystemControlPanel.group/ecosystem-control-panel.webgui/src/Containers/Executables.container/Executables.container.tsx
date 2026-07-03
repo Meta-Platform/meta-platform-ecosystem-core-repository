@@ -79,6 +79,12 @@ const ExecutablesContainer = ({
         } catch(e){ console.log(e) } finally { setIsLoading(false) }
     }
 
+    // Instala um executável declarado (não instalado) e atualiza detalhe + lista.
+    const handleInstall = async (executableName:string) => {
+        await _GetExecutablesAPI().InstallExecutable({ executableName })
+        await Promise.all([ fetchExecutableInformation(), fetchExecutableList() ])
+    }
+
     // ---- DETALHE ----
     if(selectedExecutableName)
         return <Segment style={{ margin: "15px" }}>
@@ -88,7 +94,7 @@ const ExecutablesContainer = ({
             {
                 isLoading
                 ? <Loader active style={{ margin: "50px" }}/>
-                : <ExecutableInformation executableInformation={executableInformation} serverManagerInformation={serverManagerInformation}/>
+                : <ExecutableInformation executableInformation={executableInformation} serverManagerInformation={serverManagerInformation} onInstall={handleInstall}/>
             }
         </Segment>
 
@@ -121,14 +127,7 @@ const ExecutablesContainer = ({
         selectedExecutableStatus === "installed" ? "installed" : selectedExecutableStatus === "not-installed" ? "not installed" : undefined
     ].filter(Boolean)
 
-    return <Segment style={{ margin: "15px" }}>
-        <Header>
-            <Icon name="terminal"/>
-            <Header.Content>
-                Executables
-                <Header.Subheader>executáveis disponíveis e instalados, agrupados por repositório</Header.Subheader>
-            </Header.Content>
-        </Header>
+    return <Segment style={{ margin: "10px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px", flexWrap: "wrap" }}>
             <Label size="large"><Icon name="terminal"/> {totalCount} executables</Label>
             <Label size="large" basic color="green"><Icon name="check circle"/> {installedCount} installed</Label>

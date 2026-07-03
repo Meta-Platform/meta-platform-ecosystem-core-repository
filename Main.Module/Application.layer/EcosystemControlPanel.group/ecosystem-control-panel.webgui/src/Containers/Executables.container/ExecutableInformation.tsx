@@ -21,6 +21,7 @@ import EmptyState from "../../Components/EmptyState"
 import KeyValuePanel from "../../Components/KeyValuePanel"
 import CopyValue from "../../Components/CopyValue"
 import { openExecWindow } from "../../Utils/logWindows"
+import { toastSuccess, toastError, errorMessage } from "../../Utils/toast"
 
 // Cabeçalho de seção leve (evita o "icon header" do Semantic que amplia o ícone).
 const SectionHeader = ({ icon, children }:any) =>
@@ -119,7 +120,9 @@ const CommandRow = ({ command, prefix, depth = 0 }:any) => {
     </>
 }
 
-const ExecutableInformation = ({ executableInformation, serverManagerInformation }:any) => {
+const ExecutableInformation = ({ executableInformation, serverManagerInformation, onInstall }:any) => {
+
+    const [ isInstalling, setIsInstalling ] = useState(false)
 
     if(!executableInformation)
         return <Segment placeholder style={{ minHeight: "200px" }}>
@@ -218,9 +221,28 @@ const ExecutableInformation = ({ executableInformation, serverManagerInformation
                     { isDebug && <Label size="tiny" color="grey">debug</Label> }
                 </Header.Content>
             </Header>
-            <HostActionsBar
-                executableInformation={executableInformation}
-                onRun={() => openExecWindow({ packageDirPath: executableInformation.packageDirPath, executableName })}/>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                {
+                    !isInstalled && onInstall &&
+                    <Button color="green" size="small" loading={isInstalling} disabled={isInstalling} style={{ flex: "0 0 auto" }}
+                        onClick={async () => {
+                            setIsInstalling(true)
+                            try {
+                                await onInstall(executableName)
+                                toastSuccess(`Executável ${executableName} instalado.`)
+                            } catch(e) {
+                                toastError(errorMessage(e))
+                            } finally {
+                                setIsInstalling(false)
+                            }
+                        }}>
+                        <Icon name="download"/> instalar
+                    </Button>
+                }
+                <HostActionsBar
+                    executableInformation={executableInformation}
+                    onRun={() => openExecWindow({ packageDirPath: executableInformation.packageDirPath, executableName })}/>
+            </div>
         </div>
         <Tab menu={{ secondary: true, pointing: true }} panes={panes} style={{ marginTop: "12px" }}/>
     </Segment>

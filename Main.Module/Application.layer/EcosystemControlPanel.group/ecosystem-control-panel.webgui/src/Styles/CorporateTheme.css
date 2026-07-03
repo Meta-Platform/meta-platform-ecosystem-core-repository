@@ -172,6 +172,18 @@ body {
     margin-left: 0;
 }
 
+/* Painéis "flat": o card externo de cada conteúdo (o Segment de nível superior
+ * de cada painel) perde borda/sombra/fundo/margem, aproveitando as bordas da
+ * tela — visual mais limpo. Mantém o padding para as faixas de toolbar
+ * (register source, etc.) continuarem alinhadas. */
+.eco-main-content > .ui.segment {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+}
+
 @media (min-width: 1500px) {
     .eco-control-shell { font-size: 17px; }
     .eco-main-content { padding: 14px 22px 22px; }
