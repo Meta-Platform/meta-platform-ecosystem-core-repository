@@ -62,26 +62,37 @@ Documentação dedicada em [`docs/`](./docs/):
 
 | Package | Tipo | Executável |
 |---------|------|------------|
-| [ecosystem-instance-manager.app](./Main.Module/Application.layer/ecosystem-instance-manager.app/README.md) | `.app` | `executor-manager` |
-| [instance-executor.cli](./Main.Module/Application.layer/instance-executor.cli/README.md) | `.cli` | `executor` |
 | [repository-explorer.cli](./Main.Module/Application.layer/repository-explorer.cli/README.md) | `.cli` | `explorer` |
-| [package-toolkit.cli](./Main.Module/Application.layer/package-toolkit.cli/README.md) | `.cli` | `mypkg` |
-| [package-runner.cli](./Main.Module/Application.layer/package-runner.cli/README.md) | `.cli` | `run` |
 
-**EcosystemControlPanel.group** (`eco-panel`):
+**EcosystemControlPanel.group** (`eco-panel`, `eco-panel-desktop`):
 [webapp](./Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.webapp/README.md) ·
 [webgui](./Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.webgui/README.md) ·
 [webservice](./Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.webservice/README.md) ·
-[service](./Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.service/README.md)
-
-**InstanceExecutorControlPanel.group** (`executor-panel`):
-[webapp](./Main.Module/Application.layer/InstanceExecutorControlPanel.group/instance-executor-control-panel.webapp/README.md) ·
-[webgui](./Main.Module/Application.layer/InstanceExecutorControlPanel.group/instance-executor-control-panel.webgui/README.md) ·
-[webservice](./Main.Module/Application.layer/InstanceExecutorControlPanel.group/instance-executor-control-panel.webservice/README.md)
+[service](./Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.service/README.md) ·
+[desktopapp](./Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.desktopapp/README.md)
 
 **ServerManager.group**:
 [webapp](./Main.Module/Application.layer/ServerManager.group/server-manager.webapp/README.md) ·
 [webgui](./Main.Module/Application.layer/ServerManager.group/server-manager.webgui/README.md)
+
+### Main.Module / InstanceManagerApplication.layer
+
+| Package | Tipo | Executável |
+|---------|------|------------|
+| [ecosystem-instance-manager.app](./Main.Module/InstanceManagerApplication.layer/ecosystem-instance-manager.app/README.md) | `.app` | `executor-manager` |
+| [instance-executor.cli](./Main.Module/InstanceManagerApplication.layer/instance-executor.cli/README.md) | `.cli` | `executor` |
+
+**InstanceExecutorControlPanel.group** (`executor-panel`):
+[webapp](./Main.Module/InstanceManagerApplication.layer/InstanceExecutorControlPanel.group/instance-executor-control-panel.webapp/README.md) ·
+[webgui](./Main.Module/InstanceManagerApplication.layer/InstanceExecutorControlPanel.group/instance-executor-control-panel.webgui/README.md) ·
+[webservice](./Main.Module/InstanceManagerApplication.layer/InstanceExecutorControlPanel.group/instance-executor-control-panel.webservice/README.md)
+
+### Main.Module / PackageApplication.layer
+
+| Package | Tipo | Executável |
+|---------|------|------------|
+| [package-runner.cli](./Main.Module/PackageApplication.layer/package-runner.cli/README.md) | `.cli` | `run` |
+| [package-toolkit.cli](./Main.Module/PackageApplication.layer/package-toolkit.cli/README.md) | `.cli` | `mypkg` |
 
 ### Main.Module / Libraries.layer
 

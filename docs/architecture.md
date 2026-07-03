@@ -27,13 +27,14 @@ coisas (ver
 
 | `executable` | `packageNamespace` | `supervisorSocketFileName` | `appType` |
 |--------------|--------------------|----------------------------|-----------|
-| `executor-manager` | `Main.Module/Application.layer/ecosystem-instance-manager.app` | `instance-manager.sock` | APP |
-| `executor-panel` | `Main.Module/Application.layer/InstanceExecutorControlPanel.group/instance-executor-control-panel.webapp` | `executor-panel.sock` | APP |
+| `executor-manager` | `Main.Module/InstanceManagerApplication.layer/ecosystem-instance-manager.app` | `instance-manager.sock` | APP |
+| `executor-panel` | `Main.Module/InstanceManagerApplication.layer/InstanceExecutorControlPanel.group/instance-executor-control-panel.webapp` | `executor-panel.sock` | APP |
 | `explorer` | `Main.Module/Application.layer/repository-explorer.cli` | `explorer.sock` | CLI |
-| `executor` | `Main.Module/Application.layer/instance-executor.cli` | `executor.sock` | CLI |
+| `executor` | `Main.Module/InstanceManagerApplication.layer/instance-executor.cli` | `executor.sock` | CLI |
 | `eco-panel` | `Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.webapp` | `eco-panel.sock` | APP |
-| `mypkg` | `Main.Module/Application.layer/package-toolkit.cli` | `package-toolkit.sock` | CLI |
-| `run` | `Main.Module/Application.layer/package-runner.cli` | `package-runner.sock` | CLI |
+| `eco-panel-desktop` | `Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.desktopapp` | `eco-panel-desktop.sock` | DESKTOP |
+| `mypkg` | `Main.Module/PackageApplication.layer/package-toolkit.cli` | `package-toolkit.sock` | CLI |
+| `run` | `Main.Module/PackageApplication.layer/package-runner.cli` | `package-runner.sock` | CLI |
 
 > A tripla `executable ↔ packageNamespace ↔ supervisorSocketFileName` é o que o
 > ecossistema usa para, ao digitar `executor-manager`, saber **qual package**
@@ -63,21 +64,21 @@ Fluxo geral da plataforma:
 | [task-executor-machine.service](../Main.Module/Services.layer/task-executor-machine.service/README.md) | Máquina de execução de tarefas (usa as libs de runtime do essential). |
 | [instance-supervisor.service](../Main.Module/Services.layer/instance-supervisor.service/README.md) | Monitora instâncias em execução e publica notificações. |
 
-## CLIs principais (`Main.Module/Application.layer`)
+## CLIs principais
 
 | CLI | Executável | Papel |
 |-----|-----------|-------|
-| [instance-executor.cli](../Main.Module/Application.layer/instance-executor.cli/README.md) | `executor` | Executa e acompanha pacotes/ambientes/tarefas. |
+| [instance-executor.cli](../Main.Module/InstanceManagerApplication.layer/instance-executor.cli/README.md) | `executor` | Executa e acompanha pacotes/ambientes/tarefas. |
 | [repository-explorer.cli](../Main.Module/Application.layer/repository-explorer.cli/README.md) | `explorer` | Explora repositórios/pacotes instalados. |
-| [package-toolkit.cli](../Main.Module/Application.layer/package-toolkit.cli/README.md) | `mypkg` | Cria novos pacotes (scaffolding). |
-| [package-runner.cli](../Main.Module/Application.layer/package-runner.cli/README.md) | `run` | Executa um package montando o runtime localmente. |
+| [package-toolkit.cli](../Main.Module/PackageApplication.layer/package-toolkit.cli/README.md) | `mypkg` | Cria novos pacotes (scaffolding). |
+| [package-runner.cli](../Main.Module/PackageApplication.layer/package-runner.cli/README.md) | `run` | Executa um package montando o runtime localmente. |
 
 ## Painéis web
 
 | Grupo | Executável | Papel |
 |-------|-----------|-------|
-| [EcosystemControlPanel.group](../Main.Module/Application.layer/EcosystemControlPanel.group/) | `eco-panel` | Painel de controle do ecossistema. |
-| [InstanceExecutorControlPanel.group](../Main.Module/Application.layer/InstanceExecutorControlPanel.group/) | `executor-panel` | Painel do executor de instâncias. |
+| [EcosystemControlPanel.group](../Main.Module/Application.layer/EcosystemControlPanel.group/) | `eco-panel` (web), `eco-panel-desktop` (Electron) | Painel de controle do ecossistema. |
+| [InstanceExecutorControlPanel.group](../Main.Module/InstanceManagerApplication.layer/InstanceExecutorControlPanel.group/) | `executor-panel` | Painel do executor de instâncias. |
 | [ServerManager.group](../Main.Module/Application.layer/ServerManager.group/) | — | Gerenciador de servidores (web). |
 
 ## Relação com Package Executor e Supervisor Socket

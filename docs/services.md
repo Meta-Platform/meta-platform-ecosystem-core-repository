@@ -20,7 +20,7 @@ e instanciado como `service-instance` pelo
 ## Quem chama quem
 
 Confirmado pelo `boot.json` do
-[ecosystem-instance-manager.app](../Main.Module/Application.layer/ecosystem-instance-manager.app/README.md),
+[ecosystem-instance-manager.app](../Main.Module/InstanceManagerApplication.layer/ecosystem-instance-manager.app/README.md),
 que instancia e liga os serviços:
 
 ```

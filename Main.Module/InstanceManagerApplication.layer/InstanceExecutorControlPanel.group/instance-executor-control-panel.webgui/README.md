@@ -2,7 +2,7 @@
 
 - **Tipo:** interface web (`.webgui`)
 - **Namespace:** `@/instance-executor-control-panel.webgui`
-- **Localização:** `Main.Module/Application.layer/InstanceExecutorControlPanel.group/instance-executor-control-panel.webgui`
+- **Localização:** `Main.Module/InstanceManagerApplication.layer/InstanceExecutorControlPanel.group/instance-executor-control-panel.webgui`
 
 ## Propósito
 

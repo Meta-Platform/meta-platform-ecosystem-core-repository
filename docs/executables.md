@@ -8,13 +8,14 @@ Os executáveis publicados por este repositório estão em
 
 | `executable` | `appType` | `packageNamespace` | `supervisorSocketFileName` | Papel |
 |--------------|-----------|--------------------|----------------------------|-------|
-| `executor-manager` | APP | `Main.Module/Application.layer/ecosystem-instance-manager.app` | `instance-manager.sock` | Gerenciador de instâncias do ecossistema (sobe os serviços-núcleo). |
-| `executor` | CLI | `Main.Module/Application.layer/instance-executor.cli` | `executor.sock` | Executa e acompanha pacotes/ambientes/tarefas. |
+| `executor-manager` | APP | `Main.Module/InstanceManagerApplication.layer/ecosystem-instance-manager.app` | `instance-manager.sock` | Gerenciador de instâncias do ecossistema (sobe os serviços-núcleo). |
+| `executor` | CLI | `Main.Module/InstanceManagerApplication.layer/instance-executor.cli` | `executor.sock` | Executa e acompanha pacotes/ambientes/tarefas. |
 | `explorer` | CLI | `Main.Module/Application.layer/repository-explorer.cli` | `explorer.sock` | Explora repositórios/pacotes instalados. |
-| `eco-panel` | APP | `…/EcosystemControlPanel.group/ecosystem-control-panel.webapp` | `eco-panel.sock` | Painel de controle do ecossistema (web). |
-| `executor-panel` | APP | `…/InstanceExecutorControlPanel.group/instance-executor-control-panel.webapp` | `executor-panel.sock` | Painel do executor de instâncias (web). |
-| `mypkg` | CLI | `Main.Module/Application.layer/package-toolkit.cli` | `package-toolkit.sock` | Cria novos pacotes (scaffolding). |
-| `run` | CLI | `Main.Module/Application.layer/package-runner.cli` | `package-runner.sock` | Executa um package montando o runtime localmente. |
+| `eco-panel` | APP | `…/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.webapp` | `eco-panel.sock` | Painel de controle do ecossistema (web). |
+| `eco-panel-desktop` | DESKTOP | `…/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.desktopapp` | `eco-panel-desktop.sock` | Painel de controle do ecossistema (janela Electron). |
+| `executor-panel` | APP | `…/InstanceManagerApplication.layer/InstanceExecutorControlPanel.group/instance-executor-control-panel.webapp` | `executor-panel.sock` | Painel do executor de instâncias (web). |
+| `mypkg` | CLI | `Main.Module/PackageApplication.layer/package-toolkit.cli` | `package-toolkit.sock` | Cria novos pacotes (scaffolding). |
+| `run` | CLI | `Main.Module/PackageApplication.layer/package-runner.cli` | `package-runner.sock` | Executa um package montando o runtime localmente. |
 
 ## Como `applications.json` publica executáveis
 

@@ -6,9 +6,10 @@
 
 ## Propósito
 
-Front-end (React/TSX) do **painel de controle do ecossistema**. É um dos três
-pacotes do grupo [EcosystemControlPanel](../) — junto com o `.webservice`
-(API) e o `.webapp` (composição) que formam a aplicação `eco-panel`.
+Front-end (React/TSX) do **painel de controle do ecossistema**. É um dos pacotes
+do grupo [EcosystemControlPanel](../) — junto com o `.webservice` (API), o
+`.service`, o `.webapp` (composição, `eco-panel`) e o `.desktopapp`
+(janela Electron, `eco-panel-desktop`).
 
 ## Estrutura (`src/`)
 

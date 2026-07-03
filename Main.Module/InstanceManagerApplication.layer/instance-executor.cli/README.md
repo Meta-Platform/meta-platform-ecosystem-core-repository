@@ -3,7 +3,7 @@
 - **Tipo:** aplicação de linha de comando (`.cli`)
 - **Namespace:** `@/instance-executor.cli`
 - **Executável:** `executor`
-- **Localização:** `Main.Module/Application.layer/instance-executor.cli`
+- **Localização:** `Main.Module/InstanceManagerApplication.layer/instance-executor.cli`
 
 ## Propósito
 

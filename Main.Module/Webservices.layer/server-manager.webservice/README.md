@@ -1,17 +1,16 @@
-# Módulo Web HTTP Servers
-Módulo de serviços web da aplicação server-manager.webapp
+# server-manager.webservice (HTTP Servers)
 
-## Primeiros Passos
-O Módulo Web HTTP Servers pode ser executado de forma independente
+Web service que expõe a API **HTTPServers** (`src/APIs/HTTPServers.api.json`),
+usada pelo `server-manager.service` / `server-manager.webapp` para criar e
+gerenciar servidores HTTP.
 
-### Instalação
-```sh
-$ npm install
-````
-### Execução
-```sh
-$ node index.js
-````
+## Execução
+
+Não é executado de forma independente (`node index.js`). É montado em runtime
+sobre um `@@/server-service` a partir do
+[`metadata/endpoint-group.json`](./metadata/endpoint-group.json), sob o prefixo
+**`/server-manager`**. Assim, as rotas abaixo são acessadas com esse prefixo — por
+exemplo, `Status` fica em `GET /server-manager/status`.
 
 ## Serviços disponibilizados
 - HTTP Servers
@@ -24,7 +23,10 @@ $ node index.js
     - List Static FilesDir
 
 
-## **Datasource Manager** [DataSources]
+## **HTTP Servers** [HTTPServers]
+
+> Todas as rotas abaixo são montadas sob o prefixo `/server-manager`.
+
 **Serviços**
 - Create HTTP Server
 - Status

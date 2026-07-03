@@ -3,7 +3,7 @@
 - **Tipo:** aplicação de linha de comando (`.cli`)
 - **Namespace:** `@/package-runner.cli`
 - **Executável:** `run`
-- **Localização:** `Main.Module/Application.layer/package-runner.cli`
+- **Localização:** `Main.Module/PackageApplication.layer/package-runner.cli`
 
 ## Propósito
 

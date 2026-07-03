@@ -26,7 +26,7 @@ mypkg create services [packageName]
 
 ```
 
-### Tipos de Pacotes Disponíveis:
+### Exemplos
 ```bash
 # Criar uma biblioteca chamada "xptop-utils"
 mypkg create library xtop-utils
