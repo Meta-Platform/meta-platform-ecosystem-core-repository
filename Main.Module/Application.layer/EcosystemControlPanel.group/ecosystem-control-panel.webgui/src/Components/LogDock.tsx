@@ -77,15 +77,31 @@ const LogDock = ({ HTTPServerManager }:any) => {
     }
 
     // --- redimensionar uma flutuante (canto inferior direito) ---
-    const _startResizeFloat = (w:LogWindow, base:FloatGeometry, e:any) => {
+    // redimensiona por qualquer lado/canto: dir contém "n"/"s"/"e"/"w" combinados
+    const _startResizeFloat = (w:LogWindow, base:FloatGeometry, dir:string, e:any) => {
         e.preventDefault(); e.stopPropagation()
         focusWindow(w.id)
         const startX = e.clientX, startY = e.clientY
-        const compute = (ev:any):FloatGeometry => ({
-            ...base,
-            width:  clamp(base.width  + (ev.clientX - startX), MIN_FLOAT_W, window.innerWidth  - base.x - 10),
-            height: clamp(base.height + (ev.clientY - startY), MIN_FLOAT_H, window.innerHeight - base.y - 10)
-        })
+        const compute = (ev:any):FloatGeometry => {
+            const dx = ev.clientX - startX
+            const dy = ev.clientY - startY
+            let x = base.x, y = base.y, width = base.width, height = base.height
+            if(dir.includes("e")) width  = base.width  + dx
+            if(dir.includes("s")) height = base.height + dy
+            if(dir.includes("w")) { width  = base.width  - dx; x = base.x + dx }
+            if(dir.includes("n")) { height = base.height - dy; y = base.y + dy }
+            if(width < MIN_FLOAT_W) {
+                if(dir.includes("w")) x -= (MIN_FLOAT_W - width)
+                width = MIN_FLOAT_W
+            }
+            if(height < MIN_FLOAT_H) {
+                if(dir.includes("n")) y -= (MIN_FLOAT_H - height)
+                height = MIN_FLOAT_H
+            }
+            x = clamp(x, 0, window.innerWidth  - 80)
+            y = clamp(y, 52, window.innerHeight - 40)
+            return { x, y, width, height }
+        }
         const onMove = (ev:any) => setLiveGeo({ id: w.id, geo: compute(ev) })
         const onUp = (ev:any) => {
             document.removeEventListener("mousemove", onMove)
@@ -97,6 +113,26 @@ const LogDock = ({ HTTPServerManager }:any) => {
         document.body.style.userSelect = "none"
         document.addEventListener("mousemove", onMove)
         document.addEventListener("mouseup", onUp)
+    }
+
+    // 8 alças de redimensionamento (bordas + cantos) da janela flutuante
+    const _renderResizeHandles = (w:LogWindow, geo:FloatGeometry) => {
+        const T = 7   // espessura das bordas
+        const C = 14  // tamanho dos cantos
+        const handles:any[] = [
+            { dir: "n",  cursor: "ns-resize",   style: { top: 0, left: C, right: C, height: T } },
+            { dir: "s",  cursor: "ns-resize",   style: { bottom: 0, left: C, right: C, height: T } },
+            { dir: "w",  cursor: "ew-resize",   style: { left: 0, top: C, bottom: C, width: T } },
+            { dir: "e",  cursor: "ew-resize",   style: { right: 0, top: C, bottom: C, width: T } },
+            { dir: "nw", cursor: "nwse-resize", style: { top: 0, left: 0, width: C, height: C } },
+            { dir: "se", cursor: "nwse-resize", style: { bottom: 0, right: 0, width: C, height: C } },
+            { dir: "ne", cursor: "nesw-resize", style: { top: 0, right: 0, width: C, height: C } },
+            { dir: "sw", cursor: "nesw-resize", style: { bottom: 0, left: 0, width: C, height: C } }
+        ]
+        return handles.map((h) =>
+            <div key={h.dir}
+                onMouseDown={(e) => _startResizeFloat(w, geo, h.dir, e)}
+                style={{ position: "absolute", zIndex: 4, cursor: h.cursor, ...h.style }}/>)
     }
 
     // Fechar perde o histórico → confirma (minimizar/flutuar/reconectar não pedem).
@@ -200,10 +236,10 @@ const LogDock = ({ HTTPServerManager }:any) => {
                         display: w.mode === "minimized" ? "none" : "flex", flexDirection: "column"
                     }}>
                         <div onMouseDown={(e) => _startResizeOffcanvas(w.id, e)}
-                            title="arrastar para redimensionar"
-                            style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "7px", cursor: "ew-resize", zIndex: 2, borderLeft: "2px solid transparent" }}
-                            onMouseEnter={(e:any) => e.currentTarget.style.borderLeft = "2px solid #b6d3f2"}
-                            onMouseLeave={(e:any) => e.currentTarget.style.borderLeft = "2px solid transparent"}/>
+                            title="arrastar para redimensionar a largura"
+                            style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "9px", cursor: "ew-resize", zIndex: 5, borderLeft: "3px solid #cfd6de" }}
+                            onMouseEnter={(e:any) => e.currentTarget.style.borderLeft = "3px solid #3a6ea5"}
+                            onMouseLeave={(e:any) => e.currentTarget.style.borderLeft = "3px solid #cfd6de"}/>
                         { _renderHeader(w, false) }
                         <div style={{ flex: 1, minHeight: 0, display: "flex", padding: "10px 12px" }}>
                             { _renderContent(w) }
@@ -227,12 +263,8 @@ const LogDock = ({ HTTPServerManager }:any) => {
                     <div style={{ flex: 1, minHeight: 0, display: "flex", padding: "10px 12px" }}>
                         { _renderContent(w) }
                     </div>
-                    { /* alça de redimensionamento (canto inferior direito) */ }
-                    <div onMouseDown={(e) => _startResizeFloat(w, geo, e)}
-                        title="arrastar para redimensionar"
-                        style={{ position: "absolute", right: 0, bottom: 0, width: "16px", height: "16px", cursor: "nwse-resize", zIndex: 3 }}>
-                        <Icon name="expand" style={{ fontSize: ".7em", color: "#adb5bd", position: "absolute", right: "1px", bottom: "0" }}/>
-                    </div>
+                    { /* alças de redimensionamento (todos os lados e cantos) */ }
+                    { _renderResizeHandles(w, geo) }
                 </div>
             })
         }

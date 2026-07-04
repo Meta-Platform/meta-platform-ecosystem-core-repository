@@ -15,6 +15,9 @@ export type LogWindow = {
     id: string
     kind: RuntimeWindowKind
     mode: RuntimeWindowMode
+    // último modo não-minimizado, para restaurar do dock no mesmo modo (flutuante
+    // volta flutuante, com a mesma posição/tamanho; offcanvas volta offcanvas)
+    lastMode?: RuntimeWindowMode
     title: string
     z: number
     // log
@@ -70,6 +73,8 @@ export const setWindowMode = (id: string, mode: RuntimeWindowMode) => {
     windows = windows.map((w) => {
         if(w.id !== id) return w
         const next: LogWindow = { ...w, mode, z: ++zCounter }
+        // ao minimizar, lembra o modo atual para restaurar nele depois
+        if(mode === "minimized" && w.mode !== "minimized") next.lastMode = w.mode
         if(mode === "floating" && !next.float) next.float = _defaultFloat()
         return next
     })
@@ -88,11 +93,12 @@ export const closeLogWindow = (id: string) => {
     _emit()
 }
 
-// Clique no chip do dock: minimizado → restaura (offcanvas); visível → minimiza.
+// Clique no chip do dock: minimizado → restaura no ÚLTIMO modo (flutuante volta
+// flutuante com a mesma posição/tamanho); visível → minimiza.
 export const expandLogWindow = (id: string) => {
     const w = windows.find((x) => x.id === id)
     if(!w) return
-    if(w.mode === "minimized") setWindowMode(id, "offcanvas")
+    if(w.mode === "minimized") setWindowMode(id, w.lastMode || "offcanvas")
     else focusWindow(id)
 }
 
