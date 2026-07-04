@@ -1,3 +1,4 @@
 {
-    "PKG_CONF_DIRNAME_METADATA":"metadata"
+    "PKG_CONF_DIRNAME_METADATA":"metadata",
+    "WORKSPACE_STORAGE_FILE_PATH":"~/virtual-desk-state/local-databases/package-developer-workspace-store-service.sqlite"
 }

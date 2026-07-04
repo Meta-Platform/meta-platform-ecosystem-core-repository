@@ -1,8 +1,65 @@
 {
     "bound-params": [
-        "packageToolkitLib"
+        "packageToolkitLib",
+        "workspaceStoreLib"
     ],
     "commands": [
+        {
+            "namespace": "Workspace",
+            "command": "workspace",
+            "description": "Gerenciar workspaces (espaços de trabalho)",
+            "children": [
+                {
+                    "namespace": "ListWorkspaces",
+                    "path": "Commands/ListWorkspaces.command",
+                    "command": "list",
+                    "description": "Listar workspaces",
+                    "parametersToLoad": [
+                        "workspaceStoreLib"
+                    ]
+                },
+                {
+                    "namespace": "CreateWorkspace",
+                    "path": "Commands/CreateWorkspace.command",
+                    "command": "create [name] [path]",
+                    "description": "Criar/atualizar uma workspace",
+                    "parameters": [
+                        {
+                            "key": "name",
+                            "paramType": "positional",
+                            "valueType": "string",
+                            "describe": "Nome da workspace"
+                        },
+                        {
+                            "key": "path",
+                            "paramType": "positional",
+                            "valueType": "string",
+                            "describe": "Caminho do diretório da workspace"
+                        }
+                    ],
+                    "parametersToLoad": [
+                        "workspaceStoreLib"
+                    ]
+                },
+                {
+                    "namespace": "RemoveWorkspace",
+                    "path": "Commands/RemoveWorkspace.command",
+                    "command": "remove [name]",
+                    "description": "Remover uma workspace",
+                    "parameters": [
+                        {
+                            "key": "name",
+                            "paramType": "positional",
+                            "valueType": "string",
+                            "describe": "Nome da workspace"
+                        }
+                    ],
+                    "parametersToLoad": [
+                        "workspaceStoreLib"
+                    ]
+                }
+            ]
+        },
         {
             "namespace": "CreatePackage",
             "command": "create",

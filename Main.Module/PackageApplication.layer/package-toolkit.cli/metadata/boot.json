@@ -4,7 +4,8 @@
             "dependency": "@//command-group",
             "executableName": "mypkg",
             "bound-params": {
-                "packageToolkitLib": "@/package-toolkit.lib"
+                "packageToolkitLib": "@/package-toolkit.lib",
+                "workspaceStoreLib": "@/workspace-store.lib"
             }
         }
     ]

@@ -1,0 +1,7 @@
+[
+    {
+        "namespace": "ProcessManager",
+        "path": "Services/ProcessManager.service",
+        "params": ["runCommandPath"]
+    }
+]
