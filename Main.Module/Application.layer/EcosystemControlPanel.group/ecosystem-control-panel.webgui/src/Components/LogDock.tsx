@@ -174,6 +174,14 @@ const LogDock = ({ HTTPServerManager }:any) => {
     const floatingSorted = windows.filter((w) => w.mode === "floating").sort((a, b) => a.z - b.z)
     const floatZ = (id:string) => 1501 + Math.max(0, floatingSorted.findIndex((w) => w.id === id))
 
+    // estado agregado do dock: vermelho se alguma conexão caiu, atenção enquanto
+    // conecta, verde quando todas estão abertas. Colore a faixa superior do dock.
+    const _statuses = windows.map((w) => statusByWindow[w.id] || "connecting")
+    const _dockAccent =
+        _statuses.some((s) => s === "closed")     ? "var(--mp-danger)"
+        : _statuses.some((s) => s === "connecting") ? "var(--mp-warning)"
+        : "var(--mp-success)"
+
     const _renderContent = (w:LogWindow) =>
         w.kind === "exec"
             ? <ExecutionStream
@@ -198,7 +206,11 @@ const LogDock = ({ HTTPServerManager }:any) => {
     // barra de título com os controles de modo — colorida por tipo, para
     // destacar a janela do restante da tela. Controles como ícones brancos.
     const _renderHeader = (w:LogWindow, draggable:boolean, base?:FloatGeometry) => {
-        const headerBg = w.kind === "exec" ? "#b5651d" : "#34567d"
+        // titlebar por tipo de janela: laranja para execução, azul-aço para
+        // runtime de socket. (O vocabulário de status atual — connecting/open/
+        // closed — não distingue sucesso de erro no fechamento, então não é
+        // usado para colorir a barra, apenas o dock.)
+        const headerBg = w.kind === "exec" ? "var(--mp-titlebar-exec)" : "var(--mp-titlebar-runtime)"
         return <div
             onMouseDown={draggable && base ? (e:any) => _startDrag(w, base, e) : undefined}
             style={{
@@ -210,13 +222,13 @@ const LogDock = ({ HTTPServerManager }:any) => {
             }}>
             <Icon name={w.kind === "exec" ? "play" : "terminal"} style={{ color: "#fff", opacity: .95, flex: "0 0 auto", margin: 0 }}/>
             <strong style={{ flex: 1, minWidth: 0, fontWeight: 600, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={w.monitoringStateKey || w.executableName}>
-                { w.kind === "exec" ? "execução" : "runtime" } · {w.title}
+                { w.kind === "exec" ? "execution" : "runtime" } · {w.title}
             </strong>
             <span onMouseDown={(e:any) => e.stopPropagation()} style={{ display: "inline-flex", alignItems: "center", gap: "13px", flex: "0 0 auto" }}>
-                { w.mode !== "floating" && <Icon name="clone outline" link title="janela flutuante" style={{ color: "#fff", margin: 0 }} onClick={() => floatWindow(w.id)}/> }
-                { w.mode !== "offcanvas" && <Icon name="columns" link title="ancorar à direita" style={{ color: "#fff", margin: 0 }} onClick={() => dockRightWindow(w.id)}/> }
-                <Icon name="window minimize outline" link title="minimizar" style={{ color: "#fff", margin: 0 }} onClick={() => minimizeLogWindow(w.id)}/>
-                <Icon name="close" link title="fechar (perde o histórico)" style={{ color: "rgba(255,255,255,.85)", margin: 0 }} onClick={() => _requestClose(w.id)}/>
+                { w.mode !== "floating" && <Icon name="clone outline" link title="floating window" style={{ color: "#fff", margin: 0 }} onClick={() => floatWindow(w.id)}/> }
+                { w.mode !== "offcanvas" && <Icon name="columns" link title="dock right" style={{ color: "#fff", margin: 0 }} onClick={() => dockRightWindow(w.id)}/> }
+                <Icon name="window minimize outline" link title="minimize" style={{ color: "#fff", margin: 0 }} onClick={() => minimizeLogWindow(w.id)}/>
+                <Icon name="close" link title="close (loses history)" style={{ color: "rgba(255,255,255,.85)", margin: 0 }} onClick={() => _requestClose(w.id)}/>
             </span>
         </div>
     }
@@ -229,17 +241,18 @@ const LogDock = ({ HTTPServerManager }:any) => {
                 // mesmo container escondido, para manter a janela montada.
                 if(w.mode === "offcanvas" || w.mode === "minimized") {
                     return <div key={w.id} style={{
-                        position: "fixed", top: "52px", right: 0, bottom: `${DOCK_HEIGHT + 8}px`,
+                        position: "fixed", top: "var(--mp-shell-topbar-h)", right: 0, bottom: `${DOCK_HEIGHT + 8}px`,
                         width: `${widthByWindow[w.id] || DEFAULT_WIDTH}px`, maxWidth: "96vw",
-                        zIndex: 1500, background: "#fff", borderRadius: "8px 0 0 8px",
+                        zIndex: 1500, background: "var(--mp-surface)", borderRadius: "8px 0 0 8px",
+                        border: "2px solid var(--mp-line-strong)", borderRight: "none",
                         boxShadow: "-6px 0 22px rgba(16,24,40,.22)",
                         display: w.mode === "minimized" ? "none" : "flex", flexDirection: "column"
                     }}>
                         <div onMouseDown={(e) => _startResizeOffcanvas(w.id, e)}
-                            title="arrastar para redimensionar a largura"
-                            style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "9px", cursor: "ew-resize", zIndex: 5, borderLeft: "3px solid #cfd6de" }}
-                            onMouseEnter={(e:any) => e.currentTarget.style.borderLeft = "3px solid #3a6ea5"}
-                            onMouseLeave={(e:any) => e.currentTarget.style.borderLeft = "3px solid #cfd6de"}/>
+                            title="drag to resize width"
+                            style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "9px", cursor: "ew-resize", zIndex: 5, borderLeft: "3px solid var(--mp-line-soft)" }}
+                            onMouseEnter={(e:any) => e.currentTarget.style.borderLeft = "3px solid var(--mp-accent-blue)"}
+                            onMouseLeave={(e:any) => e.currentTarget.style.borderLeft = "3px solid var(--mp-line-soft)"}/>
                         { _renderHeader(w, false) }
                         <div style={{ flex: 1, minHeight: 0, display: "flex", padding: "10px 12px" }}>
                             { _renderContent(w) }
@@ -254,8 +267,8 @@ const LogDock = ({ HTTPServerManager }:any) => {
                     style={{
                         position: "fixed", top: `${geo.y}px`, left: `${geo.x}px`,
                         width: `${geo.width}px`, height: `${geo.height}px`,
-                        zIndex: floatZ(w.id), background: "#fff", borderRadius: "9px",
-                        border: "2px solid #8f99a6",
+                        zIndex: floatZ(w.id), background: "var(--mp-surface)", borderRadius: "var(--mp-radius-window)",
+                        border: "var(--mp-border-strong)",
                         boxShadow: "0 20px 50px rgba(16,24,40,.46), 0 4px 14px rgba(16,24,40,.30)",
                         display: "flex", flexDirection: "column", overflow: "hidden"
                     }}>
@@ -273,13 +286,13 @@ const LogDock = ({ HTTPServerManager }:any) => {
         <div style={{
             position: "fixed", left: 0, right: 0, bottom: 0, height: `${DOCK_HEIGHT}px`, zIndex: 1490,
             display: "flex", alignItems: "center", gap: "10px", padding: "0 12px",
-            background: "#1f2937",
-            borderTop: "4px solid #37b24d",
-            boxShadow: "0 -2px 0 rgba(55,178,77,.45), 0 -8px 22px rgba(16,24,40,.40)"
+            background: "var(--mp-terminal-bg-2)",
+            borderTop: `4px solid ${_dockAccent}`,
+            boxShadow: "0 -8px 22px rgba(16,24,40,.40)"
         }}>
-            <span style={{ fontSize: ".74em", fontWeight: 800, textTransform: "uppercase", color: "#37b24d", letterSpacing: ".06em", flex: "0 0 auto", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+            <span style={{ fontSize: ".74em", fontWeight: 800, textTransform: "uppercase", color: _dockAccent, letterSpacing: ".06em", flex: "0 0 auto", display: "inline-flex", alignItems: "center", gap: "6px" }}>
                 <Icon name="terminal" className="eco-log-live"/> runtime streams
-                <Label circular size="mini" style={{ background: "#37b24d", color: "#0b1f12", fontWeight: 800 }}>{windows.length}</Label>
+                <Label circular size="mini" style={{ background: _dockAccent, color: "var(--mp-terminal-bg)", fontWeight: 800 }}>{windows.length}</Label>
             </span>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", overflowX: "auto" }}>
                 {
@@ -290,13 +303,13 @@ const LogDock = ({ HTTPServerManager }:any) => {
                         const disconnected = st === "closed"
                         const active = w.mode !== "minimized"
                         return <div key={w.id}
-                            title={`${w.title} · ${disconnected ? "desconectado" : st === "open" ? "conectado" : "conectando"} · ${w.mode}`}
+                            title={`${w.title} · ${disconnected ? "disconnected" : st === "open" ? "connected" : "connecting"} · ${w.mode}`}
                             onClick={() => (w.mode === "minimized" ? expandLogWindow(w.id) : minimizeLogWindow(w.id))}
                             style={{
                                 display: "flex", alignItems: "center", gap: "6px", padding: "4px 10px", borderRadius: "6px", cursor: "pointer", flex: "0 0 auto",
-                                background: active ? "#3a6ea5" : "rgba(255,255,255,.08)",
-                                border: active ? "1px solid #5a8fc7" : "1px solid rgba(255,255,255,.16)",
-                                color: "#e6edf3", fontWeight: active ? 600 : 400
+                                background: active ? "var(--mp-accent-blue)" : "rgba(255,255,255,.08)",
+                                border: active ? "1px solid var(--mp-terminal-blue)" : "1px solid rgba(255,255,255,.16)",
+                                color: "var(--mp-terminal-fg)", fontWeight: active ? 600 : 400
                             }}>
                             <Icon name="circle" size="small" color={dot} className={st === "open" ? "eco-log-live" : undefined} style={{ flex: "0 0 auto" }}/>
                             <Icon name={w.kind === "exec" ? "play" : "terminal"} style={{ color: active ? "#fff" : "#aeb6bf", flex: "0 0 auto" }}/>
@@ -304,9 +317,9 @@ const LogDock = ({ HTTPServerManager }:any) => {
                             { n > 0 && <Label color="red" circular size="mini" style={{ flex: "0 0 auto" }}>{n > 99 ? "99+" : n}</Label> }
                             {
                                 disconnected &&
-                                <Icon name="redo" title="reconectar / re-executar" style={{ color: "#cfe0f2", flex: "0 0 auto" }} onClick={(e:any) => { e.stopPropagation(); _reconnect(w.id) }}/>
+                                <Icon name="redo" title="reconnect / re-run" style={{ color: "#cfe0f2", flex: "0 0 auto" }} onClick={(e:any) => { e.stopPropagation(); _reconnect(w.id) }}/>
                             }
-                            <Icon name="close" title="fechar (perde o histórico)" style={{ color: "rgba(255,255,255,.55)", flex: "0 0 auto", marginLeft: "2px" }} onClick={(e:any) => { e.stopPropagation(); _requestClose(w.id) }}/>
+                            <Icon name="close" title="close (loses history)" style={{ color: "rgba(255,255,255,.55)", flex: "0 0 auto", marginLeft: "2px" }} onClick={(e:any) => { e.stopPropagation(); _requestClose(w.id) }}/>
                         </div>
                     })
                 }
@@ -318,12 +331,12 @@ const LogDock = ({ HTTPServerManager }:any) => {
             <AppModal
                 variant="danger"
                 open={true}
-                header="Fechar runtime stream"
-                confirmText="fechar"
+                header="Close runtime stream"
+                confirmText="close"
                 confirmIcon="close"
                 onCancel={() => setConfirmCloseId(undefined)}
                 onConfirm={_confirmClose}>
-                Fechar <strong>{_closingName}</strong>? Isso encerra a conexão e <strong>perde o histórico</strong> desta janela.
+                Close <strong>{_closingName}</strong>? This ends the connection and <strong>loses the history</strong> of this window.
             </AppModal>
         }
     </>

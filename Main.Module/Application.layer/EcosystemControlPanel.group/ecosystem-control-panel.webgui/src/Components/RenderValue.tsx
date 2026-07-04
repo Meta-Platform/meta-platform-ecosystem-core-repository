@@ -28,7 +28,7 @@ const listStyle = {
 const RenderValue = ({ value }:any) => {
 
     if(value === null || value === undefined)
-        return <span style={{ marginLeft: "10px", color: "#9b9b9b" }}>—</span>
+        return <span style={{ marginLeft: "10px", color: "var(--mp-muted-2)" }}>—</span>
 
     if(typeof value === "string" || typeof value === "number" || typeof value === "boolean")
         return <div style={boxStyle}>{String(value)}</div>

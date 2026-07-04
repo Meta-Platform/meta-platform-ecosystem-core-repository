@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react"
 import {
     Button,
     Checkbox,
-    Header,
     Label,
     List,
     Modal,
@@ -20,12 +19,14 @@ import GetExecutableIconURL from "../../Utils/GetExecutableIconURL"
 import EmptyState from "../../Components/EmptyState"
 import KeyValuePanel from "../../Components/KeyValuePanel"
 import CopyValue from "../../Components/CopyValue"
+import EntityHeader from "../../Components/ui/EntityHeader"
+import CopyableMonoText from "../../Components/ui/CopyableMonoText"
 import { openExecWindow } from "../../Utils/logWindows"
 import { toastSuccess, toastError, errorMessage } from "../../Utils/toast"
 
 // Cabeçalho de seção leve (evita o "icon header" do Semantic que amplia o ícone).
 const SectionHeader = ({ icon, children }:any) =>
-    <div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 700, fontSize: "1rem", color: "#3a4047", borderBottom: "1px solid #eef0f2", paddingBottom: "6px", margin: "16px 0 8px" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 700, fontSize: "1rem", color: "var(--mp-ink-2)", borderBottom: "1px solid var(--mp-line-faint)", paddingBottom: "6px", margin: "16px 0 8px" }}>
         <Icon name={icon} style={{ fontSize: "1em", margin: 0 }}/> {children}
     </div>
 
@@ -54,20 +55,20 @@ const HostActionsBar = ({ executableInformation, onRun }:any) => {
 
     return <>
         <Button primary size="small" onClick={() => setConfirmRun(true)} style={{ flex: "0 0 auto" }}>
-            <Icon name="play"/> executar
+            <Icon name="play"/> run
         </Button>
         {
             confirmRun &&
             <Modal size="small" open={true} onClose={() => setConfirmRun(false)}>
-                <Modal.Header><Icon name="play" color="green"/> Executar {executableInformation.executableName}</Modal.Header>
+                <Modal.Header><Icon name="play" color="green"/> Run {executableInformation.executableName}</Modal.Header>
                 <Modal.Content>
-                    Executar <code>{executableInformation.executableName}</code> via <code>run package</code>?
-                    Isso inicia uma nova instância no ecossistema.
+                    Run <code>{executableInformation.executableName}</code> via <code>run package</code>?
+                    This starts a new instance in the ecosystem.
                 </Modal.Content>
                 <Modal.Actions>
-                    <Button onClick={() => setConfirmRun(false)}>cancelar</Button>
+                    <Button onClick={() => setConfirmRun(false)}>cancel</Button>
                     <Button color="green" onClick={() => { setConfirmRun(false); onRun() }}>
-                        <Icon name="play"/> executar
+                        <Icon name="play"/> run
                     </Button>
                 </Modal.Actions>
             </Modal>
@@ -86,27 +87,27 @@ const CommandRow = ({ command, prefix, depth = 0 }:any) => {
     const childPrefix = `${prefix} ${commandStr.split(" ")[0]}`.trim()
 
     return <>
-        <div style={{ marginLeft: depth * 16, marginBottom: "14px", borderLeft: depth > 0 ? "2px solid #eef0f2" : "none", paddingLeft: depth > 0 ? "12px" : 0 }}>
+        <div style={{ marginLeft: depth * 16, marginBottom: "14px", borderLeft: depth > 0 ? "2px solid var(--mp-line-faint)" : "none", paddingLeft: depth > 0 ? "12px" : 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <div style={{
                     flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: "8px",
-                    background: "#f3f4f6", border: "1px solid #e6e8eb", padding: "6px 10px", borderRadius: "6px",
-                    fontFamily: "monospace", fontSize: ".88em", color: "#2d333a", overflow: "auto"
+                    background: "var(--mp-surface-2)", border: "1px solid var(--mp-line-faint)", padding: "6px 10px", borderRadius: "6px",
+                    fontFamily: "monospace", fontSize: ".88em", color: "var(--mp-ink-2)", overflow: "auto"
                 }}>
-                    <span style={{ color: "#aab1b9", flex: "0 0 auto" }}>$</span>
+                    <span style={{ color: "var(--mp-muted-2)", flex: "0 0 auto" }}>$</span>
                     <span style={{ whiteSpace: "nowrap" }}>{prefix} <strong>{commandStr}</strong></span>
                 </div>
                 <CopyValue value={invocation}/>
             </div>
-            { command.description && <div style={{ color: "#666", margin: "5px 0 0 2px", fontSize: ".92em" }}>{command.description}</div> }
+            { command.description && <div style={{ color: "var(--mp-ink-3)", margin: "5px 0 0 2px", fontSize: ".92em" }}>{command.description}</div> }
             {
                 parameters.length > 0 &&
                 <div style={{ margin: "4px 0 0 2px" }}>
                     {
                         parameters.map((p:any, k:number) =>
-                            <div key={k} style={{ fontSize: ".82em", color: "#8a9099", margin: "1px 0", wordBreak: "break-word" }}>
-                                <span style={{ fontFamily: "monospace", color: "#586069" }}>{p.paramType === "positional" ? `[${p.key}]` : `--${p.key}`}</span>
-                                <span style={{ margin: "0 6px", color: "#bbb" }}>{p.valueType}{p.paramType !== "positional" ? " · option" : ""}</span>
+                            <div key={k} style={{ fontSize: ".82em", color: "var(--mp-muted)", margin: "1px 0", wordBreak: "break-word" }}>
+                                <span style={{ fontFamily: "monospace", color: "var(--mp-muted)" }}>{p.paramType === "positional" ? `[${p.key}]` : `--${p.key}`}</span>
+                                <span style={{ margin: "0 6px", color: "var(--mp-muted-2)" }}>{p.valueType}{p.paramType !== "positional" ? " · option" : ""}</span>
                                 { p.describe && <span>— {p.describe}</span> }
                             </div>)
                     }
@@ -128,8 +129,8 @@ const ExecutableInformation = ({ executableInformation, serverManagerInformation
         return <Segment placeholder style={{ minHeight: "200px" }}>
             <EmptyState
                 icon="terminal"
-                title="Nenhum executável selecionado"
-                description="Selecione um executável na árvore Executables (sidebar) para ver seus detalhes e ações."/>
+                title="No executable selected"
+                description="Select an executable in the Executables tree (sidebar) to view its details and actions."/>
         </Segment>
 
     const {
@@ -155,14 +156,14 @@ const ExecutableInformation = ({ executableInformation, serverManagerInformation
                 </List.Icon>
                 <List.Content>
                     <List.Header>package</List.Header>
-                    <List.Description style={{ wordBreak: "break-all" }}>{packageRepoPath}</List.Description>
+                    <List.Description><CopyableMonoText value={packageRepoPath} maxChars={64}/></List.Description>
                 </List.Content>
             </List.Item>
             <List.Item>
                 <List.Icon name="cubes" verticalAlign="middle"/>
                 <List.Content>
                     <List.Header>repository</List.Header>
-                    <List.Description style={{ wordBreak: "break-all" }}>{repositoryPath}</List.Description>
+                    <List.Description><CopyableMonoText value={repositoryPath} maxChars={64}/></List.Description>
                 </List.Content>
             </List.Item>
             {
@@ -170,7 +171,7 @@ const ExecutableInformation = ({ executableInformation, serverManagerInformation
                     <List.Icon name="plug" verticalAlign="middle"/>
                     <List.Content>
                         <List.Header>supervisor socket</List.Header>
-                        <List.Description style={{ wordBreak: "break-all" }}>{supervisorSocketPath || supervisorSocketFileName}</List.Description>
+                        <List.Description><CopyableMonoText value={supervisorSocketPath || supervisorSocketFileName} maxChars={64}/></List.Description>
                     </List.Content>
                 </List.Item>
             }
@@ -211,17 +212,18 @@ const ExecutableInformation = ({ executableInformation, serverManagerInformation
         })
 
     return <Segment>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-            <Header style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
-                <ExecutablePackageIcon executableInformation={executableInformation} serverManagerInformation={serverManagerInformation} size={32}/>
-                <Header.Content>
-                    {executableName}
-                    <Label size="tiny" color={type === "cli" ? "teal" : "blue"} style={{ marginLeft: "8px" }}>{type}</Label>
-                    <Label size="tiny" basic color={isInstalled ? "green" : "grey"}>{isInstalled ? "installed" : "not installed"}</Label>
-                    { isDebug && <Label size="tiny" color="grey">debug</Label> }
-                </Header.Content>
-            </Header>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+        <EntityHeader
+            iconNode={<ExecutablePackageIcon executableInformation={executableInformation} serverManagerInformation={serverManagerInformation} size={28}/>}
+            title={executableName}
+            subtitle={packageRepoPath}
+            typeLabel={type}
+            badges={<>
+                <Label size="tiny" basic color={isInstalled ? "green" : "grey"}>{isInstalled ? "installed" : "not installed"}</Label>
+                { isDebug && <Label size="tiny" color="grey">debug</Label> }
+            </>}
+            meta={packageMetadata && packageMetadata.version ? [{ label: "version", value: packageMetadata.version }] : []}
+            technicalRef={{ label: "repository", value: repositoryPath }}
+            actions={<>
                 {
                     !isInstalled && onInstall &&
                     <Button color="green" size="small" loading={isInstalling} disabled={isInstalling} style={{ flex: "0 0 auto" }}
@@ -229,21 +231,20 @@ const ExecutableInformation = ({ executableInformation, serverManagerInformation
                             setIsInstalling(true)
                             try {
                                 await onInstall(executableName)
-                                toastSuccess(`Executável ${executableName} instalado.`)
+                                toastSuccess(`Executable ${executableName} installed.`)
                             } catch(e) {
                                 toastError(errorMessage(e))
                             } finally {
                                 setIsInstalling(false)
                             }
                         }}>
-                        <Icon name="download"/> instalar
+                        <Icon name="download"/> install
                     </Button>
                 }
                 <HostActionsBar
                     executableInformation={executableInformation}
                     onRun={() => openExecWindow({ packageDirPath: executableInformation.packageDirPath, executableName })}/>
-            </div>
-        </div>
+            </>}/>
         <Tab menu={{ secondary: true, pointing: true }} panes={panes} style={{ marginTop: "12px" }}/>
     </Segment>
 }
@@ -262,7 +263,7 @@ const BootManifestView = ({ boot }:any) => {
                 <SectionHeader icon="terminal">Executables ({executables.length})</SectionHeader>
                 <List bulleted>
                     { executables.map((e:any, k:number) =>
-                        <List.Item key={k}>{e.executableName} — <i style={{ color: "#888" }}>{e.dependency}</i></List.Item>) }
+                        <List.Item key={k}>{e.executableName} — <i style={{ color: "var(--mp-muted)" }}>{e.dependency}</i></List.Item>) }
                 </List>
             </>
         }
@@ -275,7 +276,7 @@ const BootManifestView = ({ boot }:any) => {
                             <List.Icon name="cog" verticalAlign="middle"/>
                             <List.Content>
                                 <List.Header>{s.namespace}</List.Header>
-                                <List.Description style={{ color: "#888", wordBreak: "break-all" }}>{s.dependency}</List.Description>
+                                <List.Description style={{ color: "var(--mp-muted)", wordBreak: "break-all" }}>{s.dependency}</List.Description>
                             </List.Content>
                         </List.Item>) }
                 </List>
@@ -290,7 +291,7 @@ const BootManifestView = ({ boot }:any) => {
                             <List.Icon name="linkify" verticalAlign="middle"/>
                             <List.Content>
                                 <List.Header>{e.url || e.dependency}</List.Header>
-                                { e.url && <List.Description style={{ color: "#888", wordBreak: "break-all" }}>{e.dependency}</List.Description> }
+                                { e.url && <List.Description style={{ color: "var(--mp-muted)", wordBreak: "break-all" }}>{e.dependency}</List.Description> }
                             </List.Content>
                         </List.Item>) }
                 </List>
@@ -298,7 +299,7 @@ const BootManifestView = ({ boot }:any) => {
         }
         {
             services.length === 0 && endpoints.length === 0 && executables.length === 0 &&
-            <span style={{ color: "#bbb" }}>boot.json sem services/endpoints declarados</span>
+            <span style={{ color: "var(--mp-muted-2)" }}>boot.json sem services/endpoints declarados</span>
         }
     </>
 }

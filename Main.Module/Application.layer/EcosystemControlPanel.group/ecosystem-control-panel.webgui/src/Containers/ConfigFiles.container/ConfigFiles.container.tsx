@@ -8,7 +8,6 @@ import {
     Input,
     Label,
     Loader,
-    Message,
     Modal,
     Segment,
     Table
@@ -16,6 +15,8 @@ import {
 
 import GetAPI from "../../Utils/GetAPI"
 import CopyValue from "../../Components/CopyValue"
+import SystemBanner from "../../Components/ui/SystemBanner"
+import PageMasthead from "../../Components/ui/PageMasthead"
 import ListSkeleton from "../../Components/Skeleton"
 import { toastSuccess, toastError, errorMessage } from "../../Utils/toast"
 
@@ -48,7 +49,7 @@ const ValueTypeBadge = ({ value }:any) => {
 
 const RenderReadValue = (value:any) => {
     if(value === null || value === undefined)
-        return <i style={{ color: "grey" }}>—</i>
+        return <i style={{ color: "var(--mp-muted-2)" }}>—</i>
     if(typeof value === "object")
         return <code style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(value, null, 2)}</code>
     return <code>{String(value)}</code>
@@ -63,32 +64,32 @@ const GetConfigTitle = (configFileName?:string) => {
 
 const ConfirmSaveModal = ({ configFileName, paramName, newValue, onCancel, onConfirm, isSaving }:any) =>
     <Modal size="small" open={true} onClose={onCancel}>
-        <Modal.Header><Icon name="warning sign" color="orange"/> Confirmar alteração</Modal.Header>
+        <Modal.Header><Icon name="warning sign" color="orange"/> Confirm change</Modal.Header>
         <Modal.Content>
             <p>
-                Alterar <strong>{paramName}</strong> em <strong>{configFileName}</strong> para
+                Change <strong>{paramName}</strong> in <strong>{configFileName}</strong> to
                 <code style={{ marginLeft: "6px" }}>{String(newValue)}</code>?
             </p>
-            <p style={{ color: "#9f6000" }}>
+            <p style={{ color: "var(--mp-warning)" }}>
                 <Icon name="warning sign"/>
-                Alterações de configuração podem <strong>impactar ou quebrar o ecossistema</strong> e afetar instâncias em execução.
+                Config changes can <strong>impact or break the ecosystem</strong> and affect running instances.
             </p>
         </Modal.Content>
         <Modal.Actions>
-            <Button onClick={onCancel} disabled={isSaving}>cancelar</Button>
+            <Button onClick={onCancel} disabled={isSaving}>cancel</Button>
             <Button color="orange" loading={isSaving} onClick={onConfirm}>
-                <Icon name="save"/> salvar variável
+                <Icon name="save"/> save variable
             </Button>
         </Modal.Actions>
     </Modal>
 
 const RegistryShell = ({ children }:any) =>
     <div style={{
-        border: "1px solid #cfd6de",
-        borderRadius: "8px",
+        border: "var(--mp-border-thin)",
+        borderRadius: "var(--mp-radius-md)",
         overflow: "hidden",
-        background: "#f8fafc",
-        boxShadow: "0 1px 2px rgba(15, 23, 42, .08)"
+        background: "var(--mp-surface)",
+        boxShadow: "var(--mp-shadow-1)"
     }}>
         {children}
     </div>
@@ -98,28 +99,28 @@ const RegistryShell = ({ children }:any) =>
 const RegistryHeader = ({ title, subtitle, canEdit }:any) =>
     <div style={{
         padding: "6px 12px",
-        background: "#eef2f7",
-        borderBottom: "1px solid #cfd6de",
+        background: "var(--mp-paper-2)",
+        borderBottom: "1px solid var(--mp-line-faint)",
         display: "flex",
         alignItems: "center",
         gap: "10px",
         flexWrap: "wrap"
     }}>
-        <Icon name={canEdit ? "edit" : "file alternate outline"} style={{ color: canEdit ? "#1f7a3f" : "#596273", margin: 0, flex: "0 0 auto" }}/>
+        <Icon name={canEdit ? "edit" : "file alternate outline"} style={{ color: canEdit ? "var(--mp-success)" : "var(--mp-muted)", margin: 0, flex: "0 0 auto" }}/>
         <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "baseline", gap: "8px", overflow: "hidden" }}>
-            <strong style={{ fontSize: ".92rem", color: "#28323f", whiteSpace: "nowrap" }}>{title}</strong>
-            <span style={{ color: "#8a9099", fontSize: ".82rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{subtitle}</span>
+            <strong style={{ fontSize: ".92rem", color: "var(--mp-ink)", whiteSpace: "nowrap" }}>{title}</strong>
+            <span style={{ color: "var(--mp-muted)", fontSize: ".82rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{subtitle}</span>
         </div>
         <Label basic color={canEdit ? "green" : "grey"} size="small" style={{ margin: 0, flex: "0 0 auto" }}>
-            {canEdit ? "editável" : "somente leitura"}
+            {canEdit ? "editable" : "read-only"}
         </Label>
     </div>
 
 const RegistryToolbar = ({ children }:any) =>
     <div style={{
         padding: "10px 14px",
-        borderBottom: "1px solid #e1e6ec",
-        background: "#fafbfc",
+        borderBottom: "1px solid var(--mp-line-faint)",
+        background: "var(--mp-surface-2)",
         display: "flex",
         alignItems: "center",
         gap: "10px",
@@ -137,14 +138,14 @@ const RegistryGroupHeader = ({ name, count, isClosed, onToggle }:any) =>
             gap: "8px",
             padding: "7px 10px",
             cursor: "pointer",
-            background: isClosed ? "#f4f6f8" : "#eef3f8",
-            border: "1px solid #d7dee6",
-            borderRadius: "7px",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,.65)"
+            background: isClosed ? "var(--mp-surface-2)" : "var(--mp-paper-2)",
+            border: "1px solid var(--mp-line-soft)",
+            borderRadius: "var(--mp-radius-sm)",
+            boxShadow: "none"
         }}>
-        <Icon name={isClosed ? "caret right" : "caret down"} style={{ color: "#6c7784", margin: 0 }}/>
-        <Icon name="folder open outline" style={{ color: "#516171", margin: 0 }}/>
-        <strong style={{ color: "#2b3440", letterSpacing: 0 }}>{name}</strong>
+        <Icon name={isClosed ? "caret right" : "caret down"} style={{ color: "var(--mp-muted)", margin: 0 }}/>
+        <Icon name="folder open outline" style={{ color: "var(--mp-ink-3)", margin: 0 }}/>
+        <strong style={{ color: "var(--mp-ink)", letterSpacing: 0 }}>{name}</strong>
         <Label circular size="mini" style={{ marginLeft: "auto" }}>{count}</Label>
     </div>
 
@@ -157,14 +158,14 @@ const RegistrySubGroupHeader = ({ label, count, isClosed, onToggle }:any) =>
             gap: "8px",
             padding: "6px 10px",
             cursor: "pointer",
-            background: "#f8fafc",
-            border: "1px solid #e0e6ee",
-            borderLeft: "3px solid #8ca0b8",
-            borderRadius: "6px"
+            background: "var(--mp-surface)",
+            border: "1px solid var(--mp-line-faint)",
+            borderLeft: "3px solid var(--mp-accent-blue)",
+            borderRadius: "var(--mp-radius-sm)"
         }}>
-        <Icon name={isClosed ? "caret right" : "caret down"} style={{ color: "#7a8592", margin: 0 }}/>
-        <span style={{ color: "#71808f", fontFamily: "monospace", fontSize: ".8rem" }}>subkey</span>
-        <strong style={{ color: "#33404d", fontFamily: "monospace", fontSize: ".88rem" }}>{label}</strong>
+        <Icon name={isClosed ? "caret right" : "caret down"} style={{ color: "var(--mp-muted)", margin: 0 }}/>
+        <span style={{ color: "var(--mp-muted-2)", fontFamily: "var(--mp-font-mono)", fontSize: ".8rem" }}>subkey</span>
+        <strong style={{ color: "var(--mp-ink-2)", fontFamily: "var(--mp-font-mono)", fontSize: ".88rem" }}>{label}</strong>
         <Label circular size="mini" style={{ marginLeft: "auto" }}>{count}</Label>
     </div>
 
@@ -251,25 +252,29 @@ const ConfigFilesContainer = ({ serverManagerInformation, configFileName }:any) 
     }
 
     return <Segment style={{ margin: "15px" }}>
+        <PageMasthead
+            icon="cogs"
+            title="Config Files"
+            subtitle="Edit ecosystem default parameters and configuration files."/>
         <RegistryShell>
             <RegistryHeader
                 title={GetConfigTitle(configFileName)}
                 subtitle={`config-files / ${configFileName || "ecosystem-defaults.json"}`}
                 canEdit={canEdit}/>
             <RegistryToolbar>
-                <Message info icon size="small" style={{ margin: 0, flex: "1 1 420px" }}>
-                    <Icon name="lock"/>
-                    <Message.Content>
-                        <Message.Header>editor de parâmetros</Message.Header>
-                        { canEdit
-                            ? "Edite um valor por vez. A confirmação é obrigatória porque essas chaves podem alterar o comportamento do ecossistema."
-                            : "Este arquivo é de referência. Abra outro arquivo para editar." }
-                    </Message.Content>
-                </Message>
+                <SystemBanner
+                    tone={canEdit ? "info" : "readonly"}
+                    icon={canEdit ? "edit" : "lock"}
+                    title="parameter editor"
+                    style={{ margin: 0, flex: "1 1 420px" }}>
+                    { canEdit
+                        ? "Edit one value at a time. Confirmation is required because these keys can change ecosystem behavior."
+                        : "This file is read-only. Open another file to edit." }
+                </SystemBanner>
                 <Input
                     icon="search"
                     size="small"
-                    placeholder="filtrar parâmetros..."
+                    placeholder="filter parameters..."
                     value={filterValue}
                     onChange={(e, { value }) => setFilterValue(value)}
                     style={{ marginLeft: "auto", minWidth: "260px" }}/>
@@ -286,8 +291,8 @@ const ConfigFilesContainer = ({ serverManagerInformation, configFileName }:any) 
                     const shortName = (prefix && key.startsWith(prefix + "_")) ? key.slice(prefix.length + 1) : key
                     return <Table.Row key={key} active={isEditingThis}>
                         <Table.Cell>
-                            <Icon name="key" style={{ color: "#aaa" }}/>
-                            <span style={{ color: "#bbb", fontFamily: "monospace", fontSize: ".92em" }}>*_</span>
+                            <Icon name="key" style={{ color: "var(--mp-muted-2)" }}/>
+                            <span style={{ color: "var(--mp-muted-2)", fontFamily: "var(--mp-font-mono)", fontSize: ".92em" }}>*_</span>
                             <strong title={key} style={{ fontFamily: "monospace", fontSize: ".92em" }}>{shortName}</strong>
                         </Table.Cell>
                         <Table.Cell width={2}><ValueTypeBadge value={currentContent[key]}/></Table.Cell>
@@ -311,7 +316,7 @@ const ConfigFilesContainer = ({ serverManagerInformation, configFileName }:any) 
                                     </Button.Group>
                                     : editable
                                         ? <Button icon size="mini" basic onClick={() => startEdit(key)} disabled={!!editingKey}><Icon name="pencil"/></Button>
-                                        : <Icon name="lock" style={{ color: "#ccc" }}/>
+                                        : <Icon name="lock" style={{ color: "var(--mp-line-soft)" }}/>
                                 }
                             </Table.Cell>
                         }
@@ -393,7 +398,7 @@ const ConfigFilesContainer = ({ serverManagerInformation, configFileName }:any) 
                             </div>
                         })
                     }
-                    { groupNames.length === 0 && <div style={{ color: "#66707d", padding: "16px 14px 18px" }}>nenhum parâmetro corresponde ao filtro</div> }
+                    { groupNames.length === 0 && <div style={{ color: "var(--mp-muted)", padding: "16px 14px 18px" }}>no parameters match the filter</div> }
                 </>
             })()
         }

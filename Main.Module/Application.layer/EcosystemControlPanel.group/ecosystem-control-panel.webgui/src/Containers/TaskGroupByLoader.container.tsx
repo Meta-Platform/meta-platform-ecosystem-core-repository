@@ -7,12 +7,12 @@ import StatusBadge from "../Components/StatusBadge"
 // instala deps -> carrega packages -> instancia a app -> (serviços/endpoints
 // como filhos) ; command-application é o caminho CLI.
 const LOADER_STAGES = [
-    { type: "install-nodejs-package-dependencies", label: "Install dependencies", color: "#90a4ae", child: false },
-    { type: "nodejs-package",                      label: "Load packages",        color: "#5c8cc4", child: false },
-    { type: "application-instance",                label: "Application instance",  color: "#3a6ea5", child: false },
-    { type: "command-application",                 label: "Command application",   color: "#7e57c2", child: false },
-    { type: "service-instance",                    label: "Services",              color: "#43a047", child: true  },
-    { type: "endpoint-instance",                   label: "Endpoints",             color: "#fb8c00", child: true  }
+    { type: "install-nodejs-package-dependencies", label: "Install dependencies", color: "var(--mp-muted-2)", child: false },
+    { type: "nodejs-package",                      label: "Load packages",        color: "var(--mp-accent-blue)", child: false },
+    { type: "application-instance",                label: "Application instance",  color: "var(--mp-accent-blue)", child: false },
+    { type: "command-application",                 label: "Command application",   color: "var(--mp-accent-violet)", child: false },
+    { type: "service-instance",                    label: "Services",              color: "var(--mp-success)", child: true  },
+    { type: "endpoint-instance",                   label: "Endpoints",             color: "var(--mp-accent-orange)", child: true  }
 ]
 
 const GetTaskName = (task:any) => {
@@ -27,7 +27,7 @@ const TaskRow = ({ task, taskId, onSelectTask }:any) =>
             display: "flex", alignItems: "center", gap: "8px", padding: "4px 8px", cursor: "pointer",
             borderRadius: "4px", background: task.taskId === taskId ? "#e8f0fa" : undefined
         }}>
-        <span style={{ fontFamily: "monospace", color: "#888", width: "34px" }}>{task.taskId}</span>
+        <span style={{ fontFamily: "monospace", color: "var(--mp-muted)", width: "34px" }}>{task.taskId}</span>
         <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{GetTaskName(task)}</span>
         <StatusBadge status={task.status}/>
     </div>
@@ -42,18 +42,18 @@ const Stage = ({ stage, tasks, index, isLast, taskId, onSelectTask }:any) =>
             }}>
                 {index + 1}
             </div>
-            { !isLast && <div style={{ flex: 1, width: "2px", background: "#e0e0e0", minHeight: "12px", marginTop: "2px" }}/> }
+            { !isLast && <div style={{ flex: 1, width: "2px", background: "var(--mp-surface-muted)", minHeight: "12px", marginTop: "2px" }}/> }
         </div>
 
         { /* card do estágio */ }
         <div style={{
-            flex: 1, marginBottom: "12px", border: "1px solid #e3e6ea", borderLeft: `4px solid ${stage.color}`,
-            borderRadius: "8px", background: "#fff", marginLeft: stage.child ? "28px" : 0
+            flex: 1, marginBottom: "12px", border: "1px solid var(--mp-line-faint)", borderLeft: `4px solid ${stage.color}`,
+            borderRadius: "8px", background: "var(--mp-surface)", marginLeft: stage.child ? "28px" : 0
         }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 12px", borderBottom: "1px solid #f0f0f0" }}>
-                { stage.child && <span style={{ color: "#bbb" }}>↳</span> }
+                { stage.child && <span style={{ color: "var(--mp-muted-2)" }}>↳</span> }
                 <strong style={{ color: stage.color }}>{stage.label}</strong>
-                <span style={{ color: "#999", fontSize: ".82em" }}>{stage.type}</span>
+                <span style={{ color: "var(--mp-muted-2)", fontSize: ".82em" }}>{stage.type}</span>
                 <Label circular size="mini" style={{ marginLeft: "auto" }}>{tasks.length}</Label>
             </div>
             <div style={{ padding: "6px 8px" }}>
@@ -81,7 +81,7 @@ const TaskGroupByLoaderContainer = ({ instanceTaskList = [], taskId, onSelectTas
         ...LOADER_STAGES.filter((s) => grouped[s.type]),
         ...Object.keys(grouped)
             .filter((t) => !knownTypes.includes(t))
-            .map((t) => ({ type: t, label: t, icon: "question", color: "#9e9e9e", child: false }))
+            .map((t) => ({ type: t, label: t, icon: "question", color: "var(--mp-muted-2)", child: false }))
     ]
 
     return <div style={{ padding: "6px 2px" }}>

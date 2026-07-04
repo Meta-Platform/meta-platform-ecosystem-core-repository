@@ -9,27 +9,25 @@ const Tasks = ({
     instanceTaskList,
     taskInformation,
     onSelectTask,
-    onCloseTask
+    onCloseTask,
+    taskFilter = ""
 }) => {
 
 	const isDetailOpen = taskId !== undefined && !!taskInformation
 
-	// Visão única (sem tabs): a lista de tasks com modos lista/hierarquia/loader.
-	// O detalhe abre como off-canvas (drawer) pela direita.
-	return <div>
+	// Visão única: a lista de tasks (flat), preenchendo a altura da janela. O
+	// detalhe abre como off-canvas (drawer) pela direita.
+	return <div style={{ display: "flex", flexDirection: "column", flex: "1 1 auto", minHeight: 0 }}>
 		<TaskProcessMonitor
 			instanceTaskList={instanceTaskList}
 			taskId={taskId}
+			filterValue={taskFilter}
 			onSelectTask={onSelectTask}/>
 
 		{
 			isDetailOpen && <>
-				<div onClick={onCloseTask}
-					style={{ position: "fixed", inset: 0, background: "rgba(16,24,40,.28)", zIndex: 1400 }}/>
-				<div style={{
-					position: "fixed", top: "52px", right: 0, bottom: 0, width: "780px", maxWidth: "94vw",
-					zIndex: 1450, background: "#fff", overflow: "auto", boxShadow: "-4px 0 16px rgba(16,24,40,.18)"
-				}}>
+				<div className="mp-offcanvas__scrim" onClick={onCloseTask} style={{ zIndex: 1400 }}/>
+				<div className="mp-offcanvas" style={{ width: "720px", maxWidth: "94vw", zIndex: 1450 }}>
 					<TaskInformation taskInformation={taskInformation} onClose={onCloseTask}/>
 				</div>
 			</>

@@ -52,15 +52,15 @@ const SourcesListTable = ({
                     <div
                         onClick={() => toggle(ns)}
                         style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px", cursor: "pointer" }}>
-                        <Icon name={isOpen ? "caret down" : "caret right"} style={{ color: "#999" }}/>
-                        <Icon name="cubes" style={{ color: "#7b8794" }}/>
+                        <Icon name={isOpen ? "caret down" : "caret right"} style={{ color: "var(--mp-muted-2)" }}/>
+                        <Icon name="cubes" style={{ color: "var(--mp-muted)" }}/>
                         <strong style={{ flex: 1 }}>{ns}</strong>
                         {
                             installed
                             ? <Label size="tiny" color="green" basic>installed · {activeSourceType}</Label>
                             : <Label size="tiny" basic>not installed</Label>
                         }
-                        <span style={{ color: "#aaa", fontSize: ".85em" }}>{sources.length} src</span>
+                        <span style={{ color: "var(--mp-muted-2)", fontSize: ".85em" }}>{sources.length} src</span>
                         {
                             installed &&
                             <Button size="mini" basic icon title="update repository"
@@ -73,10 +73,10 @@ const SourcesListTable = ({
 
                     { /* fontes (expandido) */ }
                     {
-                        isOpen && <div style={{ borderTop: "1px solid #eee" }}>
+                        isOpen && <div style={{ borderTop: "1px solid var(--mp-line-faint)" }}>
                             {
                                 sources.length === 0 &&
-                                <div style={{ padding: "8px 12px 8px 36px", color: "#bbb" }}>nenhuma fonte registrada</div>
+                                <div style={{ padding: "8px 12px 8px 36px", color: "var(--mp-muted-2)" }}>nenhuma fonte registrada</div>
                             }
                             {
                                 sources.map((source:any, sKey:number) => {
@@ -86,7 +86,7 @@ const SourcesListTable = ({
                                             background: isActive ? "#f4fbf5" : undefined, borderTop: sKey > 0 ? "1px solid #f3f3f3" : undefined }}>
                                         <Icon name={isActive ? "check circle" : "feed"} color={isActive ? "green" : "grey"}/>
                                         <span style={{ width: "120px", fontWeight: 500 }}>{source.sourceType}</span>
-                                        <span style={{ flex: 1, color: "#888", fontFamily: "monospace", fontSize: ".82em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                                        <span style={{ flex: 1, color: "var(--mp-muted)", fontFamily: "monospace", fontSize: ".82em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
                                             title={SourceParamSummary(source)}>
                                             {SourceParamSummary(source)}
                                         </span>

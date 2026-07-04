@@ -102,38 +102,39 @@ const LogStreaming = ({ monitoringStateKey, HTTPServerManager, fill = false, onA
     }, [reconnectSignal])
 
     const statusMeta:any = {
-        connecting: { color: "yellow", icon: "spinner",      text: "conectando" },
-        open:       { color: "green",  icon: "circle",       text: "conectado" },
-        closed:     { color: "grey",   icon: "circle outline", text: "desconectado" }
+        connecting: { color: "yellow", icon: "spinner",      text: "connecting" },
+        open:       { color: "green",  icon: "circle",       text: "connected" },
+        closed:     { color: "grey",   icon: "circle outline", text: "disconnected" }
     }
     const sm = statusMeta[status]
 
     return <div style={fill ? { display: "flex", flexDirection: "column", height: "100%" } : undefined}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", flexWrap: "nowrap", flex: "0 0 auto", fontSize: ".9em", minWidth: 0 }}>
             <Label color={sm.color} size="small" className={status === "open" ? "eco-pulse-color" : undefined} style={{ flex: "0 0 auto" }}><Icon name={sm.icon} loading={status === "connecting"}/> {sm.text}</Label>
-            <span style={{ fontFamily: "monospace", fontSize: ".82em", color: "#8a9099", flex: "0 1 auto", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={monitoringStateKey}>{ShortId(monitoringStateKey, 8, 6)}</span>
+            <span style={{ fontFamily: "var(--mp-font-mono)", fontSize: ".82em", color: "var(--mp-muted)", flex: "0 1 auto", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={monitoringStateKey}>{ShortId(monitoringStateKey, 8, 6)}</span>
             <CopyValue value={monitoringStateKey}/>
             <Label basic size="small" style={{ flex: "0 0 auto" }}><Icon name="list"/> {lines.length}</Label>
             <Checkbox toggle label="auto-scroll" checked={autoScroll} onChange={() => setAutoScroll(!autoScroll)} style={{ flex: "0 0 auto" }}/>
             <div style={{ marginLeft: "auto", flex: "0 0 auto" }}>
                 {
                     status === "open"
-                    ? <Button size="mini" basic color="red" icon labelPosition="left" onClick={handleDisconnect}><Icon name="plug"/> desconectar</Button>
-                    : <Button size="mini" basic color="blue" icon labelPosition="left" onClick={connect}><Icon name="redo"/> reconectar</Button>
+                    ? <Button size="mini" basic color="red" icon labelPosition="left" onClick={handleDisconnect}><Icon name="plug"/> disconnect</Button>
+                    : <Button size="mini" basic color="blue" icon labelPosition="left" onClick={connect}><Icon name="redo"/> reconnect</Button>
                 }
             </div>
         </div>
         <div
             ref={bodyRef}
             style={{
-                background: "#1e2127", color: "#d7dbe0", fontFamily: "monospace", fontSize: ".82em",
-                lineHeight: 1.45, padding: "10px 12px", borderRadius: "6px",
+                background: "var(--mp-terminal-bg)", color: "var(--mp-terminal-fg)", fontFamily: "var(--mp-font-mono)", fontSize: ".82em",
+                lineHeight: 1.45, padding: "10px 12px", borderRadius: "var(--mp-radius-md)",
+                border: "2px solid var(--mp-line-strong)", borderTop: "3px solid var(--mp-titlebar-runtime)",
                 height: fill ? "auto" : "62vh", flex: fill ? 1 : undefined, minHeight: fill ? 0 : undefined,
                 overflow: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word"
             }}>
             {
                 lines.length === 0
-                ? <span style={{ color: "#6b7177" }}>aguardando log do processo…</span>
+                ? <span style={{ color: "var(--mp-terminal-muted)" }}>waiting for process log…</span>
                 : lines.map((line:string, key:number) => <div key={key}>{line || " "}</div>)
             }
         </div>

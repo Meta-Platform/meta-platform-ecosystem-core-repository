@@ -1,12 +1,15 @@
 import * as React from "react"
 import { useState, useEffect } from "react"
 
-import { Button, Card, Checkbox, Header, Icon, Image, Input, Label, Loader, Segment } from "semantic-ui-react"
+import { Button, Checkbox, Icon, Image, Input, Label, Loader, Segment } from "semantic-ui-react"
 
 import GetAPI from "../../Utils/GetAPI"
 import GetExecutableIconURL from "../../Utils/GetExecutableIconURL"
 import ListSkeleton from "../../Components/Skeleton"
 import ExecutableInformation from "./ExecutableInformation"
+import PageMasthead from "../../Components/ui/PageMasthead"
+import StatusStrip, { StatusChip } from "../../Components/ui/StatusStrip"
+import ObjectCard from "../../Components/ui/ObjectCard"
 
 // Executável de baixo nível interno do ecossistema — não deve aparecer no painel.
 const IGNORED_EXECUTABLES = ["execute-application", "execute-command-line-application", "execute-desktop-application"]
@@ -28,6 +31,16 @@ const PackageName = (packageRepoPath:string) => {
     return packageRepoPath.split("/").filter(Boolean).pop() || ""
 }
 
+// Tipo visual do executável para colorir o card: cli | app | desktop.
+const GetExecutableKind = (e:any) => {
+    const p = (e.packageRepoPath || "").toLowerCase()
+    if(e.type === "cli" || p.endsWith(".cli")) return "cli"
+    if(p.endsWith(".desktopapp")) return "desktop"
+    return "app"
+}
+const KIND_ACCENT:any      = { cli: "var(--mp-accent-cyan)", app: "var(--mp-accent-blue)", desktop: "var(--mp-accent-violet)" }
+const KIND_LABEL_COLOR:any = { cli: "teal", app: "blue", desktop: "violet" }
+
 const ExecutableIcon = ({ executable, serverManagerInformation }:any) => {
     const iconURL = executable.hasPackageIcon
         ? GetExecutableIconURL({ serverManagerInformation, executableName: executable.executableName })
@@ -36,7 +49,7 @@ const ExecutableIcon = ({ executable, serverManagerInformation }:any) => {
     if(iconURL)
         return <Image src={iconURL} title="icone do pacote" style={{ width: "22px", height: "22px", objectFit: "contain", flex: "0 0 auto", margin: 0 }}/>
 
-    return <Icon name={TYPE_ICON[executable.type] || "file"} style={{ color: "#7b8794" }} title={executable.type}/>
+    return <Icon name={TYPE_ICON[executable.type] || "file"} style={{ color: "var(--mp-muted)" }} title={executable.type}/>
 }
 
 const ExecutablesContainer = ({
@@ -127,62 +140,62 @@ const ExecutablesContainer = ({
         selectedExecutableStatus === "installed" ? "installed" : selectedExecutableStatus === "not-installed" ? "not installed" : undefined
     ].filter(Boolean)
 
-    return <Segment style={{ margin: "10px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px", flexWrap: "wrap" }}>
-            <Label size="large"><Icon name="terminal"/> {totalCount} executables</Label>
-            <Label size="large" basic color="green"><Icon name="check circle"/> {installedCount} installed</Label>
-            <Label size="large" basic><Icon name="circle outline"/> {notInstalledCount} not installed</Label>
-            {
-                filterLabelList.length > 0 &&
-                <Label size="large" color="blue" basic>
-                    <Icon name="filter"/> {filterLabelList.join(" / ")}
-                </Label>
-            }
-            <Checkbox toggle label="mostrar -dbg" checked={showDebug} onChange={() => setShowDebug(!showDebug)}/>
-            <Input icon="search" size="small" placeholder="filtrar..." value={filterValue}
-                onChange={(e, { value }) => setFilterValue(value)} style={{ marginLeft: "auto" }}/>
-        </div>
+    return <Segment style={{ margin: "10px", height: "calc(100vh - 110px)", display: "flex", flexDirection: "column" }}>
+        <PageMasthead
+            icon="terminal"
+            title="Executables"
+            subtitle="Run, filter and inspect installed applications, daemons and CLIs.">
+            <StatusStrip right={<>
+                <Checkbox toggle label="show -dbg" checked={showDebug} onChange={() => setShowDebug(!showDebug)}/>
+                <Input icon="search" size="small" placeholder="filter..." value={filterValue}
+                    onChange={(e, { value }) => setFilterValue(value)}/>
+            </>}>
+                <StatusChip icon="terminal" count={totalCount} label="executables"/>
+                <StatusChip icon="check circle" tone="success" count={installedCount} label="installed"/>
+                <StatusChip icon="circle outline" count={notInstalledCount} label="not installed"/>
+                { filterLabelList.length > 0 && <StatusChip icon="filter" tone="info" label={filterLabelList.join(" / ")}/> }
+            </StatusStrip>
+        </PageMasthead>
 
+        <div style={{ flex: "1 1 auto", minHeight: 0, overflow: "auto" }}>
         {
             isListLoading
-            ? <ListSkeleton lines={8}/>
+            ? <ListSkeleton variant="cards" lines={8}/>
             : repoGroups.map((group:any) => {
                 const items = group.items.sort((a:any, b:any) => {
                     if(a.isInstalled !== b.isInstalled) return a.isInstalled ? -1 : 1
                     return a.executableName.localeCompare(b.executableName)
                 })
                 return <div key={group.repo} style={{ marginBottom: "16px" }}>
-                    <div style={{ color: "#8a9099", fontSize: ".8em", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".03em", marginBottom: "6px" }} title={group.repositoryPath}>
+                    <div style={{ color: "var(--mp-muted)", fontSize: ".8em", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".03em", marginBottom: "6px" }} title={group.repositoryPath}>
                         <Icon name="cubes"/> {group.repo} <Label circular size="mini">{items.length}</Label>
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "10px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "12px" }}>
                         {
-                            items.map((executable:any, key:number) =>
-                                <Card key={key} fluid onClick={() => onSelectExecutable(executable.executableName)} style={{ margin: 0, cursor: "pointer", opacity: executable.isInstalled ? 1 : .76 }}>
-                                    <Card.Content style={{ padding: "10px 12px" }}>
-                                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                            <ExecutableIcon executable={executable} serverManagerInformation={serverManagerInformation}/>
-                                            <span style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{executable.executableName}</span>
-                                            { executable.isDebug && <Label size="mini" color="grey">dbg</Label> }
-                                            <Label size="mini" basic color={executable.isInstalled ? "green" : "grey"} style={{ marginLeft: "auto" }}>
-                                                {executable.isInstalled ? "installed" : "not installed"}
-                                            </Label>
-                                        </div>
-                                        {
-                                            PackageName(executable.packageRepoPath) &&
-                                            <div style={{ marginTop: "3px", paddingLeft: "22px", fontSize: ".74em", color: "#9aa0a6", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-                                                title={executable.packageRepoPath}>
-                                                <Icon name="cube" style={{ fontSize: ".9em", color: "#b5bbc1" }}/> {PackageName(executable.packageRepoPath)}
-                                            </div>
-                                        }
-                                    </Card.Content>
-                                </Card>)
+                            items.map((executable:any, key:number) => {
+                                const kind = GetExecutableKind(executable)
+                                return <ObjectCard
+                                    key={key}
+                                    iconNode={<ExecutableIcon executable={executable} serverManagerInformation={serverManagerInformation}/>}
+                                    title={executable.executableName}
+                                    meta={PackageName(executable.packageRepoPath)}
+                                    dim={!executable.isInstalled}
+                                    accent={KIND_ACCENT[kind]}
+                                    selected={selectedExecutableName === executable.executableName}
+                                    status={<Label size="mini" basic color={executable.isInstalled ? "green" : "grey"}>{executable.isInstalled ? "installed" : "not installed"}</Label>}
+                                    chips={<>
+                                        <Label size="mini" basic color={KIND_LABEL_COLOR[kind]}>{kind}</Label>
+                                        { executable.isDebug && <Label size="mini" color="grey">dbg</Label> }
+                                    </>}
+                                    onClick={() => onSelectExecutable(executable.executableName)}/>
+                            })
                         }
                     </div>
                 </div>
             })
         }
-        { !isListLoading && visible.length === 0 && <div style={{ color: "#bbb", padding: "16px" }}>nenhum executável corresponde ao filtro</div> }
+        { !isListLoading && visible.length === 0 && <div style={{ color: "var(--mp-muted)", padding: "16px" }}>no executables match the filter</div> }
+        </div>
     </Segment>
 }
 

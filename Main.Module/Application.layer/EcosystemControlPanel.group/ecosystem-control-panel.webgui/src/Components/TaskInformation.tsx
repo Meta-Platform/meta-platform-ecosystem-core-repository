@@ -2,28 +2,27 @@ import * as React from "react"
 
 import {
 	Button,
-	Header,
 	Icon,
 	Label,
-	Segment,
 	Tab,
 	TabPane
  } from "semantic-ui-react"
 
 import StatusBadge from "./StatusBadge"
 import KeyValuePanel from "./KeyValuePanel"
+import EntityHeader from "./ui/EntityHeader"
 
 // Regras (&&) empilhadas (propriedade ACIMA do valor), padronizadas com o modo
 // stacked do KeyValuePanel para otimizar o espaço estreito do off-canvas.
 const RulesTable = ({ rules }:any) => {
 	const andRules = (rules && rules["&&"]) || []
 	if(andRules.length === 0)
-		return <span style={{ color: "#999" }}>sem regras</span>
+		return <span style={{ color: "var(--mp-muted-2)" }}>sem regras</span>
 	return <div>
 		{
 			andRules.map((rule:any, key:number) =>
-				<div key={key} style={{ padding: "8px 0", borderBottom: key < andRules.length - 1 ? "1px solid #d7dce1" : "none" }}>
-					<div style={{ fontFamily: "monospace", fontSize: ".78em", color: "#8a9099", fontWeight: 600, marginBottom: "2px", wordBreak: "break-all" }}>{rule.property}</div>
+				<div key={key} style={{ padding: "8px 0", borderBottom: key < andRules.length - 1 ? "1px solid var(--mp-line-faint)" : "none" }}>
+					<div style={{ fontFamily: "monospace", fontSize: ".78em", color: "var(--mp-muted)", fontWeight: 600, marginBottom: "2px", wordBreak: "break-all" }}>{rule.property}</div>
 					<code style={{ wordBreak: "break-all" }}>{String(rule["="])}</code>
 				</div>)
 		}
@@ -56,18 +55,17 @@ const TaskInformation = ({ taskInformation, onClose }:any) => {
 		})
 
 	return <div style={{ padding: "14px 16px" }}>
-		<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
-			<Header as="h3" style={{ margin: 0 }}>
-				<Header.Content>
-					Task ID {taskInformation.taskId}
-					<StatusBadge status={taskInformation.status} size="small"/>
-					{ taskInformation.pTaskId !== undefined && taskInformation.pTaskId !== null &&
-						<Label size="mini" style={{ marginLeft: "4px" }}>parent {taskInformation.pTaskId}</Label> }
-					<Header.Subheader>{taskInformation.objectLoaderType}</Header.Subheader>
-				</Header.Content>
-			</Header>
-			{ onClose && <Button icon basic size="mini" title="fechar detalhe" onClick={onClose} style={{ flex: "0 0 auto" }}><Icon name="close"/></Button> }
-		</div>
+		<EntityHeader
+			icon="tasks"
+			title={`Task ${taskInformation.taskId}`}
+			status={taskInformation.status}
+			subtitle={taskInformation.objectLoaderType}
+			badges={ taskInformation.pTaskId !== undefined && taskInformation.pTaskId !== null
+				? <Label size="tiny" basic>parent {taskInformation.pTaskId}</Label>
+				: undefined }
+			actions={ onClose
+				? <Button icon basic size="small" title="fechar detalhe" onClick={onClose}><Icon name="close"/></Button>
+				: undefined }/>
 
 		{
 			panes.length > 0 &&

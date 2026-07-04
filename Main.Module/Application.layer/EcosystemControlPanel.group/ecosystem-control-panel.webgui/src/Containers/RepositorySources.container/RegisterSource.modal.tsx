@@ -44,14 +44,14 @@ const RegisterSourceModal = ({
         onRegister({ repositoryNamespace, sourceType, ...fields })
 
     return <Modal size="small" open={true} onClose={onCancel}>
-        <Modal.Header><Icon name="feed"/> Registrar nova fonte</Modal.Header>
+        <Modal.Header><Icon name="feed"/> Register new source</Modal.Header>
         <Modal.Content>
             <Form>
                 <Form.Field>
                     <label>repository namespace</label>
                     <input
                         list="namespace-options"
-                        placeholder="ex.: meta-platform-essential-repository"
+                        placeholder="e.g. meta-platform-essential-repository"
                         value={repositoryNamespace}
                         onChange={({ target: { value } }) => setRepositoryNamespace(value)}/>
                     <datalist id="namespace-options">
@@ -69,7 +69,7 @@ const RegisterSourceModal = ({
                     sourceType === "LOCAL_FS" &&
                     <Form.Input
                         label="local path"
-                        placeholder="/caminho/para/o/repositorio"
+                        placeholder="/path/to/the/repository"
                         value={fields.localPath || ""}
                         onChange={(e, { value }) => setField("localPath", value)}/>
                 }
@@ -77,12 +77,12 @@ const RegisterSourceModal = ({
                     sourceType === "GITHUB_RELEASE" && <>
                         <Form.Input
                             label="repo owner"
-                            placeholder="usuário/owner no GitHub"
+                            placeholder="GitHub user/owner"
                             value={fields.repoOwner || ""}
                             onChange={(e, { value }) => setField("repoOwner", value)}/>
                         <Form.Input
                             label="repo name"
-                            placeholder="nome do repositório no GitHub"
+                            placeholder="GitHub repository name"
                             value={fields.repoName || ""}
                             onChange={(e, { value }) => setField("repoName", value)}/>
                     </>
@@ -91,20 +91,20 @@ const RegisterSourceModal = ({
                     sourceType === "GOOGLE_DRIVE" &&
                     <Form.Input
                         label="file id"
-                        placeholder="id do arquivo .tar.gz no Google Drive"
+                        placeholder="Google Drive .tar.gz file id"
                         value={fields.fileId || ""}
                         onChange={(e, { value }) => setField("fileId", value)}/>
                 }
             </Form>
             <Message info size="small">
                 <Icon name="info circle"/>
-                Registrar uma fonte apenas a cadastra em <code>sources.json</code>. A instalação é um passo separado.
+                Registering a source only records it in <code>sources.json</code>. Installation is a separate step.
             </Message>
         </Modal.Content>
         <Modal.Actions>
-            <Button onClick={onCancel} disabled={isRegistering}>cancelar</Button>
+            <Button onClick={onCancel} disabled={isRegistering}>cancel</Button>
             <Button color="blue" disabled={!isValid()} loading={isRegistering} onClick={handleRegister}>
-                <Icon name="plus"/> registrar fonte
+                <Icon name="plus"/> register source
             </Button>
         </Modal.Actions>
     </Modal>

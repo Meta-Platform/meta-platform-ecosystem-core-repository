@@ -59,13 +59,17 @@ const PackageLeaf = ({ pkg, selectedKey, onSelectPackage, serverManagerInformati
     const isSelected = selectable && selectedKey === PackageKey(pkg)
     return <div
         onClick={selectable ? () => onSelectPackage(pkg) : undefined}
+        role={selectable ? "option" : undefined}
+        aria-selected={selectable ? isSelected : undefined}
         style={{
-            padding: "2px 4px", paddingLeft: "20px", display: "flex", alignItems: "center",
-            cursor: selectable ? "pointer" : "default", borderRadius: "4px",
-            background: isSelected ? "#e8f0fa" : undefined
+            padding: "3px 4px", paddingLeft: "20px", display: "flex", alignItems: "center", gap: "4px",
+            cursor: selectable ? "pointer" : "default", borderRadius: "var(--mp-radius-sm)",
+            background: isSelected ? "var(--mp-accent-blue-tint)" : undefined,
+            boxShadow: isSelected ? "inset 3px 0 0 var(--mp-accent-blue)" : undefined,
+            fontWeight: isSelected ? 700 : undefined
         }}>
         <PackageIcon packageData={pkg} serverManagerInformation={serverManagerInformation} size={16}/>
-        <span>{pkg.packageName}</span>
+        <span style={{ color: "var(--mp-ink)" }}>{pkg.packageName}</span>
         <Label size="mini" color={GetExtColor(pkg.ext)} style={{ marginLeft: "6px" }}>{pkg.ext}</Label>
     </div>
 }
@@ -80,14 +84,15 @@ const TreeNode = ({ name, node, defaultOpen, selectedKey, onSelectPackage, serve
     return <div>
         <div
             onClick={() => setOpen(!open)}
-            style={{ padding: "3px 4px", cursor: "pointer", display: "flex", alignItems: "center", userSelect: "text" }}>
-            <Icon name={open ? "caret down" : "caret right"} style={{ color: "#999", width: "14px", flex: "0 0 auto" }}/>
+            role="button" aria-expanded={open}
+            style={{ padding: "3px 4px", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", userSelect: "text" }}>
+            <Icon name={open ? "caret down" : "caret right"} style={{ color: "var(--mp-muted)", width: "14px", flex: "0 0 auto" }}/>
             <Icon name={open ? "folder open" : "folder"} color="yellow"/>
-            <strong style={{ color: "#333" }}>{name}</strong>
+            <strong style={{ color: "var(--mp-ink-2)" }}>{name}</strong>
             <Label circular size="mini" style={{ marginLeft: "6px" }}>{totalDescendants}</Label>
         </div>
         {
-            open && <div style={{ marginLeft: `${INDENT}px`, borderLeft: "1px dashed #e0e0e0" }}>
+            open && <div style={{ marginLeft: `${INDENT}px`, borderLeft: "1px dashed var(--mp-line-faint)" }}>
                 { childNames.map((childName:string, key:number) =>
                     <TreeNode
                         key={key}
@@ -174,7 +179,7 @@ const PackageTree = ({ packageList, isLoading, serverManagerInformation }:any) =
                     <Input
                         icon="search"
                         size="small"
-                        placeholder="filtrar neste repo..."
+                        placeholder="filter in this repo..."
                         value={filterValue}
                         onChange={(e, { value }) => setFilterValue(value)}/>
                 </div>
@@ -188,7 +193,7 @@ const PackageTree = ({ packageList, isLoading, serverManagerInformation }:any) =
                                 node={repoNode.__children[moduleName]}
                                 defaultOpen={true}
                                 serverManagerInformation={serverManagerInformation}/>)
-                        : <div style={{ color: "#bbb", padding: "20px" }}>selecione um repositório</div>
+                        : <div style={{ color: "var(--mp-muted)", padding: "20px" }}>select a repository</div>
                     }
                 </div>
             </Grid.Column>

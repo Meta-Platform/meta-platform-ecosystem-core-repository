@@ -46,12 +46,12 @@ const RenderItemTitle = ({
 	switch(objectLoaderType){
 		case "install-nodejs-package-dependencies":
 		case "application-instance":
-			return <span style={{color:"#100085"}}> | <strong>namespace</strong> {staticParameters.namespace}</span>
+			return <span style={{color:"var(--mp-accent-blue)"}}> | <strong>namespace</strong> {staticParameters.namespace}</span>
 		case "service-instance":
 		case "nodejs-package":
-			return <span style={{color:"#100085"}}> | <strong>tag</strong> {staticParameters.tag}</span>
+			return <span style={{color:"var(--mp-accent-blue)"}}> | <strong>tag</strong> {staticParameters.tag}</span>
 		case "endpoint-instance":
-			return <span style={{color:"#100085"}}> | <strong>url</strong> {staticParameters.url}</span>
+			return <span style={{color:"var(--mp-accent-blue)"}}> | <strong>url</strong> {staticParameters.url}</span>
 	}
 }
 

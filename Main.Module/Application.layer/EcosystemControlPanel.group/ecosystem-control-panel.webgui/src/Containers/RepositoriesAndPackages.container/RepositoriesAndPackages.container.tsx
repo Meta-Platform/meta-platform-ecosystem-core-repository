@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import {
     Button,
     Grid,
-    Header,
     Icon,
     Input,
     Label,
@@ -29,6 +28,7 @@ import EmptyState from "../../Components/EmptyState"
 import { BuildPackageTree, TreeNode, PackageKey } from "../ApplicationsAndPackages.container/PackageTree"
 import CopyValue from "../../Components/CopyValue"
 import PackageIcon from "../../Components/PackageIcon"
+import EntityHeader from "../../Components/ui/EntityHeader"
 
 // Workspace unificado de Repositories & Packages (Sources + Packages juntos):
 // lista de repositórios à esquerda; à direita, sub-abas Sources e Packages do
@@ -105,13 +105,13 @@ const RepositoriesAndPackagesContainer = ({
         return a && a.sourceData && a.sourceData.sourceType
     }
 
-    const ACTION_LABEL:any = { install: "Instalação", change: "Troca de fonte", update: "Atualização", removeSource: "Remoção de fonte" }
+    const ACTION_LABEL:any = { install: "Install", change: "Source change", update: "Update", removeSource: "Source removal" }
     const runAction = async (busy:any, call:any) => {
         try {
             setBusyAction(busy)
             await call()
             await updateAll()
-            toastSuccess(`${ACTION_LABEL[busy.action] || busy.action} concluída${busy.namespace ? ` — ${busy.namespace}` : ""}`)
+            toastSuccess(`${ACTION_LABEL[busy.action] || busy.action} done${busy.namespace ? ` — ${busy.namespace}` : ""}`)
         } catch(e) {
             toastError(errorMessage(e))
         } finally { setBusyAction(undefined) }
@@ -146,7 +146,7 @@ const RepositoriesAndPackagesContainer = ({
         const installed = isInstalled(ns)
         return <div>
             {
-                sources.length === 0 && <div style={{ color: "#bbb", padding: "8px 0" }}>nenhuma fonte registrada</div>
+                sources.length === 0 && <div style={{ color: "var(--mp-muted-2)", padding: "8px 0" }}>no sources registered</div>
             }
             {
                 sources.map((source:any, key:number) => {
@@ -154,7 +154,7 @@ const RepositoriesAndPackagesContainer = ({
                     return <Segment key={key} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px", background: isActive ? "#f4fbf5" : undefined }}>
                         <Icon name={SOURCE_ICON[source.sourceType] || "database"} color={isActive ? "green" : "grey"} fitted style={{ flex: "0 0 auto", margin: 0, fontSize: "1.15em" }}/>
                         <span style={{ width: "120px", fontWeight: 500 }}>{source.sourceType}</span>
-                        <span style={{ flex: 1, color: "#888", fontFamily: "monospace", fontSize: ".82em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={SOURCE_PARAM_SUMMARY(source)}>{SOURCE_PARAM_SUMMARY(source)}</span>
+                        <span style={{ flex: 1, color: "var(--mp-muted)", fontFamily: "monospace", fontSize: ".82em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={SOURCE_PARAM_SUMMARY(source)}>{SOURCE_PARAM_SUMMARY(source)}</span>
                         { isActive && <Label color="green" size="mini">active</Label> }
                         <Button.Group size="mini" basic>
                             <Popup content="install" trigger={<Button icon loading={isBusy(ns, "install", source.sourceType)} onClick={() => handleInstall(ns, source.sourceType)}><Icon name="download" color="blue"/></Button>}/>
@@ -174,8 +174,8 @@ const RepositoriesAndPackagesContainer = ({
         if(!selectedPackage)
             return <EmptyState
                 icon="cube"
-                title="Nenhum pacote selecionado"
-                description="Selecione um pacote na árvore à esquerda para ver seus detalhes."/>
+                title="No package selected"
+                description="Select a package in the tree on the left to view its details."/>
         const p = selectedPackage
         const location = `${p.moduleName}.${p.layerName}${p.parentGroup ? `.${p.parentGroup}` : ""}`
         const rows = [
@@ -188,20 +188,18 @@ const RepositoriesAndPackagesContainer = ({
             ["location", location]
         ]
         return <Segment>
-            <Header as="h5" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <PackageIcon packageData={p} serverManagerInformation={serverManagerInformation} size={28}/>
-                <Header.Content>
-                    {p.packageName}<Label size="mini" style={{ marginLeft: "6px" }}>{p.ext}</Label>
-                    <Header.Subheader>{p.namespaceRepo}</Header.Subheader>
-                </Header.Content>
-            </Header>
+            <EntityHeader
+                iconNode={<PackageIcon packageData={p} serverManagerInformation={serverManagerInformation} size={26}/>}
+                title={p.packageName}
+                typeLabel={p.ext}
+                subtitle={p.namespaceRepo}/>
             <List divided size="small">
                 {
                     rows.map(([k, v]:any, idx:number) =>
                         <List.Item key={idx}>
                             <List.Content floated="right"><CopyValue value={String(v)}/></List.Content>
                             <List.Content>
-                                <span style={{ color: "#999" }}>{k}: </span>
+                                <span style={{ color: "var(--mp-muted-2)" }}>{k}: </span>
                                 <strong style={{ fontFamily: "monospace" }}>{v}</strong>
                             </List.Content>
                         </List.Item>)
@@ -219,7 +217,7 @@ const RepositoriesAndPackagesContainer = ({
         const selectedKey = selectedPackage && PackageKey(selectedPackage)
         return <Grid divided style={{ marginTop: 0 }}>
             <Grid.Column width={9}>
-                <Input icon="search" size="small" fluid placeholder="filtrar pacotes neste repo..." value={packageFilter} onChange={(e, { value }) => setPackageFilter(value)} style={{ marginBottom: "8px" }}/>
+                <Input icon="search" size="small" fluid placeholder="filter packages in this repo..." value={packageFilter} onChange={(e, { value }) => setPackageFilter(value)} style={{ marginBottom: "8px" }}/>
                 <div style={{ overflow: "auto", maxHeight: "62vh", fontFamily: "system-ui, sans-serif", fontSize: ".95em" }}>
                     {
                         repoNode
@@ -232,7 +230,7 @@ const RepositoriesAndPackagesContainer = ({
                                 selectedKey={selectedKey}
                                 onSelectPackage={setSelectedPackage}
                                 serverManagerInformation={serverManagerInformation}/>)
-                        : <div style={{ color: "#bbb", padding: "20px" }}>nenhum pacote instalado neste repositório</div>
+                        : <div style={{ color: "var(--mp-muted-2)", padding: "20px" }}>no packages installed in this repository</div>
                     }
                 </div>
             </Grid.Column>
@@ -256,19 +254,20 @@ const RepositoriesAndPackagesContainer = ({
             repoSelected
             ? <div>
                 <Breadcrumbs items={[ "Repositories & Packages", repoSelected, activeTab ]}/>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-                        <Icon name="cubes" color={isInstalled(repoSelected) ? "green" : "grey"} fitted style={{ flex: "0 0 auto", fontSize: "1.3em" }}/>
-                        <strong style={{ fontSize: "1.1em" }}>{repoSelected}</strong>
-                        <span style={{ color: "#aaa", fontSize: ".8em", whiteSpace: "nowrap" }}>
-                            { isInstalled(repoSelected) ? `installed · ${getActiveSourceType(repoSelected)}` : "not installed" }
-                        </span>
-                    </div>
-                    {
-                        isInstalled(repoSelected) &&
-                        <Button size="mini" basic loading={isBusy(repoSelected, "update")} onClick={() => handleUpdate(repoSelected)}><Icon name="refresh"/> update repository</Button>
+                <EntityHeader
+                    icon="cubes"
+                    title={repoSelected}
+                    badges={
+                        isInstalled(repoSelected)
+                        ? <Label size="tiny" basic color="green">installed</Label>
+                        : <Label size="tiny" basic color="grey">not installed</Label>
                     }
-                </div>
+                    meta={isInstalled(repoSelected) ? [{ label: "source", value: getActiveSourceType(repoSelected) }] : []}
+                    actions={
+                        isInstalled(repoSelected)
+                        ? <Button size="small" basic loading={isBusy(repoSelected, "update")} onClick={() => handleUpdate(repoSelected)}><Icon name="refresh"/> update repository</Button>
+                        : undefined
+                    }/>
                 <Tab
                     menu={{ secondary: true, pointing: true }}
                     activeIndex={activeTab === "sources" ? 1 : 0}
@@ -278,7 +277,7 @@ const RepositoriesAndPackagesContainer = ({
                         { menuItem: { key: "sources",  content: <span><Icon name="feed"/> Sources</span> },  render: () => <Tab.Pane>{renderSourcesPanel(repoSelected)}</Tab.Pane> }
                     ]}/>
             </div>
-            : <div style={{ color: "#bbb", padding: "20px" }}>selecione um repositório na árvore à esquerda</div>
+            : <div style={{ color: "var(--mp-muted-2)", padding: "20px" }}>select a repository in the tree on the left</div>
         }
 
         {
@@ -291,12 +290,12 @@ const RepositoriesAndPackagesContainer = ({
             <AppModal
                 variant="danger"
                 open={true}
-                header="Remover fonte"
-                confirmText="remover"
+                header="Remove source"
+                confirmText="remove"
                 confirmIcon="trash"
                 onCancel={() => setConfirmRemove(undefined)}
                 onConfirm={handleConfirmRemove}>
-                Remover <strong>{confirmRemove.st}</strong> de <strong>{confirmRemove.ns}</strong>? Altera o <code>sources.json</code>.
+                Remove <strong>{confirmRemove.st}</strong> from <strong>{confirmRemove.ns}</strong>? Changes <code>sources.json</code>.
             </AppModal>
         }
         {
@@ -304,14 +303,14 @@ const RepositoriesAndPackagesContainer = ({
             <AppModal
                 variant="edit"
                 open={true}
-                header="Trocar fonte do repositório"
-                confirmText="trocar fonte"
+                header="Change repository source"
+                confirmText="change source"
                 confirmIcon="exchange"
                 onCancel={() => setConfirmChange(undefined)}
                 onConfirm={handleConfirmChange}>
-                Tornar <strong>{confirmChange.st}</strong> a fonte ativa de <strong>{confirmChange.ns}</strong>?
-                <p style={{ color: "#9f6000", marginTop: "8px" }}>
-                    <Icon name="warning sign"/> Isso reinstala/realinha o repositório pela nova fonte e pode impactar o que está em execução.
+                Make <strong>{confirmChange.st}</strong> the active source of <strong>{confirmChange.ns}</strong>?
+                <p style={{ color: "var(--mp-warning)", marginTop: "8px" }}>
+                    <Icon name="warning sign"/> This reinstalls/realigns the repository from the new source and may impact what is running.
                 </p>
             </AppModal>
         }
@@ -320,14 +319,14 @@ const RepositoriesAndPackagesContainer = ({
             <AppModal
                 variant="info"
                 open={true}
-                header="Novo namespace de repositório"
-                confirmText="criar"
+                header="New repository namespace"
+                confirmText="create"
                 confirmIcon="plus"
                 confirmDisabled={!newNamespace}
                 onCancel={() => setIsAddNamespaceOpen(false)}
                 onConfirm={handleCreateNamespace}>
-                <Input fluid autoFocus placeholder="ex.: meu-repositorio" value={newNamespace || ""} onChange={(e, { value }) => setNewNamespace(value)}/>
-                <div style={{ color: "#888", fontSize: ".85em", marginTop: "6px" }}>Use letras minúsculas, números e hífen. Ex.: <code>ecosystem-core</code></div>
+                <Input fluid autoFocus placeholder="e.g. my-repository" value={newNamespace || ""} onChange={(e, { value }) => setNewNamespace(value)}/>
+                <div style={{ color: "var(--mp-muted)", fontSize: ".85em", marginTop: "6px" }}>Use lowercase letters, numbers and hyphens. E.g. <code>ecosystem-core</code></div>
             </AppModal>
         }
     </Segment>

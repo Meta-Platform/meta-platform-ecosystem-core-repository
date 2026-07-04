@@ -18,8 +18,8 @@ const AppModal = ({
     children,
     onCancel,
     onConfirm,
-    confirmText = "confirmar",
-    cancelText = "cancelar",
+    confirmText = "confirm",
+    cancelText = "cancel",
     confirmIcon,
     confirmDisabled = false,
     loading = false,
@@ -30,7 +30,7 @@ const AppModal = ({
     const isDanger = variant === "danger"
 
     return <Modal size={size} open={open} onClose={() => !loading && onCancel && onCancel()} closeOnDimmerClick={!loading}>
-        <Modal.Header>
+        <Modal.Header className={`mp-modal-head mp-modal-head--${variant}`}>
             <Icon name={v.icon} color={v.iconColor}/> {header}
         </Modal.Header>
         <Modal.Content scrolling>

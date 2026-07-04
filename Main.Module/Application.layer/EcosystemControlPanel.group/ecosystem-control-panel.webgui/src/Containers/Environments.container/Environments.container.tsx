@@ -2,7 +2,7 @@ import * as React from "react"
 import { useState, useEffect } from "react"
 import { connect }            from "react-redux"
 import { bindActionCreators } from "redux"
-import { Button, Header, Icon, Input, Label, Segment, Table } from "semantic-ui-react"
+import { Button, Icon, Input, Label, Segment, Table } from "semantic-ui-react"
 import qs from "query-string"
 import {
 	useNavigate
@@ -13,6 +13,7 @@ import GetAPI from "../../Utils/GetAPI"
 import Breadcrumbs from "../../Components/Breadcrumbs"
 import ListSkeleton from "../../Components/Skeleton"
 import EmptyState from "../../Components/EmptyState"
+import EntityHeader from "../../Components/ui/EntityHeader"
 import { ShortId } from "../../Utils/Format"
 import { toastSuccess, toastError, errorMessage } from "../../Utils/toast"
 
@@ -103,7 +104,7 @@ const EnvironmentsContainer = ({
         try {
             await getEnviromentAPI().SaveExecutionParams({ environmentName: environmentNameSelected, executionParams })
             await fetchExecutionParams()
-            toastSuccess("Plano de execução salvo")
+            toastSuccess("Execution plan saved")
         } catch(e) { toastError(errorMessage(e)); throw e }
     }
 
@@ -114,19 +115,17 @@ const EnvironmentsContainer = ({
     if(environmentNameSelected)
         return <Segment style={{ margin: "15px" }}>
             <Breadcrumbs items={[ "Environments", ExtractPackageIdentity(environmentNameSelected), ShortId(ExtractEnvironmentHash(environmentNameSelected), 8, 6) ]}/>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <Header>
-                    <Icon name="sitemap"/>
-                    <Header.Content>
-                        {ExtractPackageIdentity(environmentNameSelected)}
-                        <Label size="tiny" style={{ marginLeft: "8px", fontFamily: "monospace" }}>{ShortId(ExtractEnvironmentHash(environmentNameSelected), 10, 8)}</Label>
-                        <Header.Subheader style={{ wordBreak: "break-all" }}>environments / {environmentNameSelected}</Header.Subheader>
-                    </Header.Content>
-                </Header>
-                <Button size="small" basic icon labelPosition="left" onClick={backToList}>
-                    <Icon name="arrow left"/> lista
-                </Button>
-            </div>
+            <EntityHeader
+                icon="sitemap"
+                title={ExtractPackageIdentity(environmentNameSelected)}
+                subtitle={`environments / ${environmentNameSelected}`}
+                typeLabel={ExtractType(ExtractPackageIdentity(environmentNameSelected))}
+                technicalRef={{ label: "hash", value: ExtractEnvironmentHash(environmentNameSelected), maxChars: 20 }}
+                actions={
+                    <Button size="small" basic icon labelPosition="left" onClick={backToList}>
+                        <Icon name="arrow left"/> list
+                    </Button>
+                }/>
             <EnvironmentDetailsTab
                 metadataHierarchy={metadataHierarchySelected}
                 executionParams={executionParamsSelected}
@@ -138,11 +137,11 @@ const EnvironmentsContainer = ({
     const grouped = GroupByIdentity(filtered)
     const identities = Object.keys(grouped).sort()
 
-    return <Segment style={{ margin: "10px" }}>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "10px" }}>
+    return <Segment style={{ margin: "10px", height: "calc(100vh - 110px)", display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "10px", flex: "0 0 auto" }}>
             <Label size="large"><Icon name="sitemap"/> {environmentNameList.length} environments</Label>
-            <Label basic>{identities.length} pacotes</Label>
-            <Input icon="search" size="small" placeholder="filtrar environments..." value={filterValue}
+            <Label basic>{identities.length} packages</Label>
+            <Input icon="search" size="small" placeholder="filter environments..." value={filterValue}
                 onChange={(e, { value }) => setFilterValue(value)} style={{ marginLeft: "auto" }}/>
         </div>
 
@@ -150,8 +149,8 @@ const EnvironmentsContainer = ({
             isLoadingList
             ? <ListSkeleton lines={10}/>
             : identities.length === 0
-                ? <EmptyState icon="sitemap" title="Nenhum environment" description="Execute um pacote para gerar um environment."/>
-                : <div style={{ overflow: "auto", maxHeight: "72vh" }}>
+                ? <EmptyState icon="sitemap" title="No environments" description="Run a package to generate an environment."/>
+                : <div style={{ overflow: "auto", flex: "1 1 auto", minHeight: 0 }}>
                     <Table celled striped compact>
                         <Table.Header>
                             <Table.Row>
@@ -171,15 +170,15 @@ const EnvironmentsContainer = ({
                                         <Table.Row key={`g-${gi}`} style={{ cursor: instances.length > 1 ? "pointer" : "default" }}
                                             onClick={() => instances.length > 1 ? setOpenGroups({ ...openGroups, [identity]: !isOpen }) : selectEnvironment(instances[0])}>
                                             <Table.Cell>
-                                                { instances.length > 1 && <Icon name={isOpen ? "caret down" : "caret right"} style={{ color: "#999" }}/> }
-                                                <Icon name="cube" style={{ color: "#888" }}/> <strong>{identity}</strong>
+                                                { instances.length > 1 && <Icon name={isOpen ? "caret down" : "caret right"} style={{ color: "var(--mp-muted-2)" }}/> }
+                                                <Icon name="cube" style={{ color: "var(--mp-muted)" }}/> <strong>{identity}</strong>
                                             </Table.Cell>
                                             <Table.Cell><Label size="mini">{ExtractType(identity)}</Label></Table.Cell>
                                             <Table.Cell>{instances.length}</Table.Cell>
                                             <Table.Cell textAlign="right">
                                                 {
                                                     instances.length === 1 &&
-                                                    <span style={{ color: "#3a6ea5" }}>abrir <Icon name="arrow right"/></span>
+                                                    <span style={{ color: "var(--mp-accent-blue)" }}>open <Icon name="arrow right"/></span>
                                                 }
                                             </Table.Cell>
                                         </Table.Row>
@@ -188,12 +187,12 @@ const EnvironmentsContainer = ({
                                         instances.forEach((name:string, ii:number) =>
                                             rows.push(
                                                 <Table.Row key={`i-${gi}-${ii}`} style={{ cursor: "pointer" }} onClick={() => selectEnvironment(name)}>
-                                                    <Table.Cell style={{ paddingLeft: "34px", fontFamily: "monospace", color: "#666" }}>
-                                                        <Icon name="hashtag" style={{ color: "#bbb" }}/> {ShortId(ExtractEnvironmentHash(name), 12, 8)}
+                                                    <Table.Cell style={{ paddingLeft: "34px", fontFamily: "monospace", color: "var(--mp-ink-3)" }}>
+                                                        <Icon name="hashtag" style={{ color: "var(--mp-muted-2)" }}/> {ShortId(ExtractEnvironmentHash(name), 12, 8)}
                                                     </Table.Cell>
                                                     <Table.Cell/>
                                                     <Table.Cell/>
-                                                    <Table.Cell textAlign="right"><span style={{ color: "#3a6ea5" }}>abrir <Icon name="arrow right"/></span></Table.Cell>
+                                                    <Table.Cell textAlign="right"><span style={{ color: "var(--mp-accent-blue)" }}>open <Icon name="arrow right"/></span></Table.Cell>
                                                 </Table.Row>))
                                     return rows
                                 })

@@ -43,6 +43,7 @@ import MainMenu from "../Components/MainMenu"
 import WelcomePanel from "../Components/WelcomePanel"
 import ToastContainer from "../Components/ToastContainer"
 import LogDock from "../Components/LogDock"
+import { StatusChip } from "../Components/ui/StatusStrip"
 
 import QueryParamsActionsCreator from "../Actions/QueryParams.actionsCreator"
 
@@ -51,7 +52,7 @@ const DEFAULT_PANEL = "welcome"
 // Título/ícone da seção ativa, mostrado no header superior (MainMenu) no lugar
 // dos cabeçalhos que ficavam dentro de cada card.
 const PANEL_TITLES:any = {
-	"instance supervisor": { title: "Sockets de supervisor",  icon: "server" },
+	"instance supervisor": { title: "Supervisor Sockets",  icon: "server" },
 	"executables":         { title: "Executables",            icon: "terminal" },
 	"environments":        { title: "Environments",           icon: "sitemap" },
 	"repositories":        { title: "Repositories & Packages", icon: "cubes" },
@@ -150,11 +151,56 @@ const useNotificationManager = (serverManagerInformation) => {
 }
 
 
+// Bucket de filtro por severidade/origem.
+const NotificationBucket = (payload:any) => {
+	const view = GetNotificationPresentation(payload)
+	if(view.type === "error") return "errors"
+	if(payload?.type === "log") return "runtime"
+	return "system"
+}
+
+// Colapsa itens consecutivos idênticos (mesmo título + corpo) num só card com
+// contador — reduz ruído de eventos repetidos (§9.9).
+const GroupConsecutive = (list:any[]) => {
+	const out:any[] = []
+	list.forEach((n:any) => {
+		const view = GetNotificationPresentation(n.payload)
+		const sig = `${view.title}∆${view.body}`
+		const last = out[out.length - 1]
+		if(last && last.sig === sig) {
+			last.count += 1
+			last.wasSeen = last.wasSeen && n.wasSeen
+		} else {
+			out.push({ sig, view, count: 1, wasSeen: n.wasSeen })
+		}
+	})
+	return out
+}
+
+const NOTIF_FILTERS:any = [
+	{ key: "all",     label: "all" },
+	{ key: "errors",  label: "errors",  tone: "danger" },
+	{ key: "runtime", label: "runtime", tone: "info" },
+	{ key: "system",  label: "system" }
+]
+
 const NotificationPanel = ({ onClose, notificationStateList }) => {
+
+	const [ filter, setFilter ] = useState<string>("all")
+
+	const counts = notificationStateList.reduce((acc:any, n:any) => {
+		const b = NotificationBucket(n.payload); acc[b] = (acc[b] || 0) + 1; return acc
+	}, {})
+
+	const filtered = filter === "all"
+		? notificationStateList
+		: notificationStateList.filter((n:any) => NotificationBucket(n.payload) === filter)
+	const grouped = GroupConsecutive(filtered)
+
 	return <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
 		<div style={{
 			height: "56px", flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "space-between",
-			padding: "0 14px", borderBottom: "1px solid #e7eaee", background: "#fff"
+			padding: "0 14px", borderBottom: "2px solid var(--mp-line-strong)", background: "var(--mp-paper-2)"
 		}}>
 			<Header as='h4' style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
 				<Icon name='bell outline' />
@@ -163,42 +209,53 @@ const NotificationPanel = ({ onClose, notificationStateList }) => {
 			<Button circular icon='close' basic size="mini" onClick={onClose} />
 		</div>
 
-		<div style={{ overflow: 'auto', flex: "1 1 auto", padding: "12px", background: "#f6f8fa" }}>
+		{/* filter chips */}
+		<div style={{ flex: "0 0 auto", display: "flex", gap: "6px", padding: "8px 12px", borderBottom: "1px solid var(--mp-line-faint)", background: "var(--mp-surface-2)", flexWrap: "wrap" }}>
+			{ NOTIF_FILTERS.map((f:any) => {
+				const n = f.key === "all" ? notificationStateList.length : (counts[f.key] || 0)
+				return <StatusChip key={f.key} tone={f.tone || "neutral"} count={n} label={f.label}
+					active={filter === f.key} onClick={() => setFilter(f.key)}/>
+			}) }
+		</div>
+
+		<div style={{ overflow: 'auto', flex: "1 1 auto", padding: "12px", background: "var(--mp-paper)" }}>
 			{
-				notificationStateList.length === 0
-				&& <Segment placeholder textAlign="center" style={{ color: "grey", minHeight: "160px" }}>
+				grouped.length === 0
+				&& <Segment placeholder textAlign="center" style={{ color: "var(--mp-muted)", minHeight: "160px" }}>
 					<Icon name="bell slash outline" size="large"/>
-					<div>Sem notificações por enquanto</div>
+					<div>No notifications yet</div>
 				</Segment>
 			}
 			{
-				notificationStateList.map((notification, key) => {
-					const { wasSeen, payload } = notification
-					const view = GetNotificationPresentation(payload)
+				grouped.map((g:any, key:number) => {
+					const view = g.view
 					const messageHtml = ansiConverter.toHtml(view.body)
+					const stripe = view.color === "red" ? "var(--mp-danger)" : view.color === "orange" ? "var(--mp-accent-orange)" : view.color === "green" ? "var(--mp-success)" : view.color === "violet" ? "var(--mp-accent-violet)" : view.color === "teal" ? "var(--mp-accent-cyan)" : view.color === "blue" ? "var(--mp-accent-blue)" : "var(--mp-neutral)"
 
 					return <div
 						key={key}
 						style={{
-							opacity: wasSeen ? 0.72 : 1,
-							background: "#fff",
-							border: "1px solid #e2e7ed",
-							borderLeft: `4px solid ${view.color === "red" ? "#db2828" : view.color === "orange" ? "#f2711c" : view.color === "green" ? "#21ba45" : view.color === "violet" ? "#6435c9" : view.color === "teal" ? "#00b5ad" : "#767676"}`,
-							borderRadius: "6px",
+							opacity: g.wasSeen ? 0.72 : 1,
+							background: "var(--mp-surface)",
+							border: "1px solid var(--mp-line)",
+							borderLeft: `6px solid ${stripe}`,
+							borderRadius: "var(--mp-radius-md)",
 							padding: "10px 12px",
 							marginBottom: "10px",
-							boxShadow: "0 1px 2px rgba(16,24,40,.04)"
+							boxShadow: "var(--mp-shadow-1)"
 						}}>
 						<div style={{ display: "flex", alignItems: "flex-start", gap: "8px", minWidth: 0 }}>
 							<Icon name={view.icon} color={view.color} style={{ marginTop: "2px", flex: "0 0 auto" }}/>
 							<div style={{ minWidth: 0, flex: 1 }}>
 								<div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
 									<strong style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{view.title}</strong>
-									{ !wasSeen && <Label circular empty color="orange" size="mini" style={{ flex: "0 0 auto" }}/> }
+									{ g.count > 1 && <Label circular size="mini" style={{ flex: "0 0 auto" }}>×{g.count}</Label> }
+									{ !g.wasSeen && <Label circular empty color="orange" size="mini" style={{ flex: "0 0 auto" }}/> }
 								</div>
-								<div style={{ color: "#4b5563", fontSize: ".9em", marginTop: "5px", wordBreak: "break-word" }}
+								<div title={view.body}
+									style={{ color: "var(--mp-ink-3)", fontSize: ".9em", marginTop: "5px", wordBreak: "break-word", fontFamily: "var(--mp-font-mono)", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}
 									dangerouslySetInnerHTML={{ __html: messageHtml }}/>
-								<div style={{ display: "flex", justifyContent: "space-between", gap: "8px", color: "#98a2b3", fontSize: ".78em", marginTop: "8px" }}>
+								<div style={{ display: "flex", justifyContent: "space-between", gap: "8px", color: "var(--mp-muted-2)", fontSize: ".78em", marginTop: "8px" }}>
 									<span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{view.origin || "system"}</span>
 									<span style={{ flex: "0 0 auto" }}>{view.date}</span>
 								</div>
@@ -339,7 +396,7 @@ const ControlPanelPage = ({
 	const renderActivePanel = () => {
 		switch(activeItem){
 			case "welcome":
-				return <WelcomePanel onNavigate={handleNavigate} ecosystemdataPath={ecosystemdataPathSelected}/>
+				return <WelcomePanel onNavigate={handleNavigate} ecosystemdataPath={ecosystemdataPathSelected} serverManagerInformation={HTTPServerManager}/>
 			case "environments":
 				return <EnvironmentsContainer serverManagerInformation={HTTPServerManager}/>
 			case "repositories":
@@ -401,8 +458,7 @@ const ControlPanelPage = ({
 					{
 						/* Sidebar como DRAWER em telas estreitas (tablet). */
 						isNarrow && isSidebarOpen && <>
-							<div onClick={() => setIsSidebarOpen(false)}
-								style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.35)", zIndex: 1500 }}/>
+							<div className="mp-offcanvas__scrim" onClick={() => setIsSidebarOpen(false)} style={{ zIndex: 1500 }}/>
 							<div className="eco-sidebar-drawer">
 								<EcosystemNavigator
 									serverManagerInformation={HTTPServerManager}
@@ -417,11 +473,7 @@ const ControlPanelPage = ({
 					{
 						/* Notificações como OVERLAY: não empurra o conteúdo. */
 						isOpenNotificationPanel &&
-						<div style={{
-							position: "fixed", top: "52px", right: 0, bottom: 0, width: "380px", maxWidth: "92vw",
-							zIndex: 1000, background: "#ffffff",
-							boxShadow: "-3px 0 12px rgba(16,24,40,.12)", borderLeft: "1px solid #e3e6ea", overflow: "hidden"
-						}}>
+						<div className="mp-offcanvas" style={{ width: "380px", maxWidth: "92vw", zIndex: 1000, overflow: "hidden" }}>
 							<NotificationPanel
 								onClose={handleCloseNotificationPanel}
 								notificationStateList={notificationStateList}/>

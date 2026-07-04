@@ -252,7 +252,7 @@ const EcosystemNavigator = ({
             icon="search"
             size="small"
             fluid
-            placeholder="buscar..."
+            placeholder="search..."
             value={navFilter}
             onChange={(e, { value }) => setNavFilter(value)}
             style={{ marginBottom: "6px" }}/>
@@ -264,13 +264,13 @@ const EcosystemNavigator = ({
                 active={openSections.sockets}
                 onClick={() => { toggleSection("sockets"); onNavigate({ panel: "instance supervisor", params: { monitoringStateKey: undefined } }) }}>
                 <Icon name="dropdown"/>
-                <SectionTitle iconName="server" label="Sockets de supervisor" count={visibleOverviewKeys.length}/>
+                <SectionTitle iconName="server" label="Supervisor Sockets" count={visibleOverviewKeys.length}/>
             </Accordion.Title>
             <Accordion.Content active={openSections.sockets || filtering}>
                 {
                     overviewSocketGroupList.map((group:any) =>
                         <div key={group.groupKey} style={{ marginBottom: "6px" }}>
-                            <div style={{ padding: "5px 6px", color: "#6a7480", fontSize: ".85em", fontWeight: 700, textTransform: "uppercase" }}>
+                            <div style={{ padding: "5px 6px", color: "var(--mp-muted)", fontSize: ".85em", fontWeight: 700, textTransform: "uppercase" }}>
                                 {group.groupLabel}
                             </div>
                             <List selection size="small" style={{ marginTop: 0 }}>
@@ -293,7 +293,7 @@ const EcosystemNavigator = ({
                             </List>
                         </div>)
                 }
-                { hiddenUnavailableCount > 0 && <div style={{ color: "#7b8794", fontSize: ".85em", padding: "6px 6px 0" }}>{hiddenUnavailableCount} sockets indisponíveis ocultos</div> }
+                { hiddenUnavailableCount > 0 && <div style={{ color: "var(--mp-muted)", fontSize: ".85em", padding: "6px 6px 0" }}>{hiddenUnavailableCount} unavailable sockets hidden</div> }
             </Accordion.Content>
 
             { /* Executables (executables/) — 2º nó, irmão de repos/ no EcosystemData */ }
@@ -374,7 +374,7 @@ const EcosystemNavigator = ({
                 }
                 <div onClick={() => setShowDebugExecutables(!showDebugExecutables)} className="eco-nav-debug-toggle">
                     <Icon name={showDebugExecutables ? "eye slash" : "eye"}/>
-                    {showDebugExecutables ? "ocultar -dbg" : "mostrar -dbg"}
+                    {showDebugExecutables ? "hide -dbg" : "show -dbg"}
                 </div>
             </Accordion.Content>
 

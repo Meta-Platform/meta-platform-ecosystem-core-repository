@@ -4,7 +4,6 @@ import {useEffect, useState}  from "react"
 import useWebSocket from "../../Hooks/useWebSocket"
 
 import {
-	Divider,
 	Icon,
 	Label,
 	Segment,
@@ -13,6 +12,8 @@ import {
 
 import StatusBadge from "../../Components/StatusBadge"
 import CopyValue   from "../../Components/CopyValue"
+import PageMasthead from "../../Components/ui/PageMasthead"
+import StatusStrip, { StatusChip } from "../../Components/ui/StatusStrip"
 import { TruncateMiddle } from "../../Utils/Format"
 import { openLogWindow, subscribeLogWindows } from "../../Utils/logWindows"
 
@@ -60,12 +61,12 @@ const AppInfo = ({ merged }:any) => {
 		? PrimitiveEntries(merged).filter((k) => HIGHLIGHT_KEYS.includes(k) && k !== "executableName" && String(merged[k]) !== "").slice(0, 2)
 		: []
 	if(!exeName && otherKeys.length === 0)
-		return <span style={{ color: "#bbb", fontSize: ".85em" }}>sem dados do app</span>
-	return <span style={{ fontSize: ".85em", color: "#555", display: "inline-flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+		return <span style={{ color: "var(--mp-muted-2)", fontSize: ".85em" }}>no app data</span>
+	return <span style={{ fontSize: ".85em", color: "var(--mp-ink-3)", display: "inline-flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
 		{ exeName && <Label size="mini" color="blue"><Icon name="terminal"/> {exeName}</Label> }
 		{
 			otherKeys.map((key:string, index:number) => <span key={index}>
-				<span style={{ color: "#999" }}>{key}: </span>
+				<span style={{ color: "var(--mp-muted-2)" }}>{key}: </span>
 				<strong>{String(merged[key])}</strong>
 			</span>)
 		}
@@ -112,25 +113,25 @@ const SocketRow = ({ supervisorAPI, monitoringStateKey, filePath, status, onSele
 			{ logOpen && <Icon name="terminal" color="blue" className="eco-log-live" style={{ marginLeft: "6px" }} title="log stream ao vivo"/> }
 		</Table.Cell>
 		<Table.Cell><StatusBadge status={status}/></Table.Cell>
-		<Table.Cell style={{ fontFamily: "monospace", color: "#666" }}>
+		<Table.Cell style={{ fontFamily: "monospace", color: "var(--mp-ink-3)" }}>
 			{ !isConnected ? "—" : (isLoading ? "…" : (pid != null ? String(pid) : "—")) }
 		</Table.Cell>
 		<Table.Cell style={{ overflow: "hidden" }} title={filePath}>
 			<span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-				<span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "monospace", fontSize: ".82em", color: "#888" }}>{TruncateMiddle(filePath, 36)}</span>
+				<span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "monospace", fontSize: ".82em", color: "var(--mp-muted)" }}>{TruncateMiddle(filePath, 36)}</span>
 				<CopyValue value={filePath}/>
 			</span>
 		</Table.Cell>
 		<Table.Cell style={{ overflow: "hidden" }}>
 			{
 				!isConnected
-				? <span style={{ color: "#c0392b", fontSize: ".85em" }}><Icon name="warning circle"/> indisponível</span>
+				? <span style={{ color: "var(--mp-danger)", fontSize: ".85em" }}><Icon name="warning circle"/> unavailable</span>
 				: isLoading
-					? <span style={{ color: "#bbb", fontSize: ".85em" }}>carregando…</span>
+					? <span style={{ color: "var(--mp-muted-2)", fontSize: ".85em" }}>loading…</span>
 					: (appNamespace || serverUrl)
 						? <div style={{ fontSize: ".85em", display: "flex", flexDirection: "column", gap: "1px", overflow: "hidden" }}>
-							{ appNamespace && <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={appNamespace}><Icon name="cube" style={{ color: "#7b8794" }}/> <strong>{appNamespace}</strong></span> }
-							{ serverUrl && <span style={{ color: "#666", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={serverUrl}><Icon name="server" style={{ color: "#7b8794" }}/> {TruncateMiddle(serverUrl, 38)}</span> }
+							{ appNamespace && <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={appNamespace}><Icon name="cube" style={{ color: "var(--mp-muted)" }}/> <strong>{appNamespace}</strong></span> }
+							{ serverUrl && <span style={{ color: "var(--mp-ink-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={serverUrl}><Icon name="server" style={{ color: "var(--mp-muted)" }}/> {TruncateMiddle(serverUrl, 38)}</span> }
 						</div>
 						: <AppInfo merged={merged}/>
 			}
@@ -138,14 +139,14 @@ const SocketRow = ({ supervisorAPI, monitoringStateKey, filePath, status, onSele
 		<Table.Cell textAlign="right" onClick={(e:any) => e.stopPropagation()}>
 			{
 				isConnected &&
-				<a className="eco-action-link" title={logOpen ? "ver log stream aberto" : "abrir log stream"}
+				<a className="eco-action-link" title={logOpen ? "view open log stream" : "open log stream"}
 					onClick={() => openLogWindow({ monitoringStateKey, socketName })}
 					style={{ color: logOpen ? "#21862e" : "#3a6ea5", cursor: "pointer", marginRight: "8px", fontSize: ".85em", whiteSpace: "nowrap", fontWeight: logOpen ? 600 : 400 }}>
-					<Icon name={logOpen ? "eye" : "terminal"}/> {logOpen ? "ver log" : "log"}
+					<Icon name={logOpen ? "eye" : "terminal"}/> {logOpen ? "view log" : "log"}
 				</a>
 			}
-			<a className="eco-action-link" onClick={() => onSelect(monitoringStateKey)} style={{ color: "#3a6ea5", cursor: "pointer", fontSize: ".85em", whiteSpace: "nowrap" }}>
-				inspecionar <Icon name="arrow right"/>
+			<a className="eco-action-link" onClick={() => onSelect(monitoringStateKey)} style={{ color: "var(--mp-accent-blue)", cursor: "pointer", fontSize: ".85em", whiteSpace: "nowrap" }}>
+				inspect <Icon name="arrow right"/>
 			</a>
 		</Table.Cell>
 	</Table.Row>
@@ -202,12 +203,16 @@ const OverviewSocketPanel = ({
 	const unavailableCount = keys.filter((k) => overview[k]?.status === "UNAVAILABLE").length
 
 	return <Segment style={{ margin: "10px" }}>
-		<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-			<Label color="green" size="small"><Icon name="check circle"/> {connectedCount} connected</Label>
-			{ unavailableCount > 0 && <Label color="red" size="small"><Icon name="warning circle"/> {unavailableCount} unavailable</Label> }
-			<Label size="small">{keys.length} sockets</Label>
-		</div>
-		<Divider/>
+		<PageMasthead
+			icon="server"
+			title="Supervisor Sockets"
+			subtitle="Monitor local supervisor sockets, connection status, PID and associated apps.">
+			<StatusStrip>
+				<StatusChip icon="check circle" tone="success" count={connectedCount} label="connected"/>
+				{ unavailableCount > 0 && <StatusChip icon="warning circle" tone="danger" count={unavailableCount} label="unavailable"/> }
+				<StatusChip icon="plug" count={keys.length} label="sockets"/>
+			</StatusStrip>
+		</PageMasthead>
 		<div style={{ overflowX: "auto" }}>
 			<Table selectable striped unstackable style={{ tableLayout: "fixed", width: "100%" }}>
 				<Table.Header>
@@ -225,7 +230,7 @@ const OverviewSocketPanel = ({
 						groupedKeyList.map((group:any) =>
 							<React.Fragment key={group.groupKey}>
 								<Table.Row>
-									<Table.Cell colSpan={6} style={{ background: "#f4f7fa", color: "#586270", fontWeight: 700, textTransform: "uppercase", fontSize: ".84em" }}>
+									<Table.Cell colSpan={6} style={{ background: "var(--mp-surface-2)", color: "var(--mp-muted)", fontWeight: 700, textTransform: "uppercase", fontSize: ".84em" }}>
 										{group.groupLabel}
 									</Table.Cell>
 								</Table.Row>

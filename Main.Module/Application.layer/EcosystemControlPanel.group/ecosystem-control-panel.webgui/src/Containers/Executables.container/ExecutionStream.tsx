@@ -69,7 +69,7 @@ const ExecutionStream = ({ packageDirPath, executableName, serverManagerInformat
                 if(payload.status === "closed") setStatus("closed")
                 appendLine(payload)
             }
-            ws.onerror = () => appendLine({ type: "error", message: "[erro de conexão com terminal de execução]" })
+            ws.onerror = () => appendLine({ type: "error", message: "[execution terminal connection error]" })
             ws.onclose = () => setStatus("closed")
         } catch(e:any) {
             appendLine({ type: "error", message: `[falha ao abrir execução] ${e?.message || e}` })
@@ -108,9 +108,9 @@ const ExecutionStream = ({ packageDirPath, executableName, serverManagerInformat
     }, [reconnectSignal])
 
     const statusMeta:any = {
-        connecting: { color: "yellow", icon: "spinner",        text: "iniciando" },
-        running:    { color: "orange", icon: "play",           text: "executando" },
-        closed:     { color: "grey",   icon: "circle outline", text: "finalizado" }
+        connecting: { color: "yellow", icon: "spinner",        text: "starting" },
+        running:    { color: "orange", icon: "play",           text: "running" },
+        closed:     { color: "grey",   icon: "circle outline", text: "finished" }
     }
     const sm = statusMeta[status]
     const logText = lines.map((line:any) => line.message || "").join("\n")
@@ -144,31 +144,31 @@ const ExecutionStream = ({ packageDirPath, executableName, serverManagerInformat
             <Label basic size="small" style={{ flex: "0 0 auto" }}><Icon name="list"/> {lines.length}</Label>
             <Checkbox toggle label="auto-scroll" checked={autoScroll} onChange={() => setAutoScroll(!autoScroll)} style={{ flex: "0 0 auto" }}/>
             <div style={{ marginLeft: "auto", display: "flex", gap: "6px", flex: "0 0 auto" }}>
-                <Button size="mini" basic color={copyStatus === "failed" ? "red" : "orange"} icon title="copiar log" onClick={copyLog} disabled={lines.length === 0}>
+                <Button size="mini" basic color={copyStatus === "failed" ? "red" : "orange"} icon title="copy log" onClick={copyLog} disabled={lines.length === 0}>
                     <Icon name={copyStatus === "copied" ? "check" : copyStatus === "failed" ? "warning sign" : "copy"}/>
                 </Button>
                 {
                     status === "closed"
-                    ? <Button size="mini" basic color="orange" icon labelPosition="left" onClick={connect}><Icon name="redo"/> reexecutar</Button>
-                    : <Button size="mini" basic color="red" icon labelPosition="left" onClick={handleStop}><Icon name="stop"/> parar</Button>
+                    ? <Button size="mini" basic color="orange" icon labelPosition="left" onClick={connect}><Icon name="redo"/> re-run</Button>
+                    : <Button size="mini" basic color="red" icon labelPosition="left" onClick={handleStop}><Icon name="stop"/> stop</Button>
                 }
             </div>
         </div>
         <div
             ref={bodyRef}
             style={{
-                background: "#111827", color: "#f8fafc", fontFamily: "monospace", fontSize: ".83em",
-                lineHeight: 1.45, padding: "10px 12px", borderRadius: "6px",
+                background: "var(--mp-terminal-bg)", color: "var(--mp-terminal-fg)", fontFamily: "var(--mp-font-mono)", fontSize: ".83em",
+                lineHeight: 1.45, padding: "10px 12px", borderRadius: "var(--mp-radius-md)",
                 height: fill ? "auto" : "38vh", flex: fill ? 1 : undefined, minHeight: fill ? 0 : undefined,
                 overflow: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word",
-                borderTop: "3px solid #f59f00",
+                border: "2px solid var(--mp-line-strong)", borderTop: "3px solid var(--mp-titlebar-exec)",
                 userSelect: "text", WebkitUserSelect: "text", cursor: "text"
             }}>
             {
                 lines.length === 0
-                ? <span style={{ color: "#9ca3af" }}>aguardando saída da execução…</span>
+                ? <span style={{ color: "var(--mp-terminal-muted)" }}>waiting for execution output…</span>
                 : lines.map((line:any, key:number) =>
-                    <div key={key} style={{ color: line.type === "stderr" || line.type === "error" ? "#fca5a5" : line.type === "status" ? "#fbbf24" : undefined }}>
+                    <div key={key} style={{ color: line.type === "stderr" || line.type === "error" ? "var(--mp-terminal-red)" : line.type === "status" ? "var(--mp-terminal-orange)" : undefined }}>
                         {line.message || " "}
                     </div>)
             }

@@ -114,10 +114,10 @@ const ExecutionPlanView = ({ executionParams, onSaveExecutionParams }:any) => {
                         </Label>)
                 }
             </div>
-            <Input icon="search" size="small" placeholder="filtrar plano..." value={filterValue} onChange={(e, { value }) => setFilterValue(value)}/>
+            <Input icon="search" size="small" placeholder="filter plan..." value={filterValue} onChange={(e, { value }) => setFilterValue(value)}/>
         </div>
 
-        <div style={{ overflow: "auto", maxHeight: "72vh", border: "1px solid #e0e0e0", borderRadius: "4px" }}>
+        <div style={{ overflow: "auto", maxHeight: "72vh", border: "1px solid var(--mp-line-soft)", borderRadius: "4px" }}>
             <Table celled compact striped style={{ fontSize: ".9em" }}>
                 <Table.Header>
                     <Table.Row>
@@ -133,21 +133,21 @@ const ExecutionPlanView = ({ executionParams, onSaveExecutionParams }:any) => {
                         rows.map(({ task, depth, path, rootIndex }:any, key:number) => {
                             const preconditions = GetPreconditionsSummary(task)
                             return <Table.Row key={key}>
-                                <Table.Cell style={{ fontFamily: "monospace", color: "#888" }}>{rootIndex !== undefined ? rootIndex : ""}</Table.Cell>
-                                <Table.Cell style={{ color: "#100085" }}>
-                                    <Icon name={GetIconByLoaderType(task.objectLoaderType)} style={{ color: "#888" }}/>
+                                <Table.Cell style={{ fontFamily: "monospace", color: "var(--mp-muted)" }}>{rootIndex !== undefined ? rootIndex : ""}</Table.Cell>
+                                <Table.Cell style={{ color: "var(--mp-accent-blue)" }}>
+                                    <Icon name={GetIconByLoaderType(task.objectLoaderType)} style={{ color: "var(--mp-muted)" }}/>
                                     {task.objectLoaderType}
                                 </Table.Cell>
                                 <Table.Cell style={{ paddingLeft: `${12 + depth * 22}px` }}>
-                                    { depth > 0 && <span style={{ color: "#bbb" }}>↳ </span> }
+                                    { depth > 0 && <span style={{ color: "var(--mp-muted-2)" }}>↳ </span> }
                                     <strong>{GetTaskName(task)}</strong>
                                     { task.children && task.children.length > 0 && <Label size="mini" circular style={{ marginLeft: "6px" }}>{task.children.length}</Label> }
                                 </Table.Cell>
                                 <Table.Cell>
                                     {
                                         preconditions.length === 0
-                                        ? <span style={{ color: "#bbb" }}>—</span>
-                                        : preconditions.map((p:string, k:number) => <div key={k} style={{ fontFamily: "monospace", fontSize: ".85em", color: "#666" }}>{p}</div>)
+                                        ? <span style={{ color: "var(--mp-muted-2)" }}>—</span>
+                                        : preconditions.map((p:string, k:number) => <div key={k} style={{ fontFamily: "monospace", fontSize: ".85em", color: "var(--mp-ink-3)" }}>{p}</div>)
                                     }
                                 </Table.Cell>
                                 {
@@ -166,7 +166,7 @@ const ExecutionPlanView = ({ executionParams, onSaveExecutionParams }:any) => {
             editing &&
             <Modal open={true} onClose={() => setEditing(undefined)}>
                 <Modal.Header>
-                    <Icon name="pencil"/> Editar task — {GetTaskName(editing.task)} <span style={{ color: "#999", fontSize: ".8em" }}>[{editing.task.objectLoaderType}]</span>
+                    <Icon name="pencil"/> Editar task — {GetTaskName(editing.task)} <span style={{ color: "var(--mp-muted-2)", fontSize: ".8em" }}>[{editing.task.objectLoaderType}]</span>
                 </Modal.Header>
                 <Modal.Content scrolling>
                     <Message warning size="small" icon>
