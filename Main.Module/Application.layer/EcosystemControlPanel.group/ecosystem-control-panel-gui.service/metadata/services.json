@@ -1,0 +1,19 @@
+[
+    {
+        "namespace": "EcosystemControlPanelGuiService",
+        "path": "Services/EcosystemControlPanelGui.service",
+        "bound-params": [
+            "ecosystemdataHandlerService",
+            "notificationHubService",
+            "repositoryManagerService",
+            "instanceMonitoringManager",
+            "environmentHandlerService",
+            "jsonFileUtilitiesLib",
+            "ecosystemInstallUtilitiesLib",
+            "ecosystemControlPanelWebservice"
+        ],
+        "params": [
+            "ecosystemDefaultsFileRelativePath"
+        ]
+    }
+]

@@ -1,9 +1,6 @@
 {
     "params" : [
-        "port",
         "serverName",
-        "serverManagerUrl",
-        "windowUrl",
         "RT_ENV_GENERATED_DIR_NAME",
         "installDataDirPath",
         "panelStateFilePath",
@@ -15,113 +12,103 @@
         "REPOS_CONF_EXTLIST_PKG_TYPE",
         "PKG_CONF_DIRNAME_METADATA"
     ],
-    "services": [
-        {
-            "namespace": "@@/notification-hub-service",
-            "dependency": "@/ecosystem-control-panel.service/services/NotificationHubService"
-        },
-        {
-            "namespace": "@@/ecosystemdata-handler-service",
-            "dependency": "@/ecosystem-control-panel.service/services/EcosystemDataHandlerService",
-            "params":{
-                "installDataDirPath": "{{installDataDirPath}}",
-                "panelStateFilePath": "{{panelStateFilePath}}"
-            }
-        },
-        {
-            "namespace": "@@/server-service",
-            "dependency": "@/server-manager.service/services/HTTPServerService",
-            "params":{
-                "name":"{{serverName}}",
-                "port": "{{port}}"
-            }
-        },
-        {
-            "namespace": "@@/instance-monitoring-manager-service",
-            "dependency": "@/instance-supervisor.service/services/InstanceMonitoringManager",
-            "bound-params":{
-                "supervisorLib": "@/supervisor.lib",
-                "jsonFileUtilitiesLib": "@/json-file-utilities.lib",
-                "ecosystemdataHandlerService": "@@/ecosystemdata-handler-service",
-                "notificationHubService": "@@/notification-hub-service"
-            },
-            "params":{
-                "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
-            }
-        },
-        {
-            "namespace": "@@/environment-handler-service",
-            "dependency": "@/ecosystem-control-panel.service/services/EnvironmentHandlerService",
-            "bound-params":{
-                "jsonFileUtilitiesLib": "@/json-file-utilities.lib",
-                "ecosystemdataHandlerService": "@@/ecosystemdata-handler-service"
-            },
-            "params":{
-                "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
-            }
-        },
-        {
-            "namespace":"@@/repository-manager",
-            "dependency": "@/repository-manager.service/services/RepositoryManagerService",
-            "bound-params": {
-                "repositoryUtilitiesLib":"@/repository-utilities.lib",
-                "dependencyGraphBuilderLib": "@/dependency-graph-builder.lib"
-            },
-            "params": {
-                "installDataDirPath":"{{installDataDirPath}}",
-                "REPOS_CONF_FILENAME_REPOS_DATA":"{{REPOS_CONF_FILENAME_REPOS_DATA}}",
-                "REPOS_CONF_EXT_MODULE_DIR":"{{REPOS_CONF_EXT_MODULE_DIR}}",
-                "REPOS_CONF_EXT_LAYER_DIR":"{{REPOS_CONF_EXT_LAYER_DIR}}",
-                "REPOS_CONF_EXT_GROUP_DIR":"{{REPOS_CONF_EXT_GROUP_DIR}}",
-                "REPOS_CONF_EXTLIST_PKG_TYPE":"{{REPOS_CONF_EXTLIST_PKG_TYPE}}",
-                "PKG_CONF_DIRNAME_METADATA": "{{PKG_CONF_DIRNAME_METADATA}}"
-            }
-        }
-    ],
-    "endpoints": [
-        {
-            "dependency": "@/ecosystem-control-panel.webgui/endpoint-group",
-            "params":{
-                "serverManagerUrl":"{{serverManagerUrl}}",
-                "serverName":"{{serverName}}",
-                "RT_ENV_GENERATED_DIR_NAME": "{{RT_ENV_GENERATED_DIR_NAME}}"
-            },
-            "bound-params":{
-                "serverService": "@@/server-service"
-            }
-        },
-        {
-            "dependency": "@/server-manager.webservice/endpoint-group",
-            "bound-params":{
-               "serverServiceForController":"@@/server-service",
-               "serverService": "@@/server-service"
-            }
-        },
-        {
-            "dependency": "@/ecosystem-control-panel.webservice/endpoint-group",
-            "bound-params":{
-                "serverService": "@@/server-service",
-                "instanceMonitoringManager": "@@/instance-monitoring-manager-service",
-                "environmentHandlerService": "@@/environment-handler-service",
-                "ecosystemdataHandlerService": "@@/ecosystemdata-handler-service",
-                "jsonFileUtilitiesLib": "@/json-file-utilities.lib",
-                "repositoryManagerService": "@@/repository-manager",
-                "ecosystemInstallUtilitiesLib": "@/ecosystem-install-utilities.lib",
-                "notificationHubService": "@@/notification-hub-service"
-            },
-            "params":{
-                "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
-            }
-        }
-    ],
     "windows": [
         {
             "title": "Ecosystem Control Panel",
-            "url": "{{windowUrl}}",
             "width": 1280,
             "height": 800,
-            "bound-params":{
-                "serverService": "@@/server-service"
+            "dependency": "@/ecosystem-control-panel.webgui",
+            "params": {
+                "serverName":                        "{{serverName}}",
+                "RT_ENV_GENERATED_DIR_NAME":         "{{RT_ENV_GENERATED_DIR_NAME}}",
+                "installDataDirPath":                "{{installDataDirPath}}",
+                "panelStateFilePath":                "{{panelStateFilePath}}",
+                "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}",
+                "REPOS_CONF_FILENAME_REPOS_DATA":    "{{REPOS_CONF_FILENAME_REPOS_DATA}}",
+                "REPOS_CONF_EXT_MODULE_DIR":         "{{REPOS_CONF_EXT_MODULE_DIR}}",
+                "REPOS_CONF_EXT_LAYER_DIR":          "{{REPOS_CONF_EXT_LAYER_DIR}}",
+                "REPOS_CONF_EXT_GROUP_DIR":          "{{REPOS_CONF_EXT_GROUP_DIR}}",
+                "REPOS_CONF_EXTLIST_PKG_TYPE":       "{{REPOS_CONF_EXTLIST_PKG_TYPE}}",
+                "PKG_CONF_DIRNAME_METADATA":         "{{PKG_CONF_DIRNAME_METADATA}}"
+            },
+            "bound-params": {
+                "ecosystemControlPanelWebgui":     "@/ecosystem-control-panel.webgui",
+                "ecosystemControlPanelGuiService": "@/ecosystem-control-panel-gui.service",
+                "ecosystemControlPanelService":    "@/ecosystem-control-panel.service",
+                "ecosystemControlPanelWebservice": "@/ecosystem-control-panel.webservice",
+                "repositoryManagerService":        "@/repository-manager.service",
+                "instanceSupervisorService":       "@/instance-supervisor.service",
+                "jsonFileUtilitiesLib":            "@/json-file-utilities.lib",
+                "ecosystemInstallUtilitiesLib":    "@/ecosystem-install-utilities.lib",
+                "repositoryUtilitiesLib":          "@/repository-utilities.lib",
+                "dependencyGraphBuilderLib":       "@/dependency-graph-builder.lib",
+                "supervisorLib":                   "@/supervisor.lib"
+            },
+            "gui-host": {
+                "webgui": "ecosystemControlPanelWebgui",
+                "guiService": "guiService",
+                "serviceGraph": [
+                    {
+                        "ref": "notificationHub",
+                        "package": "ecosystemControlPanelService",
+                        "factory": "Services/NotificationHub.service"
+                    },
+                    {
+                        "ref": "ecosystemData",
+                        "package": "ecosystemControlPanelService",
+                        "factory": "Services/EcosystemDataHandler.service"
+                    },
+                    {
+                        "ref": "environmentHandler",
+                        "package": "ecosystemControlPanelService",
+                        "factory": "Services/EnvironmentHandler.service",
+                        "boundServices": {
+                            "ecosystemdataHandlerService": "ecosystemData"
+                        },
+                        "boundLibs": {
+                            "jsonFileUtilitiesLib": "jsonFileUtilitiesLib"
+                        }
+                    },
+                    {
+                        "ref": "repositoryManager",
+                        "package": "repositoryManagerService",
+                        "factory": "Services/RepositoryManager.service",
+                        "boundLibs": {
+                            "repositoryUtilitiesLib": "repositoryUtilitiesLib",
+                            "dependencyGraphBuilderLib": "dependencyGraphBuilderLib"
+                        }
+                    },
+                    {
+                        "ref": "instanceMonitoring",
+                        "package": "instanceSupervisorService",
+                        "factory": "Managers/InstanceMonitoring.manager",
+                        "boundServices": {
+                            "ecosystemdataHandlerService": "ecosystemData",
+                            "notificationHubService": "notificationHub"
+                        },
+                        "boundLibs": {
+                            "supervisorLib": "supervisorLib",
+                            "jsonFileUtilitiesLib": "jsonFileUtilitiesLib"
+                        }
+                    },
+                    {
+                        "ref": "guiService",
+                        "package": "ecosystemControlPanelGuiService",
+                        "factory": "Services/EcosystemControlPanelGui.service",
+                        "boundServices": {
+                            "ecosystemdataHandlerService": "ecosystemData",
+                            "notificationHubService": "notificationHub",
+                            "repositoryManagerService": "repositoryManager",
+                            "instanceMonitoringManager": "instanceMonitoring",
+                            "environmentHandlerService": "environmentHandler"
+                        },
+                        "boundLibs": {
+                            "jsonFileUtilitiesLib": "jsonFileUtilitiesLib",
+                            "ecosystemInstallUtilitiesLib": "ecosystemInstallUtilitiesLib",
+                            "ecosystemControlPanelWebservice": "ecosystemControlPanelWebservice"
+                        }
+                    }
+                ]
             }
         }
     ]
