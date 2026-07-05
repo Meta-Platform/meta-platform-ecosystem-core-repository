@@ -115,6 +115,38 @@
                     "parametersToLoad": [
                         "packageToolkitLib"
                     ]
+                },
+                {
+                    "namespace": "CreatePackage",
+                    "path": "Commands/CreatePackage.command",
+                    "command": "package [packageName] [ext]",
+                    "description": "Criar um pacote de qualquer tipo (lib, cli, service, webapp, webgui, webservice, app, desktopapp)",
+                    "parameters": [
+                        { "key": "packageName", "paramType": "positional", "valueType": "string", "describe": "Nome do pacote" },
+                        { "key": "ext", "paramType": "positional", "valueType": "string", "describe": "Tipo/extensão do pacote" }
+                    ],
+                    "parametersToLoad": [ "packageToolkitLib" ]
+                },
+                {
+                    "namespace": "CreateRepository",
+                    "path": "Commands/CreateRepository.command",
+                    "command": "repository [name]",
+                    "description": "Criar um Repository (scaffold) no diretório atual",
+                    "parameters": [
+                        { "key": "name", "paramType": "positional", "valueType": "string", "describe": "Nome do repositório" }
+                    ],
+                    "parametersToLoad": [ "packageToolkitLib" ]
+                },
+                {
+                    "namespace": "CreateContainer",
+                    "path": "Commands/CreateContainer.command",
+                    "command": "container [kind] [name]",
+                    "description": "Criar um Module/Layer/Group no diretório atual",
+                    "parameters": [
+                        { "key": "kind", "paramType": "positional", "valueType": "string", "describe": "module | layer | group" },
+                        { "key": "name", "paramType": "positional", "valueType": "string", "describe": "Nome do container" }
+                    ],
+                    "parametersToLoad": [ "packageToolkitLib" ]
                 }
             ]
         }
