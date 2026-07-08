@@ -46,6 +46,26 @@ Resumo da colaboração:
 - **instance-supervisor** monitora as instâncias em execução (consumido pelos
   painéis).
 
+## Como um serviço recebe parâmetros (whitelist)
+
+Um serviço só recebe os parâmetros **declarados na sua `metadata/services.json`**
+(campo `params` para valores, `bound-params` para outros serviços/libs) — mesmo
+que o `boot.json` da aplicação passe outros. O boot **filtra** os params pelo que
+o serviço declara.
+
+Consequência prática: para injetar um **novo** parâmetro num serviço é preciso
+alterar **dois** arquivos:
+
+1. `metadata/services.json` do serviço → adicionar o nome em `params`.
+2. `boot.json` da aplicação → passar o valor (`"nome": "{{nome}}"`).
+
+Faltando o passo 1, o serviço recebe o param como `undefined` **silenciosamente**
+(nenhum erro é lançado). Foi o que aconteceu com o `socket` do
+`ecosystem-manager.service` (endereço do daemon, usado para injetar
+`META_LAUNCH_PROGRESS_SOCKET` no spawn de apps desktop — ver
+[MyDesktop — feedback de lançamento](https://github.com/Meta-Platform/meta-platform-applications-repository/blob/main/docs/mydesktop-launch-feedback.md)):
+estava só no `boot.json` e chegava vazio até ser adicionado ao `services.json`.
+
 Ver: [instance-lifecycle.md](./instance-lifecycle.md) ·
 [runtime-environment-management.md](./runtime-environment-management.md) ·
 [supervision.md](./supervision.md).
