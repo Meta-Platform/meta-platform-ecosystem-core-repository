@@ -1,6 +1,6 @@
 {
     "params" : [
-        "socket", 
+        "socket",
         "serverName",
         "ECO_DIRPATH_INSTALL_DATA",
         "REPOS_CONF_FILENAME_REPOS_DATA",
@@ -10,7 +10,13 @@
         "REPOS_CONF_EXTLIST_PKG_TYPE",
         "PKG_CONF_DIRNAME_METADATA",
         "EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES",
-        "ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA"
+        "ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA",
+        "ECOSYSTEMDATA_CONF_DIRNAME_CONFIGURATIONS_DIR",
+        "ECOSYSTEMDATA_CONF_DIRNAME_NPM_DEPENDENCIES",
+        "ECOSYSTEMDATA_CONF_FILENAME_ECOSYSTEM_DEFAULTS",
+        "ECOSYSTEMDATA_CONF_DIRNAME_SUPERVISOR_UNIX_SOCKET_DIR",
+        "PKG_CONF_FILENAME_STARTUP_PARAMS",
+        "PKG_CONF_FILENAME_BOOT"
     ],
     "services": [
         {
@@ -88,6 +94,23 @@
                 "EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES": "{{EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES}}",
                 "ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA": "{{ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA}}"
             }
+        },
+        {
+            "namespace":"@@/command-line-runtime-service",
+            "dependency": "@/command-line-runtime-manager.service/services/CommandLineRuntimeService",
+            "bound-params": {
+                "jsonFileUtilitiesLib": "@/json-file-utilities.lib"
+            },
+            "params": {
+                "ecosystemDataPath": "{{ECO_DIRPATH_INSTALL_DATA}}",
+                "configurationsDirName": "{{ECOSYSTEMDATA_CONF_DIRNAME_CONFIGURATIONS_DIR}}",
+                "npmDependenciesDirName": "{{ECOSYSTEMDATA_CONF_DIRNAME_NPM_DEPENDENCIES}}",
+                "ecosystemDefaultsFileName": "{{ECOSYSTEMDATA_CONF_FILENAME_ECOSYSTEM_DEFAULTS}}",
+                "supervisorSocketsDirName": "{{ECOSYSTEMDATA_CONF_DIRNAME_SUPERVISOR_UNIX_SOCKET_DIR}}",
+                "metadataDirName": "{{PKG_CONF_DIRNAME_METADATA}}",
+                "startupParamsFileName": "{{PKG_CONF_FILENAME_STARTUP_PARAMS}}",
+                "bootFileName": "{{PKG_CONF_FILENAME_BOOT}}"
+            }
         }
     ],
     "endpoints": [
@@ -105,7 +128,8 @@
                 "taskExecutorMachineService": "@@/standard-task-executor-machine-service",
                 "repositoryManagerService": "@@/repository-manager",
                 "ecosystemManagerService": "@@/ecosystem-manager",
-                "environmentRuntimeService": "@@/environment-runtime-service"
+                "environmentRuntimeService": "@@/environment-runtime-service",
+                "commandLineRuntimeService": "@@/command-line-runtime-service"
             }
         }
     ]

@@ -1,0 +1,25 @@
+{
+    "params": [
+        "ecosystemDataPath",
+        "executablesDirName",
+        "targetExecutable",
+        "instanceManagerSocketPath",
+        "supervisorSocketPath"
+    ],
+    "executables": [
+        {
+            "dependency": "@//command-group",
+            "executableName": "instance-manager-daemon",
+            "bound-params": {
+                "processSupervisorLib": "@/process-supervisor.lib"
+            },
+            "params": {
+                "ecosystemDataPath": "{{ecosystemDataPath}}",
+                "executablesDirName": "{{executablesDirName}}",
+                "targetExecutable": "{{targetExecutable}}",
+                "instanceManagerSocketPath": "{{instanceManagerSocketPath}}",
+                "supervisorSocketPath": "{{supervisorSocketPath}}"
+            }
+        }
+    ]
+}

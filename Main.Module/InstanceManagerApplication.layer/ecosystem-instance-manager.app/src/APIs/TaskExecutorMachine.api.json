@@ -33,6 +33,19 @@
 			]
 		},
 		{
+			"summary": "StopTasks",
+			"method": "POST",
+			"path": "/stop-tasks",
+			"parameters": [
+				{
+					"name": "taskIds",
+					"in": "body",
+					"type": "json",
+					"required": true
+				}
+			]
+		},
+		{
 			"summary": "TaskStatusChange",
 			"method": "WS",
 			"path": "/task-status-change"

@@ -1,8 +1,9 @@
 const EcosystemManagerController = (params) => {
 
-    const { 
+    const {
         ecosystemManagerService: {
             RunPackage,
+            StopPackage,
             ListSupervisedPackages,
             GetTaskExecutorEventEmitter
         }
@@ -23,6 +24,7 @@ const EcosystemManagerController = (params) => {
     const controllerServiceObject = {
         controllerName : "EcosystemManagerController",
         RunPackage,
+        StopPackage,
         ListPackages: ListSupervisedPackages,
         PackageList
     }

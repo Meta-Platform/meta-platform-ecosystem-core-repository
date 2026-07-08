@@ -1,5 +1,6 @@
 {
     "port":"9084",
-    "serverName":"RuntimeManagerWebserviceInstance"
+    "serverName":"RuntimeManagerWebserviceInstance",
+    "platformApplicationSocketPath":"/home/kadisk/EcosystemData/sockets/ecosystem-instance-manager.app.sock"
 }
 

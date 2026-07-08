@@ -29,6 +29,19 @@
 					"required": false
 				}
 			]
+		},
+		{
+			"summary": "StopPackage",
+			"method": "POST",
+			"path": "/stop-package",
+			"parameters": [
+				{
+					"name": "packagePath",
+					"in": "body",
+					"type": "string",
+					"required": true
+				}
+			]
 		}
 	]
 }

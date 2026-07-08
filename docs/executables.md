@@ -13,7 +13,6 @@ Os executáveis publicados por este repositório estão em
 | `explorer` | CLI | `Main.Module/Application.layer/repository-explorer.cli` | `explorer.sock` | Explora repositórios/pacotes instalados. |
 | `eco-panel` | APP | `…/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.webapp` | `eco-panel.sock` | Painel de controle do ecossistema (web). |
 | `eco-panel-desktop` | DESKTOP | `…/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.desktopapp` | `eco-panel-desktop.sock` | Painel de controle do ecossistema (janela Electron). |
-| `executor-panel` | APP | `…/InstanceManagerApplication.layer/InstanceExecutorControlPanel.group/instance-executor-control-panel.webapp` | `executor-panel.sock` | Painel do executor de instâncias (web). |
 | `mypkg` | CLI | `Main.Module/PackageApplication.layer/package-toolkit.cli` | `package-toolkit.sock` | Cria novos pacotes (scaffolding). |
 | `run` | CLI | `Main.Module/PackageApplication.layer/package-runner.cli` | `package-runner.sock` | Executa um package montando o runtime localmente. |
 

@@ -6,8 +6,14 @@
     "REPOS_CONF_EXT_MODULE_DIR":"Module",
     "REPOS_CONF_EXT_LAYER_DIR":"layer",
     "REPOS_CONF_EXT_GROUP_DIR":"group",
-    "REPOS_CONF_EXTLIST_PKG_TYPE":"cli|app|webapp|webgui|webservice|service|lib",
+    "REPOS_CONF_EXTLIST_PKG_TYPE":"cli|app|webapp|desktopapp|webgui|webservice|service|lib",
     "PKG_CONF_DIRNAME_METADATA":"metadata",
     "EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES": ".dependencies",
-    "ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA": "metadata-hierarchy.json"
+    "ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA": "metadata-hierarchy.json",
+    "ECOSYSTEMDATA_CONF_DIRNAME_CONFIGURATIONS_DIR": "config-files",
+    "ECOSYSTEMDATA_CONF_DIRNAME_NPM_DEPENDENCIES": "npm-dependencies",
+    "ECOSYSTEMDATA_CONF_FILENAME_ECOSYSTEM_DEFAULTS": "ecosystem-defaults.json",
+    "ECOSYSTEMDATA_CONF_DIRNAME_SUPERVISOR_UNIX_SOCKET_DIR": "supervisor-sockets",
+    "PKG_CONF_FILENAME_STARTUP_PARAMS": "startup-params.json",
+    "PKG_CONF_FILENAME_BOOT": "boot.json"
 }

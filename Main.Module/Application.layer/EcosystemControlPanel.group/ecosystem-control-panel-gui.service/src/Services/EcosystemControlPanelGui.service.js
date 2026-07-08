@@ -40,6 +40,8 @@ const EcosystemControlPanelGuiService = (params) => {
         ecosystemInstallUtilitiesLib,
         ecosystemControlPanelWebservice,
         ecosystemDefaultsFileRelativePath,
+        instanceManagerClientLib,
+        platformApplicationSocketPath,
         onReady
     } = params
 
@@ -53,7 +55,9 @@ const EcosystemControlPanelGuiService = (params) => {
         environmentHandlerService,
         jsonFileUtilitiesLib,
         ecosystemInstallUtilitiesLib,
-        ecosystemDefaultsFileRelativePath
+        ecosystemDefaultsFileRelativePath,
+        instanceManagerClientLib,
+        platformApplicationSocketPath
     }
 
     const registry = {}

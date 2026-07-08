@@ -24,6 +24,8 @@ const TaskExecutorMachineController = (params) => {
         },
         ListTasks: taskExecutorMachineService.ListTasks,
         GetTask: taskExecutorMachineService.GetTask,
+        // 1 parâmetro (taskIds) chega como valor direto (contrato do server-manager).
+        StopTasks: (taskIds) => taskExecutorMachineService.StopTasks(taskIds),
         TaskStatusChange
     }
 

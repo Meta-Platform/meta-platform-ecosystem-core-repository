@@ -1,50 +1,61 @@
-const path = require("path")
+const { join } = require("path")
 const { spawn } = require("node:child_process")
 
+// Ações de host do eco-panel. A EXECUÇÃO DE PACOTES é delegada ao daemon
+// executor-manager (via @/instance-manager-client.lib) — o painel não spawna
+// mais `run package`. As ações OpenVSCode/OpenTerminal (abrir editor/terminal
+// no host) NÃO são execução de pacote e permanecem como spawn local.
 const HostActionsController = (params) => {
 
     const {
-        ecosystemdataHandlerService,
-        ecosystemDefaultsFileRelativePath,
         jsonFileUtilitiesLib,
-        notificationHubService
+        notificationHubService,
+        instanceManagerClientLib,
+        platformApplicationSocketPath
     } = params
 
     const ReadJsonFile = jsonFileUtilitiesLib.require("ReadJsonFile")
     const { NotifyEvent } = notificationHubService
 
+    const CreateInstanceManagerClient = instanceManagerClientLib.require("CreateInstanceManagerClient")
+    const instanceManager = CreateInstanceManagerClient({ platformApplicationSocketPath })
+
     const _Notify = (origin, type, message) =>
         NotifyEvent({ origin, type: "log", content: { sourceName: origin, type, message } })
 
-    const _GetExecutablesDirPath = async () => {
-        const ecosystemDefaults = await ReadJsonFile(
-            path.resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaultsFileRelativePath))
-        return path.resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaults.ECOSYSTEMDATA_CONF_DIRNAME_GLOBAL_EXECUTABLES_DIR)
+    // Um pacote é CLI se declara executableName no boot.json.
+    const _IsCommandLinePackage = async (packagePath) => {
+        try {
+            const boot = await ReadJsonFile(join(packagePath, "metadata", "boot.json"))
+            const executables = (boot && boot.executables) || []
+            return executables.some((item) => item && item.executableName)
+        } catch(e) {
+            return false
+        }
     }
 
-    // Dispara um processo desacoplado (não bloqueia o servidor nem morre com ele).
+    // spawn desacoplado — usado APENAS para abrir editor/terminal no host.
     const _SpawnDetached = (command, args, options = {}) =>
         new Promise((resolve, reject) => {
             try {
                 const child = spawn(command, args, { detached: true, stdio: "ignore", ...options })
                 child.on("error", (err) => reject(err))
-                // dá um tempo curto para capturar erro de "command not found"
                 setTimeout(() => { child.unref(); resolve() }, 150)
             } catch (e) {
                 reject(e)
             }
         })
 
-    // Executa um pacote pela CLI `run package <path>` (gera nova instância).
+    // Executa um pacote DELEGANDO ao daemon.
     const RunPackage = async ({ packagePath }) => {
-        const executablesDirPath = await _GetExecutablesDirPath()
-        const env = { ...process.env, PATH: `${executablesDirPath}:${process.env.PATH}` }
+        if(!(await instanceManager.IsAvailable())){
+            const message = "Instance Manager (daemon) indisponível — não foi possível executar."
+            _Notify("HostActions.RunPackage", "error", message)
+            throw message
+        }
         try {
-            await _SpawnDetached(path.resolve(executablesDirPath, "run"), ["package", packagePath], {
-                cwd: ecosystemdataHandlerService.GetEcosystemDataPath(),
-                env
-            })
-            _Notify("HostActions.RunPackage", "info", `Executando pacote: ${packagePath}`)
+            await instanceManager.RunPackage({ packagePath })
+            _Notify("HostActions.RunPackage", "info", `Execução delegada ao daemon: ${packagePath}`)
             return { started: true, packagePath }
         } catch (e) {
             _Notify("HostActions.RunPackage", "error", `Falha ao executar ${packagePath}: ${e.message || e}`)
@@ -52,53 +63,75 @@ const HostActionsController = (params) => {
         }
     }
 
+    // "Executar com terminal" (WS). Roteia pelo daemon:
+    //  - pacote CLI  → terminal REAL (node-pty) do daemon, com stdout ao vivo
+    //  - pacote APP  → execução in-process no daemon (sem stdout por-app):
+    //                  reporta apenas status running/closed.
+    // Mantém o contrato do webgui: mensagens {type:"status"|"stdout"|"error"}.
     const RunPackageStreaming = async (ws, encodedPackagePath) => {
         const packagePath = decodeURIComponent(encodedPackagePath)
-        const executablesDirPath = await _GetExecutablesDirPath()
-        const env = { ...process.env, PATH: `${executablesDirPath}:${process.env.PATH}` }
-        const commandPath = path.resolve(executablesDirPath, "run")
-        let child
 
-        const _Send = (payload) => {
-            try { ws.send(JSON.stringify(payload)) } catch(e) {}
-        }
-
-        const _Close = () => {
-            try { ws.close() } catch(e) {}
-        }
+        const _Send = (payload) => { try { ws.send(JSON.stringify(payload)) } catch(e){} }
+        const _Close = () => { try { ws.close() } catch(e){} }
 
         try {
-            _Send({ type: "status", status: "starting", message: `run package ${packagePath}` })
-            child = spawn(commandPath, ["package", packagePath], {
-                cwd: ecosystemdataHandlerService.GetEcosystemDataPath(),
-                env
-            })
+            _Send({ type: "status", status: "starting", message: `Executando via daemon: ${packagePath}` })
 
-            child.stdout.on("data", (chunk) => _Send({ type: "stdout", message: chunk.toString() }))
-            child.stderr.on("data", (chunk) => _Send({ type: "stderr", message: chunk.toString() }))
-            child.on("error", (error) => {
-                _Notify("HostActions.RunPackageStreaming", "error", `Falha ao executar ${packagePath}: ${error.message || error}`)
-                _Send({ type: "error", message: error.message || String(error) })
+            if(!(await instanceManager.IsAvailable())){
+                _Send({ type: "error", message: "Instance Manager (daemon) indisponível." })
                 _Close()
-            })
-            child.on("spawn", () => {
-                _Notify("HostActions.RunPackageStreaming", "info", `Executando pacote com terminal: ${packagePath}`)
-                _Send({ type: "status", status: "running", message: "processo iniciado" })
-            })
-            child.on("close", (code, signal) => {
-                _Send({ type: "status", status: "closed", exitCode: code, signal, message: `processo finalizado${code !== null ? ` com código ${code}` : ""}${signal ? ` (${signal})` : ""}` })
-                _Close()
-            })
-        } catch(e) {
+                return
+            }
+
+            if(await _IsCommandLinePackage(packagePath))
+                return await _StreamCommandLine(ws, packagePath, _Send, _Close)
+
+            // APP: execução in-process no daemon; sem stream de stdout por-app.
+            await instanceManager.RunPackage({ packagePath })
+            _Notify("HostActions.RunPackageStreaming", "info", `Execução delegada ao daemon: ${packagePath}`)
+            _Send({ type: "status", status: "running", message: "Execução iniciada no daemon (logs centralizados no Instance Manager)." })
+            _Send({ type: "status", status: "closed", message: "Solicitação de execução concluída." })
+            _Close()
+        } catch (e) {
             _Notify("HostActions.RunPackageStreaming", "error", `Falha ao executar ${packagePath}: ${e.message || e}`)
             _Send({ type: "error", message: e.message || String(e) })
             _Close()
         }
+    }
 
-        ws.on && ws.on("close", () => {
-            if(child && !child.killed)
-                child.kill()
+    // Executa um CLI no terminal real do daemon e faz a ponte do stream
+    // (protocolo do terminal {type:"data"|"exit"} → contrato do webgui
+    // {type:"stdout"} / {type:"status", status:"closed"}).
+    const _StreamCommandLine = async (ws, packagePath, _Send, _Close) => {
+        const { terminalId } = await instanceManager.RunCommandLinePackage({ packagePath })
+        _Notify("HostActions.RunPackageStreaming", "info", `Execução com terminal delegada ao daemon: ${packagePath}`)
+
+        const daemonWs = await instanceManager.OpenTerminalStream({ terminalId })
+
+        daemonWs.on("open", () => _Send({ type: "status", status: "running", message: "terminal iniciado" }))
+        daemonWs.on("message", (raw) => {
+            let m; try { m = JSON.parse(raw.toString()) } catch(e){ return }
+            if(m.type === "data")
+                _Send({ type: "stdout", message: m.data })
+            else if(m.type === "exit"){
+                _Send({ type: "status", status: "closed", exitCode: m.exitCode, message: `processo finalizado${m.exitCode !== undefined ? ` com código ${m.exitCode}` : ""}` })
+                _Close()
+            }
+            else if(m.type === "error")
+                _Send({ type: "error", message: m.message })
         })
+        daemonWs.on("close", () => _Close())
+        daemonWs.on("error", (error) => _Send({ type: "error", message: (error && error.message) || String(error) }))
+
+        // Entrada do usuário (se o webgui enviar) → terminal do daemon.
+        ws.on && ws.on("message", (raw) => {
+            try {
+                const msg = JSON.parse(raw)
+                if(msg && msg.type === "input")
+                    daemonWs.send(JSON.stringify({ type: "input", data: msg.data }))
+            } catch(e){}
+        })
+        ws.on && ws.on("close", () => { try { daemonWs.close() } catch(e){} })
     }
 
     const OpenVSCode = async ({ targetPath }) => {

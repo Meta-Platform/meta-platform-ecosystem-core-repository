@@ -1,5 +1,6 @@
 const { join } = require('path')
 const crypto = require('crypto')
+const { spawn } = require('child_process')
 
 const colors = require("colors")
 
@@ -55,6 +56,52 @@ const EcosystemManager = (params) => {
     const ResolvePackageName          = resolvePackageNameLib.require("ResolvePackageName")
     const GetMetadataRootNode         = metadataHierarchyHandlerLib.require("GetMetadataRootNode")
     const WriteObjectToFile           = jsonFileUtilitiesLib.require("WriteObjectToFile")
+    const ReadJsonFile                = jsonFileUtilitiesLib.require("ReadJsonFile")
+
+    // Um pacote é DESKTOP (Electron) se o boot.json declara a seção "windows".
+    const _IsDesktopPackage = async (packagePath) => {
+        try {
+            const boot = await ReadJsonFile(join(packagePath, PKG_CONF_DIRNAME_METADATA, "boot.json"))
+            return Array.isArray(boot && boot.windows) && boot.windows.length > 0
+        } catch(e) {
+            return false
+        }
+    }
+
+    // Registro dos processos DESKTOP lançados pelo daemon (packagePath → child),
+    // para poder encerrá-los depois (eles não são tasks do executor in-process).
+    const desktopProcesses = new Map()
+
+    // Executa um pacote DESKTOP em PROCESSO SEPARADO (via `run package`).
+    // Necessário porque o desktop-window-instance loader faz process.exit(0) ao
+    // fechar a janela Electron — se rodasse in-process, derrubaria o daemon.
+    // `detached` cria um novo grupo de processos (pgid = pid) para encerrar a
+    // árvore inteira (run + electron) depois.
+    const _RunDesktopInSeparateProcess = (packagePath) => {
+        const executablesDirPath = join(ECO_DIRPATH_INSTALL_DATA, "executables")
+        const env = { ...process.env, PATH: `${executablesDirPath}:${process.env.PATH}` }
+        const child = spawn(join(executablesDirPath, "run"), ["package", packagePath], {
+            cwd: ECO_DIRPATH_INSTALL_DATA,
+            env,
+            detached: true,
+            stdio: "ignore"
+        })
+        desktopProcesses.set(packagePath, child)
+        child.on("exit", () => {
+            if(desktopProcesses.get(packagePath) === child)
+                desktopProcesses.delete(packagePath)
+        })
+        child.unref()
+    }
+
+    // Encerra um pacote DESKTOP lançado pelo daemon (mata o grupo de processos).
+    const _StopDesktopProcess = (packagePath) => {
+        const child = desktopProcesses.get(packagePath)
+        if(!child) return false
+        try { process.kill(-child.pid, "SIGTERM") } catch(e) { try { child.kill("SIGTERM") } catch(_){} }
+        desktopProcesses.delete(packagePath)
+        return true
+    }
 
     const _Start = async () => {
         await PrepareRepositoriesFileJson({
@@ -94,6 +141,12 @@ const EcosystemManager = (params) => {
 
     const RunPackage = async ({ packagePath, startupParams }) => {
         try{
+            // DESKTOP → processo separado (isola o Electron do daemon).
+            if(await _IsDesktopPackage(packagePath)){
+                _RunDesktopInSeparateProcess(packagePath)
+                return {}
+            }
+
             const packageList = await repositoryManagerService.ListPackages()
             const metadataHierarchy = await BuildMetadataHierarchy({
                 path: packagePath,
@@ -160,10 +213,20 @@ const EcosystemManager = (params) => {
         }
     }
 
+    // Encerra a execução de um pacote pelo seu caminho.
+    // 1 parâmetro (packagePath) chega como valor direto (contrato do server-manager).
+    // DESKTOP → mata o processo separado; demais → delega ao runtime in-process.
+    const StopPackage = async (packagePath) => {
+        if(_StopDesktopProcess(packagePath))
+            return { stopped: true }
+        return environmentRuntimeService.StopPackage(packagePath)
+    }
+
     _Start()
 
     return {
         RunPackage,
+        StopPackage,
         ListSupervisedPackages,
         GetTaskExecutorEventEmitter: environmentRuntimeService.GetTaskExecutorEventEmitter
     }

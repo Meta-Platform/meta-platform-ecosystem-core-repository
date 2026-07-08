@@ -6,12 +6,6 @@
         "supervisorSocketFileName":"instance-manager.sock"
     },
     {
-        "appType":"APP",
-        "executable":"executor-panel",
-        "packageNamespace":"Main.Module/InstanceManagerApplication.layer/InstanceExecutorControlPanel.group/instance-executor-control-panel.webapp",
-        "supervisorSocketFileName":"executor-panel.sock"
-    },
-    {
         "appType":"CLI",
         "executable":"explorer",
         "packageNamespace":"Main.Module/Application.layer/repository-explorer.cli",
@@ -22,6 +16,12 @@
         "executable":"executor",
         "packageNamespace":"Main.Module/InstanceManagerApplication.layer/instance-executor.cli",
         "supervisorSocketFileName":"executor.sock"
+    },
+    {
+        "appType":"CLI",
+        "executable":"instance-manager-daemon",
+        "packageNamespace":"Main.Module/InstanceManagerApplication.layer/instance-manager-daemon.cli",
+        "supervisorSocketFileName":"instance-manager-daemon.sock"
     },
     {
         "appType":"APP",

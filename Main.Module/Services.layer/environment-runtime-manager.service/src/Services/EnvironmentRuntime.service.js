@@ -4,6 +4,7 @@ const FilterAppplicationTasks = (tasks) =>
     tasks.filter(({objectLoaderType}) => objectLoaderType ==='application-instance')
 
 const ExecutionDataState = require("../Helpers/ExecutionDataState")
+const ExecutionStatusTypes = require("../Helpers/ExecutionStatusTypes")
 const GetIsolateExecutionParameters = require("../Helpers/GetIsolateExecutionParameters")
 
 const EnvironmentRuntimeService = (params) => {
@@ -60,8 +61,37 @@ const EnvironmentRuntimeService = (params) => {
             .GetAssociatedTaskIds(executionId)
         taskExecutorMachineService
             .StopTasks(associatedTaskIds)
-        
+
         return {}
+    }
+
+    // Encerra a execução de um pacote a partir do seu caminho: localiza a
+    // application-task cujo rootPath corresponde, descobre a execução ativa que
+    // a contém e a encerra. Usado pelos painéis (my-desktop / eco-panel) que
+    // conhecem o packagePath, não o executionId.
+    const StopPackage = (packagePath) => {
+        // Todas as application-tasks com esse rootPath (pode haver tasks antigas
+        // já TERMINATED acumuladas no task-executor além da ativa).
+        const matchingTaskIds = new Set(
+            ListApplicationTask()
+                .filter((task) => task.staticParameters && task.staticParameters.rootPath === packagePath)
+                .map((task) => String(task.taskId)))
+
+        if(matchingTaskIds.size === 0)
+            return { stopped: false, reason: "pacote não está em execução" }
+
+        // Encontra a execução ATIVA que contém alguma dessas tasks.
+        const execution = executionState.ListExecutions()
+            .find((record) => record
+                && record.status !== ExecutionStatusTypes.TERMINATED
+                && record.statusAssociatedTasks
+                && Object.keys(record.statusAssociatedTasks).some((taskId) => matchingTaskIds.has(String(taskId))))
+
+        if(!execution)
+            return { stopped: false, reason: "execução ativa não encontrada" }
+
+        StopExecution(execution.executionId)
+        return { stopped: true, executionId: execution.executionId }
     }
 
     const ListApplicationTask = () => 
@@ -83,7 +113,8 @@ const EnvironmentRuntimeService = (params) => {
         GetExecutionData: executionState.GetExecutionData,
         ListApplicationTask,
         ListRunningEnvironments,
-        StopExecution
+        StopExecution,
+        StopPackage
     }
 
 }

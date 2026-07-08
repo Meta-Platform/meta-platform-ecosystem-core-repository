@@ -10,7 +10,8 @@
         "REPOS_CONF_EXT_LAYER_DIR",
         "REPOS_CONF_EXT_GROUP_DIR",
         "REPOS_CONF_EXTLIST_PKG_TYPE",
-        "PKG_CONF_DIRNAME_METADATA"
+        "PKG_CONF_DIRNAME_METADATA",
+        "platformApplicationSocketPath"
     ],
     "windows": [
         {
@@ -29,7 +30,8 @@
                 "REPOS_CONF_EXT_LAYER_DIR":          "{{REPOS_CONF_EXT_LAYER_DIR}}",
                 "REPOS_CONF_EXT_GROUP_DIR":          "{{REPOS_CONF_EXT_GROUP_DIR}}",
                 "REPOS_CONF_EXTLIST_PKG_TYPE":       "{{REPOS_CONF_EXTLIST_PKG_TYPE}}",
-                "PKG_CONF_DIRNAME_METADATA":         "{{PKG_CONF_DIRNAME_METADATA}}"
+                "PKG_CONF_DIRNAME_METADATA":         "{{PKG_CONF_DIRNAME_METADATA}}",
+                "platformApplicationSocketPath":     "{{platformApplicationSocketPath}}"
             },
             "bound-params": {
                 "ecosystemControlPanelWebgui":     "@/ecosystem-control-panel.webgui",
@@ -42,7 +44,8 @@
                 "ecosystemInstallUtilitiesLib":    "@/ecosystem-install-utilities.lib",
                 "repositoryUtilitiesLib":          "@/repository-utilities.lib",
                 "dependencyGraphBuilderLib":       "@/dependency-graph-builder.lib",
-                "supervisorLib":                   "@/supervisor.lib"
+                "supervisorLib":                   "@/supervisor.lib",
+                "instanceManagerClientLib":        "@/instance-manager-client.lib"
             },
             "gui-host": {
                 "webgui": "ecosystemControlPanelWebgui",
@@ -105,7 +108,8 @@
                         "boundLibs": {
                             "jsonFileUtilitiesLib": "jsonFileUtilitiesLib",
                             "ecosystemInstallUtilitiesLib": "ecosystemInstallUtilitiesLib",
-                            "ecosystemControlPanelWebservice": "ecosystemControlPanelWebservice"
+                            "ecosystemControlPanelWebservice": "ecosystemControlPanelWebservice",
+                            "instanceManagerClientLib": "instanceManagerClientLib"
                         }
                     }
                 ]

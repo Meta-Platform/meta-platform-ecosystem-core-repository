@@ -1,0 +1,28 @@
+{
+    "bound-params": [
+        "processSupervisorLib"
+    ],
+    "params": [
+        "ecosystemDataPath",
+        "executablesDirName",
+        "targetExecutable",
+        "instanceManagerSocketPath",
+        "supervisorSocketPath"
+    ],
+    "commands": [
+        {
+            "namespace": "Start",
+            "path": "Commands/Start.command",
+            "command": "start",
+            "description": "Sobe e mantém vivo o daemon executor-manager (auto-restart)",
+            "parametersToLoad": [
+                "processSupervisorLib",
+                "ecosystemDataPath",
+                "executablesDirName",
+                "targetExecutable",
+                "instanceManagerSocketPath",
+                "supervisorSocketPath"
+            ]
+        }
+    ]
+}

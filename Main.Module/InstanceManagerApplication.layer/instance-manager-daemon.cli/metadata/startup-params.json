@@ -1,0 +1,7 @@
+{
+    "ecosystemDataPath": "/home/kadisk/EcosystemData",
+    "executablesDirName": "executables",
+    "targetExecutable": "executor-manager",
+    "instanceManagerSocketPath": "/home/kadisk/EcosystemData/sockets/ecosystem-instance-manager.app.sock",
+    "supervisorSocketPath": "/home/kadisk/EcosystemData/supervisor-sockets/instance-manager.sock"
+}

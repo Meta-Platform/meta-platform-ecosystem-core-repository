@@ -82,10 +82,10 @@ Documentação dedicada em [`docs/`](./docs/):
 | [ecosystem-instance-manager.app](./Main.Module/InstanceManagerApplication.layer/ecosystem-instance-manager.app/README.md) | `.app` | `executor-manager` |
 | [instance-executor.cli](./Main.Module/InstanceManagerApplication.layer/instance-executor.cli/README.md) | `.cli` | `executor` |
 
-**InstanceExecutorControlPanel.group** (`executor-panel`):
-[webapp](./Main.Module/InstanceManagerApplication.layer/InstanceExecutorControlPanel.group/instance-executor-control-panel.webapp/README.md) ·
-[webgui](./Main.Module/InstanceManagerApplication.layer/InstanceExecutorControlPanel.group/instance-executor-control-panel.webgui/README.md) ·
-[webservice](./Main.Module/InstanceManagerApplication.layer/InstanceExecutorControlPanel.group/instance-executor-control-panel.webservice/README.md)
+> **InstanceExecutorControlPanel.group** foi movido para o
+> [ApplicationsRepository](https://github.com/Meta-Platform/meta-platform-applications-repository)
+> (`Apps.Module/InstanceManager.layer/InstanceExecutorControlPanel.group`), onde ganhou
+> versão desktop (`executor-panel-desktop`).
 
 ### Main.Module / PackageApplication.layer
 

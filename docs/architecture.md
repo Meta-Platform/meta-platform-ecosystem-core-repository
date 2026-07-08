@@ -28,7 +28,6 @@ coisas (ver
 | `executable` | `packageNamespace` | `supervisorSocketFileName` | `appType` |
 |--------------|--------------------|----------------------------|-----------|
 | `executor-manager` | `Main.Module/InstanceManagerApplication.layer/ecosystem-instance-manager.app` | `instance-manager.sock` | APP |
-| `executor-panel` | `Main.Module/InstanceManagerApplication.layer/InstanceExecutorControlPanel.group/instance-executor-control-panel.webapp` | `executor-panel.sock` | APP |
 | `explorer` | `Main.Module/Application.layer/repository-explorer.cli` | `explorer.sock` | CLI |
 | `executor` | `Main.Module/InstanceManagerApplication.layer/instance-executor.cli` | `executor.sock` | CLI |
 | `eco-panel` | `Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.webapp` | `eco-panel.sock` | APP |
@@ -78,7 +77,6 @@ Fluxo geral da plataforma:
 | Grupo | Executável | Papel |
 |-------|-----------|-------|
 | [EcosystemControlPanel.group](../Main.Module/Application.layer/EcosystemControlPanel.group/) | `eco-panel` (web), `eco-panel-desktop` (Electron) | Painel de controle do ecossistema. |
-| [InstanceExecutorControlPanel.group](../Main.Module/InstanceManagerApplication.layer/InstanceExecutorControlPanel.group/) | `executor-panel` | Painel do executor de instâncias. |
 | [ServerManager.group](../Main.Module/Application.layer/ServerManager.group/) | — | Gerenciador de servidores (web). |
 
 ## Relação com Package Executor e Supervisor Socket

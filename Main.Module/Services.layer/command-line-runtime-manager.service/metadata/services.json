@@ -1,0 +1,19 @@
+[
+    {
+        "namespace": "CommandLineRuntimeService",
+        "path": "Services/CommandLineRuntime.service",
+        "bound-params": [
+            "jsonFileUtilitiesLib"
+        ],
+        "params": [
+            "ecosystemDataPath",
+            "configurationsDirName",
+            "npmDependenciesDirName",
+            "ecosystemDefaultsFileName",
+            "supervisorSocketsDirName",
+            "metadataDirName",
+            "startupParamsFileName",
+            "bootFileName"
+        ]
+    }
+]
