@@ -12,6 +12,36 @@
 			"path": "/package-list"
 		},
 		{
+			"summary": "LaunchProgressStream",
+			"method": "WS",
+			"path": "/launch-progress"
+		},
+		{
+			"summary": "LaunchProgress",
+			"method": "POST",
+			"path": "/report-launch-progress",
+			"parameters": [
+				{
+					"name": "launchId",
+					"in": "body",
+					"type": "string",
+					"required": true
+				},
+				{
+					"name": "phase",
+					"in": "body",
+					"type": "string",
+					"required": true
+				},
+				{
+					"name": "percentage",
+					"in": "body",
+					"type": "number",
+					"required": false
+				}
+			]
+		},
+		{
 			"summary": "RunPackage",
 			"method": "POST",
 			"path": "/run-package",

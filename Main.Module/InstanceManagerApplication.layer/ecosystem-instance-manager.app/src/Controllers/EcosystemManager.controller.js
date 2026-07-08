@@ -5,6 +5,9 @@ const EcosystemManagerController = (params) => {
             RunPackage,
             StopPackage,
             ListSupervisedPackages,
+            ReportLaunchProgress,
+            GetLaunchProgressSnapshot,
+            GetLaunchProgressEmitter,
             GetTaskExecutorEventEmitter
         }
     } = params
@@ -21,12 +24,31 @@ const EcosystemManagerController = (params) => {
         })
     }
 
+    // Ingest de progresso de lançamento vindo do app (electron-main) por POST.
+    const LaunchProgress = (data) => ReportLaunchProgress(data)
+
+    // Stream de progresso de lançamento: envia o snapshot atual e, em seguida,
+    // cada novo estado. O listener é removido quando o ws fecha.
+    const LaunchProgressStream = (ws) => {
+        const _safeSend = (state) => {
+            try { ws.send(JSON.stringify(state)) } catch(e){}
+        }
+        try { GetLaunchProgressSnapshot().forEach(_safeSend) } catch(e){}
+        const onProgress = (state) => _safeSend(state)
+        GetLaunchProgressEmitter().on("LAUNCH_PROGRESS", onProgress)
+        ws.on && ws.on("close", () => {
+            try { GetLaunchProgressEmitter().removeListener("LAUNCH_PROGRESS", onProgress) } catch(e){}
+        })
+    }
+
     const controllerServiceObject = {
         controllerName : "EcosystemManagerController",
         RunPackage,
         StopPackage,
         ListPackages: ListSupervisedPackages,
-        PackageList
+        PackageList,
+        LaunchProgress,
+        LaunchProgressStream
     }
 
     return Object.freeze(controllerServiceObject)

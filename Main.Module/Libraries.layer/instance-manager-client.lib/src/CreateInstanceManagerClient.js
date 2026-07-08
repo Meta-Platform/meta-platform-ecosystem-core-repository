@@ -123,6 +123,11 @@ const CreateInstanceManagerClient = ({
         OpenPackageListStream: () =>
             _OpenStream("EcosystemManager", "PackageList"),
 
+        // Stream de progresso de lançamento de aplicações (abrindo → build →
+        // aberto), consumido pelos painéis para refletir no ícone.
+        OpenLaunchProgressStream: () =>
+            _OpenStream("EcosystemManager", "LaunchProgressStream"),
+
         // ---- TaskExecutorMachine (tarefas) ----------------------------------
 
         // Lista todas as tarefas do task-executor compartilhado do daemon.

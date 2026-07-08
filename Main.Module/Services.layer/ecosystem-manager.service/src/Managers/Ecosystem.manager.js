@@ -1,6 +1,7 @@
 const { join } = require('path')
 const crypto = require('crypto')
 const { spawn } = require('child_process')
+const { EventEmitter } = require('events')
 
 const colors = require("colors")
 
@@ -45,7 +46,8 @@ const EcosystemManager = (params) => {
         REPOS_CONF_EXT_GROUP_DIR,
         EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES,
         ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA,
-        onReady 
+        socket,
+        onReady
     } = params
 
     const ReadAllPackageMetadata      = dependencyGraphBuilderLib.require("Utils/ReadAllPackageMetadata")
@@ -72,14 +74,48 @@ const EcosystemManager = (params) => {
     // para poder encerrá-los depois (eles não são tasks do executor in-process).
     const desktopProcesses = new Map()
 
+    // Progresso de LANÇAMENTO de aplicações (para a área de trabalho refletir no
+    // ícone: abrindo → build → aberto). O app lançado reporta seus eventos por
+    // HTTP no socket deste daemon (ver ReportLaunchProgress); aqui mantemos o
+    // último estado por launchId (= packagePath) e um emissor próprio — separado
+    // do stream de tasks — que o controller expõe como WS (LaunchProgressStream).
+    const launchProgressEmitter = new EventEmitter()
+    const launchProgressState   = new Map()
+
+    const _EmitLaunchProgress = ({ launchId, phase, percentage }) => {
+        if(!launchId || !phase) return
+        const state = { launchId, phase, ...(percentage !== undefined ? { percentage } : {}) }
+        if(phase === "closed") launchProgressState.delete(launchId)
+        else                   launchProgressState.set(launchId, state)
+        launchProgressEmitter.emit("LAUNCH_PROGRESS", state)
+    }
+
+    // Ingest chamado pelo app lançado (electron-main) via POST. `phase` ∈
+    // { window-ready | building | ready }; `percentage` só em building/ready.
+    const ReportLaunchProgress = ({ launchId, phase, percentage } = {}) => {
+        _EmitLaunchProgress({ launchId, phase, percentage })
+        return {}
+    }
+
+    const GetLaunchProgressSnapshot = () => Array.from(launchProgressState.values())
+    const GetLaunchProgressEmitter  = () => launchProgressEmitter
+
     // Executa um pacote DESKTOP em PROCESSO SEPARADO (via `run package`).
     // Necessário porque o desktop-window-instance loader faz process.exit(0) ao
     // fechar a janela Electron — se rodasse in-process, derrubaria o daemon.
     // `detached` cria um novo grupo de processos (pgid = pid) para encerrar a
     // árvore inteira (run + electron) depois.
+    //
+    // Injeta META_LAUNCH_PROGRESS_SOCKET/META_LAUNCH_ID no env: eles fluem pelo
+    // `run` → taskLoader → OpenElectronWindow (que faz ...process.env) até o
+    // electron-main, que POSTa o progresso de volta neste socket.
     const _RunDesktopInSeparateProcess = (packagePath) => {
         const executablesDirPath = join(ECO_DIRPATH_INSTALL_DATA, "executables")
-        const env = { ...process.env, PATH: `${executablesDirPath}:${process.env.PATH}` }
+        const env = {
+            ...process.env,
+            PATH: `${executablesDirPath}:${process.env.PATH}`,
+            ...(socket ? { META_LAUNCH_PROGRESS_SOCKET: socket, META_LAUNCH_ID: packagePath } : {})
+        }
         const child = spawn(join(executablesDirPath, "run"), ["package", packagePath], {
             cwd: ECO_DIRPATH_INSTALL_DATA,
             env,
@@ -87,9 +123,12 @@ const EcosystemManager = (params) => {
             stdio: "ignore"
         })
         desktopProcesses.set(packagePath, child)
+        // Feedback imediato no ícone enquanto o Electron sobe (antes do window-ready).
+        _EmitLaunchProgress({ launchId: packagePath, phase: "launching" })
         child.on("exit", () => {
             if(desktopProcesses.get(packagePath) === child)
                 desktopProcesses.delete(packagePath)
+            _EmitLaunchProgress({ launchId: packagePath, phase: "closed" })
         })
         child.unref()
     }
@@ -228,6 +267,9 @@ const EcosystemManager = (params) => {
         RunPackage,
         StopPackage,
         ListSupervisedPackages,
+        ReportLaunchProgress,
+        GetLaunchProgressSnapshot,
+        GetLaunchProgressEmitter,
         GetTaskExecutorEventEmitter: environmentRuntimeService.GetTaskExecutorEventEmitter
     }
 
