@@ -4,7 +4,6 @@ import { connect } from "react-redux"
 import { Button, Icon, Label } from "semantic-ui-react"
 
 import LogStreaming from "../Containers/InstanceSupervisor.container/LogStreaming"
-import ExecutionStream from "../Containers/Executables.container/ExecutionStream"
 import AppModal from "./AppModal"
 import {
     subscribeLogWindows, expandLogWindow, minimizeLogWindow, floatWindow, dockRightWindow,
@@ -19,7 +18,7 @@ const MIN_FLOAT_H = 220
 
 const clamp = (v:number, lo:number, hi:number) => Math.min(Math.max(v, lo), hi)
 
-// Dock global de runtime: logs e terminais de execução. Cada janela pode estar
+// Dock global de logs das instâncias supervisionadas. Cada janela pode estar
 // minimizada (dock inferior), ancorada à direita (offcanvas) ou flutuante
 // (arrastável). Todas ficam montadas — trocar de modo nunca perde a conexão.
 const LogDock = ({ HTTPServerManager }:any) => {
@@ -183,46 +182,33 @@ const LogDock = ({ HTTPServerManager }:any) => {
         : "var(--mp-success)"
 
     const _renderContent = (w:LogWindow) =>
-        w.kind === "exec"
-            ? <ExecutionStream
-                packageDirPath={w.packageDirPath}
-                executableName={w.executableName}
-                serverManagerInformation={HTTPServerManager}
-                onActivity={() => _markActivity(w.id)}
-                onStatusChange={(s:string) => setStatusByWindow((m:any) => ({ ...m, [w.id]: s }))}
-                reconnectSignal={reconnectSignals[w.id] || 0}
-                visible={w.mode !== "minimized"}
-                fill/>
-            : <LogStreaming
-                monitoringStateKey={w.monitoringStateKey}
-                socketName={w.socketName}
-                HTTPServerManager={HTTPServerManager}
-                onActivity={() => _markActivity(w.id)}
-                onStatusChange={(s:string) => setStatusByWindow((m:any) => ({ ...m, [w.id]: s }))}
-                reconnectSignal={reconnectSignals[w.id] || 0}
-                visible={w.mode !== "minimized"}
-                fill/>
+        <LogStreaming
+            monitoringStateKey={w.monitoringStateKey}
+            socketName={w.socketName}
+            HTTPServerManager={HTTPServerManager}
+            onActivity={() => _markActivity(w.id)}
+            onStatusChange={(s:string) => setStatusByWindow((m:any) => ({ ...m, [w.id]: s }))}
+            reconnectSignal={reconnectSignals[w.id] || 0}
+            visible={w.mode !== "minimized"}
+            fill/>
 
-    // barra de título com os controles de modo — colorida por tipo, para
-    // destacar a janela do restante da tela. Controles como ícones brancos.
+    // barra de título com os controles de modo. Controles como ícones brancos.
+    // (O vocabulário de status atual — connecting/open/closed — não distingue
+    // sucesso de erro no fechamento, então não é usado para colorir a barra,
+    // apenas o dock.)
     const _renderHeader = (w:LogWindow, draggable:boolean, base?:FloatGeometry) => {
-        // titlebar por tipo de janela: laranja para execução, azul-aço para
-        // runtime de socket. (O vocabulário de status atual — connecting/open/
-        // closed — não distingue sucesso de erro no fechamento, então não é
-        // usado para colorir a barra, apenas o dock.)
-        const headerBg = w.kind === "exec" ? "var(--mp-titlebar-exec)" : "var(--mp-titlebar-runtime)"
         return <div
             onMouseDown={draggable && base ? (e:any) => _startDrag(w, base, e) : undefined}
             style={{
                 display: "flex", alignItems: "center", gap: "8px", padding: "7px 11px",
-                background: headerBg, color: "#fff", fontSize: ".82em",
+                background: "var(--mp-titlebar-runtime)", color: "#fff", fontSize: ".82em",
                 borderBottom: "1px solid rgba(0,0,0,.20)",
                 borderRadius: w.mode === "offcanvas" ? "8px 0 0 0" : "7px 7px 0 0",
                 flex: "0 0 auto", cursor: draggable ? "move" : "default"
             }}>
-            <Icon name={w.kind === "exec" ? "play" : "terminal"} style={{ color: "#fff", opacity: .95, flex: "0 0 auto", margin: 0 }}/>
-            <strong style={{ flex: 1, minWidth: 0, fontWeight: 600, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={w.monitoringStateKey || w.executableName}>
-                { w.kind === "exec" ? "execution" : "runtime" } · {w.title}
+            <Icon name="terminal" style={{ color: "#fff", opacity: .95, flex: "0 0 auto", margin: 0 }}/>
+            <strong style={{ flex: 1, minWidth: 0, fontWeight: 600, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={w.monitoringStateKey}>
+                runtime · {w.title}
             </strong>
             <span onMouseDown={(e:any) => e.stopPropagation()} style={{ display: "inline-flex", alignItems: "center", gap: "13px", flex: "0 0 auto" }}>
                 { w.mode !== "floating" && <Icon name="clone outline" link title="floating window" style={{ color: "#fff", margin: 0 }} onClick={() => floatWindow(w.id)}/> }
@@ -312,12 +298,12 @@ const LogDock = ({ HTTPServerManager }:any) => {
                                 color: "var(--mp-terminal-fg)", fontWeight: active ? 600 : 400
                             }}>
                             <Icon name="circle" size="small" color={dot} className={st === "open" ? "eco-log-live" : undefined} style={{ flex: "0 0 auto" }}/>
-                            <Icon name={w.kind === "exec" ? "play" : "terminal"} style={{ color: active ? "#fff" : "#aeb6bf", flex: "0 0 auto" }}/>
+                            <Icon name="terminal" style={{ color: active ? "#fff" : "#aeb6bf", flex: "0 0 auto" }}/>
                             <span style={{ maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: ".85em" }}>{w.title}</span>
                             { n > 0 && <Label color="red" circular size="mini" style={{ flex: "0 0 auto" }}>{n > 99 ? "99+" : n}</Label> }
                             {
                                 disconnected &&
-                                <Icon name="redo" title="reconnect / re-run" style={{ color: "#cfe0f2", flex: "0 0 auto" }} onClick={(e:any) => { e.stopPropagation(); _reconnect(w.id) }}/>
+                                <Icon name="redo" title="reconnect" style={{ color: "#cfe0f2", flex: "0 0 auto" }} onClick={(e:any) => { e.stopPropagation(); _reconnect(w.id) }}/>
                             }
                             <Icon name="close" title="close (loses history)" style={{ color: "rgba(255,255,255,.55)", flex: "0 0 auto", marginLeft: "2px" }} onClick={(e:any) => { e.stopPropagation(); _requestClose(w.id) }}/>
                         </div>

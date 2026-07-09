@@ -2,22 +2,6 @@
 	"name": "HostActions",
 	"endpoints": [
 		{
-			"summary": "RunPackage",
-			"method": "POST",
-			"path": "/run-package",
-			"parameters": [
-				{ "name": "packagePath", "in": "body", "type": "string", "required": true }
-			]
-		},
-		{
-			"summary": "RunPackageStreaming",
-			"method": "WS",
-			"path": "/run-package-stream/:encodedPackagePath",
-			"parameters": [
-				{ "name": "encodedPackagePath", "in": "path", "type": "string", "required": true }
-			]
-		},
-		{
 			"summary": "OpenVSCode",
 			"method": "POST",
 			"path": "/open-vscode",

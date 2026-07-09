@@ -82,7 +82,6 @@
     --mp-terminal-blue:   #6DB7FF;
 
     /* barras de título de janelas de runtime, por estado */
-    --mp-titlebar-exec:     #C96A1E; /* execução em andamento */
     --mp-titlebar-runtime:  #2D74C4; /* stream de log de socket */
     --mp-titlebar-success:  #1FAD57; /* finalizado com sucesso */
     --mp-titlebar-failed:   #E34949; /* erro crítico */

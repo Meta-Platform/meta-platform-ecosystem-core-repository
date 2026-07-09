@@ -144,7 +144,7 @@ const ExecutablesContainer = ({
         <PageMasthead
             icon="terminal"
             title="Executables"
-            subtitle="Run, filter and inspect installed applications, daemons and CLIs.">
+            subtitle="Install, filter and inspect the applications, daemons and CLIs declared by the repositories.">
             <StatusStrip right={<>
                 <Checkbox toggle label="show -dbg" checked={showDebug} onChange={() => setShowDebug(!showDebug)}/>
                 <Input icon="search" size="small" placeholder="filter..." value={filterValue}

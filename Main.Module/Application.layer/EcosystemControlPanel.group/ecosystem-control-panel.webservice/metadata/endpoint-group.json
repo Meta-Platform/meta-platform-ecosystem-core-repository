@@ -1,5 +1,5 @@
 {
-    "params": ["ecosystemDefaultsFileRelativePath","platformApplicationSocketPath"],
+    "params": ["ecosystemDefaultsFileRelativePath"],
     "bound-params":[
         "serverService",
         "instanceMonitoringManager",
@@ -8,8 +8,7 @@
         "ecosystemdataHandlerService",
         "repositoryManagerService",
         "ecosystemInstallUtilitiesLib",
-        "notificationHubService",
-        "instanceManagerClientLib"
+        "notificationHubService"
     ],
     "endpoints": [
         {
@@ -130,17 +129,12 @@
             "type": "controller",
             "params": {
                 "api-template": "APIs/HostActions.api.json",
-                "controller": "Controllers/HostActions.controller",
-                "controller-params":{
-                    "platformApplicationSocketPath": "{{platformApplicationSocketPath}}"
-                }
+                "controller": "Controllers/HostActions.controller"
             },
             "bound-params": {
                 "serverService":"serverService",
                 "controller-params":{
-                    "notificationHubService": "notificationHubService",
-                    "instanceManagerClientLib": "instanceManagerClientLib",
-                    "jsonFileUtilitiesLib": "jsonFileUtilitiesLib"
+                    "notificationHubService": "notificationHubService"
                 }
             }
         },

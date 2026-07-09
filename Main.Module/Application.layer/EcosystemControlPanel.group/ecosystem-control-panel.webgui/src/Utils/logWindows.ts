@@ -1,31 +1,27 @@
-// Store global (pub/sub) das janelas de runtime (logs e terminais de execução).
-// Uma janela = um stream (log de um socket) OU um terminal de execução de um app.
-// Cada janela tem um MODO:
+// Store global (pub/sub) das janelas de log das instâncias supervisionadas.
+// Uma janela = um stream de log de um socket de supervisão. Cada janela tem um MODO:
 //   - "minimized": só no dock inferior (continua montada/conectada, preserva histórico)
 //   - "offcanvas": ancorada à direita (um por vez)
 //   - "floating":  janela flutuante, arrastável/redimensionável (várias ao mesmo tempo)
 // As janelas ficam sempre montadas; trocar de modo nunca perde a conexão.
+//
+// Execução de pacote NÃO vive aqui: quem executa e mostra o terminal de execução
+// é o Instance Executor Panel. Este painel apenas OBSERVA o log de quem já roda.
 
 export type RuntimeWindowMode = "minimized" | "offcanvas" | "floating"
-export type RuntimeWindowKind = "log" | "exec"
 
 export type FloatGeometry = { x: number, y: number, width: number, height: number }
 
 export type LogWindow = {
     id: string
-    kind: RuntimeWindowKind
     mode: RuntimeWindowMode
     // último modo não-minimizado, para restaurar do dock no mesmo modo (flutuante
     // volta flutuante, com a mesma posição/tamanho; offcanvas volta offcanvas)
     lastMode?: RuntimeWindowMode
     title: string
     z: number
-    // log
     monitoringStateKey?: string
     socketName?: string
-    // exec
-    packageDirPath?: string
-    executableName?: string
     // geometria da janela flutuante (preservada enquanto montada)
     float?: FloatGeometry
 }
@@ -109,23 +105,14 @@ export const updateFloatGeometry = (id: string, geo: FloatGeometry) => {
 
 // Abre (ou foca) a janela de log de um socket.
 export const openLogWindow = ({ monitoringStateKey, socketName }: { monitoringStateKey: string, socketName: string }) => {
-    const existing = windows.find((w) => w.kind === "log" && w.monitoringStateKey === monitoringStateKey)
+    const existing = windows.find((w) => w.monitoringStateKey === monitoringStateKey)
     if(existing){
         if(existing.mode === "minimized") setWindowMode(existing.id, "offcanvas")
         else focusWindow(existing.id)
         return existing.id
     }
     const id = _nextId()
-    windows = [ ...windows, { id, kind: "log", mode: "offcanvas", title: socketName, z: ++zCounter, monitoringStateKey, socketName } ]
-    _soloOffcanvas(id)
-    _emit()
-    return id
-}
-
-// Abre uma nova janela de terminal de execução de um app (cada execução = 1 janela).
-export const openExecWindow = ({ packageDirPath, executableName }: { packageDirPath: string, executableName: string }) => {
-    const id = _nextId()
-    windows = [ ...windows, { id, kind: "exec", mode: "offcanvas", title: executableName, z: ++zCounter, packageDirPath, executableName } ]
+    windows = [ ...windows, { id, mode: "offcanvas", title: socketName, z: ++zCounter, monitoringStateKey, socketName } ]
     _soloOffcanvas(id)
     _emit()
     return id

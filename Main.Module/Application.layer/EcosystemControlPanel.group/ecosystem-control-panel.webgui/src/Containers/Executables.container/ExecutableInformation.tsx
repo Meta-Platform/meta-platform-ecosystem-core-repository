@@ -1,16 +1,12 @@
 import * as React from "react"
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
 
 import {
     Button,
-    Checkbox,
     Label,
     List,
-    Modal,
     Segment,
     Tab,
-    Table,
-    Loader,
     Icon,
     Image
 } from "semantic-ui-react"
@@ -21,7 +17,6 @@ import KeyValuePanel from "../../Components/KeyValuePanel"
 import CopyValue from "../../Components/CopyValue"
 import EntityHeader from "../../Components/ui/EntityHeader"
 import CopyableMonoText from "../../Components/ui/CopyableMonoText"
-import { openExecWindow } from "../../Utils/logWindows"
 import { toastSuccess, toastError, errorMessage } from "../../Utils/toast"
 
 // Cabeçalho de seção leve (evita o "icon header" do Semantic que amplia o ícone).
@@ -39,41 +34,6 @@ const ExecutablePackageIcon = ({ executableInformation, serverManagerInformation
         return <Image src={iconURL} title="icone do pacote" style={{ width: `${size}px`, height: `${size}px`, objectFit: "contain", flex: "0 0 auto", margin: 0 }}/>
 
     return <Icon name={fallbackIcon}/>
-}
-
-// Barra de ações do executável. Por enquanto, apenas APP e DESKTOP podem ser
-// disparados pela UI; CLI fica sem ação no detalhe.
-const HostActionsBar = ({ executableInformation, onRun }:any) => {
-
-    const [ confirmRun, setConfirmRun ]     = useState(false)
-
-    const packageDirPath = executableInformation?.packageDirPath
-    const appType = executableInformation?.appType
-    const canRun = appType === "APP" || appType === "DESKTOP"
-
-    if(!packageDirPath || !canRun) return null
-
-    return <>
-        <Button primary size="small" onClick={() => setConfirmRun(true)} style={{ flex: "0 0 auto" }}>
-            <Icon name="play"/> run
-        </Button>
-        {
-            confirmRun &&
-            <Modal size="small" open={true} onClose={() => setConfirmRun(false)}>
-                <Modal.Header><Icon name="play" color="green"/> Run {executableInformation.executableName}</Modal.Header>
-                <Modal.Content>
-                    Run <code>{executableInformation.executableName}</code> via <code>run package</code>?
-                    This starts a new instance in the ecosystem.
-                </Modal.Content>
-                <Modal.Actions>
-                    <Button onClick={() => setConfirmRun(false)}>cancel</Button>
-                    <Button color="green" onClick={() => { setConfirmRun(false); onRun() }}>
-                        <Icon name="play"/> run
-                    </Button>
-                </Modal.Actions>
-            </Modal>
-        }
-    </>
 }
 
 // Exibe cada comando como ele é chamado na linha de comando:
@@ -223,28 +183,23 @@ const ExecutableInformation = ({ executableInformation, serverManagerInformation
             </>}
             meta={packageMetadata && packageMetadata.version ? [{ label: "version", value: packageMetadata.version }] : []}
             technicalRef={{ label: "repository", value: repositoryPath }}
-            actions={<>
-                {
-                    !isInstalled && onInstall &&
-                    <Button color="green" size="small" loading={isInstalling} disabled={isInstalling} style={{ flex: "0 0 auto" }}
-                        onClick={async () => {
-                            setIsInstalling(true)
-                            try {
-                                await onInstall(executableName)
-                                toastSuccess(`Executable ${executableName} installed.`)
-                            } catch(e) {
-                                toastError(errorMessage(e))
-                            } finally {
-                                setIsInstalling(false)
-                            }
-                        }}>
-                        <Icon name="download"/> install
-                    </Button>
-                }
-                <HostActionsBar
-                    executableInformation={executableInformation}
-                    onRun={() => openExecWindow({ packageDirPath: executableInformation.packageDirPath, executableName })}/>
-            </>}/>
+            actions={
+                !isInstalled && onInstall &&
+                <Button color="green" size="small" loading={isInstalling} disabled={isInstalling} style={{ flex: "0 0 auto" }}
+                    onClick={async () => {
+                        setIsInstalling(true)
+                        try {
+                            await onInstall(executableName)
+                            toastSuccess(`Executable ${executableName} installed.`)
+                        } catch(e) {
+                            toastError(errorMessage(e))
+                        } finally {
+                            setIsInstalling(false)
+                        }
+                    }}>
+                    <Icon name="download"/> install
+                </Button>
+            }/>
         <Tab menu={{ secondary: true, pointing: true }} panes={panes} style={{ marginTop: "12px" }}/>
     </Segment>
 }

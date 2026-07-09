@@ -12,6 +12,16 @@
 			"path": "/package-list"
 		},
 		{
+			"summary": "ListInstances",
+			"method": "GET",
+			"path": "/list-instances"
+		},
+		{
+			"summary": "InstanceList",
+			"method": "WS",
+			"path": "/instance-list"
+		},
+		{
 			"summary": "LaunchProgressStream",
 			"method": "WS",
 			"path": "/launch-progress"
@@ -56,6 +66,12 @@
 					"name": "startupParams",
 					"in": "body",
 					"type": "json",
+					"required": false
+				},
+				{
+					"name": "launchedBy",
+					"in": "body",
+					"type": "string",
 					"required": false
 				}
 			]

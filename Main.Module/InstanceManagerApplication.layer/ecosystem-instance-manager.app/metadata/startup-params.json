@@ -15,5 +15,6 @@
     "ECOSYSTEMDATA_CONF_FILENAME_ECOSYSTEM_DEFAULTS": "ecosystem-defaults.json",
     "ECOSYSTEMDATA_CONF_DIRNAME_SUPERVISOR_UNIX_SOCKET_DIR": "supervisor-sockets",
     "PKG_CONF_FILENAME_STARTUP_PARAMS": "startup-params.json",
-    "PKG_CONF_FILENAME_BOOT": "boot.json"
+    "PKG_CONF_FILENAME_BOOT": "boot.json",
+    "instanceStoreFilePath": "~/virtual-desk-state/local-databases/ecosystem-instance-store.sqlite"
 }

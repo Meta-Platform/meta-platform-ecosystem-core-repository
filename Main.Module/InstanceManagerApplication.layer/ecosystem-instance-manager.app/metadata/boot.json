@@ -16,7 +16,8 @@
         "ECOSYSTEMDATA_CONF_FILENAME_ECOSYSTEM_DEFAULTS",
         "ECOSYSTEMDATA_CONF_DIRNAME_SUPERVISOR_UNIX_SOCKET_DIR",
         "PKG_CONF_FILENAME_STARTUP_PARAMS",
-        "PKG_CONF_FILENAME_BOOT"
+        "PKG_CONF_FILENAME_BOOT",
+        "instanceStoreFilePath"
     ],
     "services": [
         {
@@ -83,7 +84,8 @@
                 "environmentRuntimeService": "@@/environment-runtime-service",
                 "metadataHierarchyHandlerLib": "@/metadata-hierarchy-handler.lib",
                 "resolvePackageNameLib": "@/resolve-package-name.lib",
-                "jsonFileUtilitiesLib": "@/json-file-utilities.lib"
+                "jsonFileUtilitiesLib": "@/json-file-utilities.lib",
+                "instanceStoreLib": "@/instance-store.lib"
 
             },
             "params": {
@@ -93,6 +95,7 @@
                 "REPOS_CONF_EXT_GROUP_DIR":"{{REPOS_CONF_EXT_GROUP_DIR}}",
                 "EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES": "{{EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES}}",
                 "ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA": "{{ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA}}",
+                "instanceStoreFilePath": "{{instanceStoreFilePath}}",
                 "socket": "{{socket}}"
             }
         },

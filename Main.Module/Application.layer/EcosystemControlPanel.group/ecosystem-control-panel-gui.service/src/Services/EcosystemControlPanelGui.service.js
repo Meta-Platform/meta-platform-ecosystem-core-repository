@@ -5,10 +5,10 @@
 // são o manifesto (dual-transport com a webservice HTTP).
 //
 // Diferente dos apps mais simples, o control-panel tem endpoints WebSocket
-// (LogStreaming, InstanceOverviewChange, RunPackageStreaming, StreamNotifications):
-// além de Invoke (request/response), expõe InvokeStream, que recebe do host um
-// objeto ws-like (wsShim, mesma API do `ws` do express-ws) e o entrega ao método
-// WS do controller — espelhando o contrato do servidor HTTP.
+// (LogStreaming, InstanceOverviewChange, StreamNotifications): além de Invoke
+// (request/response), expõe InvokeStream, que recebe do host um objeto ws-like
+// (wsShim, mesma API do `ws` do express-ws) e o entrega ao método WS do
+// controller — espelhando o contrato do servidor HTTP.
 
 const CONTROLLER_MODULES = {
     InstancesSupervisor:      { controller: "Controllers/InstancesSupervisor.controller",      api: "APIs/InstancesSupervisor.api.json" },
@@ -40,8 +40,6 @@ const EcosystemControlPanelGuiService = (params) => {
         ecosystemInstallUtilitiesLib,
         ecosystemControlPanelWebservice,
         ecosystemDefaultsFileRelativePath,
-        instanceManagerClientLib,
-        platformApplicationSocketPath,
         onReady
     } = params
 
@@ -55,9 +53,7 @@ const EcosystemControlPanelGuiService = (params) => {
         environmentHandlerService,
         jsonFileUtilitiesLib,
         ecosystemInstallUtilitiesLib,
-        ecosystemDefaultsFileRelativePath,
-        instanceManagerClientLib,
-        platformApplicationSocketPath
+        ecosystemDefaultsFileRelativePath
     }
 
     const registry = {}

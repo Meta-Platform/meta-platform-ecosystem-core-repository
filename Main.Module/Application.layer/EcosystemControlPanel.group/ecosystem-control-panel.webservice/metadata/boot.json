@@ -3,8 +3,7 @@
         "port",
         "serverName",
         "installDataDirPath",
-        "ecosystemDefaultsFileRelativePath",
-        "platformApplicationSocketPath"
+        "ecosystemDefaultsFileRelativePath"
     ],
     "services": [
         {
@@ -55,13 +54,11 @@
                 "instanceMonitoringManager": "@@/instance-monitoring-manager-service",
                 "environmentHandlerService": "@@/environment-handler-service",
                 "jsonFileUtilitiesLib": "@/json-file-utilities.lib",
-                "ecosystemInstallUtilitiesLib": "@/ecosystem-install-utilities.lib",
-                "instanceManagerClientLib": "@/instance-manager-client.lib"
+                "ecosystemInstallUtilitiesLib": "@/ecosystem-install-utilities.lib"
             },
             "params":{
                 "installDataDirPath": "{{installDataDirPath}}",
-                "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}",
-                "platformApplicationSocketPath": "{{platformApplicationSocketPath}}"
+                "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
             }
         }
     ]

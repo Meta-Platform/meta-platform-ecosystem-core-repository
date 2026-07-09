@@ -107,9 +107,11 @@ const CreateInstanceManagerClient = ({
 
         // ---- EcosystemManager (execução de pacotes) -------------------------
 
-        // Executa um pacote a partir do seu caminho absoluto.
-        RunPackage: ({ packagePath, startupParams } = {}) =>
-            _Call("EcosystemManager", "RunPackage", { packagePath, startupParams }),
+        // Executa um pacote a partir do seu caminho absoluto. `launchedBy`
+        // identifica quem pediu (my-desktop, instance-executor-panel…) e fica
+        // registrado junto da instância.
+        RunPackage: ({ packagePath, startupParams, launchedBy } = {}) =>
+            _Call("EcosystemManager", "RunPackage", { packagePath, startupParams, launchedBy }),
 
         // Encerra a execução de um pacote pelo seu caminho.
         StopPackage: ({ packagePath } = {}) =>
@@ -122,6 +124,14 @@ const CreateInstanceManagerClient = ({
         // Stream de mudanças na lista de pacotes (WebSocket).
         OpenPackageListStream: () =>
             _OpenStream("EcosystemManager", "PackageList"),
+
+        // Instâncias que o daemon colocou no ar (apps in-process e desktop).
+        ListInstances: () =>
+            _Call("EcosystemManager", "ListInstances"),
+
+        // Stream das instâncias lançadas pelo daemon (WebSocket).
+        OpenInstanceListStream: () =>
+            _OpenStream("EcosystemManager", "InstanceList"),
 
         // Stream de progresso de lançamento de aplicações (abrindo → build →
         // aberto), consumido pelos painéis para refletir no ícone.

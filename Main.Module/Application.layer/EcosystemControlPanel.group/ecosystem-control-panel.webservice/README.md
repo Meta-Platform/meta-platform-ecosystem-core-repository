@@ -28,6 +28,6 @@ Cada grupo é um controller montado a partir de um `APIs/*.api.json`
 | `/environments` | Environments | Ambientes de execução. |
 | `/sources` | Sources | Fontes de repositório. |
 | `/configurations` | Configurations | Configurações do ecossistema. |
-| `/host-actions` | HostActions | Ações no host. |
+| `/host-actions` | HostActions | Ações no host (abrir VSCode/terminal). Não executa pacotes — isso é papel do Instance Executor Panel. |
 | `/ecosystemdata-handler` | EcosystemData | Manipulação do diretório `EcosystemData`. |
 | `/notification` | Notification | Canal de notificações. |

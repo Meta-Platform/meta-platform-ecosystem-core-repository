@@ -38,14 +38,16 @@ const EcosystemManager = (params) => {
         metadataHierarchyHandlerLib,
         resolvePackageNameLib,
         jsonFileUtilitiesLib,
-        repositoryManagerService, 
+        instanceStoreLib,
+        repositoryManagerService,
         environmentRuntimeService,
         PKG_CONF_DIRNAME_METADATA,
-        ECO_DIRPATH_INSTALL_DATA, 
+        ECO_DIRPATH_INSTALL_DATA,
         REPOS_CONF_FILENAME_REPOS_DATA,
         REPOS_CONF_EXT_GROUP_DIR,
         EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES,
         ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA,
+        instanceStoreFilePath,
         socket,
         onReady
     } = params
@@ -59,6 +61,26 @@ const EcosystemManager = (params) => {
     const GetMetadataRootNode         = metadataHierarchyHandlerLib.require("GetMetadataRootNode")
     const WriteObjectToFile           = jsonFileUtilitiesLib.require("WriteObjectToFile")
     const ReadJsonFile                = jsonFileUtilitiesLib.require("ReadJsonFile")
+    const InitializeInstanceStore     = instanceStoreLib.require("InitializeInstanceStore")
+
+    // Registro persistente do que ESTE daemon colocou no ar. O daemon centraliza
+    // a execução, então é ele quem deve informar aos painéis as instâncias que
+    // rodou — inclusive as desktop, que vivem em processo separado e antes só
+    // existiam num Map em memória, perdido a cada restart.
+    const instanceStore = InitializeInstanceStore(instanceStoreFilePath)
+
+    const _Log = (action, message) =>
+        console.log(`${colors.bgCyan.black("[EcosystemManagerService]")} ${colors.inverse(`[${action}]`)} ${message}`)
+
+    // O registro é observabilidade, não caminho crítico: se o SQLite falhar, o
+    // lançamento/encerramento continua. Só logamos.
+    const _SafeStore = async (operation) => {
+        try {
+            return await operation()
+        } catch(e) {
+            _Log("InstanceStore", `${colors.bgRed("ERROR")} ${e && e.message ? e.message : e}`)
+        }
+    }
 
     // Um pacote é DESKTOP (Electron) se o boot.json declara a seção "windows".
     const _IsDesktopPackage = async (packagePath) => {
@@ -109,7 +131,7 @@ const EcosystemManager = (params) => {
     // Injeta META_LAUNCH_PROGRESS_SOCKET/META_LAUNCH_ID no env: eles fluem pelo
     // `run` → taskLoader → OpenElectronWindow (que faz ...process.env) até o
     // electron-main, que POSTa o progresso de volta neste socket.
-    const _RunDesktopInSeparateProcess = (packagePath) => {
+    const _RunDesktopInSeparateProcess = async (packagePath, launchedBy) => {
         const executablesDirPath = join(ECO_DIRPATH_INSTALL_DATA, "executables")
         const env = {
             ...process.env,
@@ -123,11 +145,18 @@ const EcosystemManager = (params) => {
             stdio: "ignore"
         })
         desktopProcesses.set(packagePath, child)
+        await _SafeStore(() => instanceStore.RegisterLaunch({
+            packagePath,
+            kind: instanceStore.KIND.DESKTOP,
+            pid: child.pid,
+            launchedBy
+        }))
         // Feedback imediato no ícone enquanto o Electron sobe (antes do window-ready).
         _EmitLaunchProgress({ launchId: packagePath, phase: "launching" })
         child.on("exit", () => {
             if(desktopProcesses.get(packagePath) === child)
                 desktopProcesses.delete(packagePath)
+            _SafeStore(() => instanceStore.MarkStopped({ packagePath }))
             _EmitLaunchProgress({ launchId: packagePath, phase: "closed" })
         })
         child.unref()
@@ -142,11 +171,22 @@ const EcosystemManager = (params) => {
         return true
     }
 
+    // Readota o que sobreviveu ao restart (desktop/cli com pid vivo) e descarta o
+    // que morreu junto com o daemon (apps in-process) ou por conta própria.
+    const _ReconcileInstances = async () => {
+        const result = await _SafeStore(() => instanceStore.ConnectAndSync().then(() => instanceStore.Reconcile()))
+        if(!result) return
+        const { adopted, cleaned } = result
+        if(adopted.length > 0) _Log("InstanceStore", `${adopted.length} instância(s) readotada(s) após restart`)
+        if(cleaned.length > 0) _Log("InstanceStore", `${cleaned.length} instância(s) obsoleta(s) limpa(s)`)
+    }
+
     const _Start = async () => {
         await PrepareRepositoriesFileJson({
             installDataDirPath: ECO_DIRPATH_INSTALL_DATA,
             REPOS_CONF_FILENAME_REPOS_DATA
         })
+        await _ReconcileInstances()
         onReady()
     }
 
@@ -178,11 +218,11 @@ const EcosystemManager = (params) => {
     const WriteMetadataGraphFile = async (environmentPath, tree) => 
         await WriteObjectToFile(join(environmentPath, ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA), tree)
 
-    const RunPackage = async ({ packagePath, startupParams }) => {
+    const RunPackage = async ({ packagePath, startupParams, launchedBy }) => {
         try{
             // DESKTOP → processo separado (isola o Electron do daemon).
             if(await _IsDesktopPackage(packagePath)){
-                _RunDesktopInSeparateProcess(packagePath)
+                await _RunDesktopInSeparateProcess(packagePath, launchedBy)
                 return {}
             }
 
@@ -204,8 +244,23 @@ const EcosystemManager = (params) => {
 
             await PrepareDataDir({ environmentPath, EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES})
             await WriteMetadataGraphFile(environmentPath, metadataHierarchy)
-        
-            await environmentRuntimeService.ExecuteEnvironment(environmentPath)
+
+            const executionId = await environmentRuntimeService.ExecuteEnvironment(environmentPath)
+
+            // App in-process: registra o lançamento e amarra os ids de runtime. O
+            // taskId só existe depois de executar o ambiente, e a application-task
+            // é identificada pelo rootPath.
+            await _SafeStore(async () => {
+                await instanceStore.RegisterLaunch({
+                    packagePath,
+                    kind: instanceStore.KIND.APP,
+                    executionId,
+                    launchedBy
+                })
+                const applicationTask = FindApplicationTaskByRootPath(environmentRuntimeService.ListApplicationTask(), packagePath)
+                if(applicationTask)
+                    await instanceStore.AttachRuntimeIds({ packagePath, taskId: applicationTask.taskId })
+            })
 
             return {}
         }catch(e){
@@ -224,26 +279,37 @@ const EcosystemManager = (params) => {
     const ListSupervisedPackages = async () => {
         try{
             const listAllRepositoriesPackage = await repositoryManagerService.ListPackages()
-                
-            const applicationTasks = environmentRuntimeService.ListApplicationTask() 
-    
+
+            const applicationTasks = environmentRuntimeService.ListApplicationTask()
+
+            // Apps DESKTOP não são tasks do executor in-process: eles rodam em
+            // processo separado. Sem isto, um desktop lançado pelo daemon nunca
+            // apareceria como "em serviço" nos painéis.
+            const desktopInstanceList = (await ListInstances())
+                .filter((instance) => instance.kind === instanceStore.KIND.DESKTOP)
+            const desktopByPath = desktopInstanceList
+                .reduce((acc, instance) => ({ ...acc, [instance.packagePath]: instance }), {})
+
             const packageStatusPromises = listAllRepositoriesPackage
                 .map(async (packageRepositoryParams) => {
                     const packagePath = await repositoryManagerService.GetPackagePath(packageRepositoryParams)
                     const applicationTask = FindApplicationTaskByRootPath(applicationTasks, packagePath)
+                    const desktopInstance = desktopByPath[packagePath]
                     const metadata = await ReadAllPackageMetadata({
-                        path: packagePath, 
+                        path: packagePath,
                         PKG_CONF_DIRNAME_METADATA
                     })
-                    const packageInService = !!applicationTask
-                    return { 
+                    const packageInService = !!applicationTask || !!desktopInstance
+                    return {
                         repositoryParams: packageRepositoryParams,
                         hasIcon: await repositoryManagerService.CheckPackageHasIcon(packageRepositoryParams),
                         ...metadata ? { metadata } : {},
                         packageInService,
-                        ...packageInService
+                        ...applicationTask
                             ? { applicationInServiceState: ExtractStateByTask(applicationTask) }
-                            : {}
+                            : desktopInstance
+                                ? { applicationInServiceState: { status: "ACTIVE", pid: desktopInstance.pid, kind: "desktop", staticParameters: {} } }
+                                : {}
                     }
                 })
             return await Promise.all(packageStatusPromises)
@@ -256,9 +322,46 @@ const EcosystemManager = (params) => {
     // 1 parâmetro (packagePath) chega como valor direto (contrato do server-manager).
     // DESKTOP → mata o processo separado; demais → delega ao runtime in-process.
     const StopPackage = async (packagePath) => {
-        if(_StopDesktopProcess(packagePath))
+        if(_StopDesktopProcess(packagePath)){
+            await _SafeStore(() => instanceStore.MarkStopped({ packagePath }))
             return { stopped: true }
-        return environmentRuntimeService.StopPackage(packagePath)
+        }
+        const result = await environmentRuntimeService.StopPackage(packagePath)
+        await _SafeStore(() => instanceStore.MarkStopped({ packagePath }))
+        return result
+    }
+
+    // Instâncias que ESTE daemon colocou no ar, com o estado vivo de cada uma.
+    //
+    // A verdade de cada kind vem de uma fonte diferente:
+    //   app     → status da application-task no task-executor in-process
+    //   desktop → o pid ainda está vivo?
+    // Uma linha marcada como RUNNING no banco cujo processo/task sumiu é
+    // corrigida aqui (o daemon nem sempre recebe o evento de saída).
+    const ListInstances = async () => {
+        const runningList = await _SafeStore(() => instanceStore.ListRunning())
+        if(!runningList) return []
+
+        const applicationTasks = environmentRuntimeService.ListApplicationTask()
+
+        const instanceList = await Promise.all(runningList.map(async (instance) => {
+            if(instance.kind === instanceStore.KIND.APP){
+                const task = FindApplicationTaskByRootPath(applicationTasks, instance.packagePath)
+                if(!task){
+                    await _SafeStore(() => instanceStore.MarkStopped({ packagePath: instance.packagePath }))
+                    return undefined
+                }
+                return { ...instance, status: task.status, taskId: task.taskId, objectLoaderType: task.objectLoaderType }
+            }
+
+            if(!instanceStore.IsProcessAlive(instance.pid)){
+                await _SafeStore(() => instanceStore.MarkStopped({ packagePath: instance.packagePath }))
+                return undefined
+            }
+            return { ...instance, status: "ACTIVE" }
+        }))
+
+        return instanceList.filter(Boolean)
     }
 
     _Start()
@@ -266,6 +369,7 @@ const EcosystemManager = (params) => {
     return {
         RunPackage,
         StopPackage,
+        ListInstances,
         ListSupervisedPackages,
         ReportLaunchProgress,
         GetLaunchProgressSnapshot,

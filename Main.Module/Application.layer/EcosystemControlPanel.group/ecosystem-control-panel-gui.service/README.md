@@ -16,7 +16,7 @@ Expõe:
 - `InvokeStream(serviceName, method, data, wsShim)` — **streaming** (WebSocket):
   recebe do host um objeto ws-like (mesma API do `ws` do express-ws) e o entrega
   ao método WS do controller (LogStreaming, InstanceOverviewChange,
-  RunPackageStreaming, StreamNotifications). Espelha o contrato WS
+  StreamNotifications). Espelha o contrato WS
   (0 → `method(ws)`; 1 → `method(ws, valor)`; 2+ → `method(ws, objeto)`).
 - `GetManifest()` — `{ apiName: apiTemplate }` (o `.api.json` inteiro; o renderer
   reconstrói a superfície e distingue WS de HTTP).

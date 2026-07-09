@@ -4,6 +4,7 @@ const EcosystemManagerController = (params) => {
         ecosystemManagerService: {
             RunPackage,
             StopPackage,
+            ListInstances,
             ListSupervisedPackages,
             ReportLaunchProgress,
             GetLaunchProgressSnapshot,
@@ -22,6 +23,28 @@ const EcosystemManagerController = (params) => {
                 console.log(e)
             }
         })
+    }
+
+    // Stream das instâncias lançadas por este daemon. Reage a DUAS fontes: as
+    // tasks in-process (TASK_STATUS_CHANGE) e os processos desktop, que não são
+    // tasks e só se manifestam pelo progresso de lançamento (LAUNCH_PROGRESS).
+    const InstanceList = (ws) => {
+        const _safeSend = async () => {
+            try { ws.send(JSON.stringify(await ListInstances())) } catch(e){}
+        }
+
+        const taskEmitter   = GetTaskExecutorEventEmitter()
+        const launchEmitter = GetLaunchProgressEmitter()
+
+        taskEmitter.on("TASK_STATUS_CHANGE", _safeSend)
+        launchEmitter.on("LAUNCH_PROGRESS", _safeSend)
+
+        ws.on && ws.on("close", () => {
+            try { taskEmitter.removeListener("TASK_STATUS_CHANGE", _safeSend) } catch(e){}
+            try { launchEmitter.removeListener("LAUNCH_PROGRESS", _safeSend) } catch(e){}
+        })
+
+        _safeSend()
     }
 
     // Ingest de progresso de lançamento vindo do app (electron-main) por POST.
@@ -45,6 +68,8 @@ const EcosystemManagerController = (params) => {
         controllerName : "EcosystemManagerController",
         RunPackage,
         StopPackage,
+        ListInstances,
+        InstanceList,
         ListPackages: ListSupervisedPackages,
         PackageList,
         LaunchProgress,

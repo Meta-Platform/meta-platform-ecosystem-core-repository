@@ -10,12 +10,10 @@
             "environmentHandlerService",
             "jsonFileUtilitiesLib",
             "ecosystemInstallUtilitiesLib",
-            "ecosystemControlPanelWebservice",
-            "instanceManagerClientLib"
+            "ecosystemControlPanelWebservice"
         ],
         "params": [
-            "ecosystemDefaultsFileRelativePath",
-            "platformApplicationSocketPath"
+            "ecosystemDefaultsFileRelativePath"
         ]
     }
 ]
