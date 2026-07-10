@@ -14,6 +14,9 @@ const KIND_APP     = "app"
 const KIND_DESKTOP = "desktop"
 const KIND_CLI     = "cli"
 
+// Tabela renomeada durante a migração do schema antigo (ver _MigrateLegacySchema).
+const LEGACY_TABLE = "Instances_legacy"
+
 // Checagem padrão de vida do processo: o sinal 0 não envia nada, apenas valida
 // que o pid existe e é sinalizável por este usuário.
 const DefaultIsProcessAlive = (pid) => {
@@ -36,8 +39,13 @@ const DefaultIsProcessAlive = (pid) => {
  * perdia a cada restart do daemon — deixando aplicações vivas e invisíveis.
  * Aqui ele é persistido.
  *
- * Uma Instance é `{ packagePath, kind, pid?, taskId?, executionId?, launchedBy?, status }`.
- * `packagePath` é a identidade: um mesmo pacote não roda duas vezes ao mesmo tempo.
+ * Uma Instance é `{ instanceId, packagePath, kind, pid?, taskId?, executionId?, launchedBy?, status }`.
+ *
+ * `instanceId` — e não `packagePath` — é a identidade. Um pacote DESKTOP roda em
+ * várias instâncias simultâneas (o usuário abre a mesma aplicação duas vezes), e
+ * cada uma precisa ser distinguível para ser encerrada e contada individualmente.
+ * `app` e `cli` continuam sendo um-por-packagePath: relançá-los sobrescreve o
+ * registro anterior.
  */
 const InitializeInstanceStore = (storage) => {
 
@@ -51,7 +59,8 @@ const InitializeInstanceStore = (storage) => {
 
     const InstanceModel = sequelize.define("Instance", {
         id:          { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-        packagePath: { type: DataTypes.STRING, allowNull: false, unique: true },
+        instanceId:  { type: DataTypes.STRING, allowNull: false, unique: true },
+        packagePath: { type: DataTypes.STRING, allowNull: false },
         kind:        { type: DataTypes.STRING, allowNull: false },
         pid:         { type: DataTypes.INTEGER, allowNull: true },
         taskId:      { type: DataTypes.INTEGER, allowNull: true },
@@ -62,19 +71,70 @@ const InitializeInstanceStore = (storage) => {
         stoppedAt:   { type: DataTypes.DATE, allowNull: true }
     })
 
-    const ConnectAndSync = async () => {
-        await sequelize.authenticate()
-        await sequelize.sync()
+    /**
+     * O schema anterior tinha `packagePath NOT NULL UNIQUE` e não tinha
+     * `instanceId`. `sync()` não altera tabela existente, e o SQLite não remove
+     * uma constraint UNIQUE por ALTER TABLE — a tabela precisa ser recriada.
+     *
+     * Renomeamos a antiga aqui; o `sync()` seguinte cria a nova no formato certo
+     * e `_CopyLegacyRows` traz as linhas de volta. O `launchId` legado ERA o
+     * `packagePath`, então ele vira o `instanceId` das linhas migradas — o que
+     * mantém coerente qualquer instância desktop viva sendo readotada pelo
+     * Reconcile.
+     *
+     * Devolve `true` se houve renomeação (ou seja: há linhas a copiar).
+     */
+    const _MigrateLegacySchema = async () => {
+        const queryInterface = sequelize.getQueryInterface()
+        const tableName = InstanceModel.getTableName()
+
+        let description
+        try {
+            description = await queryInterface.describeTable(tableName)
+        } catch(e) {
+            return false // tabela ainda não existe: o sync() já a cria no formato novo
+        }
+
+        if(description.instanceId) return false // já migrada
+
+        await sequelize.query(`DROP TABLE IF EXISTS \`${LEGACY_TABLE}\``)
+        await queryInterface.renameTable(tableName, LEGACY_TABLE)
+        return true
     }
 
-    const _serialize = ({ packagePath, kind, pid, taskId, executionId, launchedBy, status, startedAt, stoppedAt }) =>
-        ({ packagePath, kind, pid, taskId, executionId, launchedBy, status, startedAt, stoppedAt })
+    const _CopyLegacyRows = async () => {
+        const tableName = InstanceModel.getTableName()
+        await sequelize.query(
+            `INSERT INTO \`${tableName}\`
+                (instanceId, packagePath, kind, pid, taskId, executionId, launchedBy, status, startedAt, stoppedAt, createdAt, updatedAt)
+             SELECT packagePath, packagePath, kind, pid, taskId, executionId, launchedBy, status, startedAt, stoppedAt, createdAt, updatedAt
+               FROM \`${LEGACY_TABLE}\``)
+        await sequelize.query(`DROP TABLE \`${LEGACY_TABLE}\``)
+    }
 
-    // Registra (ou re-registra) o lançamento de um pacote. Como `packagePath` é
-    // único, relançar o mesmo pacote sobrescreve o registro anterior.
-    const RegisterLaunch = async ({ packagePath, kind, pid, taskId, executionId, launchedBy }) => {
-        const existing = await InstanceModel.findOne({ where: { packagePath } })
+    const ConnectAndSync = async () => {
+        await sequelize.authenticate()
+        const hasLegacyRows = await _MigrateLegacySchema()
+        await sequelize.sync()
+        if(hasLegacyRows) await _CopyLegacyRows()
+    }
+
+    const _serialize = ({ instanceId, packagePath, kind, pid, taskId, executionId, launchedBy, status, startedAt, stoppedAt }) =>
+        ({ instanceId, packagePath, kind, pid, taskId, executionId, launchedBy, status, startedAt, stoppedAt })
+
+    /**
+     * Registra o lançamento de uma instância. `instanceId` é gerado por quem
+     * lança (o daemon) e identifica esta execução específica.
+     *
+     * DESKTOP cria sempre uma linha nova — é o kind que admite várias instâncias
+     * do mesmo pacote. Os demais são um-por-pacote: se já houver uma instância
+     * RUNNING daquele packagePath, ela é sobrescrita.
+     */
+    const RegisterLaunch = async ({ instanceId, packagePath, kind, pid, taskId, executionId, launchedBy }) => {
+        if(!instanceId) throw new Error("RegisterLaunch: 'instanceId' é obrigatório.")
+
         const values = {
+            instanceId,
             packagePath,
             kind,
             pid:         pid ?? null,
@@ -85,35 +145,49 @@ const InitializeInstanceStore = (storage) => {
             startedAt:   new Date(),
             stoppedAt:   null
         }
-        if(existing) {
-            await existing.update(values)
-            return _serialize(existing)
+
+        if(kind !== KIND_DESKTOP) {
+            const existing = await InstanceModel.findOne({ where: { packagePath, status: RUNNING } })
+            if(existing) {
+                await existing.update(values)
+                return _serialize(existing)
+            }
         }
+
         const created = await InstanceModel.create(values)
         return _serialize(created)
     }
 
     // Completa o registro depois que o runtime resolveu taskId/executionId (o
     // lançamento in-process só conhece esses ids após executar o ambiente).
-    const AttachRuntimeIds = async ({ packagePath, taskId, executionId }) => {
+    const AttachRuntimeIds = async ({ instanceId, taskId, executionId }) => {
         const [count] = await InstanceModel.update(
             {
                 ...(taskId      !== undefined ? { taskId }      : {}),
                 ...(executionId !== undefined ? { executionId } : {})
             },
-            { where: { packagePath } })
+            { where: { instanceId } })
         return count > 0
     }
 
-    const MarkStopped = async ({ packagePath }) => {
+    const MarkStopped = async ({ instanceId }) => {
+        const [count] = await InstanceModel.update(
+            { status: STOPPED, stoppedAt: new Date() },
+            { where: { instanceId, status: RUNNING } })
+        return count > 0
+    }
+
+    // Encerra o registro de TODAS as instâncias RUNNING de um pacote. Usado no
+    // encerramento por packagePath (que não distingue instâncias).
+    const MarkStoppedByPackage = async ({ packagePath }) => {
         const [count] = await InstanceModel.update(
             { status: STOPPED, stoppedAt: new Date() },
             { where: { packagePath, status: RUNNING } })
         return count > 0
     }
 
-    const Remove = async ({ packagePath }) =>
-        await InstanceModel.destroy({ where: { packagePath } })
+    const Remove = async ({ instanceId }) =>
+        await InstanceModel.destroy({ where: { instanceId } })
 
     const List = async () =>
         (await InstanceModel.findAll({ order: [["startedAt", "DESC"]] })).map(_serialize)
@@ -121,8 +195,11 @@ const InitializeInstanceStore = (storage) => {
     const ListRunning = async () =>
         (await InstanceModel.findAll({ where: { status: RUNNING }, order: [["startedAt", "DESC"]] })).map(_serialize)
 
-    const Get = async ({ packagePath }) => {
-        const instance = await InstanceModel.findOne({ where: { packagePath } })
+    const ListRunningByPackage = async ({ packagePath }) =>
+        (await InstanceModel.findAll({ where: { packagePath, status: RUNNING }, order: [["startedAt", "ASC"]] })).map(_serialize)
+
+    const Get = async ({ instanceId }) => {
+        const instance = await InstanceModel.findOne({ where: { instanceId } })
         return instance ? _serialize(instance) : undefined
     }
 
@@ -154,7 +231,7 @@ const InitializeInstanceStore = (storage) => {
         if(cleaned.length > 0)
             await InstanceModel.update(
                 { status: STOPPED, stoppedAt: new Date() },
-                { where: { packagePath: { [Op.in]: cleaned.map((i) => i.packagePath) } } })
+                { where: { instanceId: { [Op.in]: cleaned.map((i) => i.instanceId) } } })
 
         return { adopted, cleaned }
     }
@@ -168,9 +245,11 @@ const InitializeInstanceStore = (storage) => {
         RegisterLaunch,
         AttachRuntimeIds,
         MarkStopped,
+        MarkStoppedByPackage,
         Remove,
         List,
         ListRunning,
+        ListRunningByPackage,
         Get,
         Reconcile
     }

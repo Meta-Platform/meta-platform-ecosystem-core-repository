@@ -109,13 +109,19 @@ const CreateInstanceManagerClient = ({
 
         // Executa um pacote a partir do seu caminho absoluto. `launchedBy`
         // identifica quem pediu (my-desktop, instance-executor-panel…) e fica
-        // registrado junto da instância.
+        // registrado junto da instância. Devolve `{ instanceId }` — a identidade
+        // desta execução, necessária para encerrá-la depois.
         RunPackage: ({ packagePath, startupParams, launchedBy } = {}) =>
             _Call("EcosystemManager", "RunPackage", { packagePath, startupParams, launchedBy }),
 
-        // Encerra a execução de um pacote pelo seu caminho.
+        // Encerra TODAS as instâncias de um pacote pelo seu caminho.
         StopPackage: ({ packagePath } = {}) =>
             _Call("EcosystemManager", "StopPackage", { packagePath }),
+
+        // Encerra UMA instância pelo seu id (um pacote desktop pode estar aberto
+        // várias vezes; é assim que se fecha a janela certa).
+        StopInstance: ({ instanceId } = {}) =>
+            _Call("EcosystemManager", "StopInstance", { instanceId }),
 
         // Lista os pacotes supervisionados pelo daemon.
         ListPackages: () =>

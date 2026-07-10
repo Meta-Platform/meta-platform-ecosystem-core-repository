@@ -4,6 +4,7 @@ const EcosystemManagerController = (params) => {
         ecosystemManagerService: {
             RunPackage,
             StopPackage,
+            StopInstance,
             ListInstances,
             ListSupervisedPackages,
             ReportLaunchProgress,
@@ -68,6 +69,7 @@ const EcosystemManagerController = (params) => {
         controllerName : "EcosystemManagerController",
         RunPackage,
         StopPackage,
+        StopInstance,
         ListInstances,
         InstanceList,
         ListPackages: ListSupervisedPackages,

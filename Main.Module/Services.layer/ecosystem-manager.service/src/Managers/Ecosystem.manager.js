@@ -92,21 +92,46 @@ const EcosystemManager = (params) => {
         }
     }
 
-    // Registro dos processos DESKTOP lançados pelo daemon (packagePath → child),
-    // para poder encerrá-los depois (eles não são tasks do executor in-process).
+    // Registro dos processos DESKTOP lançados pelo daemon (instanceId → { child,
+    // packagePath }), para poder encerrá-los depois (eles não são tasks do
+    // executor in-process). A chave é o instanceId — e não o packagePath —
+    // porque o mesmo pacote pode estar aberto em várias instâncias, e cada uma
+    // tem o seu próprio processo a encerrar.
     const desktopProcesses = new Map()
+
+    // Cada lançamento tem uma identidade própria, gerada aqui. É ela que viaja
+    // como META_LAUNCH_ID até o Electron e volta nos eventos de progresso, e é
+    // por ela que uma instância é encerrada e contada.
+    const _CreateInstanceId = () => crypto.randomUUID()
 
     // Progresso de LANÇAMENTO de aplicações (para a área de trabalho refletir no
     // ícone: abrindo → build → aberto). O app lançado reporta seus eventos por
     // HTTP no socket deste daemon (ver ReportLaunchProgress); aqui mantemos o
-    // último estado por launchId (= packagePath) e um emissor próprio — separado
+    // último estado por launchId (= instanceId) e um emissor próprio — separado
     // do stream de tasks — que o controller expõe como WS (LaunchProgressStream).
     const launchProgressEmitter = new EventEmitter()
     const launchProgressState   = new Map()
 
-    const _EmitLaunchProgress = ({ launchId, phase, percentage }) => {
+    // O evento carrega o packagePath junto do launchId: o painel conhece o
+    // pacote que mandou abrir, não o instanceId (que só nasce aqui), e precisa
+    // dos dois para saber a QUAL ícone o progresso pertence e QUAL instância
+    // daquele ícone acabou de abrir ou fechar.
+    const _ResolveLaunchPackagePath = (launchId) => {
+        const registered = desktopProcesses.get(launchId)
+        if(registered) return registered.packagePath
+        const state = launchProgressState.get(launchId)
+        return state && state.packagePath
+    }
+
+    const _EmitLaunchProgress = ({ launchId, phase, percentage, packagePath }) => {
         if(!launchId || !phase) return
-        const state = { launchId, phase, ...(percentage !== undefined ? { percentage } : {}) }
+        const resolvedPath = packagePath || _ResolveLaunchPackagePath(launchId)
+        const state = {
+            launchId,
+            phase,
+            ...(resolvedPath !== undefined ? { packagePath: resolvedPath } : {}),
+            ...(percentage !== undefined ? { percentage } : {})
+        }
         if(phase === "closed") launchProgressState.delete(launchId)
         else                   launchProgressState.set(launchId, state)
         launchProgressEmitter.emit("LAUNCH_PROGRESS", state)
@@ -114,6 +139,7 @@ const EcosystemManager = (params) => {
 
     // Ingest chamado pelo app lançado (electron-main) via POST. `phase` ∈
     // { window-ready | building | ready }; `percentage` só em building/ready.
+    // O app só conhece o seu launchId; o packagePath é resolvido aqui.
     const ReportLaunchProgress = ({ launchId, phase, percentage } = {}) => {
         _EmitLaunchProgress({ launchId, phase, percentage })
         return {}
@@ -132,11 +158,12 @@ const EcosystemManager = (params) => {
     // `run` → taskLoader → OpenElectronWindow (que faz ...process.env) até o
     // electron-main, que POSTa o progresso de volta neste socket.
     const _RunDesktopInSeparateProcess = async (packagePath, launchedBy) => {
+        const instanceId = _CreateInstanceId()
         const executablesDirPath = join(ECO_DIRPATH_INSTALL_DATA, "executables")
         const env = {
             ...process.env,
             PATH: `${executablesDirPath}:${process.env.PATH}`,
-            ...(socket ? { META_LAUNCH_PROGRESS_SOCKET: socket, META_LAUNCH_ID: packagePath } : {})
+            ...(socket ? { META_LAUNCH_PROGRESS_SOCKET: socket, META_LAUNCH_ID: instanceId } : {})
         }
         const child = spawn(join(executablesDirPath, "run"), ["package", packagePath], {
             cwd: ECO_DIRPATH_INSTALL_DATA,
@@ -144,31 +171,58 @@ const EcosystemManager = (params) => {
             detached: true,
             stdio: "ignore"
         })
-        desktopProcesses.set(packagePath, child)
+        desktopProcesses.set(instanceId, { child, packagePath })
         await _SafeStore(() => instanceStore.RegisterLaunch({
+            instanceId,
             packagePath,
             kind: instanceStore.KIND.DESKTOP,
             pid: child.pid,
             launchedBy
         }))
         // Feedback imediato no ícone enquanto o Electron sobe (antes do window-ready).
-        _EmitLaunchProgress({ launchId: packagePath, phase: "launching" })
+        _EmitLaunchProgress({ launchId: instanceId, packagePath, phase: "launching" })
         child.on("exit", () => {
-            if(desktopProcesses.get(packagePath) === child)
-                desktopProcesses.delete(packagePath)
-            _SafeStore(() => instanceStore.MarkStopped({ packagePath }))
-            _EmitLaunchProgress({ launchId: packagePath, phase: "closed" })
+            const registered = desktopProcesses.get(instanceId)
+            if(registered && registered.child === child)
+                desktopProcesses.delete(instanceId)
+            _SafeStore(() => instanceStore.MarkStopped({ instanceId }))
+            // O packagePath é passado explicitamente: o processo já saiu do mapa,
+            // então não haveria de onde resolvê-lo.
+            _EmitLaunchProgress({ launchId: instanceId, packagePath, phase: "closed" })
         })
         child.unref()
+        return instanceId
     }
 
-    // Encerra um pacote DESKTOP lançado pelo daemon (mata o grupo de processos).
-    const _StopDesktopProcess = (packagePath) => {
-        const child = desktopProcesses.get(packagePath)
-        if(!child) return false
+    // Mata o grupo de processos de um pid (o spawn é `detached`, então pgid = pid).
+    // Usado quando o daemon reiniciou e perdeu o handle do child, mas o registro
+    // guardou o pid da instância readotada.
+    const _KillProcessGroup = (pid) => {
+        if(!pid || !instanceStore.IsProcessAlive(pid)) return false
+        try { process.kill(-pid, "SIGTERM"); return true }
+        catch(e) {
+            try { process.kill(pid, "SIGTERM"); return true } catch(_){ return false }
+        }
+    }
+
+    // Encerra UMA instância DESKTOP lançada pelo daemon (mata o grupo de processos).
+    const _StopDesktopProcess = (instanceId) => {
+        const registered = desktopProcesses.get(instanceId)
+        if(!registered) return false
+        const { child } = registered
         try { process.kill(-child.pid, "SIGTERM") } catch(e) { try { child.kill("SIGTERM") } catch(_){} }
-        desktopProcesses.delete(packagePath)
+        desktopProcesses.delete(instanceId)
         return true
+    }
+
+    // Encerra TODAS as instâncias DESKTOP de um pacote. É o comportamento do
+    // encerramento por packagePath, que não distingue instâncias.
+    const _StopDesktopProcessesByPackage = (packagePath) => {
+        const instanceIdList = Array.from(desktopProcesses.entries())
+            .filter(([, registered]) => registered.packagePath === packagePath)
+            .map(([instanceId]) => instanceId)
+        instanceIdList.forEach(_StopDesktopProcess)
+        return instanceIdList.length > 0
     }
 
     // Readota o que sobreviveu ao restart (desktop/cli com pid vivo) e descarta o
@@ -222,8 +276,8 @@ const EcosystemManager = (params) => {
         try{
             // DESKTOP → processo separado (isola o Electron do daemon).
             if(await _IsDesktopPackage(packagePath)){
-                await _RunDesktopInSeparateProcess(packagePath, launchedBy)
-                return {}
+                const instanceId = await _RunDesktopInSeparateProcess(packagePath, launchedBy)
+                return { instanceId }
             }
 
             const packageList = await repositoryManagerService.ListPackages()
@@ -250,8 +304,10 @@ const EcosystemManager = (params) => {
             // App in-process: registra o lançamento e amarra os ids de runtime. O
             // taskId só existe depois de executar o ambiente, e a application-task
             // é identificada pelo rootPath.
+            const instanceId = _CreateInstanceId()
             await _SafeStore(async () => {
                 await instanceStore.RegisterLaunch({
+                    instanceId,
                     packagePath,
                     kind: instanceStore.KIND.APP,
                     executionId,
@@ -259,10 +315,10 @@ const EcosystemManager = (params) => {
                 })
                 const applicationTask = FindApplicationTaskByRootPath(environmentRuntimeService.ListApplicationTask(), packagePath)
                 if(applicationTask)
-                    await instanceStore.AttachRuntimeIds({ packagePath, taskId: applicationTask.taskId })
+                    await instanceStore.AttachRuntimeIds({ instanceId, taskId: applicationTask.taskId })
             })
 
-            return {}
+            return { instanceId }
         }catch(e){
 
             console.log(e)
@@ -284,17 +340,21 @@ const EcosystemManager = (params) => {
 
             // Apps DESKTOP não são tasks do executor in-process: eles rodam em
             // processo separado. Sem isto, um desktop lançado pelo daemon nunca
-            // apareceria como "em serviço" nos painéis.
+            // apareceria como "em serviço" nos painéis. Um mesmo pacote pode ter
+            // várias instâncias abertas, então agrupamos por caminho.
             const desktopInstanceList = (await ListInstances())
                 .filter((instance) => instance.kind === instanceStore.KIND.DESKTOP)
-            const desktopByPath = desktopInstanceList
-                .reduce((acc, instance) => ({ ...acc, [instance.packagePath]: instance }), {})
+            const desktopByPath = desktopInstanceList.reduce((acc, instance) => ({
+                ...acc,
+                [instance.packagePath]: [ ...(acc[instance.packagePath] || []), instance ]
+            }), {})
 
             const packageStatusPromises = listAllRepositoriesPackage
                 .map(async (packageRepositoryParams) => {
                     const packagePath = await repositoryManagerService.GetPackagePath(packageRepositoryParams)
                     const applicationTask = FindApplicationTaskByRootPath(applicationTasks, packagePath)
-                    const desktopInstance = desktopByPath[packagePath]
+                    const desktopInstances = desktopByPath[packagePath] || []
+                    const [ desktopInstance ] = desktopInstances
                     const metadata = await ReadAllPackageMetadata({
                         path: packagePath,
                         PKG_CONF_DIRNAME_METADATA
@@ -305,6 +365,7 @@ const EcosystemManager = (params) => {
                         hasIcon: await repositoryManagerService.CheckPackageHasIcon(packageRepositoryParams),
                         ...metadata ? { metadata } : {},
                         packageInService,
+                        ...desktopInstances.length > 0 ? { instanceCount: desktopInstances.length } : {},
                         ...applicationTask
                             ? { applicationInServiceState: ExtractStateByTask(applicationTask) }
                             : desktopInstance
@@ -318,17 +379,42 @@ const EcosystemManager = (params) => {
         }
     }
 
-    // Encerra a execução de um pacote pelo seu caminho.
+    // Encerra a execução de um pacote pelo seu caminho — TODAS as instâncias dele.
     // 1 parâmetro (packagePath) chega como valor direto (contrato do server-manager).
-    // DESKTOP → mata o processo separado; demais → delega ao runtime in-process.
+    // DESKTOP → mata os processos separados; demais → delega ao runtime in-process.
     const StopPackage = async (packagePath) => {
-        if(_StopDesktopProcess(packagePath)){
-            await _SafeStore(() => instanceStore.MarkStopped({ packagePath }))
+        if(_StopDesktopProcessesByPackage(packagePath)){
+            await _SafeStore(() => instanceStore.MarkStoppedByPackage({ packagePath }))
             return { stopped: true }
         }
         const result = await environmentRuntimeService.StopPackage(packagePath)
-        await _SafeStore(() => instanceStore.MarkStopped({ packagePath }))
+        await _SafeStore(() => instanceStore.MarkStoppedByPackage({ packagePath }))
         return result
+    }
+
+    // Encerra UMA instância pelo seu instanceId — é o que permite fechar a janela
+    // certa quando o mesmo pacote está aberto várias vezes.
+    // 1 parâmetro (instanceId) chega como valor direto (contrato do server-manager).
+    const StopInstance = async (instanceId) => {
+        if(_StopDesktopProcess(instanceId)){
+            await _SafeStore(() => instanceStore.MarkStopped({ instanceId }))
+            return { stopped: true, instanceId }
+        }
+
+        const instance = await _SafeStore(() => instanceStore.Get({ instanceId }))
+        if(!instance) throw new Error(`Instância não encontrada: ${instanceId}`)
+
+        // Desktop readotado depois de um restart: o daemon perdeu o handle do
+        // child, mas o pid registrado ainda identifica o grupo de processos.
+        if(instance.kind === instanceStore.KIND.DESKTOP && _KillProcessGroup(instance.pid)){
+            await _SafeStore(() => instanceStore.MarkStopped({ instanceId }))
+            return { stopped: true, instanceId }
+        }
+
+        // App in-process: o encerramento cai no runtime, pelo pacote.
+        const result = await environmentRuntimeService.StopPackage(instance.packagePath)
+        await _SafeStore(() => instanceStore.MarkStopped({ instanceId }))
+        return { ...result, instanceId }
     }
 
     // Instâncias que ESTE daemon colocou no ar, com o estado vivo de cada uma.
@@ -348,14 +434,14 @@ const EcosystemManager = (params) => {
             if(instance.kind === instanceStore.KIND.APP){
                 const task = FindApplicationTaskByRootPath(applicationTasks, instance.packagePath)
                 if(!task){
-                    await _SafeStore(() => instanceStore.MarkStopped({ packagePath: instance.packagePath }))
+                    await _SafeStore(() => instanceStore.MarkStopped({ instanceId: instance.instanceId }))
                     return undefined
                 }
                 return { ...instance, status: task.status, taskId: task.taskId, objectLoaderType: task.objectLoaderType }
             }
 
             if(!instanceStore.IsProcessAlive(instance.pid)){
-                await _SafeStore(() => instanceStore.MarkStopped({ packagePath: instance.packagePath }))
+                await _SafeStore(() => instanceStore.MarkStopped({ instanceId: instance.instanceId }))
                 return undefined
             }
             return { ...instance, status: "ACTIVE" }
@@ -369,6 +455,7 @@ const EcosystemManager = (params) => {
     return {
         RunPackage,
         StopPackage,
+        StopInstance,
         ListInstances,
         ListSupervisedPackages,
         ReportLaunchProgress,

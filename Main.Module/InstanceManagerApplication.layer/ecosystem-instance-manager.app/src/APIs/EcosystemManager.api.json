@@ -88,6 +88,19 @@
 					"required": true
 				}
 			]
+		},
+		{
+			"summary": "StopInstance",
+			"method": "POST",
+			"path": "/stop-instance",
+			"parameters": [
+				{
+					"name": "instanceId",
+					"in": "body",
+					"type": "string",
+					"required": true
+				}
+			]
 		}
 	]
 }
