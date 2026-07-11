@@ -11,7 +11,8 @@
             "metadataHierarchyHandlerLib",
             "resolvePackageNameLib",
             "jsonFileUtilitiesLib",
-            "instanceStoreLib"
+            "instanceStoreLib",
+            "ecosystemDefaultsHandlerLib"
         ],
         "params": [
             "PKG_CONF_DIRNAME_METADATA",
@@ -20,6 +21,8 @@
             "REPOS_CONF_EXT_GROUP_DIR",
             "EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES",
             "ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA",
+            "configurationsDirName",
+            "ecosystemDefaultsFileName",
             "instanceStoreFilePath",
             "socket"
         ]

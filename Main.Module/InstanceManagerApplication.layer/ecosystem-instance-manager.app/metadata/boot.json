@@ -85,7 +85,8 @@
                 "metadataHierarchyHandlerLib": "@/metadata-hierarchy-handler.lib",
                 "resolvePackageNameLib": "@/resolve-package-name.lib",
                 "jsonFileUtilitiesLib": "@/json-file-utilities.lib",
-                "instanceStoreLib": "@/instance-store.lib"
+                "instanceStoreLib": "@/instance-store.lib",
+                "ecosystemDefaultsHandlerLib": "@/ecosystem-defaults-handler.lib"
 
             },
             "params": {
@@ -95,6 +96,8 @@
                 "REPOS_CONF_EXT_GROUP_DIR":"{{REPOS_CONF_EXT_GROUP_DIR}}",
                 "EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES": "{{EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES}}",
                 "ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA": "{{ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA}}",
+                "configurationsDirName": "{{ECOSYSTEMDATA_CONF_DIRNAME_CONFIGURATIONS_DIR}}",
+                "ecosystemDefaultsFileName": "{{ECOSYSTEMDATA_CONF_FILENAME_ECOSYSTEM_DEFAULTS}}",
                 "instanceStoreFilePath": "{{instanceStoreFilePath}}",
                 "socket": "{{socket}}"
             }

@@ -39,6 +39,7 @@ const EcosystemManager = (params) => {
         resolvePackageNameLib,
         jsonFileUtilitiesLib,
         instanceStoreLib,
+        ecosystemDefaultsHandlerLib,
         repositoryManagerService,
         environmentRuntimeService,
         PKG_CONF_DIRNAME_METADATA,
@@ -47,6 +48,8 @@ const EcosystemManager = (params) => {
         REPOS_CONF_EXT_GROUP_DIR,
         EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES,
         ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA,
+        configurationsDirName,
+        ecosystemDefaultsFileName,
         instanceStoreFilePath,
         socket,
         onReady
@@ -62,6 +65,21 @@ const EcosystemManager = (params) => {
     const WriteObjectToFile           = jsonFileUtilitiesLib.require("WriteObjectToFile")
     const ReadJsonFile                = jsonFileUtilitiesLib.require("ReadJsonFile")
     const InitializeInstanceStore     = instanceStoreLib.require("InitializeInstanceStore")
+    const GetEcosystemDefaults        = ecosystemDefaultsHandlerLib.require("Get")
+
+    // Carrega UMA vez, na construção do manager, o ecosystem-defaults.json
+    // materializado no EcosystemData. Esse objeto é a BASE de startupParams
+    // injetada na hierarquia de metadados, para os {{VAR}} dos pacotes
+    // resolverem sem depender de literal. O caminho relativo segue a mesma
+    // convenção do command-line-runtime-manager.service:
+    // <configurationsDirName>/<ecosystemDefaultsFileName>.
+    // O Get lança erro explícito se o arquivo não existir — propositalmente
+    // deixamos propagar: sem defaults materializados o ecossistema não está
+    // instalado e o daemon deve falhar alto e claro.
+    const ecosystemDefaults = GetEcosystemDefaults(
+        ECO_DIRPATH_INSTALL_DATA,
+        join(configurationsDirName, ecosystemDefaultsFileName)
+    )
 
     // Registro persistente do que ESTE daemon colocou no ar. O daemon centraliza
     // a execução, então é ele quem deve informar aos painéis as instâncias que
@@ -281,9 +299,17 @@ const EcosystemManager = (params) => {
             }
 
             const packageList = await repositoryManagerService.ListPackages()
+
+            // Composição do startupParams injetado (BASE da hierarquia):
+            //   ecosystemDefaults  → base do ecossistema (config materializada)
+            //   startupParams      → o que o chamador passou sobrepõe o ecossistema
+            // O startup-params.json de cada nó ainda sobrepõe ambos, via merge
+            // por-nó feito no ReplaceStartupParams do dependency-graph-builder.
+            const injected = { ...ecosystemDefaults, ...(startupParams || {}) }
+
             const metadataHierarchy = await BuildMetadataHierarchy({
                 path: packagePath,
-                startupParams,
+                startupParams: injected,
                 packageList,
                 REPOS_CONF_EXT_GROUP_DIR,
                 PKG_CONF_DIRNAME_METADATA
