@@ -11,6 +11,7 @@
                 "resolvePackageNameLib": "@/resolve-package-name.lib",
                 "repositoryUtilitiesLib":"@/repository-utilities.lib",
                 "jsonFileUtilitiesLib": "@/json-file-utilities.lib",
+                "ecosystemDefaultsHandlerLib": "@/ecosystem-defaults-handler.lib",
                 "executionParamsGeneratorLib": "@/execution-params-generator.lib",
                 "applicationInstanceLib":"@/application-instance.lib",
                 "installNodejsPackageDependenciesLib":"@/install-nodejs-package-dependencies.lib",

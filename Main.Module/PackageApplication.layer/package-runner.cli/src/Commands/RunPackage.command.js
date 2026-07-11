@@ -1,4 +1,4 @@
-const { resolve, join } = require("path")
+const { join } = require("path")
 const crypto = require('crypto')
 const os = require('os')
 const colors = require("colors")
@@ -29,7 +29,8 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
     const { packagePath } = args
 
     const {
-        installDataDirPath, 
+        installDataDirPath,
+        ecosystemDefaultsFileRelativePath,
         REPOS_CONF_EXT_MODULE_DIR,
         REPOS_CONF_EXT_LAYER_DIR,
         REPOS_CONF_EXT_GROUP_DIR,
@@ -47,6 +48,7 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
         metadataHierarchyHandlerLib,
         resolvePackageNameLib,
         jsonFileUtilitiesLib,
+        ecosystemDefaultsHandlerLib,
         repositoryUtilitiesLib,
         applicationInstanceLib,
         installNodejsPackageDependenciesLib,
@@ -69,6 +71,7 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
         'desktop-window-instance'             : desktopWindowInstanceLib.require("DesktopWindowInstance.taskLoader")
     }
     const ReadJsonFile                                 = jsonFileUtilitiesLib.require("ReadJsonFile")
+    const GetEcosystemDefaults                         = ecosystemDefaultsHandlerLib.require("Get")
     const BuildMetadataHierarchy                       = dependencyGraphBuilderLib.require("BuildMetadataHierarchy")
     const PrepareRepositoriesFileJson                  = repositoryConfigHandlerLib.require("PrepareRepositoriesFileJson")
     const CreateEnvironment                            = environmentHandlerLib.require("CreateEnvironment")
@@ -143,9 +146,13 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
             REPOS_CONF_FILENAME_REPOS_DATA,
             loggerEmitter
         })
-        const absolutePackagePath = resolve(process.cwd(), packagePath)
-        const startupParamsPath = resolve(absolutePackagePath, PKG_CONF_DIRNAME_METADATA, "startup-params.json")
-        const startupParams = await ReadJsonFile(startupParamsPath)
+        // Carrega o ecosystem-defaults materializado no EcosystemData e o usa como
+        // objeto injetado (BASE) na hierarquia. O merge por-nó do
+        // BuildMetadataHierarchy sobrepõe, por cima desta base, os startup-params
+        // próprios de cada pacote — que já vêm do disco na leitura de metadados.
+        // Se o arquivo não existir, o Get lança Error explícito (ecossistema não
+        // instalado) e o erro propaga para o catch abaixo.
+        const ecosystemDefaults = GetEcosystemDefaults(absolutInstallDataDirPath, ecosystemDefaultsFileRelativePath)
         const packageList = await ListPackages({
             installDataDirPath: absolutInstallDataDirPath,
             REPOS_CONF_FILENAME_REPOS_DATA,
@@ -156,7 +163,7 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
         })
         const metadataHierarchy = await BuildMetadataHierarchy({
             path: packagePath,
-            startupParams,
+            startupParams: { ...ecosystemDefaults },
             packageList,
             REPOS_CONF_EXT_GROUP_DIR,
             PKG_CONF_DIRNAME_METADATA

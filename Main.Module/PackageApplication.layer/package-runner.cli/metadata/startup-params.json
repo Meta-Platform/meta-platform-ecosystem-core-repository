@@ -1,5 +1,6 @@
 {
     "installDataDirPath":"/home/kadisk/EcosystemData",
+    "ecosystemDefaultsFileRelativePath":"./config-files/ecosystem-defaults.json",
     "REPOS_CONF_EXT_MODULE_DIR":"Module",
     "REPOS_CONF_EXT_LAYER_DIR":"layer",
     "REPOS_CONF_EXT_GROUP_DIR":"group",
