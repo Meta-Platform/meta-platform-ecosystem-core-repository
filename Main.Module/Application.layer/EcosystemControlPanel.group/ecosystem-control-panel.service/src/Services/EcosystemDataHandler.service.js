@@ -13,8 +13,12 @@ const EcosystemDataHandlerService = (params) => {
     const {
         installDataDirPath,
         panelStateFilePath,
+        ecosystemDefaultsHandlerLib,
+        ecosystemDefaultsFileRelativePath,
         onReady
     } = params
+
+    const GetEcosystemDefaults = ecosystemDefaultsHandlerLib.require("Get")
 
     const stateFilePath = panelStateFilePath
         ? ConvertPathToAbsolutPath(panelStateFilePath)
@@ -57,7 +61,13 @@ const EcosystemDataHandlerService = (params) => {
             currentPath = newPath
             _PersistPath(newPath)
             return ConvertPathToAbsolutPath(currentPath)
-        }
+        },
+        // Retorna as variáveis de configuração do ecossistema (ecosystem-defaults.json),
+        // delegando a leitura para a ecosystem-defaults-handler.lib.
+        Get: () => GetEcosystemDefaults(
+            ConvertPathToAbsolutPath(currentPath),
+            ecosystemDefaultsFileRelativePath
+        )
     }
 
 }

@@ -8,7 +8,8 @@
     {
         "namespace": "EcosystemDataHandlerService",
         "path": "Services/EcosystemDataHandler.service",
-        "params": [ "installDataDirPath", "?panelStateFilePath" ]
+        "bound-params":[ "ecosystemDefaultsHandlerLib" ],
+        "params": [ "installDataDirPath", "?panelStateFilePath", "ecosystemDefaultsFileRelativePath" ]
     },
     {
         "namespace":"NotificationHubService",

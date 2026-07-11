@@ -22,9 +22,13 @@
         {
             "namespace": "@@/ecosystemdata-handler-service",
             "dependency": "@/ecosystem-control-panel.service/services/EcosystemDataHandlerService",
+            "bound-params":{
+                "ecosystemDefaultsHandlerLib": "@/ecosystem-defaults-handler.lib"
+            },
             "params":{
                 "installDataDirPath": "{{installDataDirPath}}",
-                "panelStateFilePath": "{{panelStateFilePath}}"
+                "panelStateFilePath": "{{panelStateFilePath}}",
+                "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
             }
         },
         {
