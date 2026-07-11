@@ -1,5 +1,4 @@
 {
     "platformApplicationSocketPath":"/home/kadisk/Workspaces/meta-platform-repo/EcosystemData/sockets/ecosystem-instance-manager.app.sock",
-    "httpServerManagerEndpoint":"/server-manager/status",
-    "REPOS_CONF_EXT_GROUP_DIR":"group"
+    "httpServerManagerEndpoint":"/server-manager/status"
 }
