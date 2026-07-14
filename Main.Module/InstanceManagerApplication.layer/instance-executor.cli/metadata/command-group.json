@@ -5,8 +5,7 @@
     ],
     "params": [
         "platformApplicationSocketPath",
-        "httpServerManagerEndpoint",
-        "REPOS_CONF_EXT_GROUP_DIR"
+        "httpServerManagerEndpoint"
     ],
     "commands": [
         {
@@ -25,8 +24,7 @@
             "parametersToLoad": [
                 "commandExecutorLib",
                 "platformApplicationSocketPath",
-                "httpServerManagerEndpoint",
-                "REPOS_CONF_EXT_GROUP_DIR"
+                "httpServerManagerEndpoint"
             ]
         },
         {
