@@ -1,15 +1,12 @@
 [
-    {
-        "namespace": "EnvironmentRuntimeService",
-        "path": "Services/EnvironmentRuntime.service",
-        "bound-params":[
-            "taskExecutorMachineService",
-            "jsonFileUtilitiesLib",
-            "executionParamsGeneratorLib"
-        ],
-        "params": [
-            "EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES",
-            "ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA"
-        ]
-    }
+        {
+                "namespace": "EnvironmentRuntimeService",
+                "path": "Services/EnvironmentRuntime.service",
+                "bound-params": [
+                        "taskExecutorMachineService",
+                        "jsonFileUtilitiesLib",
+                        "executionParamsGeneratorLib"
+                ],
+                "params": []
+        }
 ]

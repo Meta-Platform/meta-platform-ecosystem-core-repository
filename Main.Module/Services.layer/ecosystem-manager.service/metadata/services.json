@@ -1,30 +1,25 @@
 [
-    {
-        "namespace": "EcosystemManager",
-        "path": "Managers/Ecosystem.manager",
-        "bound-params":[
-            "repositoryConfigHandlerLib",
-            "environmentHandlerLib",
-            "dependencyGraphBuilderLib",
-            "repositoryManagerService",
-            "environmentRuntimeService",
-            "metadataHierarchyHandlerLib",
-            "resolvePackageNameLib",
-            "jsonFileUtilitiesLib",
-            "instanceStoreLib",
-            "ecosystemDefaultsHandlerLib"
-        ],
-        "params": [
-            "PKG_CONF_DIRNAME_METADATA",
-            "ECO_DIRPATH_INSTALL_DATA",
-            "REPOS_CONF_FILENAME_REPOS_DATA",
-            "REPOS_CONF_EXT_GROUP_DIR",
-            "EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES",
-            "ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA",
-            "configurationsDirName",
-            "ecosystemDefaultsFileName",
-            "instanceStoreFilePath",
-            "socket"
-        ]
-    }
+        {
+                "namespace": "EcosystemManager",
+                "path": "Managers/Ecosystem.manager",
+                "bound-params": [
+                        "repositoryConfigHandlerLib",
+                        "environmentHandlerLib",
+                        "dependencyGraphBuilderLib",
+                        "repositoryManagerService",
+                        "environmentRuntimeService",
+                        "metadataHierarchyHandlerLib",
+                        "resolvePackageNameLib",
+                        "jsonFileUtilitiesLib",
+                        "instanceStoreLib",
+                        "ecosystemDefaultsHandlerLib"
+                ],
+                "params": [
+                        "ECO_DIRPATH_INSTALL_DATA",
+                        "configurationsDirName",
+                        "ecosystemDefaultsFileName",
+                        "instanceStoreFilePath",
+                        "socket"
+                ]
+        }
 ]
