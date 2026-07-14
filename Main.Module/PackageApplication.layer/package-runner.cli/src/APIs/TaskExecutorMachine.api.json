@@ -1,0 +1,36 @@
+{
+	"name": "TaskExecutorMachine",
+	"endpoints": [
+		{
+			"summary": "ListTasks",
+			"method": "GET",
+			"path": "/list-task"
+		},
+		{
+			"summary": "GetTask",
+			"method": "GET",
+			"path": "/task/:taskId",
+			"parameters": [
+				{
+				  "name": "taskId",
+				  "in": "path",
+				  "type": "string",
+				  "required": true
+				}
+			]
+		},
+		{
+			"summary": "StopTasks",
+			"method": "POST",
+			"path": "/stop-tasks",
+			"parameters": [
+				{
+					"name": "taskIds",
+					"in": "body",
+					"type": "json",
+					"required": true
+				}
+			]
+		}
+	]
+}
