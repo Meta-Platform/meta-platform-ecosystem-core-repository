@@ -1,6 +1,5 @@
 {
     "port":"9103",
     "serverName":"ServerManagerWebguiInstance",
-    "serverManagerUrl": "http://localhost:9103/server-manager/status",
-    "RT_ENV_GENERATED_DIR_NAME":".generated_data"
+    "serverManagerUrl": "http://localhost:9103/server-manager/status"
 }
