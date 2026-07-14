@@ -20,7 +20,10 @@
                 "endpointInstanceLib":"@/endpoint-instance.lib",
                 "desktopWindowInstanceLib":"@/desktop-window-instance.lib",
                 "commandApplicationLib":"@/command-application.lib",
-                "taskExecutorLib": "@/task-executor.lib"
+                "taskExecutorLib": "@/task-executor.lib",
+                "utilitiesLib": "@/utilities.lib",
+                "serverManagerServiceLib": "@/server-manager.service",
+                "serverManagerWebserviceLib": "@/server-manager.webservice"
             }
 		}
 	]

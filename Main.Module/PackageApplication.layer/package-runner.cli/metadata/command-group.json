@@ -16,7 +16,10 @@
         "endpointInstanceLib",
         "desktopWindowInstanceLib",
         "commandApplicationLib",
-        "taskExecutorLib"
+        "taskExecutorLib",
+        "utilitiesLib",
+        "serverManagerServiceLib",
+        "serverManagerWebserviceLib"
     ],
 	"commands": [
 		{
@@ -50,7 +53,10 @@
                 "endpointInstanceLib",
                 "desktopWindowInstanceLib",
                 "commandApplicationLib",
-                "taskExecutorLib"
+                "taskExecutorLib",
+                "utilitiesLib",
+                "serverManagerServiceLib",
+                "serverManagerWebserviceLib"
             ]
         }
 	]
