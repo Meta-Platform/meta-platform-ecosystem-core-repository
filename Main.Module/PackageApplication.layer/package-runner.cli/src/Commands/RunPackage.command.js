@@ -14,6 +14,8 @@ const ExecutionDataState = require("../Helpers/ExecutionDataState")
 const GetIsolateExecutionParameters = require("../Helpers/GetIsolateExecutionParameters")
 const PrintDataLog = require("../Helpers/PrintDataLog")
 const GetColorLogByStatus = require("../Helpers/GetColorLogByStatus")
+const StartInstanceTaskSocketServer = require("../Helpers/StartInstanceTaskSocketServer")
+const ReportInstanceTasksToDaemon = require("../Helpers/ReportInstanceTasksToDaemon")
 
  const GetFormattedMessage = (taskId, status, objectLoaderType) => {
     return `[${taskId}] [${objectLoaderType}] ${colors[GetColorLogByStatus(status)](status)}`
@@ -30,15 +32,7 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
 
     const {
         installDataDirPath,
-        ecosystemDefaultsFileRelativePath,
-        REPOS_CONF_EXT_MODULE_DIR,
-        REPOS_CONF_EXT_LAYER_DIR,
-        REPOS_CONF_EXT_GROUP_DIR,
-        REPOS_CONF_EXTLIST_PKG_TYPE,
-        PKG_CONF_DIRNAME_METADATA,
-        EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES,
-        ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA,
-        REPOS_CONF_FILENAME_REPOS_DATA
+        ecosystemDefaultsFileRelativePath
     } = startupParams
 
     const {
@@ -58,7 +52,10 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
         desktopWindowInstanceLib,
         commandApplicationLib,
         taskExecutorLib,
-        executionParamsGeneratorLib
+        executionParamsGeneratorLib,
+        utilitiesLib,
+        serverManagerServiceLib,
+        serverManagerWebserviceLib
     } = params
 
     const taskLoaders = {
@@ -99,6 +96,61 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
             })
         })
 
+    // Quando o daemon lança este processo como uma INSTÂNCIA (desktop), ele passa
+    // META_INSTANCE_TASK_SOCKET no env. Expomos então o task-executor deste
+    // processo num Unix socket, para o daemon consultar as tarefas internas desta
+    // instância. É best-effort: qualquer falha aqui não pode afetar a execução.
+    const instanceTaskSocketPath = process.env.META_INSTANCE_TASK_SOCKET
+    if(instanceTaskSocketPath && utilitiesLib && serverManagerServiceLib && serverManagerWebserviceLib){
+        const FormatTaskForOutput = utilitiesLib.require("FormatTaskForOutput")
+        const GetTaskInformation  = utilitiesLib.require("GetTaskInformation")
+
+        // Adaptador sobre o MESMO taskExecutor que roda as tarefas — o
+        // `controllerName` é o que o mount-api usa para localizar o serviço.
+        // O socket server-manager segue servindo o StopTasks (daemon → filho).
+        const taskExecutorMachineService = {
+            controllerName : "TaskExecutorMachineController",
+            ListTasks : () => taskExecutor.ListTasks().map((task) => FormatTaskForOutput(task)),
+            GetTask   : (taskId) => GetTaskInformation(taskExecutor.GetTask(taskId)),
+            StopTasks : (taskIds) => taskExecutor.StopTasks(taskIds)
+        }
+
+        StartInstanceTaskSocketServer({
+            socketPath: instanceTaskSocketPath,
+            serverName: process.env.META_INSTANCE_TASK_SERVER_NAME || "InstanceTaskExecutor",
+            taskExecutorMachineService,
+            serverManagerServiceLib,
+            serverManagerWebserviceLib
+        }).catch((e) =>
+            console.error(`${colors.bgRed("[InstanceTaskSocket]")} falha ao abrir socket de tarefas: ${e.message}`))
+
+        // PUSH: reporta a lista de tarefas ao daemon a cada mudança de status (com
+        // debounce leve para não inundar durante o boot). O daemon faz stream ao
+        // painel por WebSocket — sem polling. Reusa o socket do daemon
+        // (META_LAUNCH_PROGRESS_SOCKET) e o instanceId (META_LAUNCH_ID).
+        const daemonSocketPath = process.env.META_LAUNCH_PROGRESS_SOCKET
+        const instanceId       = process.env.META_LAUNCH_ID
+        if(daemonSocketPath && instanceId){
+            let reportTimer
+            const _reportTasks = () => {
+                clearTimeout(reportTimer)
+                reportTimer = setTimeout(() => {
+                    const tasks = taskExecutor.ListTasks().map((task) => FormatTaskForOutput(task))
+                    ReportInstanceTasksToDaemon({ daemonSocketPath, instanceId, tasks })
+                }, 120)
+            }
+            taskExecutor.AddTaskStatusListener(_reportTasks)
+            _reportTasks()
+        }
+
+        // Remove o arquivo de socket ao encerrar (o processo é morto por SIGTERM
+        // quando o daemon fecha a instância).
+        const _cleanupSocket = () => { try { require("fs").unlinkSync(instanceTaskSocketPath) } catch(_){} }
+        process.on("exit", _cleanupSocket)
+        process.on("SIGTERM", () => { _cleanupSocket(); process.exit(0) })
+        process.on("SIGINT",  () => { _cleanupSocket(); process.exit(0) })
+    }
+
     const absolutInstallDataDirPath = ConvertPathToAbsolutPath(installDataDirPath)
 
     const _GetRootNamespace = (metadataHierarchy) => {
@@ -126,13 +178,6 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
         return join(absolutInstallDataDirPath, GLOBAL_RT_ENV_DIRNAME)
     }
 
-     const _GetMetadataHierarchy = async (environmentPath) => {
-        return await ReadJsonFile(join(environmentPath, ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA))
-    }
-
-    const _WriteMetadataGraphFile = async (environmentPath, tree) => 
-        await WriteObjectToFile(join(environmentPath, ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA), tree)
-
     const _Execute = async (environmentPath, executionParams) => {
         const taskIdList = taskExecutor.CreateTasks(executionParams)
         await WriteObjectToFile(join(environmentPath, "execution-params.json"), executionParams)
@@ -141,18 +186,34 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
     }
     
     try{
+        // Estas variáveis são do ECOSSISTEMA EM EXECUÇÃO (ecosystem-defaults),
+        // não dos startup-params do pacote: buscadas via handler. O ecosystemDefaults
+        // é também a BASE injetada no merge por-nó do BuildMetadataHierarchy — os
+        // startup-params próprios de cada pacote (do disco) sobrepõem por cima.
+        // Se o arquivo não existir, o Get lança Error explícito (ecossistema não
+        // instalado) e o erro propaga para o catch abaixo.
+        const ecosystemDefaults = GetEcosystemDefaults(absolutInstallDataDirPath, ecosystemDefaultsFileRelativePath)
+        const {
+            REPOS_CONF_EXT_MODULE_DIR,
+            REPOS_CONF_EXT_LAYER_DIR,
+            REPOS_CONF_EXT_GROUP_DIR,
+            REPOS_CONF_EXTLIST_PKG_TYPE,
+            PKG_CONF_DIRNAME_METADATA,
+            EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES,
+            ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA,
+            REPOS_CONF_FILENAME_REPOS_DATA
+        } = ecosystemDefaults
+
+        const _GetMetadataHierarchy = async (environmentPath) =>
+            await ReadJsonFile(join(environmentPath, ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA))
+        const _WriteMetadataGraphFile = async (environmentPath, tree) =>
+            await WriteObjectToFile(join(environmentPath, ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA), tree)
+
         await PrepareRepositoriesFileJson({
             installDataDirPath:absolutInstallDataDirPath,
             REPOS_CONF_FILENAME_REPOS_DATA,
             loggerEmitter
         })
-        // Carrega o ecosystem-defaults materializado no EcosystemData e o usa como
-        // objeto injetado (BASE) na hierarquia. O merge por-nó do
-        // BuildMetadataHierarchy sobrepõe, por cima desta base, os startup-params
-        // próprios de cada pacote — que já vêm do disco na leitura de metadados.
-        // Se o arquivo não existir, o Get lança Error explícito (ecossistema não
-        // instalado) e o erro propaga para o catch abaixo.
-        const ecosystemDefaults = GetEcosystemDefaults(absolutInstallDataDirPath, ecosystemDefaultsFileRelativePath)
         const packageList = await ListPackages({
             installDataDirPath: absolutInstallDataDirPath,
             REPOS_CONF_FILENAME_REPOS_DATA,
