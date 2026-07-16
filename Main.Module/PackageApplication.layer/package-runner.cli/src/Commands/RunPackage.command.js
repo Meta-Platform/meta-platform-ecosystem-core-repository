@@ -200,6 +200,14 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
             REPOS_CONF_FILENAME_REPOS_DATA
         } = ecosystemDefaults
 
+        // Gate de tipos (MPTL-18): recusa o pacote se o tipo não estiver habilitado
+        // pelos repositórios instalados (whitelist derivada), com mensagem clara.
+        repositoryUtilitiesLib.require("AssertPackageTypeEnabled")({
+            packagePath,
+            installDataDirPath: absolutInstallDataDirPath,
+            REPOS_CONF_FILENAME_REPOS_DATA
+        })
+
         const _GetMetadataHierarchy = async (environmentPath) =>
             await ReadJsonFile(join(environmentPath, ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA))
         const _WriteMetadataGraphFile = async (environmentPath, tree) =>
