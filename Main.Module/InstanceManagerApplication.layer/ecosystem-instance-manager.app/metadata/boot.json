@@ -32,13 +32,13 @@
             "namespace": "@@/standard-task-executor-machine-service",
             "dependency": "@/task-executor-machine.service/services/StandardTaskExecutorMachineService",
             "bound-params": {
-                "applicationInstanceLib": "@/application-instance.lib",
-                "installNodejsPackageDependenciesLib": "@/install-nodejs-package-dependencies.lib",
-                "nodejsPackageLib": "@/nodejs-package.lib",
-                "serviceInstanceLib": "@/service-instance.lib",
-                "endpointInstanceLib": "@/endpoint-instance.lib",
-                "desktopWindowInstanceLib": "@/desktop-window-instance.lib",
-                "commandApplicationLib": "@/command-application.lib",
+                "applicationInstanceLib": "@/application-instance.taskLoader",
+                "installNodejsPackageDependenciesLib": "@/install-nodejs-package-dependencies.taskLoader",
+                "nodejsPackageLib": "@/nodejs-package.taskLoader",
+                "serviceInstanceLib": "@/service-instance.taskLoader",
+                "endpointInstanceLib": "@/endpoint-instance.taskLoader",
+                "desktopWindowInstanceLib": "@/desktop-window-instance.taskLoader",
+                "commandApplicationLib": "@/command-application.taskLoader",
                 "taskExecutorLib": "@/task-executor.lib",
                 "utilitiesLib": "@/utilities.lib"
             }

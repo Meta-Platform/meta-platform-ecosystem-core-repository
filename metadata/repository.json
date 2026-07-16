@@ -1,0 +1,5 @@
+{
+    "namespace": "EcosystemCoreRepo",
+    "dependencies": ["EssentialRepo"],
+    "supportedPackageTypes": ["webapp", "webgui", "webservice"]
+}
