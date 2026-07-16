@@ -1,3 +1,16 @@
 {
-    "taskLoaders": []
+    "taskLoaders": [
+        {
+            "objectLoaderType": "endpoint-instance",
+            "package": "@/endpoint-instance.taskLoader",
+            "path": "Taskloaders.Module/Loaders.layer/endpoint-instance.taskLoader",
+            "entry": "src/EndpointInstance.taskLoader",
+            "npmDependencies": {
+                "webpack": "^5.102.1",
+                "html-webpack-plugin": "^5.6.4",
+                "colors": "^1.4.0"
+            },
+            "injectsDeps": true
+        }
+    ]
 }
