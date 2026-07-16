@@ -44,13 +44,6 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
         jsonFileUtilitiesLib,
         ecosystemDefaultsHandlerLib,
         repositoryUtilitiesLib,
-        applicationInstanceLib,
-        installNodejsPackageDependenciesLib,
-        nodejsPackageLib,
-        serviceInstanceLib,
-        endpointInstanceLib,
-        desktopWindowInstanceLib,
-        commandApplicationLib,
         taskExecutorLib,
         executionParamsGeneratorLib,
         utilitiesLib,
@@ -58,15 +51,18 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
         serverManagerWebserviceLib
     } = params
 
-    const taskLoaders = {
-        'install-nodejs-package-dependencies' : installNodejsPackageDependenciesLib.require("InstallNodejsPackageDependencies.taskLoader"),
-        'nodejs-package'                      : nodejsPackageLib.require("NodeJSPackage.taskLoader"),
-        'command-application'                 : commandApplicationLib.require("CommandApplication.taskLoader"),
-        'application-instance'                : applicationInstanceLib.require("ApplicationInstance.taskLoader"),
-        'service-instance'                    : serviceInstanceLib.require("ServiceInstance.taskLoader"),
-        'endpoint-instance'                   : endpointInstanceLib.require("EndpointInstance.taskLoader"),
-        'desktop-window-instance'             : desktopWindowInstanceLib.require("DesktopWindowInstance.taskLoader")
-    }
+    // Descoberta dinâmica: monta o mapa de object loaders a partir dos
+    // taskloaders.json dos repositórios instalados (em vez de um mapa hard-coded).
+    // O taskloader-registry.lib é carregado por require() direto (a partir do
+    // installationPath do EssentialRepo) — NÃO via handler de pacote: o
+    // handler.require faz require.main.require + manipula NODE_PATH, o que
+    // desalinha o carregamento dos loaders e quebra a montagem de params.
+    const _repositoriesData = JSON.parse(require("fs").readFileSync(
+        join(ConvertPathToAbsolutPath(installDataDirPath), "repositories.json"), { encoding: "utf8" }))
+    const _CreateTaskLoaders = require(join(
+        _repositoriesData.EssentialRepo.installationPath,
+        "Taskloaders.Module/Registry.layer/taskloader-registry.lib/src/CreateTaskLoaders"))
+    const taskLoaders = _CreateTaskLoaders({ repositoriesData: _repositoriesData })
     const ReadJsonFile                                 = jsonFileUtilitiesLib.require("ReadJsonFile")
     const GetEcosystemDefaults                         = ecosystemDefaultsHandlerLib.require("Get")
     const BuildMetadataHierarchy                       = dependencyGraphBuilderLib.require("BuildMetadataHierarchy")

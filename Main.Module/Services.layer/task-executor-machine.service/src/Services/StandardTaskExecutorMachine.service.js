@@ -1,27 +1,24 @@
 const StandardTaskExecutorMachineService = (params) => {
 
-    const { 
-        applicationInstanceLib,
-        installNodejsPackageDependenciesLib,
-        nodejsPackageLib,
-        serviceInstanceLib,
-        endpointInstanceLib,
-        desktopWindowInstanceLib,
-        commandApplicationLib,
+    const {
+        installDataDirPath,
         taskExecutorLib,
         utilitiesLib,
         onReady
     } = params
 
-    const taskLoaders = {
-        'install-nodejs-package-dependencies' : installNodejsPackageDependenciesLib.require("InstallNodejsPackageDependencies.taskLoader"),
-        'nodejs-package'                      : nodejsPackageLib.require("NodeJSPackage.taskLoader"),
-        'command-application'                 : commandApplicationLib.require("CommandApplication.taskLoader"),
-        'application-instance'                : applicationInstanceLib.require("ApplicationInstance.taskLoader"),
-        'service-instance'                    : serviceInstanceLib.require("ServiceInstance.taskLoader"),
-        'endpoint-instance'                   : endpointInstanceLib.require("EndpointInstance.taskLoader"),
-        'desktop-window-instance'             : desktopWindowInstanceLib.require("DesktopWindowInstance.taskLoader")
-    }
+    // Descoberta dinâmica: monta o mapa de object loaders a partir dos
+    // taskloaders.json dos repositórios instalados. O taskloader-registry.lib é
+    // carregado por require() direto (a partir do installationPath do EssentialRepo)
+    // — NÃO via handler de pacote (o handler.require faz require.main.require +
+    // manipula NODE_PATH, o que desalinha o carregamento e quebra a montagem de params).
+    const _absInstallDataDirPath = installDataDirPath.replace("~", require("os").homedir())
+    const _repositoriesData = JSON.parse(require("fs").readFileSync(
+        require("path").join(_absInstallDataDirPath, "repositories.json"), { encoding: "utf8" }))
+    const _CreateTaskLoaders = require(require("path").join(
+        _repositoriesData.EssentialRepo.installationPath,
+        "Taskloaders.Module/Registry.layer/taskloader-registry.lib/src/CreateTaskLoaders"))
+    const taskLoaders = _CreateTaskLoaders({ repositoriesData: _repositoriesData })
 
     const FormatTaskForOutput = utilitiesLib.require("FormatTaskForOutput")
     const GetTaskInformation  = utilitiesLib.require("GetTaskInformation") 
