@@ -1,0 +1,7 @@
+[
+    {
+        "namespace": "GitStatusManager",
+        "path": "Services/GitStatusManager.service",
+        "params": []
+    }
+]
