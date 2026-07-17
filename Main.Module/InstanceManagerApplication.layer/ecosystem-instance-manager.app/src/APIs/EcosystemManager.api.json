@@ -101,6 +101,70 @@
 					"required": true
 				}
 			]
+		},
+		{
+			"summary": "ListInstanceTasks",
+			"method": "POST",
+			"path": "/list-instance-tasks",
+			"parameters": [
+				{
+					"name": "instanceId",
+					"in": "body",
+					"type": "string",
+					"required": true
+				}
+			]
+		},
+		{
+			"summary": "ReportInstanceTasks",
+			"method": "POST",
+			"path": "/report-instance-tasks",
+			"parameters": [
+				{
+					"name": "instanceId",
+					"in": "body",
+					"type": "string",
+					"required": true
+				},
+				{
+					"name": "tasks",
+					"in": "body",
+					"type": "json",
+					"required": true
+				}
+			]
+		},
+		{
+			"summary": "InstanceTaskStream",
+			"method": "WS",
+			"path": "/instance-task-stream/:instanceId",
+			"parameters": [
+				{
+					"name": "instanceId",
+					"in": "path",
+					"type": "string",
+					"required": true
+				}
+			]
+		},
+		{
+			"summary": "StopInstanceTasks",
+			"method": "POST",
+			"path": "/stop-instance-tasks",
+			"parameters": [
+				{
+					"name": "instanceId",
+					"in": "body",
+					"type": "string",
+					"required": true
+				},
+				{
+					"name": "taskIds",
+					"in": "body",
+					"type": "json",
+					"required": true
+				}
+			]
 		}
 	]
 }

@@ -65,11 +65,31 @@ const InitializeInstanceStore = (storage) => {
         pid:         { type: DataTypes.INTEGER, allowNull: true },
         taskId:      { type: DataTypes.INTEGER, allowNull: true },
         executionId: { type: DataTypes.INTEGER, allowNull: true },
+        // Caminho do Unix socket que o processo separado (desktop) abre para expor
+        // seu próprio task-executor — é por ele que o daemon consulta as tarefas
+        // internas da instância. Nulo para `app` (roda in-process no daemon).
+        taskSocketPath: { type: DataTypes.STRING, allowNull: true },
         launchedBy:  { type: DataTypes.STRING, allowNull: true },
         status:      { type: DataTypes.STRING, allowNull: false, defaultValue: RUNNING },
         startedAt:   { type: DataTypes.DATE, allowNull: true },
         stoppedAt:   { type: DataTypes.DATE, allowNull: true }
     })
+
+    // Colunas adicionadas depois do schema base. `sync()` NÃO altera tabela
+    // existente, e o SQLite não tem "ADD COLUMN IF NOT EXISTS", então cada ALTER
+    // roda em try/catch idempotente (ignora "duplicate column" / tabela nova).
+    // Mesmo padrão do project-store.lib.
+    const ADDED_COLUMNS = [
+        ["Instances", "taskSocketPath", "VARCHAR(255)"]
+    ]
+
+    const _MigrateAddedColumns = async () => {
+        for (const [table, column, type] of ADDED_COLUMNS) {
+            try {
+                await sequelize.query(`ALTER TABLE \`${table}\` ADD COLUMN \`${column}\` ${type}`)
+            } catch(e) { /* coluna já existe ou tabela ainda não criada: ok */ }
+        }
+    }
 
     /**
      * O schema anterior tinha `packagePath NOT NULL UNIQUE` e não tinha
@@ -116,11 +136,12 @@ const InitializeInstanceStore = (storage) => {
         await sequelize.authenticate()
         const hasLegacyRows = await _MigrateLegacySchema()
         await sequelize.sync()
+        await _MigrateAddedColumns()
         if(hasLegacyRows) await _CopyLegacyRows()
     }
 
-    const _serialize = ({ instanceId, packagePath, kind, pid, taskId, executionId, launchedBy, status, startedAt, stoppedAt }) =>
-        ({ instanceId, packagePath, kind, pid, taskId, executionId, launchedBy, status, startedAt, stoppedAt })
+    const _serialize = ({ instanceId, packagePath, kind, pid, taskId, executionId, taskSocketPath, launchedBy, status, startedAt, stoppedAt }) =>
+        ({ instanceId, packagePath, kind, pid, taskId, executionId, taskSocketPath, launchedBy, status, startedAt, stoppedAt })
 
     /**
      * Registra o lançamento de uma instância. `instanceId` é gerado por quem
@@ -130,20 +151,21 @@ const InitializeInstanceStore = (storage) => {
      * do mesmo pacote. Os demais são um-por-pacote: se já houver uma instância
      * RUNNING daquele packagePath, ela é sobrescrita.
      */
-    const RegisterLaunch = async ({ instanceId, packagePath, kind, pid, taskId, executionId, launchedBy }) => {
+    const RegisterLaunch = async ({ instanceId, packagePath, kind, pid, taskId, executionId, taskSocketPath, launchedBy }) => {
         if(!instanceId) throw new Error("RegisterLaunch: 'instanceId' é obrigatório.")
 
         const values = {
             instanceId,
             packagePath,
             kind,
-            pid:         pid ?? null,
-            taskId:      taskId ?? null,
-            executionId: executionId ?? null,
-            launchedBy:  launchedBy ?? null,
-            status:      RUNNING,
-            startedAt:   new Date(),
-            stoppedAt:   null
+            pid:            pid ?? null,
+            taskId:         taskId ?? null,
+            executionId:    executionId ?? null,
+            taskSocketPath: taskSocketPath ?? null,
+            launchedBy:     launchedBy ?? null,
+            status:         RUNNING,
+            startedAt:      new Date(),
+            stoppedAt:      null
         }
 
         if(kind !== KIND_DESKTOP) {

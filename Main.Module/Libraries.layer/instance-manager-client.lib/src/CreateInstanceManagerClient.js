@@ -139,6 +139,19 @@ const CreateInstanceManagerClient = ({
         OpenInstanceListStream: () =>
             _OpenStream("EcosystemManager", "InstanceList"),
 
+        // Tarefas internas de UMA instância (o daemon consulta o socket do
+        // processo dela — usado para instâncias desktop, que rodam separadas).
+        ListInstanceTasks: ({ instanceId } = {}) =>
+            _Call("EcosystemManager", "ListInstanceTasks", { instanceId }),
+
+        // Stream (WS) das tarefas internas de uma instância — push, sem polling.
+        OpenInstanceTaskStream: ({ instanceId } = {}) =>
+            _OpenStream("EcosystemManager", "InstanceTaskStream", { instanceId }),
+
+        // Encerra tarefas internas de uma instância desktop.
+        StopInstanceTasks: ({ instanceId, taskIds } = {}) =>
+            _Call("EcosystemManager", "StopInstanceTasks", { instanceId, taskIds }),
+
         // Stream de progresso de lançamento de aplicações (abrindo → build →
         // aberto), consumido pelos painéis para refletir no ícone.
         OpenLaunchProgressStream: () =>

@@ -6,42 +6,48 @@ const EcosystemManagerController = (params) => {
             StopPackage,
             StopInstance,
             ListInstances,
+            ListInstanceTasks,
+            ReportInstanceTasks,
+            InstanceTaskStream,
+            StopInstanceTasks,
             ListSupervisedPackages,
             ReportLaunchProgress,
             GetLaunchProgressSnapshot,
             GetLaunchProgressEmitter,
-            GetTaskExecutorEventEmitter
+            GetInstancesEmitter
         }
     } = params
 
+    // Stream da lista de pacotes supervisionados. Reage a mudanças na lista de
+    // instâncias (lançou/encerrou algo → o estado "em execução" de um pacote muda).
     const PackageList = (ws) => {
-        GetTaskExecutorEventEmitter()
-        .on("TASK_STATUS_CHANGE", async () => {
-            try{
-                const packages = await ListSupervisedPackages()
-                ws.send(JSON.stringify(packages))
-            }catch(e){
-                console.log(e)
-            }
+        const _safeSend = async () => {
+            try { ws.send(JSON.stringify(await ListSupervisedPackages())) } catch(e){}
+        }
+        const instancesEmitter = GetInstancesEmitter()
+        instancesEmitter.on("INSTANCES_CHANGE", _safeSend)
+        ws.on && ws.on("close", () => {
+            try { instancesEmitter.removeListener("INSTANCES_CHANGE", _safeSend) } catch(e){}
         })
+        _safeSend()
     }
 
-    // Stream das instâncias lançadas por este daemon. Reage a DUAS fontes: as
-    // tasks in-process (TASK_STATUS_CHANGE) e os processos desktop, que não são
-    // tasks e só se manifestam pelo progresso de lançamento (LAUNCH_PROGRESS).
+    // Stream das instâncias lançadas por este daemon. Reage ao emissor DEDICADO
+    // de mudanças de instância (lançou/encerrou) e ao progresso de lançamento
+    // (fase transitória "launching", antes do registro assentar).
     const InstanceList = (ws) => {
         const _safeSend = async () => {
             try { ws.send(JSON.stringify(await ListInstances())) } catch(e){}
         }
 
-        const taskEmitter   = GetTaskExecutorEventEmitter()
-        const launchEmitter = GetLaunchProgressEmitter()
+        const instancesEmitter = GetInstancesEmitter()
+        const launchEmitter     = GetLaunchProgressEmitter()
 
-        taskEmitter.on("TASK_STATUS_CHANGE", _safeSend)
+        instancesEmitter.on("INSTANCES_CHANGE", _safeSend)
         launchEmitter.on("LAUNCH_PROGRESS", _safeSend)
 
         ws.on && ws.on("close", () => {
-            try { taskEmitter.removeListener("TASK_STATUS_CHANGE", _safeSend) } catch(e){}
+            try { instancesEmitter.removeListener("INSTANCES_CHANGE", _safeSend) } catch(e){}
             try { launchEmitter.removeListener("LAUNCH_PROGRESS", _safeSend) } catch(e){}
         })
 
@@ -71,6 +77,10 @@ const EcosystemManagerController = (params) => {
         StopPackage,
         StopInstance,
         ListInstances,
+        ListInstanceTasks,
+        ReportInstanceTasks,
+        InstanceTaskStream,
+        StopInstanceTasks,
         InstanceList,
         ListPackages: ListSupervisedPackages,
         PackageList,

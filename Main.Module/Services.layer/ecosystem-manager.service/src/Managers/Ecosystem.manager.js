@@ -1,7 +1,39 @@
-const { join } = require('path')
+const { join, dirname } = require('path')
+const http = require('http')
 const crypto = require('crypto')
 const { spawn } = require('child_process')
 const { EventEmitter } = require('events')
+
+// Nome do servidor que cada instância desktop publica no seu socket de tarefas
+// (ver package-runner.cli / StartInstanceTaskSocketServer).
+const INSTANCE_TASK_SERVER_NAME = "InstanceTaskExecutor"
+
+// Caminho base (fixo) do endpoint de tarefas que o processo da instância publica.
+const INSTANCE_TASK_ENDPOINT = "/task-executor-machine"
+
+// Chamada HTTP-sobre-Unix-socket enxuta (só http nativo). Falamos direto com os
+// caminhos fixos que a instância publica — sem descoberta via mount-api, para o
+// daemon não depender de nenhuma lib nova (o que quebraria a montagem do grafo).
+const _HttpOverSocket = ({ socketPath, method, path, body }) => new Promise((resolve, reject) => {
+    const payload = body !== undefined ? JSON.stringify(body) : undefined
+    const req = http.request({
+        socketPath,
+        path,
+        method,
+        headers: payload ? { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(payload) } : {}
+    }, (res) => {
+        let data = ""
+        res.on("data", (chunk) => { data += chunk })
+        res.on("end", () => {
+            if(res.statusCode >= 200 && res.statusCode < 300){
+                try { resolve(data ? JSON.parse(data) : undefined) } catch(e){ resolve(data) }
+            } else reject(new Error(`HTTP ${res.statusCode}: ${data}`))
+        })
+    })
+    req.on("error", reject)
+    if(payload) req.write(payload)
+    req.end()
+})
 
 const colors = require("colors")
 
@@ -122,6 +154,28 @@ const EcosystemManager = (params) => {
     // por ela que uma instância é encerrada e contada.
     const _CreateInstanceId = () => crypto.randomUUID()
 
+    // Caminho do Unix socket que a instância desktop abre para expor suas tarefas.
+    // Fica ao lado do socket do próprio daemon (mesma pasta sockets/), numa
+    // subpasta por-instância. O processo filho cria o diretório ao subir.
+    const _CreateInstanceTaskSocketPath = (instanceId) =>
+        join(dirname(socket || join(ECO_DIRPATH_INSTALL_DATA, "sockets", "x")), "instance-tasks", `${instanceId}.sock`)
+
+    // PUSH das tarefas internas por instância: o processo de cada instância
+    // (desktop) reporta sua lista de tarefas aqui (ReportInstanceTasks) a cada
+    // mudança; guardamos o último estado por instanceId e emitimos, para o painel
+    // acompanhar por WebSocket (InstanceTaskStream) — sem polling.
+    const instanceTasksCache   = new Map()
+    const instanceTasksEmitter = new EventEmitter()
+    instanceTasksEmitter.setMaxListeners(0)
+
+    // Mudanças na LISTA DE INSTÂNCIAS (lançou/encerrou qualquer instância). É a
+    // fonte de reatividade do painel: o stream InstanceList do daemon assina isto
+    // e reenvia a lista inteira. Emissor DEDICADO — não dependemos do task-executor.
+    const instancesEmitter = new EventEmitter()
+    instancesEmitter.setMaxListeners(0)
+    const _EmitInstancesChange = () => { try { instancesEmitter.emit("INSTANCES_CHANGE") } catch(e){} }
+    const GetInstancesEmitter  = () => instancesEmitter
+
     // Progresso de LANÇAMENTO de aplicações (para a área de trabalho refletir no
     // ícone: abrindo → build → aberto). O app lançado reporta seus eventos por
     // HTTP no socket deste daemon (ver ReportLaunchProgress); aqui mantemos o
@@ -178,10 +232,15 @@ const EcosystemManager = (params) => {
     const _RunDesktopInSeparateProcess = async (packagePath, launchedBy) => {
         const instanceId = _CreateInstanceId()
         const executablesDirPath = join(ECO_DIRPATH_INSTALL_DATA, "executables")
+        // O processo separado abre um socket expondo seu task-executor; é por ele
+        // que consultamos as tarefas internas desta instância (ver ListInstanceTasks).
+        const taskSocketPath = _CreateInstanceTaskSocketPath(instanceId)
         const env = {
             ...process.env,
             PATH: `${executablesDirPath}:${process.env.PATH}`,
-            ...(socket ? { META_LAUNCH_PROGRESS_SOCKET: socket, META_LAUNCH_ID: instanceId } : {})
+            ...(socket ? { META_LAUNCH_PROGRESS_SOCKET: socket, META_LAUNCH_ID: instanceId } : {}),
+            META_INSTANCE_TASK_SOCKET: taskSocketPath,
+            META_INSTANCE_TASK_SERVER_NAME: INSTANCE_TASK_SERVER_NAME
         }
         const child = spawn(join(executablesDirPath, "run"), ["package", packagePath], {
             cwd: ECO_DIRPATH_INSTALL_DATA,
@@ -195,18 +254,22 @@ const EcosystemManager = (params) => {
             packagePath,
             kind: instanceStore.KIND.DESKTOP,
             pid: child.pid,
+            taskSocketPath,
             launchedBy
         }))
         // Feedback imediato no ícone enquanto o Electron sobe (antes do window-ready).
         _EmitLaunchProgress({ launchId: instanceId, packagePath, phase: "launching" })
+        _EmitInstancesChange()
         child.on("exit", () => {
             const registered = desktopProcesses.get(instanceId)
             if(registered && registered.child === child)
                 desktopProcesses.delete(instanceId)
+            instanceTasksCache.delete(instanceId)
             _SafeStore(() => instanceStore.MarkStopped({ instanceId }))
             // O packagePath é passado explicitamente: o processo já saiu do mapa,
             // então não haveria de onde resolvê-lo.
             _EmitLaunchProgress({ launchId: instanceId, packagePath, phase: "closed" })
+            _EmitInstancesChange()
         })
         child.unref()
         return instanceId
@@ -343,6 +406,7 @@ const EcosystemManager = (params) => {
                 if(applicationTask)
                     await instanceStore.AttachRuntimeIds({ instanceId, taskId: applicationTask.taskId })
             })
+            _EmitInstancesChange()
 
             return { instanceId }
         }catch(e){
@@ -411,10 +475,12 @@ const EcosystemManager = (params) => {
     const StopPackage = async (packagePath) => {
         if(_StopDesktopProcessesByPackage(packagePath)){
             await _SafeStore(() => instanceStore.MarkStoppedByPackage({ packagePath }))
+            _EmitInstancesChange()
             return { stopped: true }
         }
         const result = await environmentRuntimeService.StopPackage(packagePath)
         await _SafeStore(() => instanceStore.MarkStoppedByPackage({ packagePath }))
+        _EmitInstancesChange()
         return result
     }
 
@@ -424,6 +490,7 @@ const EcosystemManager = (params) => {
     const StopInstance = async (instanceId) => {
         if(_StopDesktopProcess(instanceId)){
             await _SafeStore(() => instanceStore.MarkStopped({ instanceId }))
+            _EmitInstancesChange()
             return { stopped: true, instanceId }
         }
 
@@ -434,12 +501,14 @@ const EcosystemManager = (params) => {
         // child, mas o pid registrado ainda identifica o grupo de processos.
         if(instance.kind === instanceStore.KIND.DESKTOP && _KillProcessGroup(instance.pid)){
             await _SafeStore(() => instanceStore.MarkStopped({ instanceId }))
+            _EmitInstancesChange()
             return { stopped: true, instanceId }
         }
 
         // App in-process: o encerramento cai no runtime, pelo pacote.
         const result = await environmentRuntimeService.StopPackage(instance.packagePath)
         await _SafeStore(() => instanceStore.MarkStopped({ instanceId }))
+        _EmitInstancesChange()
         return { ...result, instanceId }
     }
 
@@ -476,6 +545,73 @@ const EcosystemManager = (params) => {
         return instanceList.filter(Boolean)
     }
 
+    // Tarefas INTERNAS de uma instância. Para desktop, consultamos o socket do
+    // processo separado dela; se o socket estiver morto (instância encerrando),
+    // degrada para lista vazia. Para `app`, as tarefas estão no executor
+    // in-process do daemon e o painel já as recorta da lista global — aqui
+    // devolvemos vazio para não duplicar essa fonte.
+    // 1 parâmetro (instanceId) chega como valor direto (contrato do server-manager).
+    const ListInstanceTasks = async (instanceId) => {
+        const instance = await _SafeStore(() => instanceStore.Get({ instanceId }))
+        if(!instance || !instance.taskSocketPath) return []
+        try {
+            const tasks = await _HttpOverSocket({
+                socketPath: instance.taskSocketPath,
+                method: "GET",
+                path: `${INSTANCE_TASK_ENDPOINT}/list-task`
+            })
+            return tasks || []
+        } catch(e) {
+            return []
+        }
+    }
+
+    // Ingest de tarefas vindo do processo da instância (POST). Guarda o último
+    // estado e emite, para os streams abertos empurrarem ao painel.
+    // 2 parâmetros → chegam como objeto.
+    const ReportInstanceTasks = ({ instanceId, tasks } = {}) => {
+        if(!instanceId) return {}
+        instanceTasksCache.set(instanceId, tasks || [])
+        instanceTasksEmitter.emit("INSTANCE_TASKS_CHANGE", { instanceId, tasks: tasks || [] })
+        return {}
+    }
+
+    // Stream (WS) das tarefas internas de UMA instância. Manda o estado inicial
+    // (cache; se vazio, um pull único pelo socket da instância) e, em seguida,
+    // cada atualização empurrada pelo processo. Sem polling.
+    // 1 parâmetro (instanceId) chega como valor direto (contrato do server-manager).
+    const InstanceTaskStream = (ws, instanceId) => {
+        const _send = (tasks) => { try { ws.send(JSON.stringify(tasks || [])) } catch(e){} }
+
+        if(instanceTasksCache.has(instanceId)) _send(instanceTasksCache.get(instanceId))
+        else ListInstanceTasks(instanceId).then(_send).catch(() => {})
+
+        const onChange = (payload) => { if(payload && payload.instanceId === instanceId) _send(payload.tasks) }
+        instanceTasksEmitter.on("INSTANCE_TASKS_CHANGE", onChange)
+        ws.on && ws.on("close", () => {
+            try { instanceTasksEmitter.removeListener("INSTANCE_TASKS_CHANGE", onChange) } catch(e){}
+        })
+    }
+
+    // Encerra tarefas internas de uma instância desktop, delegando ao task-executor
+    // do processo dela. 2 parâmetros → chegam como objeto.
+    const StopInstanceTasks = async ({ instanceId, taskIds } = {}) => {
+        const instance = await _SafeStore(() => instanceStore.Get({ instanceId }))
+        if(!instance || !instance.taskSocketPath) return { stopped: false }
+        try {
+            const ids = Array.isArray(taskIds) ? taskIds : [taskIds]
+            const result = await _HttpOverSocket({
+                socketPath: instance.taskSocketPath,
+                method: "POST",
+                path: `${INSTANCE_TASK_ENDPOINT}/stop-tasks`,
+                body: { taskIds: ids }
+            })
+            return result || { stopped: true }
+        } catch(e) {
+            return { stopped: false }
+        }
+    }
+
     _Start()
 
     return {
@@ -483,10 +619,15 @@ const EcosystemManager = (params) => {
         StopPackage,
         StopInstance,
         ListInstances,
+        ListInstanceTasks,
+        ReportInstanceTasks,
+        InstanceTaskStream,
+        StopInstanceTasks,
         ListSupervisedPackages,
         ReportLaunchProgress,
         GetLaunchProgressSnapshot,
         GetLaunchProgressEmitter,
+        GetInstancesEmitter,
         GetTaskExecutorEventEmitter: environmentRuntimeService.GetTaskExecutorEventEmitter
     }
 
