@@ -9,6 +9,11 @@ const DEFAULT_SERVER_NAME = "PlatformMainApplicationInstance"
 // superfície de APIs publicada pelo daemon.
 const DEFAULT_SERVER_STATUS_ENDPOINT = "/server-manager/status"
 
+// Controller sem o qual o daemon não serve para nada (é quem executa pacotes).
+// Enquanto ele não aparece no status, o daemon ainda está subindo: o HTTP
+// server já responde, mas os controllers ainda não foram registrados.
+const REQUIRED_CONTROLLER = "EcosystemManager"
+
 // Cliente reutilizável do Instance Manager (daemon `executor-manager`).
 //
 // Centraliza a comunicação com o daemon de execução: os painéis (my-desktop,
@@ -49,6 +54,12 @@ const CreateInstanceManagerClient = ({
         if(!APIs || !APIs[serverName])
             throw new Error(`Instance Manager daemon indisponível em ${platformApplicationSocketPath}`)
 
+        // Superfície incompleta = daemon ainda inicializando. Tratar como
+        // indisponível (e não cachear) é o que permite ao chamador tentar de
+        // novo e ao usuário receber a mensagem correta de "daemon não pronto".
+        if(!APIs[serverName][REQUIRED_CONTROLLER])
+            throw new Error(`Instance Manager daemon ainda inicializando em ${platformApplicationSocketPath}`)
+
         return APIs[serverName]
     }
 
@@ -61,15 +72,33 @@ const CreateInstanceManagerClient = ({
         return apisPromise
     }
 
-    const _ResolveMethod = async (controllerName, methodName) => {
+    const _FindMethod = async (controllerName, methodName) => {
         const controllers = await _GetAPIs()
         const controller = controllers[controllerName]
         const method = controller && controller[methodName]
 
-        if(typeof method !== "function")
-            throw new Error(`Método ${controllerName}.${methodName} não disponível no Instance Manager daemon`)
+        return (typeof method === "function") ? method : undefined
+    }
 
-        return method
+    // O daemon publica `/server-manager/status` assim que o HTTP server sobe,
+    // ANTES de registrar os controllers. Uma montagem feita nessa janela
+    // enxerga o servidor mas não o controller, e ficaria cacheada para sempre
+    // (o cache só era invalidado em erro de chamada, não em método ausente).
+    // Por isso: método ausente invalida o cache e força UMA remontagem — se o
+    // daemon já terminou de subir, a segunda tentativa acha o método.
+    const _ResolveMethod = async (controllerName, methodName) => {
+        const method = await _FindMethod(controllerName, methodName)
+        if(method)
+            return method
+
+        apisPromise = undefined
+
+        const methodAfterRemount = await _FindMethod(controllerName, methodName)
+        if(methodAfterRemount)
+            return methodAfterRemount
+
+        apisPromise = undefined
+        throw new Error(`Método ${controllerName}.${methodName} não disponível no Instance Manager daemon`)
     }
 
     // Chamada HTTP (request/response). Em caso de erro invalida o cache das
