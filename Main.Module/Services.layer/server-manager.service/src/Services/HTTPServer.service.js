@@ -14,10 +14,11 @@ const HTTPServerService = (params) => {
     const serviceList = []
 
     const {
-        name, 
+        name,
         port,
         onReady,
         onClose,
+        onError,
         middlewareService
     } = params
 
@@ -36,6 +37,13 @@ const HTTPServerService = (params) => {
     } else {
         server = app.listen(port, onReady)
     }
+
+    // Sem este handler, um erro do server (ex.: EADDRINUSE ao dar listen, que é
+    // assíncrono e não é pego por try/catch de quem chamou) vira exceção não tratada
+    // e derruba o processo silenciosamente. Aqui reportamos o motivo via onError.
+    server.on("error", (err) => {
+        if (onError) onError(err)
+    })
 
     const AddStaticEndpoint = ({path, staticDir, needsAuth}) => {
         const staticEndpointsService = CreateStaticEndpointsService({path, staticDir, needsAuth})

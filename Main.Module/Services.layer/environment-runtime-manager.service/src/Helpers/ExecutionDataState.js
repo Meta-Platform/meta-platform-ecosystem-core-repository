@@ -72,24 +72,27 @@ const ExecutionDataState = () => {
         GetActiveExecutions()
         .forEach(f)
 
-    const UpdateTaskStatus = (taskId, status) => {
+    const UpdateTaskStatus = (taskId, status, statusReason) => {
         ForEachActiveExecution((execution) => {
             const { statusAssociatedTasks } = execution
             if(statusAssociatedTasks.hasOwnProperty(taskId)){
                 statusAssociatedTasks[taskId] = status
             }
         })
-        _RefreshAllExecutionStatus(status)
+        _RefreshAllExecutionStatus(status, statusReason)
     }
 
-    const _ChangeExecutionStatus = (execution, nextStatus) => {
+    const _ChangeExecutionStatus = (execution, nextStatus, statusReason) => {
         const { executionId } = execution
         execution.status = nextStatus
-        eventEmitter.emit(EXECUTION_STATUS_CHANGE, {executionId, status: nextStatus})
+        // Guardamos o motivo no registro para quem consultar GetExecutionData depois
+        // do evento (o motivo só é relevante em ERROR; caso contrário fica undefined).
+        execution.statusReason = statusReason
+        eventEmitter.emit(EXECUTION_STATUS_CHANGE, {executionId, status: nextStatus, statusReason})
     }
 
-    const _RefreshAllExecutionStatus = (statusSource) => {
-        
+    const _RefreshAllExecutionStatus = (statusSource, statusReason) => {
+
         ForEachActiveExecution((execution) => {
             const { statusAssociatedTasks } = execution
             switch(statusSource){
@@ -105,18 +108,18 @@ const ExecutionDataState = () => {
                         _ChangeExecutionStatus(execution, ExecutionStatusTypes.STOPPING)
                     break
                 case TaskStatusTypes.FAILURE:
-                    _ChangeExecutionStatus(execution, ExecutionStatusTypes.ERROR)
+                    _ChangeExecutionStatus(execution, ExecutionStatusTypes.ERROR, statusReason)
                     break
             }
         })
     }
 
-    const NotifyTaskStatusChange = (taskId, status) => {
+    const NotifyTaskStatusChange = (taskId, status, statusReason) => {
         if(status === TaskStatusTypes.ACTIVE
             || status === TaskStatusTypes.FINISHED
             || status === TaskStatusTypes.FAILURE
             || status === TaskStatusTypes.TERMINATED){
-                UpdateTaskStatus(taskId, status)
+                UpdateTaskStatus(taskId, status, statusReason)
         }
     }
 
@@ -125,10 +128,10 @@ const ExecutionDataState = () => {
         return Object.keys(statusAssociatedTasks).map((taskId) => parseInt(taskId))
     }
 
-    const AddExecutionStatusListener = (executionId, f) => 
+    const AddExecutionStatusListener = (executionId, f) =>
         eventEmitter.on(EXECUTION_STATUS_CHANGE, (eventData) => {
             if(eventData.executionId === parseInt(executionId)){
-                f(eventData.status)
+                f(eventData.status, eventData.statusReason)
             }
         })
     

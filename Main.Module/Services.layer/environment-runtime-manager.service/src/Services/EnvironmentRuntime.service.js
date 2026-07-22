@@ -26,8 +26,8 @@ const EnvironmentRuntimeService = (params) => {
 
     const Init = async () => {
         taskExecutorMachineService
-            .AddTaskStatusListener(({taskId, status}) => 
-                executionState.NotifyTaskStatusChange(taskId, status))
+            .AddTaskStatusListener(({taskId, status, statusReason}) =>
+                executionState.NotifyTaskStatusChange(taskId, status, statusReason))
 
         onReady()
     }

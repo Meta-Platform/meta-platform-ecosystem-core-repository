@@ -70,7 +70,8 @@ const EndpointInstanceTaskLoader = (runtimeDeps) => {
                 } else throw `Tipo de endpoint "${type}" não encontrado`
 
             }catch(e){
-                executorChannel.emit(CommandChannelEventTypes.CHANGE_TASK_STATUS, TaskStatusTypes.FAILURE)
+                const reason = (e && (e.message || e.toString())) || String(e)
+                executorChannel.emit(CommandChannelEventTypes.CHANGE_TASK_STATUS, TaskStatusTypes.FAILURE, reason)
                 console.error(e)
             }
         }

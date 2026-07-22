@@ -1,4 +1,5 @@
 const { join, dirname } = require('path')
+const fs = require('fs')
 const http = require('http')
 const crypto = require('crypto')
 const { spawn } = require('child_process')
@@ -160,6 +161,34 @@ const EcosystemManager = (params) => {
     const _CreateInstanceTaskSocketPath = (instanceId) =>
         join(dirname(socket || join(ECO_DIRPATH_INSTALL_DATA, "sockets", "x")), "instance-tasks", `${instanceId}.sock`)
 
+    // Log por instância. Fica em <install-data>/instance-logs/<instanceId>.log,
+    // seguindo o mesmo esquema por-instância dos sockets. É o rastro que responde
+    // "por que terminou": para desktop recebe o stdout/stderr do processo (antes
+    // descartado com stdio:"ignore") + código de saída; para app in-process recebe
+    // as transições de estado da execução, incluindo o motivo em caso de ERROR.
+    const _CreateInstanceLogPath = (instanceId) =>
+        join(ECO_DIRPATH_INSTALL_DATA, "instance-logs", `${instanceId}.log`)
+
+    const _EnsureInstanceLogPath = (instanceId) => {
+        const logPath = _CreateInstanceLogPath(instanceId)
+        fs.mkdirSync(dirname(logPath), { recursive: true })
+        return logPath
+    }
+
+    const _NowLocalISO = () => {
+        const now = new Date()
+        const offset = now.getTimezoneOffset() * 60000
+        return (new Date(now - offset)).toISOString()
+    }
+
+    // Anexa uma linha ao log da instância. Observabilidade, não caminho crítico:
+    // qualquer erro de escrita é engolido para não derrubar um launch/stop.
+    const _AppendInstanceLog = (instanceId, message) => {
+        try {
+            fs.appendFileSync(_EnsureInstanceLogPath(instanceId), `[${_NowLocalISO()}] ${message}\n`)
+        } catch(e) {}
+    }
+
     // PUSH das tarefas internas por instância: o processo de cada instância
     // (desktop) reporta sua lista de tarefas aqui (ReportInstanceTasks) a cada
     // mudança; guardamos o último estado por instanceId e emitimos, para o painel
@@ -242,12 +271,23 @@ const EcosystemManager = (params) => {
             META_INSTANCE_TASK_SOCKET: taskSocketPath,
             META_INSTANCE_TASK_SERVER_NAME: INSTANCE_TASK_SERVER_NAME
         }
+        // Redireciona stdout/stderr do processo para o log da instância (antes ia
+        // para "ignore" e sumia). O filho herda o fd; fechamos nossa cópia após o
+        // spawn. Se abrir o log falhar, degrada para "ignore" (não bloqueia o launch).
+        let logFd
+        try {
+            const logPath = _EnsureInstanceLogPath(instanceId)
+            logFd = fs.openSync(logPath, "a")
+            fs.writeSync(logFd, `[${_NowLocalISO()}] [daemon] launching desktop ${packagePath}\n`)
+        } catch(e) { logFd = undefined }
+
         const child = spawn(join(executablesDirPath, "run"), ["package", packagePath], {
             cwd: ECO_DIRPATH_INSTALL_DATA,
             env,
             detached: true,
-            stdio: "ignore"
+            stdio: logFd !== undefined ? ["ignore", logFd, logFd] : "ignore"
         })
+        if(logFd !== undefined) { try { fs.closeSync(logFd) } catch(e) {} }
         desktopProcesses.set(instanceId, { child, packagePath })
         await _SafeStore(() => instanceStore.RegisterLaunch({
             instanceId,
@@ -260,11 +300,14 @@ const EcosystemManager = (params) => {
         // Feedback imediato no ícone enquanto o Electron sobe (antes do window-ready).
         _EmitLaunchProgress({ launchId: instanceId, packagePath, phase: "launching" })
         _EmitInstancesChange()
-        child.on("exit", () => {
+        child.on("exit", (code, signal) => {
             const registered = desktopProcesses.get(instanceId)
             if(registered && registered.child === child)
                 desktopProcesses.delete(instanceId)
             instanceTasksCache.delete(instanceId)
+            // Registra o desfecho no log da instância: código de saída e signal
+            // eram ignorados antes (o callback nem recebia os argumentos).
+            _AppendInstanceLog(instanceId, `[daemon] desktop exited (code=${code}, signal=${signal})`)
             _SafeStore(() => instanceStore.MarkStopped({ instanceId }))
             // O packagePath é passado explicitamente: o processo já saiu do mapa,
             // então não haveria de onde resolvê-lo.
@@ -394,6 +437,15 @@ const EcosystemManager = (params) => {
             // taskId só existe depois de executar o ambiente, e a application-task
             // é identificada pelo rootPath.
             const instanceId = _CreateInstanceId()
+
+            // Log por instância do app in-process: não há processo filho para
+            // redirecionar stdio, então registramos as transições de estado da
+            // execução — incluindo o MOTIVO quando uma tarefa falha (ERROR). É o
+            // que torna "terminou sem erro" auditável para apps.
+            _AppendInstanceLog(instanceId, `[daemon] launching app ${packagePath} (executionId=${executionId})`)
+            environmentRuntimeService.AddExecutionStatusListener(executionId, (status, statusReason) =>
+                _AppendInstanceLog(instanceId, `execution status: ${status}${statusReason ? ` — ${statusReason}` : ""}`))
+
             await _SafeStore(async () => {
                 await instanceStore.RegisterLaunch({
                     instanceId,
