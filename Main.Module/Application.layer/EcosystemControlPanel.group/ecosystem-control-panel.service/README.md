@@ -2,7 +2,7 @@
 
 - **Tipo:** pacote de serviços (`.service`)
 - **Namespace:** `@/ecosystem-control-panel.service`
-- **Localização:** `Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.service`
+- **Localização:** `Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.service` (EcosystemCoreRepo)
 
 ## Propósito
 

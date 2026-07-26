@@ -1,5 +1,11 @@
 # ecosystem-control-panel-gui.service
 
+- **Tipo:** pacote de serviços (`.service`)
+- **Namespace:** `@/ecosystem-control-panel-gui.service`
+- **Localização:** `Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel-gui.service` (EcosystemCoreRepo)
+
+## Propósito
+
 Serviço especializado em **servir a GUI** (`ecosystem-control-panel.webgui`) da
 aplicação Electron **sem webservices HTTP** (modo *GUI-host* — ver
 `desktop-window-instance.lib`).
@@ -27,3 +33,9 @@ Bound-params: `ecosystemdataHandlerService`, `notificationHubService`,
 `repositoryManagerService`, `instanceMonitoringManager`,
 `environmentHandlerService`, `jsonFileUtilitiesLib`, `ecosystemInstallUtilitiesLib`,
 `ecosystemControlPanelWebservice` (handle) + param `ecosystemDefaultsFileRelativePath`.
+
+## Serviços expostos (`metadata/services.json`)
+
+| Namespace | Path | Dependências (bound-params) |
+|---|---|---|
+| `EcosystemControlPanelGuiService` | `Services/EcosystemControlPanelGui.service` | `ecosystemdataHandlerService`, `notificationHubService`, `repositoryManagerService`, `instanceMonitoringManager`, `environmentHandlerService`, `jsonFileUtilitiesLib`, `ecosystemInstallUtilitiesLib`, `ecosystemControlPanelWebservice` |

@@ -2,7 +2,7 @@
 
 - **Tipo:** pacote de serviços (`.service`)
 - **Namespace:** `@/ecosystem-manager.service`
-- **Localização:** `Main.Module/Services.layer/ecosystem-manager.service`
+- **Localização:** `Main.Module/Services.layer/ecosystem-manager.service` (EcosystemCoreRepo)
 
 ## Propósito
 

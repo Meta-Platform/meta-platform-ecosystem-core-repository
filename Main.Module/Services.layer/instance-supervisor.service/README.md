@@ -2,7 +2,7 @@
 
 - **Tipo:** pacote de serviços (`.service`)
 - **Namespace:** `@/instance-supervisor.service`
-- **Localização:** `Main.Module/Services.layer/instance-supervisor.service`
+- **Localização:** `Main.Module/Services.layer/instance-supervisor.service` (EcosystemCoreRepo)
 
 ## Propósito
 

@@ -1,8 +1,8 @@
 # command-line-runtime-manager.service
 
-- **Tipo:** serviço (`.service`)
+- **Tipo:** pacote de serviços (`.service`)
 - **Namespace:** `@/command-line-runtime-manager.service`
-- **Localização:** `Main.Module/Services.layer/command-line-runtime-manager.service`
+- **Localização:** `Main.Module/Services.layer/command-line-runtime-manager.service` (EcosystemCoreRepo)
 
 ## Propósito
 
@@ -36,6 +36,12 @@ consumidores (o painel `instance-executor-control-panel`, via WebSocket).
 `ecosystemDataPath`, `configurationsDirName`, `npmDependenciesDirName`,
 `ecosystemDefaultsFileName`, `metadataDirName`, `startupParamsFileName`,
 `bootFileName` — usados para montar a invocação do `pkg-exec`.
+
+## Serviços expostos (`metadata/services.json`)
+
+| Namespace | Path | Dependências (bound-params) |
+|---|---|---|
+| `CommandLineRuntimeService` | `Services/CommandLineRuntime.service` | `jsonFileUtilitiesLib` |
 
 > Consulte a [Arquitetura](https://github.com/Meta-Platform/.github/blob/main/docs/ARQUITETURA.md) e o
 > [README do repositório](../../../README.md).

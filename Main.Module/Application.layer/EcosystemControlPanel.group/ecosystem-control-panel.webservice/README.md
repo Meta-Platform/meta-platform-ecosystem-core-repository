@@ -1,5 +1,11 @@
 # ecosystem-control-panel.webservice
 
+- **Tipo:** serviço web (backend HTTP) (`.webservice`)
+- **Namespace:** `@/ecosystem-control-panel.webservice`
+- **Localização:** `Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.webservice` (EcosystemCoreRepo)
+
+## Propósito
+
 Web service (backend) do **Ecosystem Control Panel** (executável `eco-panel` /
 `eco-panel-desktop`). Expõe as APIs REST/controllers que o
 `ecosystem-control-panel.webgui` consome para operar e inspecionar o ecossistema.
@@ -15,7 +21,7 @@ Executor. Depende, via `bound-params`, de serviços como `serverService`,
 `ecosystemdataHandlerService`, `repositoryManagerService`,
 `ecosystemInstallUtilitiesLib` e `notificationHubService`.
 
-## Endpoints (controllers)
+## Serviços disponibilizados
 
 Cada grupo é um controller montado a partir de um `APIs/*.api.json`
 (ver [`src/Controllers/`](./src/Controllers/)):

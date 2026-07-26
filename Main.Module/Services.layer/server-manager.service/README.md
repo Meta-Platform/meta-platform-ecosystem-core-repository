@@ -2,7 +2,7 @@
 
 - **Tipo:** pacote de serviços (`.service`)
 - **Namespace:** `@/server-manager.service`
-- **Localização:** `Main.Module/Services.layer/server-manager.service`
+- **Localização:** `Main.Module/Services.layer/server-manager.service` (EcosystemCoreRepo)
 
 ## Propósito
 

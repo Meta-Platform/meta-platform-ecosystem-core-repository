@@ -1,4 +1,11 @@
-# Package Toolkit
+# package-toolkit.cli
+
+- **Tipo:** aplicação de linha de comando (`.cli`)
+- **Namespace:** `@/package-toolkit.cli`
+- **Executável:** `mypkg`
+- **Localização:** `Main.Module/PackageApplication.layer/package-toolkit.cli` (EcosystemCoreRepo)
+
+## Propósito
 
 O Package Toolkit é uma ferramenta de linha de comando para criar diferentes tipos de pacotes no ecossistema Meta Platform.
 

@@ -1,4 +1,11 @@
-# Ecosystem Control Panel (Desktop)
+# ecosystem-control-panel.desktopapp
+
+- **Tipo:** aplicação desktop (Electron) (`.desktopapp`)
+- **Namespace:** `@/ecosystem-control-panel.desktopapp`
+- **Executável:** `eco-panel-desktop`
+- **Localização:** `Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.desktopapp` (EcosystemCoreRepo)
+
+## Propósito
 
 Versão **desktop** do Ecosystem Control Panel (`eco-panel`): roda a mesma
 aplicação web do
@@ -17,3 +24,9 @@ O `metadata/boot.json` combina:
 A janela só abre depois que o `@@/server-service` está `ACTIVE` (via
 `agentLinkRules`), exibindo uma tela de carregamento até o webgui terminar de
 compilar. Roda na porta `9997` por padrão (o webapp usa `9998`).
+
+## Janelas (`metadata/boot.json` → `windows`)
+
+| Título | Dimensões | Dependência | GUI-host |
+|---|---|---|---|
+| Ecosystem Control Panel | 1280x800 | `@/ecosystem-control-panel.webgui` | sim |

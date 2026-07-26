@@ -1,4 +1,10 @@
-# server-manager.webservice (HTTP Servers)
+# server-manager.webservice
+
+- **Tipo:** serviço web (backend HTTP) (`.webservice`)
+- **Namespace:** `@/server-manager.webservice`
+- **Localização:** `Main.Module/Webservices.layer/server-manager.webservice` (EcosystemCoreRepo)
+
+## Propósito
 
 Web service que expõe a API **HTTPServers** (`src/APIs/HTTPServers.api.json`),
 usada pelo `server-manager.service` / `server-manager.webapp` para criar e
@@ -13,15 +19,10 @@ sobre um `@@/server-service` a partir do
 exemplo, `Status` fica em `GET /server-manager/status`.
 
 ## Serviços disponibilizados
-- HTTP Servers
-    - Create HTTP Server
-    - Status
-    - List HTTP Servers
-    - Add Web Service
-    - List Web Service
-    - Add Static Files Dir
-    - List Static FilesDir
 
+Um único controller, **HTTP Servers** `[HTTPServers]`, com os endpoints:
+`Create HTTP Server`, `Status`, `List HTTP Servers`, `Add Web Service`,
+`List Web Service`, `Add Static Files Dir` e `List Static FilesDir`.
 
 ## **HTTP Servers** [HTTPServers]
 
@@ -36,7 +37,6 @@ exemplo, `Status` fica em `GET /server-manager/status`.
 - Add Static Files Dir
 - List Static FilesDir
 
-
 ### **Create HTTP Server** [CreateHTTPServer]
 `POST` /http-server
 
@@ -46,14 +46,11 @@ exemplo, `Status` fica em `GET /server-manager/status`.
 | name  | string  | body  | yes  |
 | port  | number  | body  | yes  |
 
-
 ### **Status** [Status]
  `GET` /status
 
-
 ### **List HTTP Servers** [ListHTTPServers]
 `GET` /http-server-manager
-
 
 ### **Add Web Service** [AddWebService]
 `PUT` /http-server-manager/:name/web-services
@@ -61,7 +58,6 @@ exemplo, `Status` fica em `GET /server-manager/status`.
 **Parâmetros**
 | Name  | Value Type | Parameter Type | Required |
 | ------------- | ------------- | ------------- | -------------|
-
 
 ### **List Web Service** [ListWebService]
 `GET` /http-server-manager/:name/web-services
@@ -74,7 +70,6 @@ exemplo, `Status` fica em `GET /server-manager/status`.
 | ------------- | ------------- | ------------- | -------------|
 | name  | string  | path  | yes  |
 | path  | string  | body  | yes  |
-
 
 ### **List Static Files Dir** [ListStaticFilesDir]
  `GET` /http-server-manager/:name/static-files-dir

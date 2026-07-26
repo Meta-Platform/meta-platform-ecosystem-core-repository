@@ -2,7 +2,7 @@
 
 - **Tipo:** pacote de serviços (`.service`)
 - **Namespace:** `@/task-executor-machine.service`
-- **Localização:** `Main.Module/Services.layer/task-executor-machine.service`
+- **Localização:** `Main.Module/Services.layer/task-executor-machine.service` (EcosystemCoreRepo)
 
 ## Propósito
 

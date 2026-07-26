@@ -2,7 +2,7 @@
 
 - **Tipo:** biblioteca (`.lib`)
 - **Namespace:** `@/mount-api.lib`
-- **Localização:** `Main.Module/Libraries.layer/mount-api.lib`
+- **Localização:** `Main.Module/Libraries.layer/mount-api.lib` (EcosystemCoreRepo)
 
 ## Propósito
 

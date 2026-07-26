@@ -2,7 +2,7 @@
 
 - **Tipo:** interface web (`.webgui`)
 - **Namespace:** `@/ecosystem-control-panel.webgui`
-- **Localização:** `Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.webgui`
+- **Localização:** `Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.webgui` (EcosystemCoreRepo)
 
 ## Propósito
 
@@ -10,6 +10,12 @@ Front-end (React/TSX) do **painel de controle do ecossistema**. É um dos pacote
 do grupo [EcosystemControlPanel](../) — junto com o `.webservice` (API), o
 `.service`, o `.webapp` (composição, `eco-panel`) e o `.desktopapp`
 (janela Electron, `eco-panel-desktop`).
+
+## Execução
+
+Não é executada de forma independente: é compilada em runtime pelo loader
+`web-graphic-user-interface`, quando o `.webapp` ou o `.desktopapp` do grupo
+sobe.
 
 ## Estrutura (`src/`)
 

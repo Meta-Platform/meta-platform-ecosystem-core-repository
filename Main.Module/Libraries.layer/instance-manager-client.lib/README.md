@@ -2,7 +2,7 @@
 
 - **Tipo:** biblioteca (`.lib`)
 - **Namespace:** `@/instance-manager-client.lib`
-- **Localização:** `Main.Module/Libraries.layer/instance-manager-client.lib`
+- **Localização:** `Main.Module/Libraries.layer/instance-manager-client.lib` (EcosystemCoreRepo)
 
 ## Propósito
 

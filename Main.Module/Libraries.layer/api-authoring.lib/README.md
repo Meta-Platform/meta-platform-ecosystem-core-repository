@@ -1,11 +1,23 @@
 # api-authoring.lib
 
+- **Tipo:** biblioteca (`.lib`)
+- **Namespace:** `@/api-authoring.lib`
+- **Localização:** `Main.Module/Libraries.layer/api-authoring.lib` (EcosystemCoreRepo)
+
+## Propósito
+
 Núcleo compartilhado de **autoria de APIs** para pacotes `.webservice` (edição
 visual do APIDesigner). Persistência em `fs` puro — cada API é um arquivo
 `<name>.api.json` (`{ name, endpoints: [{ summary, method, path, parameters }] }`)
 dentro de `apisDir`. Não depende de lowdb.
 
 Reutilizada por `api-designer.webservice` (e disponível para CLI).
+
+## Exports (`src/`)
+
+| Módulo | Responsabilidade |
+|---|---|
+| `InitializeApiAuthoring.js` | Cria a instância de autoria de API (leitura e escrita dos `APIs/*.api.json`). |
 
 ## API
 

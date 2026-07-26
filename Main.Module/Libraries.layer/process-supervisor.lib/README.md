@@ -2,7 +2,7 @@
 
 - **Tipo:** biblioteca (`.lib`)
 - **Namespace:** `@/process-supervisor.lib`
-- **Localização:** `Main.Module/Libraries.layer/process-supervisor.lib`
+- **Localização:** `Main.Module/Libraries.layer/process-supervisor.lib` (EcosystemCoreRepo)
 
 ## Propósito
 

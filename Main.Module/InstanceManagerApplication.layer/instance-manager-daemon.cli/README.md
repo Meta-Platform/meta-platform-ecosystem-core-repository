@@ -1,9 +1,9 @@
 # instance-manager-daemon.cli
 
-- **Tipo:** CLI (`.cli`)
+- **Tipo:** aplicação de linha de comando (`.cli`)
 - **Namespace:** `@/instance-manager-daemon.cli`
 - **Executável:** `instance-manager-daemon`
-- **Localização:** `Main.Module/InstanceManagerApplication.layer/instance-manager-daemon.cli`
+- **Localização:** `Main.Module/InstanceManagerApplication.layer/instance-manager-daemon.cli` (EcosystemCoreRepo)
 
 ## Propósito
 

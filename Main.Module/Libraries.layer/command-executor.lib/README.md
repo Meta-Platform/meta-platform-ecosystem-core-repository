@@ -2,7 +2,7 @@
 
 - **Tipo:** biblioteca (`.lib`)
 - **Namespace:** `@/command-executor.lib`
-- **Localização:** `Main.Module/Libraries.layer/command-executor.lib`
+- **Localização:** `Main.Module/Libraries.layer/command-executor.lib` (EcosystemCoreRepo)
 
 ## Propósito
 

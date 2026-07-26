@@ -2,7 +2,7 @@
 
 - **Tipo:** biblioteca (`.lib`)
 - **Namespace:** `@/instance-store.lib`
-- **Localização:** `Main.Module/Libraries.layer/instance-store.lib` (EcosystemCoreRepository)
+- **Localização:** `Main.Module/Libraries.layer/instance-store.lib` (EcosystemCoreRepo)
 
 ## Propósito
 
@@ -43,6 +43,12 @@ altera tabela existente —, `ConnectAndSync()` recria a tabela quando detecta o
 formato antigo, preservando as linhas. O `launchId` legado *era* o `packagePath`,
 então ele vira o `instanceId` das linhas migradas, e uma instância desktop viva
 continua sendo readotada pelo `Reconcile()`.
+
+## Exports (`src/`)
+
+| Módulo | Responsabilidade |
+|---|---|
+| `InitializeInstanceStore.js` | Cria o store: conecta no SQLite, migra o schema e expõe a API de instâncias. |
 
 ## Reconciliação
 

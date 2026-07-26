@@ -1,5 +1,11 @@
 # git-status.lib
 
+- **Tipo:** biblioteca (`.lib`)
+- **Namespace:** `@/git-status.lib`
+- **Localização:** `Main.Module/Libraries.layer/git-status.lib` (EcosystemCoreRepo)
+
+## Propósito
+
 Status de git reativo e compartilhável entre apps do Meta Platform.
 
 Lê o estado não commitado de repositórios (branch + arquivos sujos) e o propaga
@@ -7,6 +13,15 @@ para os diretórios ancestrais, de modo que qualquer nível de uma hierarquia
 (pacote, group, layer, module, repositório) possa ser marcado quando contém
 alterações. Um watcher de filesystem por repositório (com debounce) mantém o
 status atualizado por eventos — sem polling.
+
+## Exports (`src/`)
+
+| Módulo | Responsabilidade |
+|---|---|
+| `InitializeGitStatusManager.js` | Cria o gerenciador: observa o repositório e emite mudanças de status. |
+| `GetRepositoryGitStatus.js` | Lê o status git de um repositório. |
+| `BuildAncestorStatusMap.js` | Propaga o status dos arquivos para os diretórios ancestrais, para pintar a árvore. |
+| `Services/GitStatusManager.service.js` | Expõe o gerenciador como serviço do ecossistema. |
 
 ## API
 
@@ -35,3 +50,9 @@ completo (não deltas):
   repositories: { [name]: { path, isRepo, branch, dirty, count } }
 }
 ```
+
+## Serviços expostos (`metadata/services.json`)
+
+| Namespace | Path | Dependências (bound-params) |
+|---|---|---|
+| `GitStatusManager` | `Services/GitStatusManager.service` | — |

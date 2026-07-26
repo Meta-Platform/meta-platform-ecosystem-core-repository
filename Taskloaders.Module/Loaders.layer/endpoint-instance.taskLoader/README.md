@@ -1,6 +1,10 @@
-# endpoint-instance.lib
+# endpoint-instance.taskLoader
 
-- **Tipo:** biblioteca / *task loader* (`.lib`) · **Namespace:** `@/endpoint-instance.lib`
+- **Tipo:** *task loader* (`.taskLoader`)
+- **Namespace:** `@/endpoint-instance.taskLoader`
+- **Localização:** `Taskloaders.Module/Loaders.layer/endpoint-instance.taskLoader` (EcosystemCoreRepo)
+
+## Propósito
 
 *Object loader* do tipo **`endpoint-instance`**: instancia um endpoint HTTP
 (controller ou interface web) associado a um serviço de servidor, durante a
@@ -14,6 +18,14 @@ execução de um plano.
 | `StartControllerService.js` | Sobe um endpoint do tipo *controller*. |
 | `StartWebGraphicUserInterfaceService.js` | Sobe a interface web (web GUI). |
 | `WebInterfaceBuilder.js` | Constrói/empacota a interface web. |
+
+## Registro (`metadata/taskloaders.json` do repositório)
+
+| Campo | Valor |
+|---|---|
+| `objectLoaderType` | `endpoint-instance` |
+| `entry` | `src/EndpointInstance.taskLoader` |
+| `npmDependencies` | `webpack`, `html-webpack-plugin`, `colors` |
 
 > Parâmetros e exemplo no `execution-params`: ver
 > [Tipos de Object Loader → `endpoint-instance`](https://github.com/Meta-Platform/meta-platform-open-standard/blob/main/concepts/tipos-de-object-loader.md#endpoint-instance).

@@ -2,7 +2,7 @@
 
 - **Tipo:** pacote de serviços (`.service`)
 - **Namespace:** `@/environment-runtime-manager.service`
-- **Localização:** `Main.Module/Services.layer/environment-runtime-manager.service`
+- **Localização:** `Main.Module/Services.layer/environment-runtime-manager.service` (EcosystemCoreRepo)
 
 ## Propósito
 

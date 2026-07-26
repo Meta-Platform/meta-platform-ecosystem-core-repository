@@ -2,7 +2,7 @@
 
 - **Tipo:** biblioteca (`.lib`)
 - **Namespace:** `@/package-toolkit.lib`
-- **Localização:** `Main.Module/Libraries.layer/package-toolkit.lib`
+- **Localização:** `Main.Module/Libraries.layer/package-toolkit.lib` (EcosystemCoreRepo)
 
 ## Propósito
 

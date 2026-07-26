@@ -2,7 +2,7 @@
 
 - **Tipo:** interface web (`.webgui`)
 - **Namespace:** `@/server-manager.webgui`
-- **Localização:** `Main.Module/Application.layer/ServerManager.group/server-manager.webgui`
+- **Localização:** `Main.Module/Application.layer/ServerManager.group/server-manager.webgui` (EcosystemCoreRepo)
 
 ## Propósito
 
@@ -10,6 +10,11 @@ Front-end (React/TSX) do **gerenciador de servidores**. Faz parte do grupo
 [ServerManager](../), junto com o `.webapp` (e apoiado pelo
 `@/server-manager.webservice` / `@/server-manager.service`), oferecendo a
 interface de administração dos servidores HTTP do ecossistema.
+
+## Execução
+
+Não é executada de forma independente: é compilada em runtime pelo loader
+`web-graphic-user-interface`, quando o `server-manager.webapp` sobe.
 
 ## Estrutura (`src/`)
 
