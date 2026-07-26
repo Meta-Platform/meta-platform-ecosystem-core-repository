@@ -88,6 +88,9 @@ const InitializeGitStatusManager = () => {
             remote,
             dirty: files.length > 0,
             count: files.length,
+            // Lista completa (path + estado) para quem precisa mostrar O QUE mudou,
+            // não só quantos: o mapa por caminho carrega apenas uma amostra por nó.
+            files,
             statusByPath: isRepo ? BuildAncestorStatusMap(repoPath, files) : {}
         }
         if(entry) entry.cache = result
@@ -120,7 +123,10 @@ const InitializeGitStatusManager = () => {
             for(const { name, path: repoPath } of list){
                 const r = await _compute(repoPath)
                 Object.assign(statusByPath, r.statusByPath)
-                repositories[name] = { path: repoPath, isRepo: r.isRepo, branch: r.branch, remote: r.remote, dirty: r.dirty, count: r.count }
+                repositories[name] = {
+                    path: repoPath, isRepo: r.isRepo, branch: r.branch, remote: r.remote,
+                    dirty: r.dirty, count: r.count, files: r.files
+                }
             }
             return { statusByPath, repositories }
         }
