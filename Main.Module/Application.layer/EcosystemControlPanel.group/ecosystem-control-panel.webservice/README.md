@@ -1,6 +1,6 @@
 # ecosystem-control-panel.webservice
 
-- **Tipo:** serviço web (backend HTTP) (`.webservice`)
+- **Tipo:** serviço web, backend HTTP (`.webservice`)
 - **Namespace:** `@/ecosystem-control-panel.webservice`
 - **Localização:** `Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.webservice` (EcosystemCoreRepo)
 

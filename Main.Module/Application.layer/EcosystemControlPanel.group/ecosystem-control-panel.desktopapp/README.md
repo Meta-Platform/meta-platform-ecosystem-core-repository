@@ -1,6 +1,6 @@
 # ecosystem-control-panel.desktopapp
 
-- **Tipo:** aplicação desktop (Electron) (`.desktopapp`)
+- **Tipo:** aplicação desktop Electron (`.desktopapp`)
 - **Namespace:** `@/ecosystem-control-panel.desktopapp`
 - **Executável:** `eco-panel-desktop`
 - **Localização:** `Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.desktopapp` (EcosystemCoreRepo)

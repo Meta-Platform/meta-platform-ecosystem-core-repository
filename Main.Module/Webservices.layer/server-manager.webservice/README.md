@@ -1,6 +1,6 @@
 # server-manager.webservice
 
-- **Tipo:** serviço web (backend HTTP) (`.webservice`)
+- **Tipo:** serviço web, backend HTTP (`.webservice`)
 - **Namespace:** `@/server-manager.webservice`
 - **Localização:** `Main.Module/Webservices.layer/server-manager.webservice` (EcosystemCoreRepo)
 
