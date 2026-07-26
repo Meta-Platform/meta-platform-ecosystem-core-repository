@@ -36,20 +36,22 @@ const ParsePorcelainZ = (stdout) => {
 }
 
 /**
- * Lê o estado do git de um repositório: se é um repo, o branch atual e a lista
- * de arquivos "sujos" (não commitados) — modificados, staged, em conflito e
- * não rastreados (`-uall` lista arquivos individuais, não só diretórios).
+ * Lê o estado do git de um repositório: se é um repo, o branch atual, a origem
+ * remota e a lista de arquivos "sujos" (não commitados) — modificados, staged,
+ * em conflito e não rastreados (`-uall` lista arquivos individuais, não só
+ * diretórios).
  *
- * Nunca lança: um diretório sem git resolve `{ isRepo:false, branch:null, files:[] }`.
+ * Nunca lança: um diretório sem git resolve
+ * `{ isRepo:false, branch:null, remote:null, files:[] }`.
  *
  * @param {string} repositoryPath  raiz do repositório
- * @returns {Promise<{isRepo:boolean, branch:(string|null), files:Array<{path:string,state:string}>}>}
+ * @returns {Promise<{isRepo:boolean, branch:(string|null), remote:(string|null), files:Array<{path:string,state:string}>}>}
  */
 const GetRepositoryGitStatus = async (repositoryPath) => {
     try {
         await RunGit(["rev-parse", "--is-inside-work-tree"], repositoryPath)
     } catch(e) {
-        return { isRepo: false, branch: null, files: [] }
+        return { isRepo: false, branch: null, remote: null, files: [] }
     }
 
     let branch = null
@@ -58,12 +60,18 @@ const GetRepositoryGitStatus = async (repositoryPath) => {
         branch = raw === "HEAD" ? "(detached)" : raw
     } catch(e) { branch = null }
 
+    // URL do remote de origem — repositório local (sem remote) resolve null.
+    let remote = null
+    try {
+        remote = (await RunGit(["remote", "get-url", "origin"], repositoryPath)).trim() || null
+    } catch(e) { remote = null }
+
     let files = []
     try {
         files = ParsePorcelainZ(await RunGit(["status", "--porcelain=v1", "-z", "-uall"], repositoryPath))
     } catch(e) { files = [] }
 
-    return { isRepo: true, branch, files }
+    return { isRepo: true, branch, remote, files }
 }
 
 module.exports = GetRepositoryGitStatus

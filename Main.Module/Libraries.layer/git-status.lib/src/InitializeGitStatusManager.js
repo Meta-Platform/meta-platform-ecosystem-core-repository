@@ -81,10 +81,11 @@ const InitializeGitStatusManager = () => {
     const _compute = async (repoPath) => {
         const entry = repos.get(repoPath)
         if(entry && entry.cache) return entry.cache
-        const { isRepo, branch, files } = await GetRepositoryGitStatus(repoPath)
+        const { isRepo, branch, remote, files } = await GetRepositoryGitStatus(repoPath)
         const result = {
             isRepo,
             branch,
+            remote,
             dirty: files.length > 0,
             count: files.length,
             statusByPath: isRepo ? BuildAncestorStatusMap(repoPath, files) : {}
@@ -119,7 +120,7 @@ const InitializeGitStatusManager = () => {
             for(const { name, path: repoPath } of list){
                 const r = await _compute(repoPath)
                 Object.assign(statusByPath, r.statusByPath)
-                repositories[name] = { path: repoPath, isRepo: r.isRepo, branch: r.branch, dirty: r.dirty, count: r.count }
+                repositories[name] = { path: repoPath, isRepo: r.isRepo, branch: r.branch, remote: r.remote, dirty: r.dirty, count: r.count }
             }
             return { statusByPath, repositories }
         }
