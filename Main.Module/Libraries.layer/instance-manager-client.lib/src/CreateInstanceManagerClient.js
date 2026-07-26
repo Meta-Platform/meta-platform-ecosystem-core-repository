@@ -152,6 +152,12 @@ const CreateInstanceManagerClient = ({
         StopInstance: ({ instanceId } = {}) =>
             _Call("EcosystemManager", "StopInstance", { instanceId }),
 
+        // Traz para frente a janela de UMA instância desktop (foco), em vez de
+        // abrir outra. Devolve `{ focused }` — false quando a instância não tem
+        // janela ou o canal de foco não está disponível.
+        FocusInstance: ({ instanceId } = {}) =>
+            _Call("EcosystemManager", "FocusInstance", { instanceId }),
+
         // Lista os pacotes supervisionados pelo daemon.
         ListPackages: () =>
             _Call("EcosystemManager", "ListPackages"),

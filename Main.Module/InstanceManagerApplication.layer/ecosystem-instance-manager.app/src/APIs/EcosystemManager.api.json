@@ -103,6 +103,19 @@
 			]
 		},
 		{
+			"summary": "FocusInstance",
+			"method": "POST",
+			"path": "/focus-instance",
+			"parameters": [
+				{
+					"name": "instanceId",
+					"in": "body",
+					"type": "string",
+					"required": true
+				}
+			]
+		},
+		{
 			"summary": "ListInstanceTasks",
 			"method": "POST",
 			"path": "/list-instance-tasks",

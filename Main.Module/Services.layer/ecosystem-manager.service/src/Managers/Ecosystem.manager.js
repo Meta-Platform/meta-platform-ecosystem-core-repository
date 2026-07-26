@@ -161,6 +161,14 @@ const EcosystemManager = (params) => {
     const _CreateInstanceTaskSocketPath = (instanceId) =>
         join(dirname(socket || join(ECO_DIRPATH_INSTALL_DATA, "sockets", "x")), "instance-tasks", `${instanceId}.sock`)
 
+    // Caminho do Unix socket de CONTROLE DE JANELA da instância desktop (quem o
+    // abre é o electron-main). É por ele que trazemos uma janela já aberta para
+    // frente em vez de lançar outra instância. O caminho é DERIVADO do
+    // instanceId — assim continua resolvível para instâncias readotadas após um
+    // restart do daemon, sem precisar guardá-lo no registro.
+    const _CreateInstanceWindowSocketPath = (instanceId) =>
+        join(dirname(socket || join(ECO_DIRPATH_INSTALL_DATA, "sockets", "x")), "instance-windows", `${instanceId}.sock`)
+
     // Log por instância. Fica em <install-data>/instance-logs/<instanceId>.log,
     // seguindo o mesmo esquema por-instância dos sockets. É o rastro que responde
     // "por que terminou": para desktop recebe o stdout/stderr do processo (antes
@@ -269,7 +277,10 @@ const EcosystemManager = (params) => {
             PATH: `${executablesDirPath}:${process.env.PATH}`,
             ...(socket ? { META_LAUNCH_PROGRESS_SOCKET: socket, META_LAUNCH_ID: instanceId } : {}),
             META_INSTANCE_TASK_SOCKET: taskSocketPath,
-            META_INSTANCE_TASK_SERVER_NAME: INSTANCE_TASK_SERVER_NAME
+            META_INSTANCE_TASK_SERVER_NAME: INSTANCE_TASK_SERVER_NAME,
+            // Socket que o electron-main abre para receber comandos de janela
+            // (hoje: foco). Flui daqui → `run` → taskLoader → electron-main.
+            META_WINDOW_CONTROL_SOCKET: _CreateInstanceWindowSocketPath(instanceId)
         }
         // Redireciona stdout/stderr do processo para o log da instância (antes ia
         // para "ignore" e sumia). O filho herda o fd; fechamos nossa cópia após o
@@ -564,6 +575,35 @@ const EcosystemManager = (params) => {
         return { ...result, instanceId }
     }
 
+    // Traz para frente a janela de UMA instância desktop. É o que permite ao
+    // painel dar FOCO num aplicativo já aberto em vez de abrir outra instância.
+    // Fala com o socket de controle de janela publicado pelo electron-main.
+    // 1 parâmetro (instanceId) chega como valor direto (contrato do server-manager).
+    const FocusInstance = async (instanceId) => {
+        if(!instanceId) throw new Error("FocusInstance: 'instanceId' é obrigatório")
+
+        const instance = await _SafeStore(() => instanceStore.Get({ instanceId }))
+        if(!instance) throw new Error(`Instância não encontrada: ${instanceId}`)
+
+        // Só instâncias DESKTOP têm janela. Para as demais não há o que focar —
+        // devolvemos o resultado negativo em vez de erro (o chamador decide).
+        if(instance.kind !== instanceStore.KIND.DESKTOP)
+            return { focused: false, instanceId }
+
+        try {
+            const result = await _HttpOverSocket({
+                socketPath: _CreateInstanceWindowSocketPath(instanceId),
+                method: "POST",
+                path: "/focus"
+            })
+            return { focused: Boolean(result && result.focused), instanceId }
+        } catch(e) {
+            // Socket ausente/morto: instância encerrando, ou lançada por uma
+            // versão do taskLoader anterior a este canal.
+            return { focused: false, instanceId }
+        }
+    }
+
     // Instâncias que ESTE daemon colocou no ar, com o estado vivo de cada uma.
     //
     // A verdade de cada kind vem de uma fonte diferente:
@@ -670,6 +710,7 @@ const EcosystemManager = (params) => {
         RunPackage,
         StopPackage,
         StopInstance,
+        FocusInstance,
         ListInstances,
         ListInstanceTasks,
         ReportInstanceTasks,
