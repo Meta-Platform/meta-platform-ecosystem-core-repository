@@ -1,88 +1,56 @@
+import { GetTheme, GetKindLabel, MakeEdge } from "../_shared/DiagramTheme"
 
-import { MarkerType } from 'reactflow'
+// Nós: 1 por item da dependencyList, no formato do nó customizado "pkg".
+// A cor vem do tipo do pacote (sufixo do namespace) — mesmo eixo do diagrama.
+const ConvertDependencyListToNodes = (dependencyList: any[]) =>
+    dependencyList.reduce((nodesAcc: Map<string, any>, { code, dependency }: any) => {
+        const { metadata } = dependency
+        const name = metadata.package.namespace
 
-const ConvertDependencyListToNodes = (dependencyList) => 
-    dependencyList
-        .reduce((nodesAcc, { code, dependency }) => {
-
-            const {
-                metadata
-            } = dependency
-
-            const nodeId = code
-            const nodeLabel = metadata.package.namespace
-
-            nodesAcc.set(nodeId, {
-                id: nodeId,
-                data: { label: nodeLabel },
-                style: {
-                    width: 250
-                }
-            })
-
-            return nodesAcc
-        }, new Map())
-
-
-const ConvertLinkedGraphToEdges = (linkedGraph) => {
-
-    const edges = new Set()
-
-    const hasChildren = 
-        graph => code => Object.keys(graph[code]).length > 0
-
-
-    const getEdge = (source, target) => {
-        const edgeId = `e${source}-${target}`
-
-        return {
-            edgeId,
-            type: 'floating',
-            markerEnd: {
-                type: MarkerType.ArrowClosed,
+        nodesAcc.set(code, {
+            id: code,
+            type: "pkg",
+            position: { x: 0, y: 0 },
+            data: {
+                name,
+                typeLabel: GetKindLabel(name),
+                kindLabel: GetKindLabel(name),
+                theme: GetTheme(name),
             },
-            source,
-            target
-        }
+        })
+
+        return nodesAcc
+    }, new Map())
+
+// Arestas: percorre o linkedGraph (aninhado, chaves = codes) gerando uma aresta
+// "depende de" (source -> target) para cada relação pai/filho.
+const ConvertLinkedGraphToEdges = (linkedGraph: any) => {
+    const edges = new Map<string, any>()
+
+    const _MountEdges = (graph: any) => {
+        Object.keys(graph || {}).forEach((code) => {
+            const childGraph = graph[code] || {}
+            Object.keys(childGraph).forEach((childCode) => {
+                const id = `e-${code}-${childCode}`
+                if (!edges.has(id)) edges.set(id, MakeEdge(id, code, childCode, "dep"))
+            })
+            _MountEdges(childGraph)
+        })
     }
 
-    const _MountEdges = (graph, edges) => {
-        const nodeCodes = Object.keys(graph || {})
-
-        return nodeCodes
-            .filter(hasChildren(graph))
-            .reduce((edgesAcc, code) => {
-                const childGraph = graph[code]
-                const childNodeCodes = Object.keys(childGraph)
-
-                childNodeCodes
-                .forEach((childCode) => {
-                    edges.add(getEdge(code, childCode))
-                })
-                
-                _MountEdges(childGraph, edges)
-
-                return edgesAcc
-            }, edges)
-    }
-    
-    _MountEdges(linkedGraph, edges)
+    _MountEdges(linkedGraph)
     return edges
 }
 
-const ConvertDependencyToFlowElements = (metadataHierarchy) => {
-
-    const {
-        dependencyList,
-        linkedGraph
-    } = metadataHierarchy
+const ConvertDependencyToFlowElements = (metadataHierarchy: any) => {
+    const { dependencyList, linkedGraph } = metadataHierarchy
 
     const nodes = ConvertDependencyListToNodes(dependencyList)
     const edges = ConvertLinkedGraphToEdges(linkedGraph)
 
-    return { 
-        nodes: Array.from(nodes.values()), 
-        edges: Array.from(edges)
+    return {
+        nodes: Array.from(nodes.values()),
+        edges: Array.from(edges.values()),
     }
 }
 
