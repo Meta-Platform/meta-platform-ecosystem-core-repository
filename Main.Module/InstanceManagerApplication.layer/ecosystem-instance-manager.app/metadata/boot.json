@@ -6,7 +6,11 @@
         "ECOSYSTEMDATA_CONF_FILENAME_ECOSYSTEM_DEFAULTS",
         "PKG_CONF_FILENAME_STARTUP_PARAMS",
         "PKG_CONF_FILENAME_BOOT",
-        "instanceStoreFilePath"
+        "instanceStoreFilePath",
+        "metricsSampleIntervalMs",
+        "metricsHistorySize",
+        "instanceLogMaxBytes",
+        "instanceLogRetentionDays"
     ],
     "services": [
         {
@@ -62,6 +66,8 @@
                 "resolvePackageNameLib": "@/resolve-package-name.lib",
                 "jsonFileUtilitiesLib": "@/json-file-utilities.lib",
                 "instanceStoreLib": "@/instance-store.lib",
+                "processMetricsLib": "@/process-metrics.lib",
+                "taskExecutorMachineService": "@@/standard-task-executor-machine-service",
                 "ecosystemDefaultsHandlerLib": "@/ecosystem-defaults-handler.lib"
             },
             "params": {
@@ -69,6 +75,10 @@
                 "configurationsDirName": "{{ECOSYSTEMDATA_CONF_DIRNAME_CONFIGURATIONS_DIR}}",
                 "ecosystemDefaultsFileName": "{{ECOSYSTEMDATA_CONF_FILENAME_ECOSYSTEM_DEFAULTS}}",
                 "instanceStoreFilePath": "{{instanceStoreFilePath}}",
+                "metricsSampleIntervalMs": "{{metricsSampleIntervalMs}}",
+                "metricsHistorySize": "{{metricsHistorySize}}",
+                "instanceLogMaxBytes": "{{instanceLogMaxBytes}}",
+                "instanceLogRetentionDays": "{{instanceLogRetentionDays}}",
                 "socket": "{{socket}}"
             }
         },

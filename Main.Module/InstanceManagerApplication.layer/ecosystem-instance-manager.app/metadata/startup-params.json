@@ -5,5 +5,9 @@
     "ECOSYSTEMDATA_CONF_FILENAME_ECOSYSTEM_DEFAULTS": "ecosystem-defaults.json",
     "PKG_CONF_FILENAME_STARTUP_PARAMS": "startup-params.json",
     "PKG_CONF_FILENAME_BOOT": "boot.json",
-    "instanceStoreFilePath": "~/virtual-desk-state/local-databases/ecosystem-instance-store.sqlite"
+    "instanceStoreFilePath": "~/virtual-desk-state/local-databases/ecosystem-instance-store.sqlite",
+    "metricsSampleIntervalMs": 2000,
+    "metricsHistorySize": 300,
+    "instanceLogMaxBytes": 8388608,
+    "instanceLogRetentionDays": 7
 }

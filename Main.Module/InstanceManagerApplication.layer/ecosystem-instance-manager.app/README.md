@@ -37,6 +37,21 @@ Um controller por área, definidos em `metadata/endpoint-group.json`:
 | `/enviroment-runtime` | `Controllers/EnvironmentRuntime.controller` |
 | `/command-line-runtime` | `Controllers/CommandLineRuntime.controller` |
 
+### Observabilidade (controller `EcosystemManager`)
+
+Como o daemon é quem executa, é dele que sai o que o
+[Instance Executor](https://github.com/Meta-Platform/meta-platform-applications-repository/tree/main/Apps.Module/InstanceManager.layer/InstanceExecutorControlPanel.group)
+mostra de log e desempenho:
+
+| Endpoint | Método | O quê |
+|---|---|---|
+| `/read-instance-log` | POST | Log de uma instância (tail ou incremento por offset) |
+| `/instance-log-stream/:instanceId` | WS | Log ao vivo |
+| `/list-instance-logs` | GET | Inventário dos logs em disco |
+| `/list-instance-metrics` | GET | Snapshot de desempenho de todas as instâncias |
+| `/instance-metrics` | POST | Série histórica de uma instância |
+| `/metrics-stream` | WS | Uma amostra por tick |
+
 ## Composição (`metadata/boot.json`)
 
 - Serviço `@@/server-service` a partir de `@/server-manager.service/services/HTTPServerService` (no socket `{{socket}}`).

@@ -15,7 +15,13 @@ const EcosystemManagerController = (params) => {
             ReportLaunchProgress,
             GetLaunchProgressSnapshot,
             GetLaunchProgressEmitter,
-            GetInstancesEmitter
+            GetInstancesEmitter,
+            ReadInstanceLog,
+            InstanceLogStream,
+            ListInstanceLogs,
+            ListInstanceMetrics,
+            GetInstanceMetrics,
+            MetricsStream
         }
     } = params
 
@@ -87,7 +93,16 @@ const EcosystemManagerController = (params) => {
         ListPackages: ListSupervisedPackages,
         PackageList,
         LaunchProgress,
-        LaunchProgressStream
+        LaunchProgressStream,
+
+        // Observabilidade: o log por instância já era gravado em disco, mas não
+        // havia como lê-lo sem abrir um terminal; desempenho não existia.
+        ReadInstanceLog,
+        InstanceLogStream,
+        ListInstanceLogs,
+        ListInstanceMetrics,
+        GetInstanceMetrics,
+        MetricsStream
     }
 
     return Object.freeze(controllerServiceObject)

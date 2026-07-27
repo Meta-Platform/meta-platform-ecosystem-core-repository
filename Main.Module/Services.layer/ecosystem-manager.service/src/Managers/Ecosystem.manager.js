@@ -72,9 +72,11 @@ const EcosystemManager = (params) => {
         resolvePackageNameLib,
         jsonFileUtilitiesLib,
         instanceStoreLib,
+        processMetricsLib,
         ecosystemDefaultsHandlerLib,
         repositoryManagerService,
         environmentRuntimeService,
+        taskExecutorMachineService,
         PKG_CONF_DIRNAME_METADATA,
         ECO_DIRPATH_INSTALL_DATA,
         REPOS_CONF_FILENAME_REPOS_DATA,
@@ -84,9 +86,22 @@ const EcosystemManager = (params) => {
         configurationsDirName,
         ecosystemDefaultsFileName,
         instanceStoreFilePath,
+        metricsSampleIntervalMs,
+        metricsHistorySize,
+        instanceLogMaxBytes,
+        instanceLogRetentionDays,
         socket,
         onReady
     } = params
+
+    // Parâmetros de observabilidade têm default no código (e não só no
+    // startup-params) para uma instalação anterior a eles continuar subindo: um
+    // {{VAR}} não declarado chega como null, e null não pode virar intervalo de
+    // amostragem.
+    const METRICS_SAMPLE_INTERVAL_MS  = Number(metricsSampleIntervalMs)  || 2000
+    const METRICS_HISTORY_SIZE        = Number(metricsHistorySize)       || 300
+    const INSTANCE_LOG_MAX_BYTES      = Number(instanceLogMaxBytes)      || (8 * 1024 * 1024)
+    const INSTANCE_LOG_RETENTION_DAYS = Number(instanceLogRetentionDays) || 7
 
     const ReadAllPackageMetadata      = dependencyGraphBuilderLib.require("Utils/ReadAllPackageMetadata")
     const BuildMetadataHierarchy      = dependencyGraphBuilderLib.require("BuildMetadataHierarchy")
@@ -99,6 +114,12 @@ const EcosystemManager = (params) => {
     const ReadJsonFile                = jsonFileUtilitiesLib.require("ReadJsonFile")
     const InitializeInstanceStore     = instanceStoreLib.require("InitializeInstanceStore")
     const GetEcosystemDefaults        = ecosystemDefaultsHandlerLib.require("Get")
+
+    // Observabilidade é acessório: se a lib de métricas não estiver montada
+    // (instalação antiga, boot.json sem o bound-param), o daemon continua
+    // executando pacotes normalmente — só não reporta desempenho.
+    const CreateProcessSampler = processMetricsLib && processMetricsLib.require("CreateProcessSampler")
+    const CreateMetricsHistory = processMetricsLib && processMetricsLib.require("CreateMetricsHistory")
 
     // Carrega UMA vez, na construção do manager, o ecosystem-defaults.json
     // materializado no EcosystemData. Esse objeto é a BASE de startupParams
@@ -197,6 +218,201 @@ const EcosystemManager = (params) => {
         } catch(e) {}
     }
 
+    // ---- Leitura do log da instância -------------------------------------
+    //
+    // O log já era gravado, mas não havia como lê-lo sem abrir um terminal e
+    // conhecer o instanceId — ou seja, o rastro que responde "por que morreu"
+    // existia e era inalcançável pela interface. Estas funções o servem.
+
+    // Teto do que se lê de uma vez. Um log de uma sessão longa tem dezenas de MB;
+    // mandar isso pelo socket travaria a interface e não seria lido por ninguém.
+    const LOG_READ_MAX_BYTES = 512 * 1024
+
+    // Lê um pedaço do fim do arquivo (ou a partir de um offset conhecido) e o
+    // devolve em linhas. `offset` volta para o chamador continuar de onde parou —
+    // é o que torna o acompanhamento incremental, sem reenviar o log inteiro.
+    const _ReadLogSlice = (logPath, { fromOffset, maxBytes = LOG_READ_MAX_BYTES } = {}) => {
+        const { size } = fs.statSync(logPath)
+
+        // Offset maior que o arquivo = ele foi truncado (rotação) desde a última
+        // leitura. Recomeçar do início é o único resultado correto.
+        const isRotated = fromOffset !== undefined && fromOffset > size
+        const start = (fromOffset !== undefined && !isRotated)
+            ? fromOffset
+            : Math.max(0, size - maxBytes)
+
+        if(start >= size)
+            return { lines: [], offset: size, size, truncated: false, rotated: isRotated }
+
+        const length = Math.min(size - start, maxBytes)
+        const buffer = Buffer.alloc(length)
+
+        const fd = fs.openSync(logPath, "r")
+        try { fs.readSync(fd, buffer, 0, length, start) }
+        finally { try { fs.closeSync(fd) } catch(e) {} }
+
+        let text = buffer.toString("utf8")
+
+        // Começamos no meio do arquivo: a primeira linha quase sempre está
+        // cortada ao meio. Descartá-la evita exibir lixo no topo.
+        const startedMidFile = start > 0 && fromOffset === undefined
+        if(startedMidFile){
+            const firstBreak = text.indexOf("\n")
+            if(firstBreak >= 0) text = text.slice(firstBreak + 1)
+        }
+
+        const lines = text.split("\n")
+        // Última linha sem "\n" = escrita ainda em curso. Fica para a próxima
+        // leitura, e o offset recua para não perdê-la.
+        const pendingBytes = Buffer.byteLength(lines[lines.length - 1], "utf8")
+        lines.pop()
+
+        return {
+            lines,
+            offset: (start + length) - pendingBytes,
+            size,
+            truncated: startedMidFile,
+            rotated: isRotated
+        }
+    }
+
+    // Lê o log de uma instância. Sem `fromOffset`, devolve as últimas linhas;
+    // com ele, só o que foi escrito depois. 2+ params → chegam como objeto.
+    const ReadInstanceLog = async ({ instanceId, tailLines = 500, fromOffset } = {}) => {
+        if(!instanceId) throw new Error("ReadInstanceLog: 'instanceId' é obrigatório.")
+
+        const logPath = _CreateInstanceLogPath(instanceId)
+
+        let slice
+        try { slice = _ReadLogSlice(logPath, { fromOffset }) }
+        catch(e) {
+            // Instância sem log ainda (acabou de subir) não é erro: é log vazio.
+            return { instanceId, lines: [], offset: 0, size: 0, exists: false }
+        }
+
+        const lines = (fromOffset === undefined && slice.lines.length > tailLines)
+            ? slice.lines.slice(slice.lines.length - tailLines)
+            : slice.lines
+
+        return { instanceId, exists: true, path: logPath, ...slice, lines }
+    }
+
+    // Acompanhamento ao vivo do log de uma instância (WS).
+    //
+    // Usa `fs.watchFile` (stat periódico) e não `fs.watch` (inotify) de
+    // propósito: o arquivo pode AINDA NÃO EXISTIR quando o painel abre a aba
+    // (instância recém-lançada) — inotify falharia no arquivo ausente — e quem
+    // escreve é outro processo, pelo fd herdado no spawn. O stat só roda
+    // enquanto houver alguém assistindo.
+    // 1 parâmetro (instanceId) chega como valor direto.
+    const InstanceLogStream = (ws, instanceId) => {
+        if(!instanceId) { try { ws.close() } catch(e){} ; return }
+
+        const logPath = _CreateInstanceLogPath(instanceId)
+        let offset = 0
+        let closed = false
+
+        const _send = (payload) => { try { ws.send(JSON.stringify(payload)) } catch(e){} }
+
+        const _pump = async (type) => {
+            if(closed) return
+            const result = await ReadInstanceLog({ instanceId, fromOffset: offset })
+            if(!result.exists) return
+            offset = result.offset
+            if(result.lines.length > 0 || type === "snapshot")
+                _send({ type, instanceId, lines: result.lines, size: result.size, rotated: result.rotated })
+        }
+
+        // Estado inicial: as últimas linhas do que já existe.
+        ReadInstanceLog({ instanceId })
+            .then((result) => {
+                if(closed) return
+                offset = result.offset
+                _send({ type: "snapshot", instanceId, lines: result.lines, size: result.size, exists: result.exists })
+            })
+            .catch(() => {})
+
+        const onChange = (current, previous) => {
+            if(current.mtimeMs === previous.mtimeMs && current.size === previous.size) return
+            _pump("append").catch(() => {})
+        }
+
+        fs.watchFile(logPath, { interval: 400 }, onChange)
+
+        ws.on && ws.on("close", () => {
+            closed = true
+            try { fs.unwatchFile(logPath, onChange) } catch(e){}
+        })
+    }
+
+    // Inventário dos logs em disco, cruzado com o que o registro sabe de cada
+    // instância. É o que permite abrir o log de algo que já morreu — justamente
+    // o caso em que o log importa mais.
+    const ListInstanceLogs = async () => {
+        const logDir = dirname(_CreateInstanceLogPath("x"))
+
+        let fileList
+        try { fileList = fs.readdirSync(logDir) }
+        catch(e) { return [] }
+
+        const instanceList = (await _SafeStore(() => instanceStore.List())) || []
+        const instanceById = new Map(instanceList.map((instance) => [instance.instanceId, instance]))
+
+        return fileList
+            .filter((fileName) => fileName.endsWith(".log"))
+            .map((fileName) => {
+                const instanceId = fileName.replace(/\.log$/, "")
+                let stats
+                try { stats = fs.statSync(join(logDir, fileName)) }
+                catch(e) { return undefined }
+
+                const instance = instanceById.get(instanceId)
+                return {
+                    instanceId,
+                    sizeBytes:   stats.size,
+                    modifiedAt:  stats.mtime,
+                    packagePath: instance && instance.packagePath,
+                    kind:        instance && instance.kind,
+                    status:      instance && instance.status,
+                    launchedBy:  instance && instance.launchedBy
+                }
+            })
+            .filter(Boolean)
+            .sort((a, b) => b.modifiedAt - a.modifiedAt)
+    }
+
+    // Um desktop de sessão longa escreve no log pelo fd herdado, sem limite. Como
+    // não controlamos esse fd, o corte é feito por truncamento do arquivo: com
+    // O_APPEND o kernel recalcula o offset, então o processo continua escrevendo
+    // normalmente a partir do zero.
+    const _TruncateOversizedLog = (instanceId) => {
+        const logPath = _CreateInstanceLogPath(instanceId)
+        try {
+            if(fs.statSync(logPath).size <= INSTANCE_LOG_MAX_BYTES) return
+            fs.truncateSync(logPath, 0)
+            _AppendInstanceLog(instanceId, `[daemon] log truncado ao passar de ${INSTANCE_LOG_MAX_BYTES} bytes`)
+        } catch(e) {}
+    }
+
+    // Um arquivo de log por LANÇAMENTO (o instanceId é único por execução), então
+    // a pasta cresce para sempre. No start, apaga o que é velho e não pertence a
+    // nenhuma instância viva.
+    const _PruneInstanceLogs = async () => {
+        const logList = await ListInstanceLogs()
+        const limitMs = Date.now() - (INSTANCE_LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000)
+        const logDir  = dirname(_CreateInstanceLogPath("x"))
+
+        const removed = logList.filter((log) =>
+            log.status !== instanceStore.STATUS.RUNNING && log.modifiedAt.getTime() < limitMs)
+
+        removed.forEach((log) => {
+            try { fs.unlinkSync(join(logDir, `${log.instanceId}.log`)) } catch(e) {}
+        })
+
+        if(removed.length > 0)
+            _Log("InstanceLogs", `${removed.length} log(s) de instância expirado(s) removido(s)`)
+    }
+
     // PUSH das tarefas internas por instância: o processo de cada instância
     // (desktop) reporta sua lista de tarefas aqui (ReportInstanceTasks) a cada
     // mudança; guardamos o último estado por instanceId e emitimos, para o painel
@@ -212,6 +428,187 @@ const EcosystemManager = (params) => {
     instancesEmitter.setMaxListeners(0)
     const _EmitInstancesChange = () => { try { instancesEmitter.emit("INSTANCES_CHANGE") } catch(e){} }
     const GetInstancesEmitter  = () => instancesEmitter
+
+    // ---- Desempenho por instância ----------------------------------------
+    //
+    // O daemon sabia O QUE colocou no ar, mas não COMO cada coisa está indo. Sem
+    // isto não há gráfico de desempenho possível no painel: ninguém mais tem os
+    // pids, e um painel que amostrasse por conta própria só mediria enquanto
+    // estivesse aberto.
+    //
+    // O sampler é criado UMA vez: uso de CPU é a derivada de um contador
+    // acumulado, então recriá-lo a cada amostra devolveria zero para sempre.
+
+    const metricsSampler = CreateProcessSampler ? CreateProcessSampler() : undefined
+    const metricsHistory = CreateMetricsHistory ? CreateMetricsHistory({ capacity: METRICS_HISTORY_SIZE }) : undefined
+
+    const metricsEmitter = new EventEmitter()
+    metricsEmitter.setMaxListeners(0)
+
+    // Último snapshot completo — é o que um cliente recém-conectado recebe antes
+    // do primeiro tick, para a tela não abrir vazia.
+    let lastMetricsSnapshot = { at: undefined, system: undefined, instances: [] }
+
+    // pids já amostrados, para descartar a linha de base de quem morreu.
+    const sampledPidByInstanceId = new Map()
+
+    let sampleTickCount = 0
+    let metricsTimer
+
+    const _GroupTasksByStatus = (taskList) =>
+        (taskList || []).reduce((acc, task) => ({ ...acc, [task.status]: (acc[task.status] || 0) + 1 }), {})
+
+    // Subárvore de tarefas de uma instância `app`, recortada da lista global do
+    // task-executor do daemon pela task raiz (mesma regra que o painel aplica).
+    const _CollectTaskSubtree = (taskList, rootTaskId) => {
+        const childrenOf = new Map()
+        taskList.forEach((task) => {
+            if(task.pTaskId === undefined || task.pTaskId === null) return
+            childrenOf.set(task.pTaskId, [ ...(childrenOf.get(task.pTaskId) || []), task ])
+        })
+
+        const root = taskList.find((task) => task.taskId === rootTaskId)
+        if(!root) return []
+
+        const seen = new Set()
+        const result = []
+        const _walk = (task) => {
+            if(seen.has(task.taskId)) return
+            seen.add(task.taskId)
+            result.push(task)
+            ;(childrenOf.get(task.taskId) || []).forEach(_walk)
+        }
+        _walk(root)
+        return result
+    }
+
+    // Quantas tarefas internas a instância tem, e em que estado. Cada kind tem
+    // uma fonte diferente: desktop reporta as suas ao daemon (cache), enquanto
+    // as de um app vivem no task-executor in-process.
+    const _CountInstanceTasks = (instance) => {
+        try {
+            if(instance.kind !== instanceStore.KIND.APP){
+                const tasks = instanceTasksCache.get(instance.instanceId)
+                return tasks ? _GroupTasksByStatus(tasks) : undefined
+            }
+            if(!taskExecutorMachineService || instance.taskId === undefined || instance.taskId === null)
+                return undefined
+            return _GroupTasksByStatus(_CollectTaskSubtree(taskExecutorMachineService.ListTasks(), instance.taskId))
+        } catch(e) { return undefined }
+    }
+
+    // Amostra UMA instância. Para desktop/cli mede o GRUPO de processos: o
+    // daemon lança `run package` detached (pgid = pid) e o Electron sobe seus
+    // renderers — medir só o pid registrado mostraria ~0% de CPU.
+    //
+    // `app` roda in-process no daemon, então não existe medição isolada: o que
+    // se reporta é o processo do daemon inteiro, marcado `shared: true` para a
+    // interface poder dizer isso ao usuário em vez de fingir precisão.
+    const _SampleInstance = (instance, at) => {
+        const base = {
+            instanceId:  instance.instanceId,
+            packagePath: instance.packagePath,
+            kind:        instance.kind,
+            status:      instance.status,
+            pid:         instance.pid,
+            at,
+            tasksByStatus: _CountInstanceTasks(instance)
+        }
+
+        if(!metricsSampler) return { ...base, available: false }
+
+        const isInProcess = instance.kind === instanceStore.KIND.APP
+        const sample = isInProcess
+            ? metricsSampler.SampleProcess(process.pid)
+            : (instance.pid
+                ? (metricsSampler.SampleProcessGroup(instance.pid) || metricsSampler.SampleProcess(instance.pid))
+                : undefined)
+
+        if(!sample) return { ...base, available: false }
+
+        if(!isInProcess) sampledPidByInstanceId.set(instance.instanceId, instance.pid)
+
+        return { ...base, ...sample, pid: instance.pid ?? sample.pid, available: true, shared: isInProcess }
+    }
+
+    const _SampleTick = async () => {
+        const at = Date.now()
+
+        const system = metricsSampler ? { at, ...metricsSampler.SampleSystem() } : undefined
+
+        let instanceList = []
+        try { instanceList = await ListInstances() } catch(e) { instanceList = [] }
+
+        const instances = instanceList.map((instance) => _SampleInstance(instance, at))
+
+        const aliveIds = instances.map((sample) => sample.instanceId)
+        if(metricsHistory){
+            instances.forEach((sample) => metricsHistory.Push(sample.instanceId, sample))
+            metricsHistory.KeepOnly(aliveIds)
+        }
+
+        // Linha de base de instância encerrada: sem isto o mapa do sampler
+        // cresceria para sempre num daemon que fica meses no ar.
+        const aliveIdSet = new Set(aliveIds)
+        Array.from(sampledPidByInstanceId.entries())
+            .filter(([instanceId]) => !aliveIdSet.has(instanceId))
+            .forEach(([instanceId, pid]) => {
+                if(metricsSampler) metricsSampler.Forget(pid)
+                sampledPidByInstanceId.delete(instanceId)
+            })
+
+        lastMetricsSnapshot = { at, system, instances }
+        try { metricsEmitter.emit("METRICS_SAMPLE", lastMetricsSnapshot) } catch(e) {}
+
+        // O log só é conferido de tempos em tempos: statar todo tick seria
+        // desperdício para um arquivo que leva horas para chegar ao teto.
+        sampleTickCount += 1
+        if(sampleTickCount % 30 === 0)
+            instanceList.forEach((instance) => _TruncateOversizedLog(instance.instanceId))
+    }
+
+    const _StartMetricsSampling = () => {
+        if(!metricsSampler) {
+            _Log("Metrics", "lib de métricas ausente — desempenho não será reportado")
+            return
+        }
+        if(!metricsSampler.IsSupported()) {
+            _Log("Metrics", "/proc indisponível neste sistema — desempenho não será reportado")
+            return
+        }
+
+        // `unref` para o timer não segurar o processo vivo por conta própria.
+        metricsTimer = setInterval(() => { _SampleTick().catch(() => {}) }, METRICS_SAMPLE_INTERVAL_MS)
+        if(metricsTimer.unref) metricsTimer.unref()
+        _SampleTick().catch(() => {})
+    }
+
+    // Snapshot atual de todas as instâncias + estado da máquina.
+    const ListInstanceMetrics = () => lastMetricsSnapshot
+
+    // Série histórica de UMA instância, para o gráfico. 2 params → objeto.
+    const GetInstanceMetrics = ({ instanceId, limit } = {}) => {
+        if(!instanceId) throw new Error("GetInstanceMetrics: 'instanceId' é obrigatório.")
+        const history = metricsHistory ? metricsHistory.Get(instanceId, limit) : []
+        const current = history.length > 0 ? history[history.length - 1] : undefined
+        return { instanceId, current, history, sampleIntervalMs: METRICS_SAMPLE_INTERVAL_MS }
+    }
+
+    // Stream (WS) das amostras: manda o último snapshot na conexão e, depois,
+    // cada nova amostra. Mesmo contrato dos demais streams do daemon.
+    const MetricsStream = (ws) => {
+        const _send = (snapshot) => { try { ws.send(JSON.stringify(snapshot)) } catch(e){} }
+
+        _send(lastMetricsSnapshot)
+
+        const onSample = (snapshot) => _send(snapshot)
+        metricsEmitter.on("METRICS_SAMPLE", onSample)
+        ws.on && ws.on("close", () => {
+            try { metricsEmitter.removeListener("METRICS_SAMPLE", onSample) } catch(e){}
+        })
+    }
+
+    const GetMetricsEmitter = () => metricsEmitter
 
     // Progresso de LANÇAMENTO de aplicações (para a área de trabalho refletir no
     // ícone: abrindo → build → aberto). O app lançado reporta seus eventos por
@@ -376,6 +773,10 @@ const EcosystemManager = (params) => {
             REPOS_CONF_FILENAME_REPOS_DATA
         })
         await _ReconcileInstances()
+        // Poda antes de começar a medir: a pasta de logs acumula um arquivo por
+        // lançamento e nada os removia.
+        await _PruneInstanceLogs().catch(() => {})
+        _StartMetricsSampling()
         onReady()
     }
 
@@ -721,6 +1122,16 @@ const EcosystemManager = (params) => {
         GetLaunchProgressSnapshot,
         GetLaunchProgressEmitter,
         GetInstancesEmitter,
+
+        // Observabilidade: log e desempenho por instância.
+        ReadInstanceLog,
+        InstanceLogStream,
+        ListInstanceLogs,
+        ListInstanceMetrics,
+        GetInstanceMetrics,
+        MetricsStream,
+        GetMetricsEmitter,
+
         GetTaskExecutorEventEmitter: environmentRuntimeService.GetTaskExecutorEventEmitter
     }
 

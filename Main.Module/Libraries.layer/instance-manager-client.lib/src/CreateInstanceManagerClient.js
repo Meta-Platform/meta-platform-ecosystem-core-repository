@@ -192,6 +192,36 @@ const CreateInstanceManagerClient = ({
         OpenLaunchProgressStream: () =>
             _OpenStream("EcosystemManager", "LaunchProgressStream"),
 
+        // ---- Observabilidade das instâncias ---------------------------------
+
+        // Log de UMA instância (stdout/stderr do processo, para desktop; as
+        // transições de estado da execução, para app in-process). Sem
+        // `fromOffset` devolve as últimas linhas; com ele, só o que veio depois.
+        ReadInstanceLog: ({ instanceId, tailLines, fromOffset } = {}) =>
+            _Call("EcosystemManager", "ReadInstanceLog", { instanceId, tailLines, fromOffset }),
+
+        // Acompanhamento ao vivo do log de uma instância (WebSocket): manda o
+        // trecho atual e depois cada incremento.
+        OpenInstanceLogStream: ({ instanceId } = {}) =>
+            _OpenStream("EcosystemManager", "InstanceLogStream", { instanceId }),
+
+        // Inventário dos logs em disco — inclusive de instâncias já encerradas,
+        // que é justamente quando o log importa mais.
+        ListInstanceLogs: () =>
+            _Call("EcosystemManager", "ListInstanceLogs"),
+
+        // Snapshot de desempenho de todas as instâncias + estado da máquina.
+        ListInstanceMetrics: () =>
+            _Call("EcosystemManager", "ListInstanceMetrics"),
+
+        // Série histórica de desempenho de UMA instância, para o gráfico.
+        GetInstanceMetrics: ({ instanceId, limit } = {}) =>
+            _Call("EcosystemManager", "GetInstanceMetrics", { instanceId, limit }),
+
+        // Stream (WS) das amostras de desempenho, uma a cada tick do daemon.
+        OpenMetricsStream: () =>
+            _OpenStream("EcosystemManager", "MetricsStream"),
+
         // ---- TaskExecutorMachine (tarefas) ----------------------------------
 
         // Lista todas as tarefas do task-executor compartilhado do daemon.

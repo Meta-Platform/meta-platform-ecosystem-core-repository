@@ -10,6 +10,22 @@
     },
     "ECO_DIRPATH_INSTALL_DATA": {
       "type": "string"
+    },
+    "metricsSampleIntervalMs": {
+      "type": "number",
+      "description": "Intervalo de amostragem de desempenho das instâncias, em ms."
+    },
+    "metricsHistorySize": {
+      "type": "number",
+      "description": "Quantas amostras de desempenho manter por instância (janela do gráfico = tamanho × intervalo)."
+    },
+    "instanceLogMaxBytes": {
+      "type": "number",
+      "description": "Tamanho máximo do log de uma instância antes de ser truncado."
+    },
+    "instanceLogRetentionDays": {
+      "type": "number",
+      "description": "Por quantos dias o log de uma instância já encerrada é preservado."
     }
   },
   "required": [

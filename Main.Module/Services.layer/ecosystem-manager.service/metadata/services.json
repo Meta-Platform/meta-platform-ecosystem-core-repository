@@ -12,6 +12,8 @@
                         "resolvePackageNameLib",
                         "jsonFileUtilitiesLib",
                         "instanceStoreLib",
+                        "processMetricsLib",
+                        "taskExecutorMachineService",
                         "ecosystemDefaultsHandlerLib"
                 ],
                 "params": [
@@ -19,6 +21,10 @@
                         "configurationsDirName",
                         "ecosystemDefaultsFileName",
                         "instanceStoreFilePath",
+                        "metricsSampleIntervalMs",
+                        "metricsHistorySize",
+                        "instanceLogMaxBytes",
+                        "instanceLogRetentionDays",
                         "socket"
                 ]
         }

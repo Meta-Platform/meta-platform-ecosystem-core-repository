@@ -53,6 +53,12 @@ if(await instanceManager.IsAvailable())
 | `GetTask({ taskId })` | TaskExecutorMachine | Detalha uma tarefa. |
 | `CreateTasks({ executionParams })` | TaskExecutorMachine | Cria tarefas. |
 | `OpenTaskStatusStream()` | TaskExecutorMachine (WS) | Stream de status das tarefas. |
+| `ReadInstanceLog({ instanceId, tailLines, fromOffset })` | EcosystemManager | Log de uma instância (tail ou incremento a partir de um offset). |
+| `OpenInstanceLogStream({ instanceId })` | EcosystemManager (WS) | Acompanhamento do log ao vivo. |
+| `ListInstanceLogs()` | EcosystemManager | Inventário dos logs em disco, inclusive de instâncias encerradas. |
+| `ListInstanceMetrics()` | EcosystemManager | Snapshot de desempenho de todas as instâncias + máquina. |
+| `GetInstanceMetrics({ instanceId, limit })` | EcosystemManager | Série histórica de desempenho de uma instância. |
+| `OpenMetricsStream()` | EcosystemManager (WS) | Uma amostra de desempenho por tick do daemon. |
 | `ExecuteEnvironment({ environmentPath })` | EnvironmentRuntime | Executa um ambiente. |
 | `ListRunningEnvironments()` | EnvironmentRuntime | Lista ambientes em execução. |
 | `StopExecution({ executionId })` | EnvironmentRuntime | Encerra uma execução. |
