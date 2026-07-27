@@ -42,6 +42,17 @@ Além da orquestração, o serviço expõe o feedback de abertura de apps ao MyD
 Fluxo completo em
 [MyDesktop — feedback de lançamento](https://github.com/Meta-Platform/meta-platform-applications-repository/blob/main/docs/mydesktop-launch-feedback.md).
 
+## Rota inicial de uma aplicação desktop
+
+`RunPackage({ packagePath, startupParams: { initialRoute }, launchedBy })` faz o
+daemon injetar `META_INITIAL_ROUTE` no processo da instância desktop, e o
+[`desktop-window-instance.taskLoader`](https://github.com/Meta-Platform/meta-platform-applications-repository/tree/main/Taskloaders.Module/Loaders.layer/desktop-window-instance.taskLoader)
+a aplica como hash da página. É o que permite uma aplicação abrir outra **já na
+tela certa** — o Package Developer abrindo o Instance Executor na instância que
+acabou de lançar.
+
+> `startupParams` era descartado no caminho desktop (só o in-process o usava).
+
 ## Observabilidade das instâncias
 
 O daemon centraliza a execução, então é ele — e só ele — que pode responder

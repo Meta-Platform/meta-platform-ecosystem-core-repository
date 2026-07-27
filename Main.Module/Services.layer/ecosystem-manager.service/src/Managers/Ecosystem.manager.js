@@ -663,7 +663,7 @@ const EcosystemManager = (params) => {
     // Injeta META_LAUNCH_PROGRESS_SOCKET/META_LAUNCH_ID no env: eles fluem pelo
     // `run` → taskLoader → OpenElectronWindow (que faz ...process.env) até o
     // electron-main, que POSTa o progresso de volta neste socket.
-    const _RunDesktopInSeparateProcess = async (packagePath, launchedBy) => {
+    const _RunDesktopInSeparateProcess = async (packagePath, launchedBy, startupParams) => {
         const instanceId = _CreateInstanceId()
         const executablesDirPath = join(ECO_DIRPATH_INSTALL_DATA, "executables")
         // O processo separado abre um socket expondo seu task-executor; é por ele
@@ -675,6 +675,14 @@ const EcosystemManager = (params) => {
             ...(socket ? { META_LAUNCH_PROGRESS_SOCKET: socket, META_LAUNCH_ID: instanceId } : {}),
             META_INSTANCE_TASK_SOCKET: taskSocketPath,
             META_INSTANCE_TASK_SERVER_NAME: INSTANCE_TASK_SERVER_NAME,
+            // Rota inicial da aplicação, quando quem manda abrir sabe ONDE quer
+            // chegar: é o que permite um aplicativo abrir outro já na tela certa
+            // (o Package Developer manda o Instance Executor abrir direto na
+            // instância que acabou de lançar). Chega até o electron-main pelo
+            // env, como os demais META_*.
+            ...(startupParams && startupParams.initialRoute
+                ? { META_INITIAL_ROUTE: String(startupParams.initialRoute) }
+                : {}),
             // Socket que o electron-main abre para receber comandos de janela
             // (hoje: foco). Flui daqui → `run` → taskLoader → electron-main.
             META_WINDOW_CONTROL_SOCKET: _CreateInstanceWindowSocketPath(instanceId)
@@ -811,8 +819,10 @@ const EcosystemManager = (params) => {
     const RunPackage = async ({ packagePath, startupParams, launchedBy }) => {
         try{
             // DESKTOP → processo separado (isola o Electron do daemon).
+            // `startupParams` era descartado neste caminho; ele é o que carrega
+            // a rota inicial pedida por quem mandou abrir.
             if(await _IsDesktopPackage(packagePath)){
-                const instanceId = await _RunDesktopInSeparateProcess(packagePath, launchedBy)
+                const instanceId = await _RunDesktopInSeparateProcess(packagePath, launchedBy, startupParams)
                 return { instanceId }
             }
 
