@@ -531,6 +531,21 @@ const EcosystemManager = (params) => {
         return { ...base, ...sample, pid: instance.pid ?? sample.pid, available: true, shared: isInProcess }
     }
 
+    // Uma instância desktop REPORTA suas tarefas ao daemon a cada mudança. Se ela
+    // foi lançada por um daemon anterior (readotada no restart), esse push nunca
+    // aconteceu para este processo, e a contagem ficaria vazia até a próxima
+    // mudança de estado dela — que num app estável pode não vir nunca. Um pull
+    // pelo socket da instância preenche o cache uma vez.
+    const _EnsureInstanceTasksCache = async (instanceList) => {
+        const pending = instanceList.filter((instance) =>
+            instance.kind !== instanceStore.KIND.APP && !instanceTasksCache.has(instance.instanceId))
+
+        await Promise.all(pending.map(async (instance) => {
+            const tasks = await ListInstanceTasks(instance.instanceId)
+            if(tasks && tasks.length > 0) instanceTasksCache.set(instance.instanceId, tasks)
+        }))
+    }
+
     const _SampleTick = async () => {
         const at = Date.now()
 
@@ -538,6 +553,8 @@ const EcosystemManager = (params) => {
 
         let instanceList = []
         try { instanceList = await ListInstances() } catch(e) { instanceList = [] }
+
+        try { await _EnsureInstanceTasksCache(instanceList) } catch(e) {}
 
         const instances = instanceList.map((instance) => _SampleInstance(instance, at))
 
