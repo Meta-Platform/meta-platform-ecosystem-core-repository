@@ -25,9 +25,9 @@ const ConvertPathToAbsolutPath = (_path) => join(_path)
     .replace('~', os.homedir())
 
 const RunPackageCommand = async ({ args, startupParams, params }) => {
-    
+
     const executionState = ExecutionDataState()
-    
+
     const { packagePath } = args
 
     const {
