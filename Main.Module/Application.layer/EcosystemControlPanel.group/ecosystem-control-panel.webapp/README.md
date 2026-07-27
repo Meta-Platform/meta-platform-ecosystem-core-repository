@@ -12,6 +12,12 @@ Sobe o backend (`ecosystem-control-panel.webservice` + serviços do grupo) e o
 front-end (`ecosystem-control-panel.webgui`) sobre um `@@/server-service`. Roda na
 porta `9998` por padrão (ver [`metadata/startup-params.json`](./metadata/startup-params.json)).
 
+O estado do painel (`panelStateFilePath`) é um **recurso declarado** em
+[`metadata/storage-params.json`](./metadata/storage-params.json), compartilhado
+com o `.desktopapp` pelo namespace `ecosystem-control-panel` — o caminho quem
+resolve é a
+[resource-params-handler.lib](../../../../../essential-repository/Runtime.Module/MetadataHelpers.layer/resource-params-handler.lib/README.md).
+
 ## Execução
 
 Executado pelo Package Executor a partir do executável `eco-panel`, que o

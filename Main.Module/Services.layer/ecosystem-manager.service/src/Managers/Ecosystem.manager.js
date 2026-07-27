@@ -74,6 +74,7 @@ const EcosystemManager = (params) => {
         instanceStoreLib,
         processMetricsLib,
         ecosystemDefaultsHandlerLib,
+        resourceParamsHandlerLib,
         repositoryManagerService,
         environmentRuntimeService,
         taskExecutorMachineService,
@@ -120,6 +121,13 @@ const EcosystemManager = (params) => {
     // executando pacotes normalmente — só não reporta desempenho.
     const CreateProcessSampler = processMetricsLib && processMetricsLib.require("CreateProcessSampler")
     const CreateMetricsHistory = processMetricsLib && processMetricsLib.require("CreateMetricsHistory")
+
+    // Recursos declarados (socket-params/storage-params) seguem a mesma postura:
+    // uma instalação anterior a esta lib não tem o bound-param no boot.json, e o
+    // daemon precisa continuar executando pacotes — só que sem resolver recurso,
+    // o que mantém válido o caminho literal do startup-params.json de antes.
+    const ApplyResourceParamsToHierarchy = resourceParamsHandlerLib && resourceParamsHandlerLib.require("ApplyResourceParamsToHierarchy")
+    const EnsureResources                = resourceParamsHandlerLib && resourceParamsHandlerLib.require("EnsureResources")
 
     // Carrega UMA vez, na construção do manager, o ecosystem-defaults.json
     // materializado no EcosystemData. Esse objeto é a BASE de startupParams
@@ -830,8 +838,43 @@ const EcosystemManager = (params) => {
         return join(ECO_DIRPATH_INSTALL_DATA, GLOBAL_RT_ENV_DIRNAME)
     }
 
-    const WriteMetadataGraphFile = async (environmentPath, tree) => 
+    const WriteMetadataGraphFile = async (environmentPath, tree) =>
         await WriteObjectToFile(join(environmentPath, ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA), tree)
+
+    // Resolve os recursos que o pacote DECLARA (socket-params/storage-params) e
+    // materializa as pastas antes de executar.
+    //
+    // Roda DEPOIS do BuildMetadataHierarchy de propósito: o merge por-nó de lá é
+    // `{ ...injetado, ...próprio do pacote }`, então o que entra antes é apenas
+    // base e perde para um literal esquecido no startup-params.json — justamente
+    // o caminho absoluto que este mecanismo existe para eliminar. Aplicado
+    // depois, o recurso declarado é a fonte da verdade.
+    const _ResolveDeclaredResources = (metadataHierarchy) => {
+
+        if(!ApplyResourceParamsToHierarchy) return metadataHierarchy
+
+        const {
+            ECOSYSTEMDATA_CONF_DIRNAME_UNIX_SOCKET_DIR,
+            ECOSYSTEMDATA_CONF_DIRNAME_SUPERVISOR_UNIX_SOCKET_DIR,
+            ECOSYSTEMDATA_CONF_DIRNAME_STORAGE_DIR
+        } = ecosystemDefaults
+
+        const resolved = ApplyResourceParamsToHierarchy({
+            metadataHierarchy,
+            installDataDirPath: ECO_DIRPATH_INSTALL_DATA,
+            ECOSYSTEMDATA_CONF_DIRNAME_UNIX_SOCKET_DIR,
+            ECOSYSTEMDATA_CONF_DIRNAME_SUPERVISOR_UNIX_SOCKET_DIR,
+            ECOSYSTEMDATA_CONF_DIRNAME_STORAGE_DIR
+        })
+
+        EnsureResources(resolved.resources)
+
+        resolved.resources
+            .filter(({ owner }) => owner)
+            .forEach(({ kind, parameter, path }) => _Log("Resources", `${kind} ${parameter} → ${path}`))
+
+        return resolved.metadataHierarchy
+    }
 
     const RunPackage = async ({ packagePath, startupParams, launchedBy }) => {
         try{
@@ -852,13 +895,13 @@ const EcosystemManager = (params) => {
             // por-nó feito no ReplaceStartupParams do dependency-graph-builder.
             const injected = { ...ecosystemDefaults, ...(startupParams || {}) }
 
-            const metadataHierarchy = await BuildMetadataHierarchy({
+            const metadataHierarchy = _ResolveDeclaredResources(await BuildMetadataHierarchy({
                 path: packagePath,
                 startupParams: injected,
                 packageList,
                 REPOS_CONF_EXT_GROUP_DIR,
                 PKG_CONF_DIRNAME_METADATA
-            })
+            }))
 
             const environmentName = _GetEnvironmentName(metadataHierarchy, packagePath)
             const localPath =  _GetEnvironmentsPath()

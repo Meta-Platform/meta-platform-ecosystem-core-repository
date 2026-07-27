@@ -1,0 +1,4 @@
+{
+    "instanceManagerSocketPath": { "namespace": "ecosystem-instance-manager.app", "owner": false },
+    "supervisorSocketPath": { "filename": "instance-manager.sock", "scope": "supervisor", "owner": false }
+}

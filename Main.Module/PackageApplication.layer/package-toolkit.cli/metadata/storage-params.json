@@ -1,0 +1,6 @@
+{
+    "WORKSPACE_STORAGE_FILE_PATH": {
+        "namespace": "package-developer",
+        "filename": "package-developer-workspace-store-service.sqlite"
+    }
+}

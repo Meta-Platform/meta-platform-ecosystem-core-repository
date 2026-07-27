@@ -43,6 +43,7 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
         resolvePackageNameLib,
         jsonFileUtilitiesLib,
         ecosystemDefaultsHandlerLib,
+        resourceParamsHandlerLib,
         repositoryUtilitiesLib,
         taskExecutorLib,
         executionParamsGeneratorLib,
@@ -74,6 +75,11 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
     const WriteObjectToFile                            = jsonFileUtilitiesLib.require("WriteObjectToFile")
     const ListPackages                                 = repositoryUtilitiesLib.require("ListPackages")
     const TranslateMetadataHierarchyForExecutionParams = executionParamsGeneratorLib.require("TranslateMetadataHierarchyForExecutionParams")
+    // Opcional pela mesma razão do daemon: uma instalação anterior a esta lib não
+    // a tem no boot.json, e `run package` precisa continuar rodando — sem resolver
+    // recurso, o que mantém válido o caminho literal do startup-params.json.
+    const ApplyResourceParamsToHierarchy               = resourceParamsHandlerLib && resourceParamsHandlerLib.require("ApplyResourceParamsToHierarchy")
+    const EnsureResources                              = resourceParamsHandlerLib && resourceParamsHandlerLib.require("EnsureResources")
     const TaskExecutor                                 = taskExecutorLib.require("TaskExecutor")
     
     const taskExecutor = TaskExecutor({
@@ -226,13 +232,42 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
             REPOS_CONF_EXT_GROUP_DIR,
             REPOS_CONF_EXTLIST_PKG_TYPE
         })
-        const metadataHierarchy = await BuildMetadataHierarchy({
+        // Recursos declarados (socket-params/storage-params) resolvidos DEPOIS do
+        // build: o merge por-nó de lá faz o startup-params.json do pacote sobrepor
+        // a base, então o recurso só vence um literal esquecido se for aplicado
+        // por último. Materializa as pastas antes de executar.
+        const _ResolveDeclaredResources = (metadataHierarchy) => {
+
+            if(!ApplyResourceParamsToHierarchy) return metadataHierarchy
+
+            const resolved = ApplyResourceParamsToHierarchy({
+                metadataHierarchy,
+                installDataDirPath: absolutInstallDataDirPath,
+                ECOSYSTEMDATA_CONF_DIRNAME_UNIX_SOCKET_DIR: ecosystemDefaults.ECOSYSTEMDATA_CONF_DIRNAME_UNIX_SOCKET_DIR,
+                ECOSYSTEMDATA_CONF_DIRNAME_SUPERVISOR_UNIX_SOCKET_DIR: ecosystemDefaults.ECOSYSTEMDATA_CONF_DIRNAME_SUPERVISOR_UNIX_SOCKET_DIR,
+                ECOSYSTEMDATA_CONF_DIRNAME_STORAGE_DIR: ecosystemDefaults.ECOSYSTEMDATA_CONF_DIRNAME_STORAGE_DIR
+            })
+
+            EnsureResources(resolved.resources)
+
+            resolved.resources
+                .filter(({ owner }) => owner)
+                .forEach(({ kind, parameter, path }) => loggerEmitter.emit("log", {
+                    sourceName: "RunPackage",
+                    type: "info",
+                    message: `${kind} ${parameter} → ${path}`
+                }))
+
+            return resolved.metadataHierarchy
+        }
+
+        const metadataHierarchy = _ResolveDeclaredResources(await BuildMetadataHierarchy({
             path: packagePath,
             startupParams: { ...ecosystemDefaults },
             packageList,
             REPOS_CONF_EXT_GROUP_DIR,
             PKG_CONF_DIRNAME_METADATA
-        })
+        }))
 
         const environmentName = _GetEnvironmentName(metadataHierarchy, packagePath)
         const localPath =  _GetEnvironmentsPath()

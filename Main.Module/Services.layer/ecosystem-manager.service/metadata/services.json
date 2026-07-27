@@ -14,7 +14,8 @@
                         "instanceStoreLib",
                         "processMetricsLib",
                         "taskExecutorMachineService",
-                        "ecosystemDefaultsHandlerLib"
+                        "ecosystemDefaultsHandlerLib",
+                        "resourceParamsHandlerLib"
                 ],
                 "params": [
                         "ECO_DIRPATH_INSTALL_DATA",

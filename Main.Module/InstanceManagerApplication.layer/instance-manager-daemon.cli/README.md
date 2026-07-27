@@ -37,8 +37,13 @@ autostart no login, invoque este comando pelo mecanismo de sessão do SO
 
 ## Parâmetros (`metadata/startup-params.json`)
 
-`ecosystemDataPath`, `executablesDirName` (dir dos executáveis),
-`targetExecutable` (`executor-manager`), `instanceManagerSocketPath` (socket
-removido antes de cada restart para evitar EADDRINUSE).
+`ecosystemDataPath`, `executablesDirName` (dir dos executáveis) e
+`targetExecutable` (`executor-manager`).
+
+`instanceManagerSocketPath` (socket removido antes de cada restart para evitar
+EADDRINUSE) e `supervisorSocketPath` vêm de `metadata/socket-params.json`: são
+**referências** aos sockets de outros componentes, resolvidas pela
+[resource-params-handler.lib](../../../../essential-repository/Runtime.Module/MetadataHelpers.layer/resource-params-handler.lib/README.md)
+— por isso o caminho não aparece mais copiado aqui.
 
 > Consulte a [Arquitetura](https://github.com/Meta-Platform/.github/blob/main/docs/ARQUITETURA.md).

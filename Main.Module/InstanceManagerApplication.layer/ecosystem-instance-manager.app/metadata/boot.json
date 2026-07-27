@@ -68,7 +68,8 @@
                 "instanceStoreLib": "@/instance-store.lib",
                 "processMetricsLib": "@/process-metrics.lib",
                 "taskExecutorMachineService": "@@/standard-task-executor-machine-service",
-                "ecosystemDefaultsHandlerLib": "@/ecosystem-defaults-handler.lib"
+                "ecosystemDefaultsHandlerLib": "@/ecosystem-defaults-handler.lib",
+                "resourceParamsHandlerLib": "@/resource-params-handler.lib"
             },
             "params": {
                 "ECO_DIRPATH_INSTALL_DATA": "{{ECO_DIRPATH_INSTALL_DATA}}",

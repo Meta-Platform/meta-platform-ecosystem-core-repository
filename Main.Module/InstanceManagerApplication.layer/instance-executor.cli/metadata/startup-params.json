@@ -1,4 +1,3 @@
 {
-    "platformApplicationSocketPath": "/home/kadisk/EcosystemData/sockets/ecosystem-instance-manager.app.sock",
     "httpServerManagerEndpoint": "/server-manager/status"
 }

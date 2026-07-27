@@ -31,5 +31,10 @@ do ecossistema. Comunica-se com a aplicação principal pelo socket
 Parâmetros de boot: `platformApplicationSocketPath`, `httpServerManagerEndpoint`,
 `REPOS_CONF_EXT_GROUP_DIR`.
 
+`platformApplicationSocketPath` é uma **referência** ao socket do
+`ecosystem-instance-manager.app`, declarada em `metadata/socket-params.json` e
+resolvida pela
+[resource-params-handler.lib](../../../../essential-repository/Runtime.Module/MetadataHelpers.layer/resource-params-handler.lib/README.md).
+
 > Veja o [Guia de Início Rápido](https://github.com/Meta-Platform/.github/blob/main/docs/GUIA-INICIO-RAPIDO.md#6-executar-pacotes-executor--pkg-exec)
 > e o [README do repositório](../../../README.md).

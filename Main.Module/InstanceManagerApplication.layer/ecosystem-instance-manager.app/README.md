@@ -25,6 +25,11 @@ instâncias lançadas são persistidas via `instanceStoreFilePath`.
 Executado pelo Package Executor a partir do executável `executor-manager`,
 escutando no socket informado em `socket`.
 
+`socket` e `instanceStoreFilePath` são **recursos declarados**, não caminhos
+escritos à mão: vêm de `metadata/socket-params.json` e
+`metadata/storage-params.json`, e quem os resolve (e cria as pastas) é a
+[resource-params-handler.lib](../../../../essential-repository/Runtime.Module/MetadataHelpers.layer/resource-params-handler.lib/README.md).
+
 ## Serviços disponibilizados
 
 Um controller por área, definidos em `metadata/endpoint-group.json`:

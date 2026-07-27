@@ -1,11 +1,9 @@
 {
-    "socket": "/home/kadisk/EcosystemData/sockets/ecosystem-instance-manager.app.sock",
     "serverName": "PlatformMainApplicationInstance",
     "ECO_DIRPATH_INSTALL_DATA": "/home/kadisk/EcosystemData",
     "ECOSYSTEMDATA_CONF_FILENAME_ECOSYSTEM_DEFAULTS": "ecosystem-defaults.json",
     "PKG_CONF_FILENAME_STARTUP_PARAMS": "startup-params.json",
     "PKG_CONF_FILENAME_BOOT": "boot.json",
-    "instanceStoreFilePath": "~/virtual-desk-state/local-databases/ecosystem-instance-store.sqlite",
     "metricsSampleIntervalMs": 2000,
     "metricsHistorySize": 300,
     "instanceLogMaxBytes": 8388608,

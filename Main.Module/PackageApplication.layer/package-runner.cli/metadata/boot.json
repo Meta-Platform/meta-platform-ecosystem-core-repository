@@ -12,6 +12,7 @@
                 "repositoryUtilitiesLib":"@/repository-utilities.lib",
                 "jsonFileUtilitiesLib": "@/json-file-utilities.lib",
                 "ecosystemDefaultsHandlerLib": "@/ecosystem-defaults-handler.lib",
+                "resourceParamsHandlerLib": "@/resource-params-handler.lib",
                 "executionParamsGeneratorLib": "@/execution-params-generator.lib",
                 "taskExecutorLib": "@/task-executor.lib",
                 "utilitiesLib": "@/utilities.lib",

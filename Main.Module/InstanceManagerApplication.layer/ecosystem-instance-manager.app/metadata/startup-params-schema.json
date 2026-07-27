@@ -2,9 +2,6 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
-    "socket": {
-      "type": "string"
-    },
     "serverName": {
       "type": "string"
     },
@@ -29,7 +26,6 @@
     }
   },
   "required": [
-    "socket",
     "serverName",
     "ECO_DIRPATH_INSTALL_DATA"
   ]

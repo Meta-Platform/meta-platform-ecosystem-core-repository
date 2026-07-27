@@ -3,6 +3,5 @@
     "serverName": "RuntimeManagerWebappInstance",
     "serverManagerUrl": "http://localhost:9998/server-manager/status",
     "installDataDirPath": "~/EcosystemData",
-    "panelStateFilePath": "~/virtual-desk-state/ecosystem-control-panel-state.json",
     "ecosystemDefaultsFileRelativePath": "./config-files/ecosystem-defaults.json"
 }

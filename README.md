@@ -50,6 +50,7 @@ Documentação dedicada em [`docs/`](./docs/):
 | [executables.md](./docs/executables.md) | Executáveis de `applications.json` e a tripla `executable ↔ packageNamespace ↔ supervisorSocketFileName`. |
 | [services.md](./docs/services.md) | Serviços e **quem chama quem**. |
 | [instance-lifecycle.md](./docs/instance-lifecycle.md) | Como um package vira uma instância. |
+| [declared-resources.md](./docs/declared-resources.md) | `socket-params.json` / `storage-params.json`: recursos declarados, onde caem e quem resolve. |
 | [supervision.md](./docs/supervision.md) | Supervisor sockets e a CLI `supervisor`. |
 | [repository-management.md](./docs/repository-management.md) | Repositórios em runtime. |
 | [runtime-environment-management.md](./docs/runtime-environment-management.md) | Ambientes de execução e task executor. |

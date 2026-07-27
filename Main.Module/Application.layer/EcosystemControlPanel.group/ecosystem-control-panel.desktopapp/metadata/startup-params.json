@@ -1,6 +1,5 @@
 {
     "serverName": "RuntimeManagerDesktopInstance",
     "installDataDirPath": "~/EcosystemData",
-    "panelStateFilePath": "~/virtual-desk-state/ecosystem-control-panel-state.json",
     "ecosystemDefaultsFileRelativePath": "./config-files/ecosystem-defaults.json"
 }
