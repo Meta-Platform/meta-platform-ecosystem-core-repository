@@ -1,5 +1,3 @@
-const EventEmitter = require('node:events')
-
 const LEVEL_BY_TYPE = { info : "info", success : "message", warning : "warn", error : "error" }
 
 // Fábrica: o taskloader-registry injeta runtimeDeps (TaskStatusTypes,
@@ -40,10 +38,7 @@ const EndpointInstanceTaskLoader = (runtimeDeps) => {
                 else if(type === "web-graphic-user-interface") {
                     // Era mais uma cópia do formatador de log montada à mão aqui
                     // dentro. O emissor agora delega ao logger global.
-                    const loggerEmitter = new EventEmitter()
-                    loggerEmitter.on("log", (dataLog) =>
-                        instanceLog[LEVEL_BY_TYPE[dataLog.type] || "info"](dataLog.sourceName, dataLog.message))
-                    const output = await StartWebGraphicUserInterfaceService({ loaderParams, loggerEmitter })
+                    const output = await StartWebGraphicUserInterfaceService({ loaderParams })
                     if(!wasStopped){
                         serverService.AddStaticEndpoint({ path:url, staticDir: output, needsAuth })
                         executorChannel.emit(CommandChannelEventTypes.CHANGE_TASK_STATUS, TaskStatusTypes.ACTIVE)

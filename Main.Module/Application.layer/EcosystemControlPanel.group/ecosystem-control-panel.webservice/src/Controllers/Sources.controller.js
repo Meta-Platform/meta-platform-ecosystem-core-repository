@@ -1,6 +1,4 @@
 const path = require("path")
-const EventEmitter = require('node:events')
-
 const ExtractSourceListBySourcesData = (sourcesData) => {
 
     const repositoryNamespaceList = Object.keys(sourcesData)
@@ -62,14 +60,24 @@ const SourcesController = (params) => {
     // Cada operação de escrita reporta seu progresso pelo NotificationHub,
     // exatamente como o comando `repo` faz no terminal — assim a UI recebe os
     // mesmos logs em tempo real.
-    const _BuildLoggerEmitter = (origin) => {
-        const loggerEmitter = new EventEmitter()
-        loggerEmitter.on("log", (dataLog) => NotifyEvent({
-            origin,
-            type: "log",
-            content: dataLog
-        }))
-        return loggerEmitter
+    // O NotificationHub segue existindo — ele é o barramento de eventos do
+    // PAINEL, não o log do ecossistema — e passa a ser alimentado PELO logger:
+    // durante a operação, um ouvinte encaminha cada registro para o hub.
+    // Ver a decisão LOGS-32. O ouvinte é global enquanto está registrado, então
+    // é removido no `finally`.
+    const _WithLogNotification = async (origin, Executar) => {
+        const RemoverOuvinte = Log.AddSink({
+            Write : (record) => NotifyEvent({
+                origin,
+                type    : "log",
+                content : { sourceName : record.source, type : record.level, message : record.message }
+            })
+        })
+        try {
+            return await Executar()
+        } finally {
+            RemoverOuvinte()
+        }
     }
 
     const _NotifyStructured = ({ origin, type, title, message, data }) =>
@@ -141,13 +149,12 @@ const SourcesController = (params) => {
 
         const ecosystemDefaults = await _GetEcosystemDefaults()
 
-        await UpdateRepository({
+        await _WithLogNotification("SourcesController.UpdateRepository", () => UpdateRepository({
             repositoryNamespace,
             sourceData,
             installDataDirPath: ecosystemdataHandlerService.GetEcosystemDataPath(),
-            ecosystemDefaults,
-            loggerEmitter: _BuildLoggerEmitter("SourcesController.UpdateRepository")
-        })
+            ecosystemDefaults
+        }))
 
         _NotifyStructured({
             origin: "SourcesController.UpdateRepository",
@@ -192,14 +199,13 @@ const SourcesController = (params) => {
 
         const ecosystemDefaults = await _GetEcosystemDefaults()
 
-        await InstallRepositoryLib({
+        await _WithLogNotification("SourcesController.InstallRepository", () => InstallRepositoryLib({
             repositoryNamespace,
             sourceData,
             executablesToInstall: executables,
             installDataDirPath: ecosystemdataHandlerService.GetEcosystemDataPath(),
-            ecosystemDefaults,
-            loggerEmitter: _BuildLoggerEmitter("SourcesController.InstallRepository")
-        })
+            ecosystemDefaults
+        }))
 
         _NotifyStructured({
             origin: "SourcesController.InstallRepository",
@@ -219,13 +225,12 @@ const SourcesController = (params) => {
 
         const ecosystemDefaults = await _GetEcosystemDefaults()
 
-        await ChangeRepositorySourceLib({
+        await _WithLogNotification("SourcesController.ChangeRepositorySource", () => ChangeRepositorySourceLib({
             repositoryNamespace,
             sourceData,
             installDataDirPath: ecosystemdataHandlerService.GetEcosystemDataPath(),
-            ecosystemDefaults,
-            loggerEmitter: _BuildLoggerEmitter("SourcesController.ChangeRepositorySource")
-        })
+            ecosystemDefaults
+        }))
 
         _NotifyStructured({
             origin: "SourcesController.ChangeRepositorySource",

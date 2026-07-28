@@ -13,8 +13,7 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps) => {
     const { ComputeObjectHash, WebInterfaceBuilder } = runtimeDeps
 
     const StartWebGraphicUserInterfaceService = async ({
-        loaderParams,
-        loggerEmitter
+        loaderParams
     }) => {
         const {
             nodejsPackageHandler,
@@ -50,11 +49,9 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps) => {
             output,
             url : serverEndpointStatus,
             serverAppName : serverName,
-            loggerEmitter,
             onChangeProgress : (percentage) => {
                 if(percentage < 100){
-                    loggerEmitter
-                        && loggerEmitter.emit("log", {sourceName: "WebUserInterfacePackager", type:"info", message:`BUILDING ${percentage}%`})
+                        Log.info("WebUserInterfacePackager", `BUILDING ${percentage}%`)
                 }
             }
         })

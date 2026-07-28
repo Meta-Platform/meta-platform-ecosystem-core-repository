@@ -2,8 +2,6 @@ const { join } = require("path")
 const crypto = require('crypto')
 const os = require('os')
 const colors = require("colors")
-const EventEmitter = require('events')
-
 const ConvertToHashSHA256 = (token) => 
     crypto
         .createHash('sha256')
@@ -87,16 +85,9 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
         taskLoaders
     })
 
-    const loggerEmitter = new EventEmitter()
-    loggerEmitter.on("log", (dataLog) => PrintDataLog(dataLog))
-
     taskExecutor
         .AddTaskStatusListener(({taskId, status, objectLoaderType}) => {
-            loggerEmitter && loggerEmitter.emit("log", {
-                sourceName: "TaskExecutor",
-                type: "info",
-                message: GetFormattedMessage(taskId, status, objectLoaderType)
-            })
+            Log.info("TaskExecutor", GetFormattedMessage(taskId, status, objectLoaderType))
         })
 
     // Quando o daemon lança este processo como uma INSTÂNCIA (desktop), ele passa
@@ -232,8 +223,7 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
 
         await PrepareRepositoriesFileJson({
             installDataDirPath:absolutInstallDataDirPath,
-            REPOS_CONF_FILENAME_REPOS_DATA,
-            loggerEmitter
+            REPOS_CONF_FILENAME_REPOS_DATA
         })
         const packageList = await ListPackages({
             installDataDirPath: absolutInstallDataDirPath,
@@ -263,11 +253,7 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
 
             resolved.resources
                 .filter(({ owner }) => owner)
-                .forEach(({ kind, parameter, path }) => loggerEmitter.emit("log", {
-                    sourceName: "RunPackage",
-                    type: "info",
-                    message: `${kind} ${parameter} → ${path}`
-                }))
+                .forEach(({ kind, parameter, path }) => Log.info("RunPackage", `${kind} ${parameter} → ${path}`))
 
             return resolved.metadataHierarchy
         }
@@ -284,11 +270,10 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
         const localPath =  _GetEnvironmentsPath()
         const environmentPath = await CreateEnvironment({
             environmentName, 
-            localPath,
-            loggerEmitter
+            localPath
         })
 
-        await PrepareDataDir({ environmentPath, EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES, loggerEmitter})
+        await PrepareDataDir({ environmentPath, EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES})
         await _WriteMetadataGraphFile(environmentPath, metadataHierarchy)
     
         if(!executionState.CheckIfExecutionCanBeRegistered(environmentPath)){

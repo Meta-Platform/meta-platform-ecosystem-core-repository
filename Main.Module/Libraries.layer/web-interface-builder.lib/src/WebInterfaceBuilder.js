@@ -117,7 +117,6 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
             output,
             url,
             serverAppName,
-            loggerEmitter,
             onChangeProgress
         } = params
 
@@ -143,22 +142,18 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
                 const existDir = await CheckPackageDirExist(context)
 
                 if(existDir){
-                    loggerEmitter
-                        && loggerEmitter.emit("log", {sourceName: "WebInterfaceBuilder", type:"info", message:`Iniciando a construção da interface ${context}`})
+                        Log.info("WebInterfaceBuilder", `Iniciando a construção da interface ${context}`)
                     try{
                         if(err) throw err
                         if(stats.compilation.errors.length > 0) throw stats.compilation.errors
-                        loggerEmitter
-                        && loggerEmitter.emit("log", {sourceName: "WebInterfaceBuilder", type:"info", message:`A interface ${serverAppName} foi construido com sucesso`})
+                        Log.info("WebInterfaceBuilder", `A interface ${serverAppName} foi construido com sucesso`)
                         resolve(stats)
                     }catch(error){
                         console.log(error)
-                        loggerEmitter
-                        && loggerEmitter.emit("log", {sourceName: "WebInterfaceBuilder", type:"error", message:error})
+                        Log.error("WebInterfaceBuilder", error)
                     }
                 } else {
-                    loggerEmitter
-                    && loggerEmitter.emit("log", {sourceName: "WebInterfaceBuilder", type:"error", message:`O pacote ${context} não foi encontrado`})
+                    Log.error("WebInterfaceBuilder", `O pacote ${context} não foi encontrado`)
                     reject()
                 }
             })
@@ -173,14 +168,14 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
 
             compiler.watch(watchOptions, (err, stats) => {
                 if (err) {
-                    loggerEmitter && loggerEmitter.emit("log", {sourceName: "WebInterfaceBuilder", type:"error", message: err})
+                    Log.error("WebInterfaceBuilder", err)
                     return
                 }
                 if (stats.hasErrors()) {
-                    loggerEmitter && loggerEmitter.emit("log", {sourceName: "WebInterfaceBuilder", type:"error", message: stats.compilation.errors})
+                    Log.error("WebInterfaceBuilder", stats.compilation.errors)
                     return
                 }
-                loggerEmitter && loggerEmitter.emit("log", {sourceName: "WebInterfaceBuilder", type:"info", message: `A interface ${serverAppName} foi atualizada com sucesso`})
+                Log.info("WebInterfaceBuilder", `A interface ${serverAppName} foi atualizada com sucesso`)
             })
         }
 

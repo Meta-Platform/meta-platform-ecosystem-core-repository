@@ -269,29 +269,38 @@ const ExecutablesController = (params) => {
 
         const InstallApplication = await _RequireInstallApplication()
 
-        // encaminha os logs da instalação para as notificações do painel
-        const loggerEmitter = {
-            emit: (event, payload) => {
-                if(event === "log" && notificationHubService && notificationHubService.NotifyEvent)
-                    notificationHubService.NotifyEvent({ origin: "InstallExecutable", type: "log", content: payload })
+        // Encaminha os logs da instalação para as notificações do painel. O
+        // NotificationHub é o barramento de eventos da INTERFACE, não o log do
+        // ecossistema — ele permanece, agora alimentado pelo logger (LOGS-32).
+        const RemoverOuvinte = Log.AddSink({
+            Write : (record) => {
+                if(notificationHubService && notificationHubService.NotifyEvent)
+                    notificationHubService.NotifyEvent({
+                        origin  : "InstallExecutable",
+                        type    : "log",
+                        content : { sourceName : record.source, type : record.level, message : record.message }
+                    })
             }
-        }
-
-        await InstallApplication({
-            namespace: declared.repositoryNamespace,
-            deployedRepoPath: declared.repositoryPath,
-            applicationData: {
-                appType: declared.appType,
-                executable: declared.executableName,
-                packageNamespace: declared.packageRepoPath,
-                supervisorSocketFileName: declared.supervisorSocketFileName
-            },
-            installDataDirPath: ecosystemDataPath,
-            ECOSYSTEMDATA_CONF_DIRNAME_GLOBAL_EXECUTABLES_DIR: ecosystemDefaults.ECOSYSTEMDATA_CONF_DIRNAME_GLOBAL_EXECUTABLES_DIR,
-            REPOS_CONF_FILENAME_REPOS_DATA: ecosystemDefaults.REPOS_CONF_FILENAME_REPOS_DATA,
-            supervisorSocketDirPath,
-            loggerEmitter
         })
+
+        try {
+            await InstallApplication({
+                namespace: declared.repositoryNamespace,
+                deployedRepoPath: declared.repositoryPath,
+                applicationData: {
+                    appType: declared.appType,
+                    executable: declared.executableName,
+                    packageNamespace: declared.packageRepoPath,
+                    supervisorSocketFileName: declared.supervisorSocketFileName
+                },
+                installDataDirPath: ecosystemDataPath,
+                ECOSYSTEMDATA_CONF_DIRNAME_GLOBAL_EXECUTABLES_DIR: ecosystemDefaults.ECOSYSTEMDATA_CONF_DIRNAME_GLOBAL_EXECUTABLES_DIR,
+                REPOS_CONF_FILENAME_REPOS_DATA: ecosystemDefaults.REPOS_CONF_FILENAME_REPOS_DATA,
+                supervisorSocketDirPath
+            })
+        } finally {
+            RemoverOuvinte()
+        }
 
         return { installed: true, executableName }
     }

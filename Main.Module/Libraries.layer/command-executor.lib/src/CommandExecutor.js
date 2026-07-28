@@ -1,5 +1,4 @@
 const SmartRequire = require("./SmartRequire")
-const EventEmitter = require('node:events')
 const MountAPIs = require("../../mount-api.lib/src/MountAPIs")
 const colors = SmartRequire("colors")
 
@@ -24,40 +23,17 @@ const CommandExecutor = async ({
     CommandFunction
 }) => {
 
-    const loggerEmitter = new EventEmitter()
-
-    loggerEmitter.on("log", (dataLog) => {
-        const {
-          sourceName,
-          type,
-          message
-        } = dataLog
-
-        const color = GetColorLogByType(type)
-
-        const now = new Date()
-        const offset = now.getTimezoneOffset() * 60000
-        const localISOTime = (new Date(now - offset)).toISOString()
-
-        const typeFormatted = type.padEnd(7)
-
-        const formattedMessage = `${colors.dim(`[${localISOTime}]`)} ${colors.bgBlue("[adm-cli]")} ${colors[color](`[${typeFormatted}]`)} ${colors.inverse(`[${sourceName}]`)} ${message}`
-        console.log(formattedMessage)
-    })
-
     try{
         const APIs = await MountAPIs({
             serverResourceEndpointPath,
             mainApplicationSocketPath
         })
-        loggerEmitter 
-        && loggerEmitter.emit("log", {sourceName: "CommandExecutor", type:"success", message:"Conectado ao "+mainApplicationSocketPath})
-        return await CommandFunction({APIs}, loggerEmitter)
+        Log.message("CommandExecutor", "Conectado ao "+mainApplicationSocketPath)
+        return await CommandFunction({APIs})
     } catch(e){
    
         if(e.erroredSysCall === "connect"){
-            loggerEmitter 
-            && loggerEmitter.emit("log", {sourceName: "CommandExecutor", type:"error", message:"Não foi possivel se conectar com Ecosystem Daemon"})
+            Log.error("CommandExecutor", "Não foi possivel se conectar com Ecosystem Daemon")
         } else throw e
     }
 }
