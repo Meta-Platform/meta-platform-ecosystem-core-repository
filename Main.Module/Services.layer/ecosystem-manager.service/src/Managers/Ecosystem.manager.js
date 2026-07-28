@@ -129,6 +129,17 @@ const EcosystemManager = (params) => {
     const ApplyResourceParamsToHierarchy = resourceParamsHandlerLib && resourceParamsHandlerLib.require("ApplyResourceParamsToHierarchy")
     const EnsureResources                = resourceParamsHandlerLib && resourceParamsHandlerLib.require("EnsureResources")
 
+    // A descrição da colisão vem da lib para que o provisionamento, o daemon e o
+    // executor de linha de comando digam a MESMA frase sobre o mesmo defeito.
+    // Instalação anterior ao módulo continua subindo — só sem o aviso.
+    const DescribeCollision = (() => {
+        try {
+            return resourceParamsHandlerLib.require("DetectResourceParamCollisions").DescribeCollision
+        } catch(e) {
+            return ({ parameter }) => `parâmetro '${parameter}' declarado como recurso já tinha outro valor`
+        }
+    })()
+
     // Carrega UMA vez, na construção do manager, o ecosystem-defaults.json
     // materializado no EcosystemData. Esse objeto é a BASE de startupParams
     // injetada na hierarquia de metadados, para os {{VAR}} dos pacotes
@@ -909,6 +920,14 @@ const EcosystemManager = (params) => {
         resolved.resources
             .filter(({ owner }) => owner)
             .forEach(({ kind, parameter, path }) => _Log("Resources", `${kind} ${parameter} → ${path}`))
+
+        // Colisão de nome (VDRP-233): o recurso declarado acabou de substituir um
+        // valor que o parâmetro já tinha. Aqui isso é AVISO, não recusa — o
+        // ecossistema já está no ar e derrubar o pacote no boot não desfaz o
+        // desvio, só troca um sintoma difícil por uma parada. A recusa mora no
+        // provisionamento, que é onde ainda dá para escolher o nome.
+        ;(resolved.collisions || [])
+            .forEach((collision) => _Log("Resources", `${colors.bgRed("COLISÃO")} ${DescribeCollision(collision)}`))
 
         return resolved.metadataHierarchy
     }
