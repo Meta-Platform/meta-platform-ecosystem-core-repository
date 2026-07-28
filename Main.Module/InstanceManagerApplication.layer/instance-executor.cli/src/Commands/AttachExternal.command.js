@@ -41,8 +41,23 @@ const AttachExternalCommand = async ({ args, startupParams }) => {
     const absolutePackagePath = resolve(process.cwd(), packagePath)
     const identity = DescribeExecution({ packagePath: absolutePackagePath, launchedBy: "attach" })
 
+    // O STDOUT PERTENCE AO PROCESSO HOSPEDADO — e só a ele.
+    //
+    // Um servidor MCP fala JSON-RPC por stdio: um único byte a mais no stdout
+    // quebra o protocolo do lado do cliente. Só que este comando roda dentro do
+    // package-executor, e tanto ele quanto as libs de conexão logam em stdout
+    // ("Conectado ao …"). Enquanto o attach acontece, tudo que for escrito no
+    // stdout é desviado para o stderr; depois o descritor volta ao normal e o
+    // filho o herda intacto.
+    const _silenceStdout = () => {
+        const original = process.stdout.write.bind(process.stdout)
+        process.stdout.write = ((chunk, ...rest) => process.stderr.write(chunk, ...rest))
+        return () => { process.stdout.write = original }
+    }
+
     // 1) Anuncia ao daemon (best-effort).
     let instanceId
+    const restoreStdout = _silenceStdout()
     try {
         await CommandExecutor({
             serverResourceEndpointPath: httpServerManagerEndpoint,
@@ -62,6 +77,8 @@ const AttachExternalCommand = async ({ args, startupParams }) => {
     } catch(e){
         // stderr, nunca stdout: o stdout pertence ao processo hospedado.
         console.error(`[attach] não foi possível registrar no daemon (${e && e.message ? e.message : e}); seguindo assim mesmo.`)
+    } finally {
+        restoreStdout()
     }
 
     // 2) Executa o processo real, herdando os três descritores.
@@ -71,6 +88,7 @@ const AttachExternalCommand = async ({ args, startupParams }) => {
     const detach = async () => {
         if(detached || !instanceId) return
         detached = true
+        const restore = _silenceStdout()
         try {
             await CommandExecutor({
                 serverResourceEndpointPath: httpServerManagerEndpoint,
@@ -81,6 +99,7 @@ const AttachExternalCommand = async ({ args, startupParams }) => {
                 }
             })
         } catch(e){ /* o Reconcile do daemon limpa pelo pid */ }
+        finally { restore() }
     }
 
     // 3) Sinais chegam ao processo real; o registro sai junto.
