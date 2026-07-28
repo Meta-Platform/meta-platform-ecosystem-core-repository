@@ -32,7 +32,7 @@
 				{
 					"name": "level",
 					"in": "body",
-					"type": "string",
+					"type": "any",
 					"required": false
 				},
 				{

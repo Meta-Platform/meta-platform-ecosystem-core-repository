@@ -1,6 +1,6 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { Loader, Label, Dropdown, Segment } from "semantic-ui-react"
+import { Loader, Label, Segment } from "semantic-ui-react"
 
 import GetAPI from "../../Utils/GetAPI"
 import LogViewer from "../Logs.container/LogViewer"
@@ -58,23 +58,13 @@ const EnvironmentLogsTab = ({ serverManagerInformation, environmentName }:any) =
                     Este ambiente ainda não gravou log.
                 </Segment>
 
-    return <>
-        {
-            arquivos.length > 1 &&
-            <Dropdown
-                selection
-                compact
-                value={escolhido?.path}
-                options={arquivos.map((arquivo:any) => ({ key : arquivo.path, value : arquivo.path, text : arquivo.name }))}
-                onChange={(_:any, { value }:any) => setEscolhido(arquivos.find((a:any) => a.path === value))}
-                style={{ marginBottom : 8 }}/>
-        }
-
-        <LogViewer
-            serverManagerInformation={serverManagerInformation}
-            filePath={escolhido?.path}
-            fileName={escolhido?.name}/>
-    </>
+    /* A troca de dia fica no próprio viewer, junto dos demais controles. */
+    return <LogViewer
+                serverManagerInformation={serverManagerInformation}
+                filePath={escolhido?.path}
+                fileName={escolhido?.name}
+                siblings={arquivos}
+                onSelectSibling={(arquivo:any) => setEscolhido(arquivo)}/>
 }
 
 export default EnvironmentLogsTab

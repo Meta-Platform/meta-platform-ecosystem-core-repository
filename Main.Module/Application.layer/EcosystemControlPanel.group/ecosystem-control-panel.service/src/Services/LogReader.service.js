@@ -182,7 +182,14 @@ const LogReaderService = (params) => {
 
     const _Matches = (record, { level, source, text, since, until }) => {
 
-        if (level) {
+        /*
+         * `level` aceita duas formas: uma STRING é piso ("info e acima"), uma
+         * LISTA é conjunto exato ("só warn e error"). A segunda é o que o painel
+         * usa quando o usuário marca níveis avulsos.
+         */
+        if (Array.isArray(level)) {
+            if (level.length > 0 && !level.includes(record.level)) return false
+        } else if (level) {
             const floor = LEVEL_ORDER.indexOf(level)
             const current = LEVEL_ORDER.indexOf(record.level)
             if (floor >= 0 && current >= 0 && current < floor) return false

@@ -43,6 +43,8 @@ const LogsContainer = ({ serverManagerInformation }:any) => {
 	const [ carregando, setCarregando ] = useState<boolean>(true)
 	const [ erro, setErro ] = useState<string>("")
 	const [ selecionado, setSelecionado ] = useState<any>(null)
+	/* Os outros arquivos do MESMO log — é o que permite navegar por dia. */
+	const [ irmaos, setIrmaos ] = useState<any[]>([])
 	const [ abertas, setAbertas ] = useState<any>({ ecosystem : true })
 	const [ filtroDaArvore, setFiltroDaArvore ] = useState<string>("")
 
@@ -71,7 +73,7 @@ const LogsContainer = ({ serverManagerInformation }:any) => {
 				<List.Item
 					key={arquivo.path}
 					active={selecionado?.path === arquivo.path}
-					onClick={() => setSelecionado(arquivo)}
+					onClick={() => { setSelecionado(arquivo); setIrmaos(arquivos) }}
 					style={{
 						cursor : "pointer",
 						padding : "4px 8px",
@@ -159,7 +161,9 @@ const LogsContainer = ({ serverManagerInformation }:any) => {
 			<LogViewer
 				serverManagerInformation={serverManagerInformation}
 				filePath={selecionado?.path}
-				fileName={selecionado?.name}/>
+				fileName={selecionado?.name}
+				siblings={irmaos}
+				onSelectSibling={(arquivo:any) => setSelecionado(arquivo)}/>
 		</Grid.Column>
 	</Grid>
 }

@@ -32,17 +32,15 @@ const COR_POR_NIVEL:any = {
 	fatal   : "#b71c1c"
 }
 
-const OPCOES_DE_NIVEL = [
-	{ key : "todos", value : "", text : "Todos os níveis" },
-	...NIVEIS.map((nivel) => ({ key : nivel, value : nivel, text : `${nivel} e acima` }))
-]
+/* Seleção MÚLTIPLA: o backend entende lista como conjunto exato de níveis. */
+const OPCOES_DE_NIVEL = NIVEIS.map((nivel) => ({ key : nivel, value : nivel, text : nivel }))
 
-const LogViewer = ({ serverManagerInformation, filePath, fileName }:any) => {
+const LogViewer = ({ serverManagerInformation, filePath, fileName, siblings, onSelectSibling }:any) => {
 
 	const [ registros, setRegistros ] = useState<any[]>([])
 	const [ carregando, setCarregando ] = useState<boolean>(false)
 	const [ acompanhando, setAcompanhando ] = useState<boolean>(false)
-	const [ nivel, setNivel ] = useState<string>("")
+	const [ niveis, setNiveis ] = useState<string[]>([])
 	const [ source, setSource ] = useState<string>("")
 	const [ busca, setBusca ] = useState<string>("")
 	const [ erro, setErro ] = useState<string>("")
@@ -62,7 +60,7 @@ const LogViewer = ({ serverManagerInformation, filePath, fileName }:any) => {
 		try {
 			const resposta = await _GetLogsAPI().ReadLog({
 				path   : filePath,
-				level  : nivel || undefined,
+				level  : niveis.length ? niveis : undefined,
 				source : source || undefined,
 				text   : busca || undefined
 			})
@@ -76,7 +74,7 @@ const LogViewer = ({ serverManagerInformation, filePath, fileName }:any) => {
 	}
 
 	/* Recarrega ao trocar de arquivo ou de filtro. */
-	useEffect(() => { _Carregar() }, [ filePath, nivel, source, busca ])
+	useEffect(() => { _Carregar() }, [ filePath, niveis, source, busca ])
 
 	/* Follow: assina o stream e ancora no fim. */
 	useEffect(() => {
@@ -127,15 +125,29 @@ const LogViewer = ({ serverManagerInformation, filePath, fileName }:any) => {
 		<Segment secondary style={{ display : "flex", gap : 8, alignItems : "center", flexWrap : "wrap" }}>
 
 			<Icon name="file alternate"/>
-			<strong style={{ marginRight : 8 }}>{fileName || filePath}</strong>
+
+			{
+				/* Navegação por dia: os outros arquivos do MESMO log. */
+				siblings && siblings.length > 1
+					? <Dropdown
+						selection
+						compact
+						value={filePath}
+						options={siblings.map((irmao:any) => ({ key : irmao.path, value : irmao.path, text : irmao.name }))}
+						onChange={(_:any, { value }:any) => onSelectSibling && onSelectSibling(siblings.find((i:any) => i.path === value))}
+						style={{ minWidth : 190, marginRight : 8 }}/>
+					: <strong style={{ marginRight : 8 }}>{fileName || filePath}</strong>
+			}
 
 			<Dropdown
 				selection
-				compact
+				multiple
+				clearable
+				placeholder="todos os níveis"
 				options={OPCOES_DE_NIVEL}
-				value={nivel}
-				onChange={(_:any, { value }:any) => setNivel(value)}
-				style={{ minWidth : 170 }}/>
+				value={niveis}
+				onChange={(_:any, { value }:any) => setNiveis(value)}
+				style={{ minWidth : 220 }}/>
 
 			<Input
 				icon="code"
@@ -183,7 +195,12 @@ const LogViewer = ({ serverManagerInformation, filePath, fileName }:any) => {
 					<div key={indice} style={{ padding : "2px 0", borderBottom : "1px solid #f0f0f0", whiteSpace : "pre-wrap", wordBreak : "break-word" }}>
 						{
 							registro.raw
-								? <span style={{ color : "#555" }}>{registro.message}</span>
+								? <>
+									<Label size="mini" color="grey" style={{ marginRight : 6 }} title="linha sem estrutura: veio do stdout de um processo">
+										raw
+									</Label>
+									<span style={{ color : "#555" }}>{registro.message}</span>
+								</>
 								: <>
 									<span style={{ color : "#999" }}>{registro.ts}</span>
 									{" "}
