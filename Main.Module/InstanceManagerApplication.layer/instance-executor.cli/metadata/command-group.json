@@ -28,6 +28,24 @@
             ]
         },
         {
+            "namespace": "AttachExternal",
+            "path": "Commands/AttachExternal.command",
+            "command": "attach [packagePath]",
+            "description": "Registrar no monitor um processo externo e executá-lo (use -- antes do comando)",
+            "parameters": [
+                {
+                    "key": "packagePath",
+                    "paramType": "positional",
+                    "valueType": "string",
+                    "describe": "caminho do pacote que este processo executa"
+                }
+            ],
+            "parametersToLoad": [
+                "platformApplicationSocketPath",
+                "httpServerManagerEndpoint"
+            ]
+        },
+        {
             "namespace": "ExecuteEnvironment",
             "path": "Commands/ExecuteEnvironment.command",
             "command": "env [path]",

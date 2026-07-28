@@ -13,6 +13,10 @@ const STOPPED = "STOPPED"
 const KIND_APP     = "app"
 const KIND_DESKTOP = "desktop"
 const KIND_CLI     = "cli"
+// Processo que o daemon NÃO lançou e não controla: ele se anunciou por conta
+// própria (ver AttachExternal). Aparece no monitor, mas parar/focar não se
+// aplicam — quem manda no ciclo de vida é quem o iniciou (IEXP-25).
+const KIND_EXTERNAL = "external"
 
 // Tabela renomeada durante a migração do schema antigo (ver _MigrateLegacySchema).
 const LEGACY_TABLE = "Instances_legacy"
@@ -70,6 +74,10 @@ const InitializeInstanceStore = (storage) => {
         // internas da instância. Nulo para `app` (roda in-process no daemon).
         taskSocketPath: { type: DataTypes.STRING, allowNull: true },
         launchedBy:  { type: DataTypes.STRING, allowNull: true },
+        // Identidade da execução (versão, origem do binário, caminho, commit),
+        // serializada. Responde "esta é a versão mais nova?" sem inspecionar o
+        // processo. Coluna acrescentada depois → entra por ADDED_COLUMNS.
+        identityJson: { type: DataTypes.TEXT, allowNull: true },
         status:      { type: DataTypes.STRING, allowNull: false, defaultValue: RUNNING },
         startedAt:   { type: DataTypes.DATE, allowNull: true },
         stoppedAt:   { type: DataTypes.DATE, allowNull: true }
@@ -80,7 +88,8 @@ const InitializeInstanceStore = (storage) => {
     // roda em try/catch idempotente (ignora "duplicate column" / tabela nova).
     // Mesmo padrão do project-store.lib.
     const ADDED_COLUMNS = [
-        ["Instances", "taskSocketPath", "VARCHAR(255)"]
+        ["Instances", "taskSocketPath", "VARCHAR(255)"],
+        ["Instances", "identityJson", "TEXT"]
     ]
 
     const _MigrateAddedColumns = async () => {
@@ -140,8 +149,14 @@ const InitializeInstanceStore = (storage) => {
         if(hasLegacyRows) await _CopyLegacyRows()
     }
 
-    const _serialize = ({ instanceId, packagePath, kind, pid, taskId, executionId, taskSocketPath, launchedBy, status, startedAt, stoppedAt }) =>
-        ({ instanceId, packagePath, kind, pid, taskId, executionId, taskSocketPath, launchedBy, status, startedAt, stoppedAt })
+    const _parseIdentity = (raw) => {
+        if(!raw) return undefined
+        try { return JSON.parse(raw) } catch(e){ return undefined }
+    }
+
+    const _serialize = ({ instanceId, packagePath, kind, pid, taskId, executionId, taskSocketPath, launchedBy, status, startedAt, stoppedAt, identityJson }) =>
+        ({ instanceId, packagePath, kind, pid, taskId, executionId, taskSocketPath, launchedBy, status, startedAt, stoppedAt,
+           identity: _parseIdentity(identityJson) })
 
     /**
      * Registra o lançamento de uma instância. `instanceId` é gerado por quem
@@ -177,6 +192,38 @@ const InitializeInstanceStore = (storage) => {
         }
 
         const created = await InstanceModel.create(values)
+        return _serialize(created)
+    }
+
+    /**
+     * Registra um processo EXTERNO — iniciado fora do daemon, que se anunciou.
+     *
+     * O caso concreto é o servidor MCP: quem o sobe é o cliente de IA, por stdio,
+     * então ele nunca passou pelo RunPackage e não existia para o monitor. Aqui
+     * ele passa a existir, com a identidade da execução (versão, origem, commit)
+     * que responde "é a versão mais nova?".
+     *
+     * Sempre cria linha nova (como desktop): duas sessões de IA podem ter dois
+     * MCPs do mesmo pacote no ar ao mesmo tempo.
+     */
+    const AttachExternal = async ({ instanceId, packagePath, pid, launchedBy, identity } = {}) => {
+        if(!instanceId) throw new Error("AttachExternal: 'instanceId' é obrigatório.")
+        if(!packagePath) throw new Error("AttachExternal: 'packagePath' é obrigatório.")
+
+        const created = await InstanceModel.create({
+            instanceId,
+            packagePath,
+            kind: KIND_EXTERNAL,
+            pid: pid ?? null,
+            taskId: null,
+            executionId: null,
+            taskSocketPath: null,
+            launchedBy: launchedBy ?? null,
+            identityJson: identity ? JSON.stringify(identity) : null,
+            status: RUNNING,
+            startedAt: new Date(),
+            stoppedAt: null
+        })
         return _serialize(created)
     }
 
@@ -243,7 +290,9 @@ const InitializeInstanceStore = (storage) => {
         const cleaned = []
 
         for (const instance of runningList) {
-            const hasOwnProcess = instance.kind === KIND_DESKTOP || instance.kind === KIND_CLI
+            // Externo tem processo próprio e pode morrer sem detach (kill -9,
+            // cliente de IA fechado): o pid é a única verdade sobre ele.
+            const hasOwnProcess = instance.kind === KIND_DESKTOP || instance.kind === KIND_CLI || instance.kind === KIND_EXTERNAL
             const isAlive = hasOwnProcess && IsProcessAlive(instance.pid)
 
             if(isAlive) adopted.push(instance)
@@ -260,11 +309,12 @@ const InitializeInstanceStore = (storage) => {
 
     return {
         models: { Instance: InstanceModel },
-        KIND: { APP: KIND_APP, DESKTOP: KIND_DESKTOP, CLI: KIND_CLI },
+        KIND: { APP: KIND_APP, DESKTOP: KIND_DESKTOP, CLI: KIND_CLI, EXTERNAL: KIND_EXTERNAL },
         STATUS: { RUNNING, STOPPED },
         IsProcessAlive: DefaultIsProcessAlive,
         ConnectAndSync,
         RegisterLaunch,
+        AttachExternal,
         AttachRuntimeIds,
         MarkStopped,
         MarkStoppedByPackage,

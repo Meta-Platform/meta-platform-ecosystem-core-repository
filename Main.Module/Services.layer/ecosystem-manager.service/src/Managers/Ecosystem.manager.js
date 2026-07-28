@@ -1018,6 +1018,38 @@ const EcosystemManager = (params) => {
         return result
     }
 
+    // ───────────── Instâncias EXTERNAS (o daemon não as lançou) ─────────────
+    //
+    // Um processo iniciado por fora — o caso concreto é o servidor MCP, que o
+    // cliente de IA sobe por stdio — não existia para o monitor: `RegisterLaunch`
+    // só é chamado por quem o daemon lança. Aqui ele se anuncia e passa a
+    // aparecer, com a identidade da execução (versão, origem do binário, commit).
+    //
+    // O daemon NÃO passa a ser dono do processo: parar/focar continuam sendo de
+    // quem o iniciou. O `kind: external` é o que diz isso ao painel.
+    const AttachExternalInstance = async ({ packagePath, pid, launchedBy, identity } = {}) => {
+        if(!packagePath) throw new Error("AttachExternalInstance: 'packagePath' é obrigatório.")
+        const instanceId = _CreateInstanceId()
+        const registered = await _SafeStore(() => instanceStore.AttachExternal({
+            instanceId, packagePath, pid, launchedBy, identity
+        }))
+        if(!registered) throw new Error("Não foi possível registrar a instância externa.")
+        _AppendInstanceLog(instanceId, `[daemon] external attach ${packagePath} (pid ${pid || "?"})`)
+        _EmitInstancesChange()
+        return { attached: true, instanceId }
+    }
+
+    // O processo externo avisando que terminou. Se ele morrer sem avisar, o
+    // Reconcile/ListInstances derrubam o registro pelo pid — este caminho só
+    // torna o encerramento imediato.
+    const DetachExternalInstance = async (instanceId) => {
+        if(!instanceId) throw new Error("DetachExternalInstance: 'instanceId' é obrigatório.")
+        await _SafeStore(() => instanceStore.MarkStopped({ instanceId }))
+        _AppendInstanceLog(instanceId, "[daemon] external detach")
+        _EmitInstancesChange()
+        return { detached: true, instanceId }
+    }
+
     // Encerra UMA instância pelo seu instanceId — é o que permite fechar a janela
     // certa quando o mesmo pacote está aberto várias vezes.
     // 1 parâmetro (instanceId) chega como valor direto (contrato do server-manager).
@@ -1102,10 +1134,23 @@ const EcosystemManager = (params) => {
                 await _SafeStore(() => instanceStore.MarkStopped({ instanceId: instance.instanceId }))
                 return undefined
             }
-            return { ...instance, status: "ACTIVE" }
+            return { ...instance, status: "ACTIVE", installedVersion: _InstalledVersion(instance) }
         }))
 
         return instanceList.filter(Boolean)
+    }
+
+    // Versão que está NO DISCO agora, para o painel comparar com a que está
+    // rodando e dizer "desatualizada" sem obrigar ninguém a conferir número
+    // (IEXP-28). Só faz sentido para quem registrou identidade no attach.
+    const _InstalledVersion = (instance) => {
+        if(!instance || !instance.identity || !instance.identity.packagePath) return undefined
+        const read = (file) => {
+            try { return JSON.parse(fs.readFileSync(file, "utf8")) } catch(e){ return undefined }
+        }
+        const meta = read(join(instance.identity.packagePath, "metadata", "package.json"))
+        const npm = read(join(instance.identity.packagePath, "package.json"))
+        return (meta && meta.version) || (npm && npm.version) || undefined
     }
 
     // Tarefas INTERNAS de uma instância. Para desktop, consultamos o socket do
@@ -1181,6 +1226,8 @@ const EcosystemManager = (params) => {
         RunPackage,
         StopPackage,
         StopInstance,
+        AttachExternalInstance,
+        DetachExternalInstance,
         FocusInstance,
         ListInstances,
         ListInstanceTasks,
