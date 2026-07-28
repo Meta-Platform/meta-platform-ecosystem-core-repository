@@ -432,6 +432,16 @@ const EcosystemNavigator = ({
                 </List>
             </Accordion.Content>
 
+            { /* Logs — o histórico do ecossistema. A árvore de arquivos vive
+                 dentro do próprio painel, porque ela vem do backend e muda a
+                 cada execução; aqui fica só a porta de entrada. */ }
+            <Accordion.Title
+                active={activeItem === "logs"}
+                onClick={() => onNavigate({ panel: "logs" })}>
+                <Icon name="dropdown"/>
+                <SectionTitle iconName="file alternate outline" label="Logs"/>
+            </Accordion.Title>
+
         </Accordion>
     </div>
 }

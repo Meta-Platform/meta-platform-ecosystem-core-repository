@@ -29,12 +29,14 @@ import {
 import EcosystemNavigator from "../Components/EcosystemNavigator"
 
 import GetAPI from "../Utils/GetAPI"
+import BrowserLog from "../Utils/BrowserLog"
 
 import EnvironmentsContainer            from "../Containers/Environments.container"
 import RepositoriesAndPackagesContainer from "../Containers/RepositoriesAndPackages.container"
 import InstanceSupervisorContainer      from "../Containers/InstanceSupervisor.container"
 import ExecutablesContainer             from "../Containers/Executables.container"
 import ConfigFilesContainer             from "../Containers/ConfigFiles.container"
+import LogsContainer                    from "../Containers/Logs.container"
 import EcosystemDataPathModal           from "../Modals/EcosystemDataPath.modal"
 
 import useWebSocket from "../Hooks/useWebSocket"
@@ -56,7 +58,8 @@ const PANEL_TITLES:any = {
 	"executables":         { title: "Executables",            icon: "terminal" },
 	"environments":        { title: "Environments",           icon: "sitemap" },
 	"repositories":        { title: "Repositories & Packages", icon: "cubes" },
-	"config files":        { title: "Config Files",           icon: "cogs" }
+	"config files":        { title: "Config Files",           icon: "cogs" },
+	"logs":                { title: "Logs",                   icon: "file alternate outline" }
 }
 
 const NOTIFICATION_TYPE_PROPS:any = {
@@ -393,6 +396,15 @@ const ControlPanelPage = ({
 		executableStatus   : QueryParams.executableStatus
 	}
 
+	/*
+	 * Liga o log do navegador assim que o painel sabe com qual servidor falar.
+	 * A partir daqui, erro de tela e `BrowserLog.*` ficam gravados no log da
+	 * aplicação, com origin "browser".
+	 */
+	useEffect(() => {
+		if(HTTPServerManager) BrowserLog.Install(HTTPServerManager)
+	}, [ HTTPServerManager ])
+
 	const renderActivePanel = () => {
 		switch(activeItem){
 			case "welcome":
@@ -419,6 +431,8 @@ const ControlPanelPage = ({
 				return <ConfigFilesContainer
 							serverManagerInformation={HTTPServerManager}
 							configFileName={QueryParams.configFileName}/>
+			case "logs":
+				return <LogsContainer serverManagerInformation={HTTPServerManager}/>
 			case "instance supervisor":
 			default:
 				return <InstanceSupervisorContainer/>

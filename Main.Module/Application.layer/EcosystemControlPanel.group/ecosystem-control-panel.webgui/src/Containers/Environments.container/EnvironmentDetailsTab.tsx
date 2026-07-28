@@ -9,11 +9,14 @@ import {
 import MetadataHierarchyDiagram from "./MetadataHierarchyDiagram"
 import ExecutionPlanView from "./ExecutionPlanView"
 import ExecutionPlanDiagram from "./ExecutionPlanDiagram"
+import EnvironmentLogsTab from "./EnvironmentLogsTab"
 
 const EnvironmentDetailsTab = ({
     metadataHierarchy,
     executionParams,
-    onSaveExecutionParams
+    onSaveExecutionParams,
+    serverManagerInformation,
+    environmentName
 }) => {
 
     const panes = [
@@ -43,6 +46,14 @@ const EnvironmentDetailsTab = ({
                     ? <MetadataHierarchyDiagram metadataHierarchy={metadataHierarchy}/>
                     : <Loader/>
                 }
+            </TabPane>
+        },
+        {
+            menuItem: 'logs',
+            render: () => <TabPane>
+                <EnvironmentLogsTab
+                    serverManagerInformation={serverManagerInformation}
+                    environmentName={environmentName}/>
             </TabPane>
         }
     ]

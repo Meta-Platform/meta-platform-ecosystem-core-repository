@@ -129,7 +129,9 @@ const EnvironmentsContainer = ({
             <EnvironmentDetailsTab
                 metadataHierarchy={metadataHierarchySelected}
                 executionParams={executionParamsSelected}
-                onSaveExecutionParams={handleSaveExecutionParams}/>
+                onSaveExecutionParams={handleSaveExecutionParams}
+                serverManagerInformation={HTTPServerManager}
+                environmentName={environmentNameSelected}/>
         </Segment>
 
     // ---- LISTA ----
