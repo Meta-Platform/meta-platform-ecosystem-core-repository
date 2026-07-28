@@ -736,7 +736,8 @@ const EcosystemManager = (params) => {
             kind: instanceStore.KIND.DESKTOP,
             pid: child.pid,
             taskSocketPath,
-            launchedBy
+            launchedBy,
+            identity: _PackageIdentity(packagePath)
         }))
         // Feedback imediato no ícone enquanto o Electron sobe (antes do window-ready).
         _EmitLaunchProgress({ launchId: instanceId, packagePath, phase: "launching" })
@@ -934,7 +935,8 @@ const EcosystemManager = (params) => {
                     packagePath,
                     kind: instanceStore.KIND.APP,
                     executionId,
-                    launchedBy
+                    launchedBy,
+                    identity: _PackageIdentity(packagePath)
                 })
                 const applicationTask = FindApplicationTaskByRootPath(environmentRuntimeService.ListApplicationTask(), packagePath)
                 if(applicationTask)
@@ -1138,6 +1140,22 @@ const EcosystemManager = (params) => {
         }))
 
         return instanceList.filter(Boolean)
+    }
+
+    // Identidade do PACOTE que está sendo lançado — versão e código de onde ele
+    // veio. Diferente do attach externo, aqui quem lê o disco é o daemon, então
+    // não faz sentido registrar origem/executável (seriam os DELE, não os da
+    // instância); o que interessa e é verdadeiro é a versão e o commit.
+    const _PackageIdentity = (packagePath) => {
+        if(!packagePath) return undefined
+        const read = (file) => {
+            try { return JSON.parse(fs.readFileSync(file, "utf8")) } catch(e){ return undefined }
+        }
+        const meta = read(join(packagePath, "metadata", "package.json"))
+        const npm = read(join(packagePath, "package.json"))
+        const version = (meta && meta.version) || (npm && npm.version)
+        if(!version) return undefined
+        return { packagePath, version, namespace: meta && meta.namespace }
     }
 
     // Versão que está NO DISCO agora, para o painel comparar com a que está
