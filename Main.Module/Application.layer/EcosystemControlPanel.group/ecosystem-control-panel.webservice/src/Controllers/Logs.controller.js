@@ -10,6 +10,9 @@ const fs = require("fs")
 
 const FOLLOW_INTERVAL_MS = 800
 
+/* Teto de registros por requisição de ingestão — a trava do lado do servidor. */
+const MAX_RECORDS_PER_INGEST = 200
+
 const LogsController = (params) => {
 
     const {
@@ -88,9 +91,17 @@ const LogsController = (params) => {
 
         const browserLog = Log.child({ origin : "browser" })
 
+        /*
+         * Teto do SERVIDOR. O cliente já limita a fila, mas o backend não pode
+         * confiar nisso: qualquer aba aberta pode mandar um lote enorme, e é o
+         * arquivo de log daqui que afogaria. O excedente vira UMA linha.
+         */
+        const aceitos = records.slice(0, MAX_RECORDS_PER_INGEST)
+        const excedente = records.length - aceitos.length
+
         let ingested = 0
 
-        for (const record of records) {
+        for (const record of aceitos) {
             try {
                 const level = typeof browserLog[record.level] === "function" ? record.level : "info"
                 browserLog[level](record.source || "<browser>", record.message, record.data)
@@ -100,7 +111,13 @@ const LogsController = (params) => {
             }
         }
 
-        return { ingested }
+        if (excedente > 0) {
+            try {
+                browserLog.warn("<browser>", `${excedente} registro(s) do navegador recusado(s): lote acima do teto de ${MAX_RECORDS_PER_INGEST}`)
+            } catch (e) {}
+        }
+
+        return { ingested, rejected : excedente }
     }
 
     return {

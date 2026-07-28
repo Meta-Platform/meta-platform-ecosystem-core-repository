@@ -33,7 +33,11 @@ const _Despachar = async () => {
 
     if(fila.length === 0) return
 
-    const lote = fila.slice(0, MAXIMO_POR_LOTE)
+    const lote = fila.slice(0, MAXIMO_POR_LOTE).map((registro:any) =>
+        registro.repeated
+            ? { ...registro, message : `${registro.message} (×${registro.repeated})` }
+            : registro)
+
     fila = fila.slice(MAXIMO_POR_LOTE)
 
     /* O que foi descartado por flood vira UM registro, não mil. */
@@ -60,10 +64,25 @@ const _Enfileirar = (level:string, source:string, message:any, data?:any) => {
         return
     }
 
+    const texto = typeof message === "string" ? message : JSON.stringify(message)
+
+    /*
+     * Evento REPETIDO vira contagem, não mil linhas iguais. O caso que motiva
+     * isto é o loop de render com log dentro: a mesma mensagem, do mesmo
+     * source, no mesmo nível, centenas de vezes por segundo. Guardar as
+     * repetições não acrescenta nada — saber quantas foram, sim.
+     */
+    const ultimo = fila[fila.length - 1]
+
+    if(ultimo && ultimo.level === level && ultimo.source === (source || "<browser>") && ultimo.message === texto){
+        ultimo.repeated = (ultimo.repeated || 1) + 1
+        return
+    }
+
     fila.push({
         level,
         source  : source || "<browser>",
-        message : typeof message === "string" ? message : JSON.stringify(message),
+        message : texto,
         data
     })
 }
