@@ -10,7 +10,6 @@ const ConvertToHashSHA256 = (token) =>
 
 const ExecutionDataState = require("../Helpers/ExecutionDataState")
 const GetIsolateExecutionParameters = require("../Helpers/GetIsolateExecutionParameters")
-const PrintDataLog = require("../Helpers/PrintDataLog")
 const GetColorLogByStatus = require("../Helpers/GetColorLogByStatus")
 const StartInstanceTaskSocketServer = require("../Helpers/StartInstanceTaskSocketServer")
 const ReportInstanceTasksToDaemon = require("../Helpers/ReportInstanceTasksToDaemon")
