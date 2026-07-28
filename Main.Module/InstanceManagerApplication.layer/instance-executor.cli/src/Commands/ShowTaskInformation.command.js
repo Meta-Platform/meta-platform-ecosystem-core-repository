@@ -37,7 +37,7 @@ const ShowTaskInformationCommand = async ({ args, startupParams, params}) => {
                 && await RenderActivationRulesTaskTable(task.activationRules)
 
         } catch(e){
-            console.log(e)
+            Log.error("ShowTaskInformation", e)
         }
     }
     

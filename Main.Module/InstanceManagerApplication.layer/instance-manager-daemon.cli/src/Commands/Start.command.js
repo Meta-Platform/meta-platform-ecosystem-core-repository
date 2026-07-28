@@ -21,7 +21,7 @@ const StartCommand = async ({ startupParams, params }) => {
 
     const _Log = (message) => {
         const stamp = new Date().toISOString()
-        console.log(`[${stamp}] [instance-manager-daemon] ${message}`)
+        Log.message("Start", `[${stamp}] [instance-manager-daemon] ${message}`)
     }
 
     const supervisor = CreateProcessSupervisor({

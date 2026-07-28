@@ -115,7 +115,7 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
             serverManagerServiceLib,
             serverManagerWebserviceLib
         }).catch((e) =>
-            console.error(`${colors.bgRed("[InstanceTaskSocket]")} falha ao abrir socket de tarefas: ${e.message}`))
+            Log.error("RunPackage", `${colors.bgRed("[InstanceTaskSocket]")} falha ao abrir socket de tarefas: ${e.message}`))
 
         // PUSH: reporta a lista de tarefas ao daemon a cada mudança de status (com
         // debounce leve para não inundar durante o boot). O daemon faz stream ao
@@ -291,13 +291,13 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
 
     }catch(e){
 
-        console.log(e)
+        Log.error("RunPackage", e)
 
         const now = new Date()
         const offset = now.getTimezoneOffset() * 60000
         const localISOTime = (new Date(now - offset)).toISOString()
         const formattedMessage = `${colors.dim(`[${localISOTime}]`)} ${colors.bgCyan.black("[EcosystemManagerService]")} ${colors.inverse(`[RunPackage]`)} ${colors.bgRed("ERROR")} ${e}`
-        console.log(formattedMessage)
+        Log.debug("RunPackage", formattedMessage)
     }
 
 

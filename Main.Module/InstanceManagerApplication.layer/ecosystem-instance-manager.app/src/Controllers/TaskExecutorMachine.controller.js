@@ -12,7 +12,7 @@ const TaskExecutorMachineController = (params) => {
             try{
                 ws.send(JSON.stringify({ taskId, status, objectLoaderType }))
             }catch(e){
-                console.log(e)
+                Log.error("TaskExecutorMachine", e)
             }
         })
     }

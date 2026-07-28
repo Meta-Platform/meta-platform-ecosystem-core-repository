@@ -72,9 +72,9 @@ const ListTasksCommand = async ({ startupParams, params }) => {
         try{
             const taskList = await API.ListTasks()
             const table = await MountTaskTable(taskList)
-            console.log(table.toString())
+            Log.message("ListTasks", table.toString())
         } catch(e){
-            console.log(e)
+            Log.error("ListTasks", e)
         }
     }
 

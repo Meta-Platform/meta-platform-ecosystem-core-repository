@@ -7,7 +7,7 @@ const CreateContainerCommand = async ({ args, params }) => {
     const CreateContainer = packageToolkitLib.require("CreateContainer")
 
     const dirPath = await CreateContainer({ parentPath: process.cwd(), name, kind })
-    console.log(`${kind} criado: ${dirPath}`)
+    Log.message("CreateContainer", `${kind} criado: ${dirPath}`)
 }
 
 module.exports = CreateContainerCommand

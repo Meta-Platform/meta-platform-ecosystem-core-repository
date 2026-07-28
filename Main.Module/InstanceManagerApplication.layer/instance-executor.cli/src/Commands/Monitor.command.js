@@ -17,21 +17,21 @@ const MonitorCommand = async ({ startupParams, params }) => {
         try{
             const socket = await API.TaskStatusChange()
 
-            socket.onopen = () => console.log("Conectado ao Task Executor Machine!")
+            socket.onopen = () => Log.message("Monitor", "Conectado ao Task Executor Machine!")
 
             socket.onmessage = function(event) {
                 const {data} = event
                 const message = JSON.parse(data)
-                console.log(message)
+                Log.debug("Monitor", message)
             }
 
             socket.onclose = () => {
-                console.log("onClose")
+                Log.message("Monitor", "onClose")
             }
 
             
         } catch(e){
-            console.log(e)
+            Log.error("Monitor", e)
         }
     }
 

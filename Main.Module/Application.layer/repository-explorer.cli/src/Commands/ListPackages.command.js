@@ -14,7 +14,7 @@ const ListPackagesCommand = async ({ startupParams, params }) => {
         .PlatformMainApplicationInstance
         .RepositoryManager
         const listPackages = await API.ListPackages()
-        console.log("=========== Registered Packages ===========")
+        Log.message("ListPackages", "=========== Registered Packages ===========")
         listPackages
             .forEach(package => {
                 const { 
@@ -25,10 +25,10 @@ const ListPackagesCommand = async ({ startupParams, params }) => {
                     moduleName, 
                     namespaceRepo 
                 } = package
-                console.log(`\x1b[2m${namespaceRepo}.${moduleName}.${layerName}\x1b[0m${parentGroup ? `.\x1b[3m${parentGroup}\x1b[0m`: ""}.\x1b[1m${packageName}\x1b[0m.${ext}`)
+                Log.message("ListPackages", `\x1b[2m${namespaceRepo}.${moduleName}.${layerName}\x1b[0m${parentGroup ? `.\x1b[3m${parentGroup}\x1b[0m`: ""}.\x1b[1m${packageName}\x1b[0m.${ext}`)
             })
 
-        console.log("\n")
+        Log.message("ListPackages", "\n")
     }
 
     await CommandExecutor({

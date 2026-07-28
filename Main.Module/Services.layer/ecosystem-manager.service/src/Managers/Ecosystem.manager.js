@@ -150,7 +150,7 @@ const EcosystemManager = (params) => {
     const instanceStore = InitializeInstanceStore(instanceStoreFilePath)
 
     const _Log = (action, message) =>
-        console.log(`${colors.bgCyan.black("[EcosystemManagerService]")} ${colors.inverse(`[${action}]`)} ${message}`)
+        Log.info("Ecosystem.manager", `${colors.bgCyan.black("[EcosystemManagerService]")} ${colors.inverse(`[${action}]`)} ${message}`)
 
     // O registro é observabilidade, não caminho crítico: se o SQLite falhar, o
     // lançamento/encerramento continua. Só logamos.
@@ -947,13 +947,13 @@ const EcosystemManager = (params) => {
             return { instanceId }
         }catch(e){
 
-            console.log(e)
+            Log.error("Ecosystem.manager", e)
 
             const now = new Date()
             const offset = now.getTimezoneOffset() * 60000
             const localISOTime = (new Date(now - offset)).toISOString()
             const formattedMessage = `${colors.dim(`[${localISOTime}]`)} ${colors.bgCyan.black("[EcosystemManagerService]")} ${colors.inverse(`[RunPackage]`)} ${colors.bgRed("ERROR")} ${e}`
-            console.log(formattedMessage)
+            Log.debug("Ecosystem.manager", formattedMessage)
         }
     }
 
@@ -1001,7 +1001,7 @@ const EcosystemManager = (params) => {
                 })
             return await Promise.all(packageStatusPromises)
         }catch(e){
-            console.log(e)
+            Log.error("Ecosystem.manager", e)
         }
     }
 

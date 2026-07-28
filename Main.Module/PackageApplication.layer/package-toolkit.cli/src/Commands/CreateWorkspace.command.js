@@ -15,7 +15,7 @@ const CreateWorkspaceCommand = async ({ args, startupParams, params }) => {
 
     const workspace = await store.Create({ name, path })
 
-    console.log(`Workspace "${workspace.name}" salva (${workspace.path}).`)
+    Log.message("CreateWorkspace", `Workspace "${workspace.name}" salva (${workspace.path}).`)
 }
 
 module.exports = CreateWorkspaceCommand

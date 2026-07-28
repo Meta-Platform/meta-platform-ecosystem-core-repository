@@ -17,8 +17,8 @@ const ListRepositoriesCommand = async ({ startupParams, params }) => {
             .PlatformMainApplicationInstance
             .RepositoryManager
     const listRepositories = await API.ListRepositories()
-    console.log("=========== Registered Repositories ===========")
+    Log.message("ListRepositories", "=========== Registered Repositories ===========")
     console.table(listRepositories)
-    console.log("\n")
+    Log.message("ListRepositories", "\n")
 }
 module.exports = ListRepositoriesCommand

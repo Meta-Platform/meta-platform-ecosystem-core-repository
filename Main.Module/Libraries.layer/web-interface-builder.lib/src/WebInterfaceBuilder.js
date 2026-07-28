@@ -149,7 +149,6 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
                         Log.info("WebInterfaceBuilder", `A interface ${serverAppName} foi construido com sucesso`)
                         resolve(stats)
                     }catch(error){
-                        console.log(error)
                         Log.error("WebInterfaceBuilder", error)
                     }
                 } else {

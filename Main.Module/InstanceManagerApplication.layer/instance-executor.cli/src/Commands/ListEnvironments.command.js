@@ -37,9 +37,9 @@ const ListEnvironmentCommand = async ({ startupParams, params }) => {
         try{
             const environmentsInExecution = await API.ListRunningEnvironments()
             const table = MountTaskTable(environmentsInExecution)
-            console.log(table.toString())
+            Log.message("ListEnvironments", table.toString())
         } catch(e){
-            console.log(e)
+            Log.error("ListEnvironments", e)
         }
     }
 

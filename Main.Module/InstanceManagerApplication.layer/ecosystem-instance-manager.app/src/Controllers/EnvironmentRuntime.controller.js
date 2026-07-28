@@ -18,7 +18,7 @@ const EnvironmentRuntimeController = (params) => {
                 try{
                     ws.send(JSON.stringify({ executionId, status }))
                 }catch(e){
-                    console.log(e)
+                    Log.error("EnvironmentRuntime", e)
                 }
             })
     }

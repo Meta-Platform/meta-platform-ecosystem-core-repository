@@ -12,7 +12,7 @@ const NotificationController = (params) => {
             try{
                 ws.send(JSON.stringify(event))
             }catch(e){
-                console.log(e)
+                Log.error("Notification", e)
             }
         })
     }

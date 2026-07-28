@@ -36,7 +36,7 @@ const CreateInstanceSocketHandlerManager = ({
         try {
             InitializeSocketMonitoring(socketFilePath)
         } catch(e){
-            console.log(e)
+            Log.error("CreateInstanceSocketHandlerManager", e)
         }
     }
 

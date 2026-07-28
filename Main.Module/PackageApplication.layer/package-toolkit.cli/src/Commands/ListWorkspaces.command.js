@@ -11,11 +11,11 @@ const ListWorkspacesCommand = async ({ startupParams, params }) => {
     const workspaces = await store.List()
 
     if(workspaces.length === 0){
-        console.log("Nenhuma workspace cadastrada.")
+        Log.message("ListWorkspaces", "Nenhuma workspace cadastrada.")
         return
     }
 
-    workspaces.forEach(({ name, path }) => console.log(`- ${name}\n    ${path}`))
+    workspaces.forEach(({ name, path }) => Log.message("ListWorkspaces", `- ${name}\n    ${path}`))
 }
 
 module.exports = ListWorkspacesCommand

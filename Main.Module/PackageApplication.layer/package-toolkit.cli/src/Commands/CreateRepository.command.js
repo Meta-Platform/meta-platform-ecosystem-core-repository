@@ -8,7 +8,7 @@ const CreateRepositoryCommand = async ({ args, params }) => {
     const CreateRepositoryStruct = packageToolkitLib.require("CreateRepositoryStruct")
 
     const repositoryPath = await CreateRepositoryStruct({ basePath: process.cwd(), name })
-    console.log(`Repositório criado: ${repositoryPath}`)
+    Log.message("CreateRepository", `Repositório criado: ${repositoryPath}`)
 }
 
 module.exports = CreateRepositoryCommand

@@ -22,21 +22,21 @@ const StopEnvironmentCommand = async ({ args, startupParams, params }) => {
             const socket = await API.ExecutionStatusChange({executionId})
 
             socket.onopen = () => 
-                console.log(`Começo do monitoramento de eventos da execution ${executionId}`)
+                Log.message("StopEnvironment", `Começo do monitoramento de eventos da execution ${executionId}`)
 
             socket.onmessage = function(event) {
                 const { data } = event
                 const message = JSON.parse(data)
-                console.log(message)
+                Log.debug("StopEnvironment", message)
                 if(message.status === "TERMINATED"){
                     socket.close()
                 }
             }
 
             socket.onclose = () => 
-                console.log(`Fim do monitoramento de eventos da execution ${executionId}`)
+                Log.message("StopEnvironment", `Fim do monitoramento de eventos da execution ${executionId}`)
         } catch(e){
-            console.log(e)
+            Log.error("StopEnvironment", e)
         }
     }
 

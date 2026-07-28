@@ -22,7 +22,7 @@ const ExecutePackage = async (startupParams, path) => {
                     packagePath:absolutePath
                 })
             }catch(e){
-                console.error(e)
+                Log.error("ExecutePackage", e)
             }
             
         } else {

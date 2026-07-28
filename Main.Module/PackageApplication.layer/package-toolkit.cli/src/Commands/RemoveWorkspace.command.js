@@ -14,7 +14,7 @@ const RemoveWorkspaceCommand = async ({ args, startupParams, params }) => {
 
     const removed = await store.Remove({ name })
 
-    console.log(removed > 0
+    Log.message("RemoveWorkspace", removed > 0
         ? `Workspace "${name}" removida.`
         : `Workspace "${name}" não encontrada.`)
 }

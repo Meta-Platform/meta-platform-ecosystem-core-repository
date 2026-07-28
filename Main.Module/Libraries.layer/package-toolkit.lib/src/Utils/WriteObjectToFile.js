@@ -7,7 +7,7 @@ const WriteObjectToFile = async (filepath, objectContent) => {
         const data = new Uint8Array(Buffer.from( JSON.stringify(objectContent, null, '\t')))
         await writeFile(filepath, data)
     } catch(e){
-        console.log(`erro ao escrever arquivo ${filepath}!`)
+        Log.error("WriteObjectToFile", `erro ao escrever arquivo ${filepath}!`)
         throw e
     }
 }

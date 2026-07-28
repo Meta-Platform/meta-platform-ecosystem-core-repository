@@ -33,7 +33,7 @@ const AttachExternalCommand = async ({ args, startupParams }) => {
     const commandArgs = rest.slice(1)
 
     if(!packagePath || !command){
-        console.error("uso: executor attach <caminho-do-pacote> -- <comando> [args…]")
+        Log.error("AttachExternal", "uso: executor attach <caminho-do-pacote> -- <comando> [args…]")
         process.exitCode = 2
         return
     }
@@ -76,7 +76,7 @@ const AttachExternalCommand = async ({ args, startupParams }) => {
         })
     } catch(e){
         // stderr, nunca stdout: o stdout pertence ao processo hospedado.
-        console.error(`[attach] não foi possível registrar no daemon (${e && e.message ? e.message : e}); seguindo assim mesmo.`)
+        Log.error("AttachExternal", `[attach] não foi possível registrar no daemon (${e && e.message ? e.message : e}); seguindo assim mesmo.`)
     } finally {
         restoreStdout()
     }
@@ -108,7 +108,7 @@ const AttachExternalCommand = async ({ args, startupParams }) => {
 
     await new Promise((done) => {
         child.on("error", async (error) => {
-            console.error(`[attach] falha ao executar "${command}": ${error.message}`)
+            Log.error("AttachExternal", `[attach] falha ao executar "${command}": ${error.message}`)
             await detach()
             process.exitCode = 127
             done()

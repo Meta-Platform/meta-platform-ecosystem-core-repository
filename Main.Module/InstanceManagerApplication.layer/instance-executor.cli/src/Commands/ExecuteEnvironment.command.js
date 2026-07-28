@@ -24,19 +24,19 @@ const ExecuteEnvironmentCommand = async ({ args, startupParams, params }) => {
         const socket = await API.ExecutionStatusChange({executionId})
 
         socket.onopen = () => 
-            console.log(`Começo do monitoramento de eventos da execution ${executionId}`)
+            Log.message("ExecuteEnvironment", `Começo do monitoramento de eventos da execution ${executionId}`)
 
         socket.onmessage = function(event) {
             const { data } = event
             const message = JSON.parse(data)
-            console.log(message)
+            Log.debug("ExecuteEnvironment", message)
             if(message.status === "RUNNING"){
                 socket.close()
             }
         }
 
         socket.onclose = () => 
-            console.log(`Fim do monitoramento de eventos da execution ${executionId}`)
+            Log.message("ExecuteEnvironment", `Fim do monitoramento de eventos da execution ${executionId}`)
     }
 
     await CommandExecutor({

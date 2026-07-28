@@ -14,13 +14,13 @@ const ListModulesCommand = async ({ startupParams, params }) => {
         .PlatformMainApplicationInstance
         .RepositoryManager
         const listModules = await API.ListModules()
-        console.log("=========== Registered Modules ===========")
+        Log.message("ListModules", "=========== Registered Modules ===========")
         listModules
             .forEach(module => {
                 const { moduleName, namespaceRepo } = module
-                console.log(`\x1b[2m${namespaceRepo}.\x1b[0m\x1b[1m${moduleName}\x1b[0m`)
+                Log.message("ListModules", `\x1b[2m${namespaceRepo}.\x1b[0m\x1b[1m${moduleName}\x1b[0m`)
             })
-        console.log("\n")
+        Log.message("ListModules", "\n")
     }
 
     await CommandExecutor({

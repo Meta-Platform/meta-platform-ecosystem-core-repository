@@ -33,7 +33,7 @@ const InstancesSupervisorController = (params) => {
                 const overviewData = instanceMonitoringManager.GetOverview()
                 ws.send(JSON.stringify(overviewData))
             }catch(e){
-                console.log(e)
+                Log.error("InstancesSupervisor", e)
             }
         })
     }

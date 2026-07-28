@@ -23,7 +23,7 @@ const CreatePackageCommand = async ({ args, startupParams, params }) => {
         packagePath = resolve(workingDirPath, namespace)
         await CreateBasePackage({ basePath: packagePath, namespace, author: AUTHOR, PKG_CONF_DIRNAME_METADATA })
     }
-    console.log(`Pacote criado: ${packagePath}`)
+    Log.message("CreatePackage", `Pacote criado: ${packagePath}`)
 }
 
 module.exports = CreatePackageCommand

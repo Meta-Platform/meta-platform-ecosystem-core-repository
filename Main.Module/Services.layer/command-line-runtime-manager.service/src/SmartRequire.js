@@ -8,7 +8,7 @@ const SmartRequire = (moduleName) => {
         const modulePath = path.join(basePath, moduleName)
         return require(modulePath)
     } catch(error) {
-        console.error(`Erro ao tentar carregar o ${moduleName}`)
+        Log.error("SmartRequire", `Erro ao tentar carregar o ${moduleName}`)
         throw error
     }
 }

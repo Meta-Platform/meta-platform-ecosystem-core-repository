@@ -34,7 +34,7 @@ const EcosystemDataHandlerService = (params) => {
                     return data.ecosystemDataPath
             }
         } catch(e) {
-            console.error(e)
+            Log.error("EcosystemDataHandler", e)
         }
         return undefined
     }
@@ -45,7 +45,7 @@ const EcosystemDataHandlerService = (params) => {
             fs.mkdirSync(path.dirname(stateFilePath), { recursive: true })
             fs.writeFileSync(stateFilePath, JSON.stringify({ ecosystemDataPath: newPath }, null, 2))
         } catch(e) {
-            console.error(e)
+            Log.error("EcosystemDataHandler", e)
         }
     }
 
