@@ -198,13 +198,17 @@ const EcosystemManager = (params) => {
     const _CreateInstanceWindowSocketPath = (instanceId) =>
         join(dirname(socket || join(ECO_DIRPATH_INSTALL_DATA, "sockets", "x")), "instance-windows", `${instanceId}.sock`)
 
-    // Log por instância. Fica em <install-data>/instance-logs/<instanceId>.log,
-    // seguindo o mesmo esquema por-instância dos sockets. É o rastro que responde
-    // "por que terminou": para desktop recebe o stdout/stderr do processo (antes
-    // descartado com stdio:"ignore") + código de saída; para app in-process recebe
-    // as transições de estado da execução, incluindo o motivo em caso de ERROR.
+    // Log por instância. Fica em <install-data>/logs/instances/<instanceId>.jsonl,
+    // no domínio de log do ecossistema (antes era `instance-logs/` na raiz, em
+    // texto solto, fora de qualquer padrão). É o rastro que responde "por que
+    // terminou": para desktop recebe o stdout/stderr do processo (antes descartado
+    // com stdio:"ignore") + código de saída; para app in-process recebe as
+    // transições de estado da execução, incluindo o motivo em caso de ERROR.
+    // Ver logging-standard.md.
+    const LOGS_DIRNAME = "logs"
+
     const _CreateInstanceLogPath = (instanceId) =>
-        join(ECO_DIRPATH_INSTALL_DATA, "instance-logs", `${instanceId}.log`)
+        join(ECO_DIRPATH_INSTALL_DATA, LOGS_DIRNAME, "instances", `${instanceId}.jsonl`)
 
     const _EnsureInstanceLogPath = (instanceId) => {
         const logPath = _CreateInstanceLogPath(instanceId)
@@ -212,17 +216,33 @@ const EcosystemManager = (params) => {
         return logPath
     }
 
-    const _NowLocalISO = () => {
-        const now = new Date()
-        const offset = now.getTimezoneOffset() * 60000
-        return (new Date(now - offset)).toISOString()
+    // Um CANAL do logger por instância: escreve JSONL em logs/instances/<id>.jsonl,
+    // com a mesma estrutura de qualquer outro registro do ecossistema. Substitui o
+    // `appendFileSync` com carimbo montado à mão que existia aqui.
+    const _instanceChannels = new Map()
+
+    const _GetInstanceChannel = (instanceId) => {
+
+        if(_instanceChannels.has(instanceId)) return _instanceChannels.get(instanceId)
+
+        const channel = Log.OpenFileChannel
+            ? Log.OpenFileChannel({
+                dirPath  : dirname(_CreateInstanceLogPath(instanceId)),
+                fileName : `${instanceId}.jsonl`,
+                context  : { instanceId }
+            })
+            : null
+
+        _instanceChannels.set(instanceId, channel)
+        return channel
     }
 
     // Anexa uma linha ao log da instância. Observabilidade, não caminho crítico:
     // qualquer erro de escrita é engolido para não derrubar um launch/stop.
     const _AppendInstanceLog = (instanceId, message) => {
         try {
-            fs.appendFileSync(_EnsureInstanceLogPath(instanceId), `[${_NowLocalISO()}] ${message}\n`)
+            const channel = _GetInstanceChannel(instanceId)
+            if(channel) channel.info("Daemon", message)
         } catch(e) {}
     }
 
@@ -235,6 +255,18 @@ const EcosystemManager = (params) => {
     // Teto do que se lê de uma vez. Um log de uma sessão longa tem dezenas de MB;
     // mandar isso pelo socket travaria a interface e não seria lido por ninguém.
     const LOG_READ_MAX_BYTES = 512 * 1024
+
+    // O arquivo é JSONL, mas quem lê (o painel) espera LINHAS DE TEXTO — o
+    // contrato da API não muda com o formato (decisão LOGS-2). Uma linha que não
+    // for JSON é devolvida como está: é log gravado antes desta mudança.
+    const _FormatLogLine = (line) => {
+        if(!line || line[0] !== "{") return line
+        try {
+            const { ts, level, source, message } = JSON.parse(line)
+            if(message === undefined) return line
+            return `[${ts}] [${String(level).padEnd(7)}] [${source}] ${message}`
+        } catch(e) { return line }
+    }
 
     // Lê um pedaço do fim do arquivo (ou a partir de um offset conhecido) e o
     // devolve em linhas. `offset` volta para o chamador continuar de onde parou —
@@ -269,7 +301,7 @@ const EcosystemManager = (params) => {
             if(firstBreak >= 0) text = text.slice(firstBreak + 1)
         }
 
-        const lines = text.split("\n")
+        const lines = text.split("\n").map(_FormatLogLine)
         // Última linha sem "\n" = escrita ainda em curso. Fica para a próxima
         // leitura, e o offset recua para não perdê-la.
         const pendingBytes = Buffer.byteLength(lines[lines.length - 1], "utf8")
@@ -367,9 +399,9 @@ const EcosystemManager = (params) => {
         const instanceById = new Map(instanceList.map((instance) => [instance.instanceId, instance]))
 
         return fileList
-            .filter((fileName) => fileName.endsWith(".log"))
+            .filter((fileName) => fileName.endsWith(".jsonl") || fileName.endsWith(".log"))
             .map((fileName) => {
-                const instanceId = fileName.replace(/\.log$/, "")
+                const instanceId = fileName.replace(/\.(jsonl|log)$/, "")
                 let stats
                 try { stats = fs.statSync(join(logDir, fileName)) }
                 catch(e) { return undefined }
@@ -715,11 +747,15 @@ const EcosystemManager = (params) => {
         // Redireciona stdout/stderr do processo para o log da instância (antes ia
         // para "ignore" e sumia). O filho herda o fd; fechamos nossa cópia após o
         // spawn. Se abrir o log falhar, degrada para "ignore" (não bloqueia o launch).
+        //
+        // O arquivo fica MISTO por natureza: as linhas do daemon são JSONL e o que
+        // o filho despeja no stdout é texto cru (Chromium, libs nativas). Quem lê
+        // trata os dois casos — ver _FormatLogLine.
+        _AppendInstanceLog(instanceId, `[daemon] launching desktop ${packagePath}`)
+
         let logFd
         try {
-            const logPath = _EnsureInstanceLogPath(instanceId)
-            logFd = fs.openSync(logPath, "a")
-            fs.writeSync(logFd, `[${_NowLocalISO()}] [daemon] launching desktop ${packagePath}\n`)
+            logFd = fs.openSync(_EnsureInstanceLogPath(instanceId), "a")
         } catch(e) { logFd = undefined }
 
         const child = spawn(join(executablesDirPath, "run"), ["package", packagePath], {
