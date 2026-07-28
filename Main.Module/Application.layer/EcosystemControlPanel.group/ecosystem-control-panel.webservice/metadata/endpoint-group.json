@@ -1,6 +1,8 @@
 {
-    "params": ["ecosystemDefaultsFileRelativePath"],
-    "bound-params":[
+    "params": [
+        "ecosystemDefaultsFileRelativePath"
+    ],
+    "bound-params": [
         "serverService",
         "instanceMonitoringManager",
         "environmentHandlerService",
@@ -8,7 +10,8 @@
         "ecosystemdataHandlerService",
         "repositoryManagerService",
         "ecosystemInstallUtilitiesLib",
-        "notificationHubService"
+        "notificationHubService",
+        "logReaderService"
     ],
     "endpoints": [
         {
@@ -17,15 +20,15 @@
             "params": {
                 "api-template": "APIs/InstancesSupervisor.api.json",
                 "controller": "Controllers/InstancesSupervisor.controller",
-                "controller-params":{
+                "controller-params": {
                     "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
                 }
             },
             "bound-params": {
-                "serverService":"serverService",
-                "controller-params":{
-                    "ecosystemdataHandlerService":"ecosystemdataHandlerService",
-                    "instanceMonitoringManager":"instanceMonitoringManager",
+                "serverService": "serverService",
+                "controller-params": {
+                    "ecosystemdataHandlerService": "ecosystemdataHandlerService",
+                    "instanceMonitoringManager": "instanceMonitoringManager",
                     "jsonFileUtilitiesLib": "jsonFileUtilitiesLib"
                 }
             }
@@ -36,14 +39,14 @@
             "params": {
                 "api-template": "APIs/ApplicationsAndPackages.api.json",
                 "controller": "Controllers/ApplicationsAndPackages.controller",
-                "controller-params":{
+                "controller-params": {
                     "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
                 }
             },
             "bound-params": {
-                "serverService":"serverService",
-                "controller-params":{
-                    "ecosystemdataHandlerService":"ecosystemdataHandlerService",
+                "serverService": "serverService",
+                "controller-params": {
+                    "ecosystemdataHandlerService": "ecosystemdataHandlerService",
                     "jsonFileUtilitiesLib": "jsonFileUtilitiesLib",
                     "repositoryManagerService": "repositoryManagerService"
                 }
@@ -55,14 +58,14 @@
             "params": {
                 "api-template": "APIs/Executables.api.json",
                 "controller": "Controllers/Executables.controller",
-                "controller-params":{
+                "controller-params": {
                     "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
                 }
             },
             "bound-params": {
-                "serverService":"serverService",
-                "controller-params":{
-                    "ecosystemdataHandlerService":"ecosystemdataHandlerService",
+                "serverService": "serverService",
+                "controller-params": {
+                    "ecosystemdataHandlerService": "ecosystemdataHandlerService",
                     "jsonFileUtilitiesLib": "jsonFileUtilitiesLib"
                 }
             }
@@ -73,13 +76,13 @@
             "params": {
                 "api-template": "APIs/Environments.api.json",
                 "controller": "Controllers/Environments.controller",
-                "controller-params":{
+                "controller-params": {
                     "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
                 }
             },
             "bound-params": {
-                "serverService":"serverService",
-                "controller-params":{
+                "serverService": "serverService",
+                "controller-params": {
                     "jsonFileUtilitiesLib": "jsonFileUtilitiesLib",
                     "environmentHandlerService": "environmentHandlerService",
                     "ecosystemdataHandlerService": "ecosystemdataHandlerService"
@@ -92,15 +95,15 @@
             "params": {
                 "api-template": "APIs/Sources.api.json",
                 "controller": "Controllers/Sources.controller",
-                "controller-params":{
+                "controller-params": {
                     "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
                 }
             },
             "bound-params": {
-                "serverService":"serverService",
-                "controller-params":{
+                "serverService": "serverService",
+                "controller-params": {
                     "notificationHubService": "notificationHubService",
-                    "ecosystemdataHandlerService":"ecosystemdataHandlerService",
+                    "ecosystemdataHandlerService": "ecosystemdataHandlerService",
                     "jsonFileUtilitiesLib": "jsonFileUtilitiesLib",
                     "ecosystemInstallUtilitiesLib": "ecosystemInstallUtilitiesLib"
                 }
@@ -112,14 +115,14 @@
             "params": {
                 "api-template": "APIs/Configurations.api.json",
                 "controller": "Controllers/Configurations.controller",
-                "controller-params":{
+                "controller-params": {
                     "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
                 }
             },
             "bound-params": {
-                "serverService":"serverService",
-                "controller-params":{
-                    "ecosystemdataHandlerService":"ecosystemdataHandlerService",
+                "serverService": "serverService",
+                "controller-params": {
+                    "ecosystemdataHandlerService": "ecosystemdataHandlerService",
                     "jsonFileUtilitiesLib": "jsonFileUtilitiesLib"
                 }
             }
@@ -132,8 +135,8 @@
                 "controller": "Controllers/HostActions.controller"
             },
             "bound-params": {
-                "serverService":"serverService",
-                "controller-params":{
+                "serverService": "serverService",
+                "controller-params": {
                     "notificationHubService": "notificationHubService"
                 }
             }
@@ -146,9 +149,9 @@
                 "controller": "Controllers/EcosystemData.controller"
             },
             "bound-params": {
-                "serverService":"serverService",
-                "controller-params":{
-                    "ecosystemdataHandlerService":"ecosystemdataHandlerService"
+                "serverService": "serverService",
+                "controller-params": {
+                    "ecosystemdataHandlerService": "ecosystemdataHandlerService"
                 }
             }
         },
@@ -160,9 +163,23 @@
                 "controller": "Controllers/Notification.controller"
             },
             "bound-params": {
-                "serverService":"serverService",
-                "controller-params":{
-                    "notificationHubService":"notificationHubService"
+                "serverService": "serverService",
+                "controller-params": {
+                    "notificationHubService": "notificationHubService"
+                }
+            }
+        },
+        {
+            "url": "/logs",
+            "type": "controller",
+            "params": {
+                "api-template": "APIs/Logs.api.json",
+                "controller": "Controllers/Logs.controller"
+            },
+            "bound-params": {
+                "serverService": "serverService",
+                "controller-params": {
+                    "logReaderService": "logReaderService"
                 }
             }
         }

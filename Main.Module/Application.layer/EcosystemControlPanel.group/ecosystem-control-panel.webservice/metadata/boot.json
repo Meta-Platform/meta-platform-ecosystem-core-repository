@@ -1,5 +1,5 @@
 {
-    "params" : [
+    "params": [
         "port",
         "serverName",
         "installDataDirPath",
@@ -9,19 +9,19 @@
         {
             "namespace": "@@/server-service",
             "dependency": "@/server-manager.service/services/HTTPServerService",
-            "params":{
-                "name":"{{serverName}}",
+            "params": {
+                "name": "{{serverName}}",
                 "port": "{{port}}"
             }
         },
         {
             "namespace": "@@/instance-monitoring-manager-service",
             "dependency": "@/instance-supervisor.service/services/InstanceMonitoringManager",
-            "bound-params":{
+            "bound-params": {
                 "supervisorLib": "@/supervisor.lib",
                 "jsonFileUtilitiesLib": "@/json-file-utilities.lib"
             },
-            "params":{
+            "params": {
                 "installDataDirPath": "{{installDataDirPath}}",
                 "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
             }
@@ -29,11 +29,21 @@
         {
             "namespace": "@@/environment-handler-service",
             "dependency": "@/ecosystem-control-panel.service/services/EnvironmentHandlerService",
-            "bound-params":{
+            "bound-params": {
                 "jsonFileUtilitiesLib": "@/json-file-utilities.lib"
             },
-            "params":{
+            "params": {
                 "installDataDirPath": "{{installDataDirPath}}",
+                "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
+            }
+        },
+        {
+            "namespace": "@@/log-reader-service",
+            "dependency": "@/ecosystem-control-panel.service/services/LogReaderService",
+            "bound-params": {
+                "jsonFileUtilitiesLib": "@/json-file-utilities.lib"
+            },
+            "params": {
                 "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
             }
         }
@@ -41,22 +51,23 @@
     "endpoints": [
         {
             "dependency": "@/server-manager.webservice/endpoint-group",
-            "bound-params":{
-               "serverServiceForController":"@@/server-service",
-               "serverService": "@@/server-service"
+            "bound-params": {
+                "serverServiceForController": "@@/server-service",
+                "serverService": "@@/server-service"
             }
         },
         {
             "dependency": "@//endpoint-group",
-            "bound-params":{
+            "bound-params": {
                 "serverService": "@@/server-service",
                 "supervisorLib": "@/supervisor.lib",
                 "instanceMonitoringManager": "@@/instance-monitoring-manager-service",
                 "environmentHandlerService": "@@/environment-handler-service",
                 "jsonFileUtilitiesLib": "@/json-file-utilities.lib",
-                "ecosystemInstallUtilitiesLib": "@/ecosystem-install-utilities.lib"
+                "ecosystemInstallUtilitiesLib": "@/ecosystem-install-utilities.lib",
+                "logReaderService": "@@/log-reader-service"
             },
-            "params":{
+            "params": {
                 "installDataDirPath": "{{installDataDirPath}}",
                 "ecosystemDefaultsFileRelativePath": "{{ecosystemDefaultsFileRelativePath}}"
             }

@@ -2,17 +2,39 @@
     {
         "namespace": "EnvironmentHandlerService",
         "path": "Services/EnvironmentHandler.service",
-        "bound-params":[ "jsonFileUtilitiesLib", "ecosystemdataHandlerService" ],
-        "params": [ "ecosystemDefaultsFileRelativePath" ]
+        "bound-params": [
+            "jsonFileUtilitiesLib",
+            "ecosystemdataHandlerService"
+        ],
+        "params": [
+            "ecosystemDefaultsFileRelativePath"
+        ]
     },
     {
         "namespace": "EcosystemDataHandlerService",
         "path": "Services/EcosystemDataHandler.service",
-        "bound-params":[ "ecosystemDefaultsHandlerLib" ],
-        "params": [ "installDataDirPath", "?panelStateFilePath", "ecosystemDefaultsFileRelativePath" ]
+        "bound-params": [
+            "ecosystemDefaultsHandlerLib"
+        ],
+        "params": [
+            "installDataDirPath",
+            "?panelStateFilePath",
+            "ecosystemDefaultsFileRelativePath"
+        ]
     },
     {
-        "namespace":"NotificationHubService",
-        "path":"Services/NotificationHub.service"
+        "namespace": "NotificationHubService",
+        "path": "Services/NotificationHub.service"
+    },
+    {
+        "namespace": "LogReaderService",
+        "path": "Services/LogReader.service",
+        "bound-params": [
+            "jsonFileUtilitiesLib",
+            "ecosystemdataHandlerService"
+        ],
+        "params": [
+            "ecosystemDefaultsFileRelativePath"
+        ]
     }
 ]

@@ -1,0 +1,91 @@
+{
+	"name": "Logs",
+	"endpoints": [
+		{
+			"summary": "GetLogTree",
+			"method": "GET",
+			"path": "/tree"
+		},
+		{
+			"summary": "ReadLog",
+			"method": "POST",
+			"path": "/read",
+			"parameters": [
+				{
+					"name": "path",
+					"in": "body",
+					"type": "string",
+					"required": true
+				},
+				{
+					"name": "fromOffset",
+					"in": "body",
+					"type": "number",
+					"required": false
+				},
+				{
+					"name": "maxLines",
+					"in": "body",
+					"type": "number",
+					"required": false
+				},
+				{
+					"name": "level",
+					"in": "body",
+					"type": "string",
+					"required": false
+				},
+				{
+					"name": "source",
+					"in": "body",
+					"type": "string",
+					"required": false
+				},
+				{
+					"name": "text",
+					"in": "body",
+					"type": "string",
+					"required": false
+				},
+				{
+					"name": "since",
+					"in": "body",
+					"type": "string",
+					"required": false
+				},
+				{
+					"name": "until",
+					"in": "body",
+					"type": "string",
+					"required": false
+				}
+			]
+		},
+		{
+			"summary": "LogStream",
+			"method": "WS",
+			"path": "/stream/:filePath",
+			"parameters": [
+				{
+					"name": "filePath",
+					"in": "path",
+					"type": "string",
+					"required": true
+				}
+			]
+		},
+		{
+			"summary": "IngestBrowserLog",
+			"method": "POST",
+			"path": "/ingest",
+			"parameters": [
+				{
+					"name": "records",
+					"in": "body",
+					"type": "array",
+					"required": true
+				}
+			]
+		}
+	]
+}
