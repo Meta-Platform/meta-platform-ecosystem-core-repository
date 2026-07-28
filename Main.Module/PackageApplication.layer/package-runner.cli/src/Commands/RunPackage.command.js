@@ -16,6 +16,7 @@ const PrintDataLog = require("../Helpers/PrintDataLog")
 const GetColorLogByStatus = require("../Helpers/GetColorLogByStatus")
 const StartInstanceTaskSocketServer = require("../Helpers/StartInstanceTaskSocketServer")
 const ReportInstanceTasksToDaemon = require("../Helpers/ReportInstanceTasksToDaemon")
+const InstallLogger = require("../Helpers/InstallLogger")
 
  const GetFormattedMessage = (taskId, status, objectLoaderType) => {
     return `[${taskId}] [${objectLoaderType}] ${colors[GetColorLogByStatus(status)](status)}`
@@ -154,6 +155,16 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
     }
 
     const absolutInstallDataDirPath = ConvertPathToAbsolutPath(installDataDirPath)
+
+    // `globalThis.Log` para este processo, carregado da logger.lib do
+    // EssentialRepo instalado. Vem antes de qualquer execução para que o log de
+    // toda a montagem do ambiente já seja gravado.
+    InstallLogger({
+        repositoriesData  : _repositoriesData,
+        ecosystemDefaults : GetEcosystemDefaults(absolutInstallDataDirPath, ecosystemDefaultsFileRelativePath),
+        installDataDirPath: absolutInstallDataDirPath,
+        packagePath
+    })
 
     const _GetRootNamespace = (metadataHierarchy) => {
         const dependency = GetMetadataRootNode(metadataHierarchy)
