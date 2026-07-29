@@ -9,6 +9,11 @@ const { EventEmitter } = require('events')
 // (ver package-runner.cli / StartInstanceTaskSocketServer).
 const INSTANCE_TASK_SERVER_NAME = "InstanceTaskExecutor"
 
+// Estado terminal de uma execução no environment-runtime. É o contrato de
+// string daquele serviço (ExecutionStatusTypes); ele chega aqui como
+// bound-param, e importar o módulo dele acoplaria os dois pacotes.
+const EXECUTION_STATUS_TERMINATED = "TERMINATED"
+
 // Caminho base (fixo) do endpoint de tarefas que o processo da instância publica.
 const INSTANCE_TASK_ENDPOINT = "/task-executor-machine"
 
@@ -1164,6 +1169,21 @@ const EcosystemManager = (params) => {
         }
     }
 
+    // Estado da execução que colocou um app in-process no ar.
+    //
+    // `executionId` ZERO é válido — é o da primeira execução do daemon — então a
+    // ausência precisa ser testada contra null/undefined, e não pela falsidade do
+    // valor. Instância registrada por uma versão anterior, sem executionId, cai
+    // no caminho antigo (sem task, considera parada).
+    const _GetExecutionData = (executionId) => {
+        if(executionId === null || executionId === undefined) return undefined
+        try {
+            return environmentRuntimeService.GetExecutionData(executionId)
+        } catch(e) {
+            return undefined
+        }
+    }
+
     // Instâncias que ESTE daemon colocou no ar, com o estado vivo de cada uma.
     //
     // A verdade de cada kind vem de uma fonte diferente:
@@ -1180,11 +1200,35 @@ const EcosystemManager = (params) => {
         const instanceList = await Promise.all(runningList.map(async (instance) => {
             if(instance.kind === instanceStore.KIND.APP){
                 const task = FindApplicationTaskByRootPath(applicationTasks, instance.packagePath)
-                if(!task){
-                    await _SafeStore(() => instanceStore.MarkStopped({ instanceId: instance.instanceId }))
-                    return undefined
+
+                if(task){
+                    // O taskId só passa a existir DEPOIS do lançamento, então o
+                    // RunPackage quase sempre não consegue amarrá-lo. Amarramos
+                    // aqui, na primeira listagem em que a task aparece — senão a
+                    // instância vive inteira com taskId nulo.
+                    if(instance.taskId === null || instance.taskId === undefined)
+                        await _SafeStore(() => instanceStore.AttachRuntimeIds({ instanceId: instance.instanceId, taskId: task.taskId }))
+
+                    return { ...instance, status: task.status, taskId: task.taskId, objectLoaderType: task.objectLoaderType }
                 }
-                return { ...instance, status: task.status, taskId: task.taskId, objectLoaderType: task.objectLoaderType }
+
+                // Sem application-task NÃO significa parada: entre registrar o
+                // lançamento e a task existir há uma janela (o ambiente ainda
+                // está sendo montado) em que a instância está subindo e não tem
+                // task nenhuma. Marcá-la como parada aí era definitivo — a linha
+                // saía de ListRunning e nunca mais voltava, mesmo com o app no ar
+                // atendendo pelo socket. É por isso que app in-process lançado
+                // pelo daemon sumia do painel um segundo depois de subir.
+                //
+                // Quem sabe se ainda está de pé é a EXECUÇÃO, que existe desde o
+                // primeiro instante.
+                const execution = _GetExecutionData(instance.executionId)
+
+                if(execution && execution.status !== EXECUTION_STATUS_TERMINATED)
+                    return { ...instance, status: execution.status, statusReason: execution.statusReason }
+
+                await _SafeStore(() => instanceStore.MarkStopped({ instanceId: instance.instanceId }))
+                return undefined
             }
 
             if(!instanceStore.IsProcessAlive(instance.pid)){
