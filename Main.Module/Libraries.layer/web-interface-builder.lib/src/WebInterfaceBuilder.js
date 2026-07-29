@@ -136,8 +136,17 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
                         loader: "source-map-loader"
                     },
                     {
+                        // Binários (fontes, imagens, modelos 3D) via ASSET MODULES do webpack 5.
+                        // Antes isto usava file-loader e os ícones do Semantic ficavam invisíveis
+                        // em TODOS os WebGui, por dois defeitos encadeados:
+                        //   1. sem `type`, o webpack 5 tratava o arquivo como asset próprio e
+                        //      emitia o módulo JS do file-loader no lugar do binário — o
+                        //      Chromium recusava a fonte ("OTS parsing error: invalid sfntVersion");
+                        //   2. com esModule (padrão do file-loader), o css-loader interpolava o
+                        //      namespace do módulo e o CSS pedia `url([object Module])` → 404.
+                        // `asset/resource` emite o binário e devolve a URL — resolve os dois.
                         test: /\.(png|jpg|svg|gif|mp4|eot|woff2?|ttf|glb|gltf)$/,
-                        loader: "file-loader"
+                        type: "asset/resource"
                     },
                 ]
             },
