@@ -5,6 +5,20 @@ const exists            = promisify(fs.exists)
 
 const CheckPackageDirExist = (path) => exists(`${path}`)
 
+const NormalizeComponentLibraries = (componentLibraries = []) =>
+    componentLibraries.map((library) => {
+        if (!library || !library.alias || !library.sourcePath)
+            throw new Error("Biblioteca iComponents inválida: alias e sourcePath são obrigatórios")
+        return {
+            alias: library.alias,
+            sourcePath: path.resolve(library.sourcePath),
+            framework: library.framework || "agnostic",
+            nodeModulesPath: library.nodeModulesPath
+                ? path.resolve(library.nodeModulesPath)
+                : undefined
+        }
+    })
+
 const _Debounce = (func, delay) => {
     let inDebounce
     return function() {
@@ -31,8 +45,31 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
         htmlTemplate,
         serverAppName,
         url,
-        onProgress
+        onProgress,
+        componentLibraries
     }) => {
+        const libraries = NormalizeComponentLibraries(componentLibraries)
+        const libraryNodeModules = libraries
+            .map(({ nodeModulesPath }) => nodeModulesPath)
+            .filter(Boolean)
+        const aliases = libraries.reduce((result, { alias, sourcePath }) => {
+            result[alias] = sourcePath
+            return result
+        }, {})
+        const frameworkAliases = libraries.some(({ framework }) => framework === "react")
+            ? {
+                react: path.resolve(nodeModulesPath, "react"),
+                "react-dom": path.resolve(nodeModulesPath, "react-dom")
+            }
+            : {}
+        // O alias do webpack resolve o bundle, mas o ts-loader também precisa
+        // conhecer a mesma topologia para typecheck de imports externos.
+        const libraryTypeScriptPaths = libraries.reduce((result, { alias, sourcePath }) => {
+            result[alias] = [sourcePath]
+            result[`${alias}/*`] = [`${sourcePath}/*`]
+            return result
+        }, {})
+
         return webpack({
             context: context,
             entry: path.resolve(context, entrypoint),
@@ -43,10 +80,14 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
             devtool: "source-map",
             resolve: {
                 extensions:[".ts", ".tsx", ".js", ".json"],
-                modules: [ nodeModulesPath ]
+                modules: [ nodeModulesPath, ...libraryNodeModules ],
+                // Bibliotecas compiladas por fonte devem reutilizar o runtime
+                // React do consumidor. Isso evita hooks quebrados e cópias
+                // duplicadas de React no mesmo WebGui.
+                alias: { ...frameworkAliases, ...aliases }
             },
             resolveLoader:{
-                modules: [ nodeModulesPath ]
+                modules: [ nodeModulesPath, ...libraryNodeModules ]
             },
             module: {
                 rules: [
@@ -57,10 +98,18 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
                             options: {
                                 compilerOptions:{
                                     baseUrl: "./",
+                                    skipLibCheck: true,
                                     paths: {
-                                        "*": [ `${nodeModulesPath}/*` ]
+                                        "*": [
+                                            `${nodeModulesPath}/*`,
+                                            ...libraryNodeModules.map((modulesPath) => `${modulesPath}/*`)
+                                        ],
+                                        ...libraryTypeScriptPaths
                                     },
-                                    typeRoots: [ `${nodeModulesPath}/@types` ]
+                                    typeRoots: [
+                                        `${nodeModulesPath}/@types`,
+                                        ...libraryNodeModules.map((modulesPath) => `${modulesPath}/@types`)
+                                    ]
                                 }
                             }
                         },
@@ -87,7 +136,7 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
                         loader: "source-map-loader"
                     },
                     {
-                        test: /\.(png|jpg|svg|gif|mp4|eot|glb|gltf)$/,
+                        test: /\.(png|jpg|svg|gif|mp4|eot|woff2?|ttf|glb|gltf)$/,
                         loader: "file-loader"
                     },
                 ]
@@ -117,7 +166,8 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
             output,
             url,
             serverAppName,
-            onChangeProgress
+            onChangeProgress,
+            componentLibraries
         } = params
 
 
@@ -134,7 +184,8 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
             htmlTemplate,
             serverAppName,
             url,
-            onProgress: handleChangeProgress
+            onProgress: handleChangeProgress,
+            componentLibraries
         })
 
         const Run = () => new Promise(async (resolve, reject) => {
@@ -183,5 +234,7 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
 
     return WebInterfaceBuilder
 }
+
+CreateWebInterfaceBuilder.NormalizeComponentLibraries = NormalizeComponentLibraries
 
 module.exports = CreateWebInterfaceBuilder

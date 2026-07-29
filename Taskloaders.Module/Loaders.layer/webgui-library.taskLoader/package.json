@@ -1,0 +1,9 @@
+{
+  "name": "webgui-library.taskLoader",
+  "version": "0.0.1",
+  "description": "Carrega pacotes .icomponents para builds WebGui.",
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "BSD-3-Clause"
+}

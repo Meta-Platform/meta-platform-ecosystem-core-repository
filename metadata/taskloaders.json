@@ -11,6 +11,14 @@
                 "colors": "^1.4.0"
             },
             "injectsDeps": true
+        },
+        {
+            "objectLoaderType": "webgui-library",
+            "package": "@/webgui-library.taskLoader",
+            "path": "Taskloaders.Module/Loaders.layer/webgui-library.taskLoader",
+            "entry": "src/WebGuiLibrary.taskLoader",
+            "npmDependencies": {},
+            "injectsDeps": true
         }
     ]
 }

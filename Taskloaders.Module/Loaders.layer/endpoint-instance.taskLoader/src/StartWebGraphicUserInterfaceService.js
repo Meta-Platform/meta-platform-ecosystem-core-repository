@@ -5,6 +5,18 @@ const DIR_SUFFIX = "webInterfaceAssets"
 const MountOutputDirPath = ({environmentPath, outputDirName, RT_ENV_GENERATED_DIR_NAME}) =>
     join(environmentPath, RT_ENV_GENERATED_DIR_NAME, `${outputDirName}.${DIR_SUFFIX}`)
 
+const SerializeComponentLibraries = (componentLibraries = {}) =>
+    Object.keys(componentLibraries).map((requestedAlias) => {
+        const handle = componentLibraries[requestedAlias]
+        const manifest = handle.getManifest()
+        return {
+            alias: requestedAlias || manifest.alias,
+            sourcePath: handle.getSourcePath(),
+            nodeModulesPath: handle.getNodeModulesPath(),
+            framework: manifest.framework
+        }
+    })
+
 // Fábrica: recebe runtimeDeps (ComputeObjectHash + WebInterfaceBuilder injetados pelo
 // registry) e devolve o StartWebGraphicUserInterfaceService — sem require relativo até
 // o essential nem até o WebInterfaceBuilder (que agora vive no ecosystem-core).
@@ -23,7 +35,8 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps) => {
             serverEndpointStatus,
             serverName,
             RT_ENV_GENERATED_DIR_NAME,
-            isWatch
+            isWatch,
+            componentLibraries
         } = loaderParams
 
         const context = nodejsPackageHandler.getSourcePath()
@@ -49,6 +62,7 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps) => {
             output,
             url : serverEndpointStatus,
             serverAppName : serverName,
+            componentLibraries: SerializeComponentLibraries(componentLibraries),
             onChangeProgress : (percentage) => {
                 if(percentage < 100){
                         Log.info("WebUserInterfacePackager", `BUILDING ${percentage}%`)
@@ -64,5 +78,7 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps) => {
 
     return StartWebGraphicUserInterfaceService
 }
+
+CreateStartWebGraphicUserInterfaceService.SerializeComponentLibraries = SerializeComponentLibraries
 
 module.exports = CreateStartWebGraphicUserInterfaceService
