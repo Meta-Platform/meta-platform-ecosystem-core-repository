@@ -1,5 +1,7 @@
 const { join, basename } = require("path")
 
+const EnsureMinimalLogger = require("./EnsureMinimalLogger")
+
 /*
  * Instala o `globalThis.Log` a partir da `logger.lib` do EssentialRepo
  * instalado.
@@ -9,8 +11,15 @@ const { join, basename } = require("path")
  * `handler.require` faz `require.main.require` e mexe no NODE_PATH, o que aqui
  * traria o mesmo desalinhamento de carregamento.
  *
- * Falhar não pode impedir a execução: uma instalação anterior à `logger.lib`
- * simplesmente segue sem `globalThis.Log`.
+ * Falhar não pode impedir a execução — mas também não pode deixar o processo sem
+ * `globalThis.Log` (VDRP-275). O ecossistema chama `Log.<nível>` direto, sem
+ * guarda, então "seguir sem o global" transformava qualquer log posterior em
+ * `ReferenceError: Log is not defined`; dentro de um `catch`, isso APAGA a causa
+ * real da falha. Em 29/07/2026 esse padrão travou o provisionamento do
+ * VirtualDesk por quase 24 horas.
+ *
+ * Por isso todo caminho de saída garante um logger: o canônico quando dá, o
+ * mínimo local quando não dá.
  */
 const InstallLogger = ({
     repositoriesData,
@@ -24,7 +33,7 @@ const InstallLogger = ({
         const essentialRepo = repositoriesData && repositoriesData.EssentialRepo
 
         if (!essentialRepo) {
-            return null
+            return EnsureMinimalLogger()
         }
 
         const InstallGlobalLogger = require(join(
@@ -50,7 +59,10 @@ const InstallLogger = ({
         })
 
     } catch (error) {
-        return null
+        /* A lib canônica não pôde ser carregada (essential anterior à
+           `logger.lib`, caminho que não resolve, instalação a meio caminho).
+           O mínimo local mantém o contrato do global de pé. */
+        return EnsureMinimalLogger()
     }
 }
 
