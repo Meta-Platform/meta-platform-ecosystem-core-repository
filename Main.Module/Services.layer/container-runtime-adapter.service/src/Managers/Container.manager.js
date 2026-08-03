@@ -20,6 +20,9 @@ const {
     RequireSafeFileName,
     VOLUME_MOUNT_PATH
 } = require("../Helpers/ResolveVolumeEntryPath")
+// Desenquadra o fluxo binário do runtime — que vem multiplexado ou cru, e nem
+// sempre no formato que foi pedido (CTMG-21).
+const CreateDockerStreamDecoder = require("../Helpers/DecodeDockerStream")
 
 const DOCKER_EVENT = Symbol('dockerEvent')
 
@@ -380,6 +383,218 @@ const ContainerManager = (params) => {
         } catch (error) {
             console.error(error)
             return null
+        }
+    }
+
+    /*
+        LOG AO VIVO (CTMG-23).
+
+        `GetContainerLogHistory` devolve o que já aconteceu; isto acompanha o
+        que está acontecendo. A diferença que importa para quem chama: aqui não
+        há retorno, há um assinante — `onData` recebe cada pedaço à medida que
+        o container escreve.
+
+        Container sem TTY entrega o log MULTIPLEXADO (quadros de 8 bytes com
+        stdout e stderr misturados no mesmo fluxo). `demuxStream` separa os
+        dois; sem isso, o cabeçalho binário apareceria no meio do texto.
+
+        Devolve um `Close`: stream de log segurado é conexão aberta com o
+        runtime, e quem abriu precisa poder soltar.
+    */
+    const StreamContainerLogs = async ({
+        containerIdOrName,
+        tail = 200,
+        onData,
+        onError,
+        onEnd
+    }) => {
+        const container = docker.getContainer(containerIdOrName)
+
+        const stream = await container.logs({
+            stdout: true,
+            stderr: true,
+            follow: true,
+            tail,
+            timestamps: false
+        })
+
+        const saida = new PassThrough()
+        const erro = new PassThrough()
+
+        saida.on("data", (pedaco) => onData && onData({ stream: "stdout", data: pedaco.toString("utf-8") }))
+        erro.on("data", (pedaco) => onData && onData({ stream: "stderr", data: pedaco.toString("utf-8") }))
+
+        try {
+            container.modem.demuxStream(stream, saida, erro)
+        } catch (error) {
+            // TTY: o fluxo já vem limpo, sem quadros para separar.
+            stream.on("data", (pedaco) => onData && onData({ stream: "stdout", data: pedaco.toString("utf-8") }))
+        }
+
+        stream.on("error", (error) => onError && onError(error))
+        stream.on("end", () => onEnd && onEnd())
+
+        return {
+            Close: () => {
+                try { stream.destroy() } catch (error) { /* já fechado */ }
+            }
+        }
+    }
+
+    /*
+        MÉTRICAS AO VIVO (CTMG-22).
+
+        O runtime entrega uma amostra por segundo, em JSON, com contadores
+        ACUMULADOS de CPU. Percentual de CPU não vem pronto: é a variação entre
+        duas amostras — por isso o cálculo acontece aqui, uma vez, e não em
+        cada tela que quiser mostrar o número.
+    */
+    const StreamContainerStats = async ({ containerIdOrName, onData, onError, onEnd }) => {
+        const container = docker.getContainer(containerIdOrName)
+        const stream = await container.stats({ stream: true })
+
+        let restante = ""
+
+        const CalcularCpu = (amostra) => {
+            const cpu = amostra.cpu_stats || {}
+            const anterior = amostra.precpu_stats || {}
+            const deltaCpu = (cpu.cpu_usage?.total_usage || 0) - (anterior.cpu_usage?.total_usage || 0)
+            const deltaSistema = (cpu.system_cpu_usage || 0) - (anterior.system_cpu_usage || 0)
+            const nucleos = cpu.online_cpus || (cpu.cpu_usage?.percpu_usage || []).length || 1
+            if (deltaSistema <= 0 || deltaCpu <= 0) return 0
+            return (deltaCpu / deltaSistema) * nucleos * 100
+        }
+
+        stream.on("data", (pedaco) => {
+            restante += pedaco.toString("utf-8")
+            const linhas = restante.split("\n")
+            restante = linhas.pop() || ""
+
+            linhas
+                .filter((linha) => linha.trim() !== "")
+                .forEach((linha) => {
+                    let amostra
+                    try {
+                        amostra = JSON.parse(linha)
+                    } catch (error) {
+                        return
+                    }
+
+                    const memoriaUsada = (amostra.memory_stats?.usage || 0) - (amostra.memory_stats?.stats?.cache || 0)
+                    const memoriaLimite = amostra.memory_stats?.limit || 0
+                    const redes = amostra.networks || {}
+                    const rede = Object.keys(redes).reduce((total, nome) => ({
+                        rx: total.rx + (redes[nome].rx_bytes || 0),
+                        tx: total.tx + (redes[nome].tx_bytes || 0)
+                    }), { rx: 0, tx: 0 })
+
+                    const blocos = (amostra.blkio_stats?.io_service_bytes_recursive || [])
+                        .reduce((total, entrada) => {
+                            const operacao = String(entrada.op || "").toLowerCase()
+                            if (operacao === "read") total.read += entrada.value || 0
+                            if (operacao === "write") total.write += entrada.value || 0
+                            return total
+                        }, { read: 0, write: 0 })
+
+                    onData && onData({
+                        readAt: amostra.read,
+                        cpuPercent: Number(CalcularCpu(amostra).toFixed(2)),
+                        memoryUsage: memoriaUsada,
+                        memoryLimit: memoriaLimite,
+                        memoryPercent: memoriaLimite > 0
+                            ? Number(((memoriaUsada / memoriaLimite) * 100).toFixed(2))
+                            : 0,
+                        networkRx: rede.rx,
+                        networkTx: rede.tx,
+                        blockRead: blocos.read,
+                        blockWrite: blocos.write,
+                        pids: amostra.pids_stats?.current || 0
+                    })
+                })
+        })
+
+        stream.on("error", (error) => onError && onError(error))
+        stream.on("end", () => onEnd && onEnd())
+
+        return {
+            Close: () => {
+                try { stream.destroy() } catch (error) { /* já fechado */ }
+            }
+        }
+    }
+
+    /*
+        TERMINAL DENTRO DO CONTAINER (CTMG-21).
+
+        Sessão de `exec` com TTY: entrada e saída ao vivo, como um shell.
+
+        O shell é escolhido por TENTATIVA em ordem — nem toda imagem tem bash,
+        e muitas (alpine, distroless-ish) só têm sh. Pedir bash direto faria o
+        terminal falhar em metade dos containers, com um erro que não explica
+        nada a quem só queria "abrir um terminal".
+
+        Com TTY ligado não há multiplexação: o fluxo é bidirecional e limpo.
+    */
+    const OpenExecSession = async ({
+        containerIdOrName,
+        cmd,
+        cols = 80,
+        rows = 24,
+        onData,
+        onError,
+        onEnd
+    }) => {
+        const container = docker.getContainer(containerIdOrName)
+
+        const comando = Array.isArray(cmd) && cmd.length > 0
+            ? cmd
+            : ["/bin/sh", "-c", "command -v bash >/dev/null 2>&1 && exec bash || exec sh"]
+
+        const exec = await container.exec({
+            Cmd: comando,
+            AttachStdin: true,
+            AttachStdout: true,
+            AttachStderr: true,
+            Tty: true
+        })
+
+        const stream = await exec.start({ hijack: true, stdin: true })
+
+        /*
+            Mesmo pedindo TTY, o runtime pode devolver o fluxo enquadrado — foi
+            o que aconteceu num container criado sem TTY. O decodificador
+            observa o formato em vez de confiar no que foi pedido.
+        */
+        const decodificador = CreateDockerStreamDecoder({
+            onData: ({ data }) => onData && onData(data)
+        })
+
+        stream.on("data", (pedaco) => decodificador.Push(pedaco))
+        stream.on("error", (error) => onError && onError(error))
+        stream.on("end", () => {
+            decodificador.Flush()
+            onEnd && onEnd()
+        })
+
+        try {
+            await exec.resize({ h: rows, w: cols })
+        } catch (error) {
+            // Redimensionar é conforto, não requisito: se falhar, o terminal
+            // continua utilizável no tamanho padrão.
+        }
+
+        return {
+            Write: (dados) => {
+                try { stream.write(dados) } catch (error) { onError && onError(error) }
+            },
+            Resize: async ({ cols: colunas, rows: linhas }) => {
+                try { await exec.resize({ h: linhas, w: colunas }) } catch (error) { /* ver acima */ }
+            },
+            Inspect: () => exec.inspect(),
+            Close: () => {
+                try { stream.end() } catch (error) { /* já fechado */ }
+                try { stream.destroy() } catch (error) { /* já fechado */ }
+            }
         }
     }
 
@@ -1020,6 +1235,9 @@ const ContainerManager = (params) => {
         ListAllNetworks,
         RegisterDockerEventListener,
         GetContainerLogHistory,
+        StreamContainerLogs,
+        StreamContainerStats,
+        OpenExecSession,
         InspectNetwork,
         CreateNewNetwork,
         RemoveNetwork,
