@@ -95,6 +95,35 @@ tratar erro linha a linha.
 
 **Eventos** — `RegisterDockerEventListener` (só no `ContainerRuntimeAdapter`)
 
+**Streams** — `StreamContainerLogs`, `StreamContainerStats`, `OpenExecSession`
+
+### Os três streams
+
+Diferente do resto da superfície, aqui não há retorno: há um **assinante**. Cada
+um recebe callbacks e devolve um handle com `Close` — stream aberto é conexão
+viva com o runtime, e quem abriu precisa poder soltar.
+
+| Operação | O que entrega |
+|----------|---------------|
+| `StreamContainerLogs` | Cada pedaço que o container escreve, com `stdout` e `stderr` separados |
+| `StreamContainerStats` | Uma amostra por segundo: CPU (%), memória, rede, disco e processos |
+| `OpenExecSession` | Terminal com entrada e saída ao vivo (`Write`, `Resize`, `Close`) |
+
+Três coisas que valem por si:
+
+- **O percentual de CPU é calculado aqui.** O runtime entrega contadores
+  acumulados; a porcentagem é a variação entre duas amostras. Fazer essa conta
+  uma vez, no adaptador, evita que cada tela invente a sua.
+- **O shell do `exec` é escolhido por tentativa** (`bash`, senão `sh`). Pedir
+  bash direto falha em metade das imagens, com um erro que não explica nada a
+  quem só queria abrir um terminal.
+- **O formato do fluxo é observado, não presumido.** O runtime entrega a saída
+  enquadrada (quadros de 8 bytes) ou crua, e **nem sempre no formato que foi
+  pedido**: uma sessão aberta com `Tty: true` num container criado sem TTY veio
+  enquadrada, e o terminal exibiu lixo binário no meio do texto.
+  `DecodeDockerStream` olha o começo do pedaço e decide — desenquadra quando há
+  quadro, deixa passar quando não há.
+
 ### Como as operações de arquivo em volume funcionam
 
 Volume nomeado não é diretório acessível de fora do runtime. Para ler ou
