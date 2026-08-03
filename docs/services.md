@@ -13,6 +13,7 @@ e instanciado como `service-instance` pelo
 | [environment-runtime-manager.service](../Main.Module/Services.layer/environment-runtime-manager.service/README.md) | `EnvironmentRuntimeService` | `taskExecutorMachineService`, `jsonFileUtilitiesLib`, `executionParamsGeneratorLib` |
 | [ecosystem-manager.service](../Main.Module/Services.layer/ecosystem-manager.service/README.md) | `EcosystemManager` | `repositoryManagerService`, `environmentRuntimeService`, `repositoryConfigHandlerLib`, `environmentHandlerLib`, `dependencyGraphBuilderLib`, `metadataHierarchyHandlerLib`, `resolvePackageNameLib`, `jsonFileUtilitiesLib` |
 | [instance-supervisor.service](../Main.Module/Services.layer/instance-supervisor.service/README.md) | `InstanceMonitoringManager` | `ecosystemdataHandlerService`, `supervisorLib`, `jsonFileUtilitiesLib`, `notificationHubService` |
+| [container-runtime-adapter.service](../Main.Module/Services.layer/container-runtime-adapter.service/README.md) | `ContainerRuntimeAdapter`, `ContainerRuntimeClient` | `commandExecutorLib` (só o client) |
 
 > O grupo do painel acrescenta [ecosystem-control-panel.service](../Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.service/README.md)
 > (`EnvironmentHandlerService`, `EcosystemDataHandlerService`, `NotificationHubService`).
@@ -45,6 +46,11 @@ Resumo da colaboração:
   para preparar e disparar a execução.
 - **instance-supervisor** monitora as instâncias em execução (consumido pelos
   painéis).
+- **container-runtime-adapter** é o único que fala com o runtime de containers
+  (Docker/Podman). Ele não participa do boot do ecossistema: é montado pelo
+  `container-runtime-adapter.app`, que concentra o acesso ao socket, e as demais
+  aplicações consomem o `ContainerRuntimeClient` — mesma superfície, sem a chave
+  do runtime na mão.
 
 ## Como um serviço recebe parâmetros (whitelist)
 

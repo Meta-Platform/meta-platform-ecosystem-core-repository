@@ -64,6 +64,7 @@ Documentação dedicada em [`docs/`](./docs/):
 | Package | Tipo | Executável |
 |---------|------|------------|
 | [repository-explorer.cli](./Main.Module/Application.layer/repository-explorer.cli/README.md) | `.cli` | `explorer` |
+| [container-runtime-adapter.app](./Main.Module/Application.layer/container-runtime-adapter.app/README.md) | `.app` | `container-runtime-adapter` |
 
 **EcosystemControlPanel.group** (`eco-panel`, `eco-panel-desktop`):
 [webapp](./Main.Module/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.webapp/README.md) ·
@@ -103,6 +104,7 @@ Documentação dedicada em [`docs/`](./docs/):
 
 ### Main.Module / Services.layer
 
+- [container-runtime-adapter.service](./Main.Module/Services.layer/container-runtime-adapter.service/README.md)
 - [ecosystem-manager.service](./Main.Module/Services.layer/ecosystem-manager.service/README.md)
 - [environment-runtime-manager.service](./Main.Module/Services.layer/environment-runtime-manager.service/README.md)
 - [instance-supervisor.service](./Main.Module/Services.layer/instance-supervisor.service/README.md)
@@ -112,6 +114,7 @@ Documentação dedicada em [`docs/`](./docs/):
 
 ### Main.Module / Webservices.layer
 
+- [container-orchestrator.webservice](./Main.Module/Webservices.layer/container-orchestrator.webservice/README.md)
 - [server-manager.webservice](./Main.Module/Webservices.layer/server-manager.webservice/README.md)
 
 ## Exemplos

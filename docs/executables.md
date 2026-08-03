@@ -15,6 +15,7 @@ Os executáveis publicados por este repositório estão em
 | `eco-panel-desktop` | DESKTOP | `…/Application.layer/EcosystemControlPanel.group/ecosystem-control-panel.desktopapp` | `eco-panel-desktop.sock` | Painel de controle do ecossistema (janela Electron). |
 | `mypkg` | CLI | `Main.Module/PackageApplication.layer/package-toolkit.cli` | `package-toolkit.sock` | Cria novos pacotes (scaffolding). |
 | `run` | CLI | `Main.Module/PackageApplication.layer/package-runner.cli` | `package-runner.sock` | Executa um package montando o runtime localmente. |
+| `container-runtime-adapter` | APP | `Main.Module/Application.layer/container-runtime-adapter.app` | `container-runtime-adapter.sock` | Instância única dona do socket do Docker/Podman; publica a API `ContainerRuntime` por unix socket. |
 
 ## Como `applications.json` publica executáveis
 
