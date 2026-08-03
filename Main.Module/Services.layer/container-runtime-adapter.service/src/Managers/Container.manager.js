@@ -198,6 +198,47 @@ const ContainerManager = (params) => {
         })
     }
 
+    /*
+        Build a partir do TEXTO do Dockerfile (CTMG-16).
+
+        A API do Docker só aceita contexto em TAR, e montar TAR é conhecimento
+        de formato de arquivo — que uma interface gráfica não deveria precisar
+        ter. Quem tem esse conhecimento é este pacote, que já empacota arquivo
+        para escrever em volume. Então quem chama manda o texto, e o TAR nasce
+        aqui.
+
+        Contexto de UM arquivo só: o suficiente para um Dockerfile que não
+        depende de COPY/ADD de arquivos locais. Build com contexto de verdade
+        continua sendo `BuildImageFromDockerfileString` com o stream pronto.
+    */
+    const BuildImageFromDockerfileContent = async ({
+        imageTagName,
+        dockerfileContent,
+        buildargs,
+        onData
+    }) => {
+        if (typeof dockerfileContent !== "string" || dockerfileContent.trim() === "") {
+            const erro = new Error("O conteúdo do Dockerfile é obrigatório.")
+            erro.code = "DOCKERFILE_CONTENT_REQUIRED"
+            throw erro
+        }
+
+        const contexto = BuildTarWithSingleFile({
+            name: "Dockerfile",
+            content: dockerfileContent
+        })
+
+        const contextTarStream = new PassThrough()
+        contextTarStream.end(contexto)
+
+        return await BuildImageFromDockerfileString({
+            imageTagName,
+            buildargs,
+            onData,
+            contextTarStream
+        })
+    }
+
     const CreateNewContainer = async ({
         imageName,
         containerName,
@@ -972,6 +1013,7 @@ const ContainerManager = (params) => {
         ListAllContainers,
         ListAllVolumes,
         BuildImageFromDockerfileString,
+        BuildImageFromDockerfileContent,
         CreateNewContainer,
         InspectContainer,
         ListAllImages,
