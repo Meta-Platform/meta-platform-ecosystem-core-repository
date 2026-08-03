@@ -1,0 +1,111 @@
+{
+    "schemaVersion": "1.0.0",
+    "package": {
+        "name": "container-runtime-adapter.app",
+        "type": "app",
+        "namespace": "@/container-runtime-adapter.app",
+        "repository": "EcosystemCoreRepo",
+        "version": "0.0.3"
+    },
+    "execution": {
+        "ring": "RING0",
+        "privileged": false
+    },
+    "networks": {
+        "allowed": [
+            {
+                "name": "host",
+                "access": "both",
+                "required": true
+            }
+        ],
+        "denied": []
+    },
+    "services": {
+        "provides": [
+            "container-runtime"
+        ],
+        "consumes": []
+    },
+    "resources": {
+        "sockets": [
+            {
+                "namespace": "container-runtime-socket",
+                "owner": true,
+                "ownerExecutionLevel": "RING0",
+                "required": true
+            }
+        ],
+        "hostMounts": [
+            {
+                "source": "docker-socket",
+                "target": "/mnt/host-mounts/docker-socket",
+                "readOnly": false
+            }
+        ],
+        "container": {
+            "privileged": false
+        }
+    },
+    "storageRequirements": [],
+    "permissions": [
+        {
+            "name": "container:read",
+            "risk": "medium",
+            "approvalRequired": false,
+            "reason": "Listar, inspecionar e ler logs de containers"
+        },
+        {
+            "name": "container:manage",
+            "risk": "critical",
+            "approvalRequired": true,
+            "reason": "Criar, iniciar, parar, reiniciar, matar, remover e exportar containers"
+        },
+        {
+            "name": "image:read",
+            "risk": "medium",
+            "approvalRequired": false,
+            "reason": "Listar e inspecionar imagens"
+        },
+        {
+            "name": "image:build",
+            "risk": "high",
+            "approvalRequired": true,
+            "reason": "Construir imagens a partir de Dockerfile"
+        },
+        {
+            "name": "image:manage",
+            "risk": "critical",
+            "approvalRequired": true,
+            "reason": "Remover e exportar imagens"
+        },
+        {
+            "name": "network:read",
+            "risk": "medium",
+            "approvalRequired": false,
+            "reason": "Listar e inspecionar redes Docker"
+        },
+        {
+            "name": "network:manage",
+            "risk": "critical",
+            "approvalRequired": true,
+            "reason": "Criar ou remover redes e conectar ou desconectar containers"
+        },
+        {
+            "name": "volume:read",
+            "risk": "medium",
+            "approvalRequired": false,
+            "reason": "Listar e inspecionar volumes Docker"
+        },
+        {
+            "name": "volume:manage",
+            "risk": "critical",
+            "approvalRequired": true,
+            "reason": "Criar, remover e exportar volumes Docker"
+        }
+    ],
+    "installation": {
+        "approvalRequired": true,
+        "reason": "Instância única de RING0, dona do container-runtime-socket e com escrita no docker.sock, equivalente a controle total do runtime do host."
+    }
+}

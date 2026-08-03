@@ -1,0 +1,399 @@
+{
+    "name": "ContainerRuntime",
+    "endpoints": [
+        {
+            "path": "/containers",
+            "method": "GET",
+            "summary": "ListAllContainers"
+        },
+        {
+            "path": "/images",
+            "method": "GET",
+            "summary": "ListAllImages"
+        },
+        {
+            "path": "/networks",
+            "method": "GET",
+            "summary": "ListAllNetworks"
+        },
+        {
+            "path": "/volumes",
+            "method": "GET",
+            "summary": "ListAllVolumes"
+        },
+        {
+            "summary": "CreateNewContainer",
+            "method": "POST",
+            "path": "/create-container",
+            "parameters": [
+                {
+                    "in": "body",
+                    "name": "options",
+                    "type": "json",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "summary": "BuildImageFromDockerfileString",
+            "method": "POST",
+            "path": "/build-image",
+            "parameters": [
+                {
+                    "in": "body",
+                    "name": "options",
+                    "type": "json",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "summary": "RemoveContainer",
+            "method": "POST",
+            "path": "/remove-container",
+            "parameters": [
+                {
+                    "in": "body",
+                    "name": "containerIdOrName",
+                    "type": "string",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "summary": "StartContainer",
+            "method": "POST",
+            "path": "/start-container",
+            "parameters": [
+                {
+                    "in": "body",
+                    "name": "containerIdOrName",
+                    "type": "string",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "summary": "StopContainer",
+            "method": "POST",
+            "path": "/stop-container",
+            "parameters": [
+                {
+                    "in": "body",
+                    "name": "containerIdOrName",
+                    "type": "string",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "summary": "RestartContainer",
+            "method": "POST",
+            "path": "/restart-container",
+            "parameters": [
+                {
+                    "in": "body",
+                    "name": "containerIdOrName",
+                    "type": "string",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "summary": "KillContainer",
+            "method": "POST",
+            "path": "/kill-container",
+            "parameters": [
+                {
+                    "in": "body",
+                    "name": "containerIdOrName",
+                    "type": "string",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "summary": "InspectContainer",
+            "method": "POST",
+            "path": "/inspect-container",
+            "parameters": [
+                {
+                    "in": "body",
+                    "name": "containerIdOrName",
+                    "type": "string",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "summary": "GetContainerLogHistory",
+            "method": "POST",
+            "path": "/container-log-history",
+            "parameters": [
+                {
+                    "in": "body",
+                    "name": "containerIdOrName",
+                    "type": "string",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "summary": "ExportContainer",
+            "method": "POST",
+            "path": "/export-container",
+            "parameters": [
+                {
+                    "in": "body",
+                    "name": "containerIdOrName",
+                    "type": "string",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "summary": "InspectNetwork",
+            "method": "POST",
+            "path": "/inspect-network",
+            "parameters": [
+                {
+                    "in": "body",
+                    "name": "networkIdOrName",
+                    "type": "string",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "summary": "CreateNewNetwork",
+            "method": "POST",
+            "path": "/create-network",
+            "parameters": [
+                {
+                    "in": "body",
+                    "name": "options",
+                    "type": "json",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "summary": "RemoveNetwork",
+            "method": "POST",
+            "path": "/remove-network",
+            "parameters": [
+                {
+                    "in": "body",
+                    "name": "networkIdOrName",
+                    "type": "string",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "summary": "ConnectContainerToNetwork",
+            "method": "POST",
+            "path": "/connect-container-network",
+            "parameters": [
+                {
+                    "in": "body",
+                    "name": "options",
+                    "type": "json",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "summary": "DisconnectContainerFromNetwork",
+            "method": "POST",
+            "path": "/disconnect-container-network",
+            "parameters": [
+                {
+                    "in": "body",
+                    "name": "options",
+                    "type": "json",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "summary": "InspectVolume",
+            "method": "POST",
+            "path": "/inspect-volume",
+            "parameters": [
+                {
+                    "in": "body",
+                    "name": "volumeName",
+                    "type": "string",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "summary": "CreateNewVolume",
+            "method": "POST",
+            "path": "/create-volume",
+            "parameters": [
+                {
+                    "in": "body",
+                    "name": "options",
+                    "type": "json",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "summary": "RemoveVolume",
+            "method": "POST",
+            "path": "/remove-volume",
+            "parameters": [
+                {
+                    "in": "body",
+                    "name": "volumeName",
+                    "type": "string",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "summary": "InspectImage",
+            "method": "POST",
+            "path": "/inspect-image",
+            "parameters": [
+                {
+                    "in": "body",
+                    "name": "imageIdOrName",
+                    "type": "string",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "summary": "RemoveImage",
+            "method": "POST",
+            "path": "/remove-image",
+            "parameters": [
+                {
+                    "in": "body",
+                    "name": "options",
+                    "type": "json",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "summary": "ExportImage",
+            "method": "POST",
+            "path": "/export-image",
+            "parameters": [
+                {
+                    "in": "body",
+                    "name": "imageIdOrName",
+                    "type": "string",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "summary": "ExportVolume",
+            "method": "POST",
+            "path": "/export-volume",
+            "parameters": [
+                {
+                    "in": "body",
+                    "name": "volumeName",
+                    "type": "string",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "path": "/volume-entries",
+            "method": "POST",
+            "summary": "ListVolumeEntries",
+            "parameters": [
+                {
+                    "name": "volumeName",
+                    "in": "body",
+                    "type": "string",
+                    "required": true
+                },
+                {
+                    "name": "path",
+                    "in": "body",
+                    "type": "string",
+                    "required": false
+                }
+            ]
+        },
+        {
+            "path": "/volume-file/put",
+            "method": "POST",
+            "summary": "PutFileInVolume",
+            "parameters": [
+                {
+                    "name": "volumeName",
+                    "in": "body",
+                    "type": "string",
+                    "required": true
+                },
+                {
+                    "name": "path",
+                    "in": "body",
+                    "type": "string",
+                    "required": false
+                },
+                {
+                    "name": "fileName",
+                    "in": "body",
+                    "type": "string",
+                    "required": true
+                },
+                {
+                    "name": "contentBase64",
+                    "in": "body",
+                    "type": "string",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "path": "/volume-file/get",
+            "method": "POST",
+            "summary": "GetFileFromVolume",
+            "parameters": [
+                {
+                    "name": "volumeName",
+                    "in": "body",
+                    "type": "string",
+                    "required": true
+                },
+                {
+                    "name": "path",
+                    "in": "body",
+                    "type": "string",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "path": "/volume-entry/remove",
+            "method": "POST",
+            "summary": "DeleteVolumeEntry",
+            "parameters": [
+                {
+                    "name": "volumeName",
+                    "in": "body",
+                    "type": "string",
+                    "required": true
+                },
+                {
+                    "name": "path",
+                    "in": "body",
+                    "type": "string",
+                    "required": true
+                }
+            ]
+        }
+    ]
+}

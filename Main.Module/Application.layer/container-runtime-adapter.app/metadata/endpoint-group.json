@@ -1,0 +1,22 @@
+{
+    "bound-params":[
+        "serverService",
+        "containerRuntimeAdapterService"
+    ],
+    "endpoints": [
+        {
+            "url": "/container-runtime",
+            "type": "controller",
+            "params": {
+                "api-template": "APIs/ContainerRuntime.api.json",
+                "controller": "Controllers/ContainerRuntime.controller"
+            },
+            "bound-params": {
+                "serverService":"serverService",
+                "controller-params":{
+                    "containerRuntimeAdapterService":"containerRuntimeAdapterService"
+                }
+            }
+        }
+    ]
+}

@@ -1,0 +1,5 @@
+{
+    "socket": "/home/kadisk/EcosystemData/sockets/container-runtime-adapter.app.sock",
+    "serverName": "ContainerRuntimeAdapterInstance",
+    "dockerSocketPath": "/var/run/docker.sock"
+}

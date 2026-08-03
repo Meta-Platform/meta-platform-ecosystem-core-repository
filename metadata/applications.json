@@ -46,7 +46,11 @@
         "executable":"run",
         "packageNamespace":"Main.Module/PackageApplication.layer/package-runner.cli",
         "supervisorSocketFileName":"package-runner.sock"
+    },
+    {
+        "appType":"APP",
+        "executable":"container-runtime-adapter",
+        "packageNamespace":"Main.Module/Application.layer/container-runtime-adapter.app",
+        "supervisorSocketFileName":"container-runtime-adapter.sock"
     }
-
-    
 ]

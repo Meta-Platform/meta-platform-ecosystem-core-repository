@@ -1,0 +1,13 @@
+[
+    {
+        "namespace": "ContainerRuntimeAdapter",
+        "path": "Managers/Container.manager",
+        "params": ["socketPath"]
+    },
+    {
+        "namespace": "ContainerRuntimeClient",
+        "path": "Services/ContainerRuntimeClient.service",
+        "params": ["containerRuntimeSocketPath", "containerRuntimeServerManagerUrl"],
+        "bound-params": ["commandExecutorLib"]
+    }
+]

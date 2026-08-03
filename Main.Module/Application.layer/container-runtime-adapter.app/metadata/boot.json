@@ -1,0 +1,40 @@
+{
+    "params" : [
+        "socket",
+        "serverName",
+        "dockerSocketPath"
+    ],
+    "services": [
+        {
+            "namespace": "@@/server-service",
+            "dependency": "@/server-manager.service/services/HTTPServerService",
+            "params":{
+                "name":"{{serverName}}",
+                "port": "{{socket}}"
+            }
+        },
+        {
+            "namespace": "@@/container-runtime-adapter-service",
+            "dependency": "@/container-runtime-adapter.service/services/ContainerRuntimeAdapter",
+            "params":{
+                "socketPath": "{{dockerSocketPath}}"
+            }
+        }
+    ],
+    "endpoints": [
+        {
+            "dependency": "@/server-manager.webservice/endpoint-group",
+            "bound-params":{
+               "serverServiceForController":"@@/server-service",
+               "serverService": "@@/server-service"
+            }
+        },
+        {
+            "dependency": "@//endpoint-group",
+            "bound-params":{
+                "serverService": "@@/server-service",
+                "containerRuntimeAdapterService": "@@/container-runtime-adapter-service"
+            }
+        }
+    ]
+}

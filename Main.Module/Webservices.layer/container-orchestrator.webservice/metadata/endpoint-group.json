@@ -1,0 +1,40 @@
+{
+    "bound-params": [
+        "serverService",
+        "commandExecutorLib",
+        "?authorizationClientLib",
+        "?auditManagerService"
+    ],
+    "params": [
+        "?needsAuth",
+        "containerRuntimeSocketPath",
+        "containerRuntimeServerManagerUrl",
+        "?iamManagerSocketPath",
+        "?iamManagerServerManagerUrl"
+    ],
+    "endpoints": [
+        {
+            "url": "/container-orchestrator",
+            "type": "controller",
+            "params": {
+                "api-template": "APIs/ContainerOrchestrator.api.json",
+                "controller": "Controllers/ContainerOrchestrator.controller",
+                "needsAuth": "needsAuth",
+                "controller-params": {
+                    "containerRuntimeSocketPath": "{{containerRuntimeSocketPath}}",
+                    "containerRuntimeServerManagerUrl": "{{containerRuntimeServerManagerUrl}}",
+                    "iamManagerSocketPath": "{{iamManagerSocketPath}}",
+                    "iamManagerServerManagerUrl": "{{iamManagerServerManagerUrl}}"
+                }
+            },
+            "bound-params": {
+                "serverService": "serverService",
+                "controller-params": {
+                    "commandExecutorLib": "commandExecutorLib",
+                    "authorizationClientLib": "authorizationClientLib"
+
+                }
+            }
+        }
+    ]
+}
