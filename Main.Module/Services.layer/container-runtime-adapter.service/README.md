@@ -108,10 +108,31 @@ runtime nenhum, que impedem escapar do ponto de montagem.
 
 ## Dependências
 
-- **npm:** `dockerode` — exigido **na hora de conectar**, não ao carregar o
-  módulo: cadastrar e listar conexões é trabalho de arquivo e não pode depender
-  do cliente do runtime estar instalado
+- **npm:** `dockerode`
 - **Ecossistema:** `@/command-executor.lib` (só o `ContainerRuntimeClient`)
+
+### `require` de dependência npm tem hora certa: no topo do módulo
+
+O executor da plataforma aponta o `NODE_PATH` para as dependências do pacote
+**apenas enquanto o módulo é carregado**, e o restaura logo depois (é o que
+`CreatePackageHandle` faz, e o `exec-pkg` segue o mesmo modelo). Um
+`require("dockerode")` adiado — feito dentro de uma função, na primeira
+chamada — procura num caminho que já não existe mais e falha com
+`MODULE_NOT_FOUND`, **mesmo com a dependência instalada corretamente**.
+
+Custou um provisionamento inteiro para aparecer (CTMG-13): fora do executor,
+com `node --test` ou `node -e`, o `require` tardio funciona perfeitamente.
+
+Por isso o `ContainerRuntimeConnectionManager` carrega o adaptador e o cliente
+no topo, dentro de um `try/catch`: onde o cliente não está instalado, cadastrar
+e listar conexões continua funcionando (é trabalho de arquivo) e só **conectar**
+falha, com `RUNTIME_CLIENT_UNAVAILABLE` em vez de um erro de resolução de módulo.
+
+> **Ao editar este pacote com o ecossistema no ar:** o daemon
+> `executor-manager` guarda os módulos já carregados no cache de `require` do
+> Node. `repo update` troca o arquivo no disco, mas o processo continua
+> executando a versão antiga — é preciso **reiniciar o daemon** para a mudança
+> valer.
 
 ## Testes
 

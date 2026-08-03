@@ -39,13 +39,41 @@ const DiscoverLocalRuntimes = require("../Helpers/DiscoverLocalRuntimes")
 const ContainerConnectionStore = require("../Stores/ContainerConnection.store")
 
 /*
-    O adaptador (e o cliente do runtime que ele carrega) é exigido só na hora
-    de CONECTAR. Cadastrar, listar e apagar conexão é trabalho de arquivo, e
-    não pode depender de o cliente do runtime estar instalado — nem no teste,
-    nem numa instalação onde ninguém conectou em nada ainda.
+    O adaptador e o cliente do runtime são carregados AQUI, no topo, e não na
+    hora de conectar.
+
+    Isso não é preferência de estilo: o executor da plataforma aponta o
+    NODE_PATH para as dependências do pacote apenas ENQUANTO o módulo é
+    carregado, e o restaura em seguida. Um `require("dockerode")` tardio, feito
+    no meio de uma chamada, procura num caminho que já não existe mais e falha
+    com MODULE_NOT_FOUND — mesmo com a dependência instalada corretamente.
+
+    O try/catch mantém o pacote utilizável onde o cliente do runtime não está
+    instalado (o teste unitário roda assim): cadastrar, listar e apagar conexão
+    é trabalho de arquivo e continua funcionando. Só CONECTAR fica indisponível,
+    e com mensagem explícita em vez de um erro de resolução de módulo.
 */
-const RequireContainerManager = () => require("./Container.manager")
-const RequireRuntimeClient = () => require("dockerode")
+let ContainerManager = null
+let RuntimeClient = null
+let ErroDeCarga = null
+
+try {
+    ContainerManager = require("./Container.manager")
+    RuntimeClient = require("dockerode")
+} catch (error) {
+    ErroDeCarga = error
+}
+
+const ExigirClienteDeRuntime = () => {
+    if (RuntimeClient && ContainerManager) return
+    const erro = new Error(
+        "O cliente do runtime de containers não está disponível neste processo " +
+        `(${ErroDeCarga ? ErroDeCarga.message : "dockerode ausente"}). ` +
+        "As conexões continuam podendo ser cadastradas, mas nenhuma pode ser usada."
+    )
+    erro.code = "RUNTIME_CLIENT_UNAVAILABLE"
+    throw erro
+}
 
 const CriarErro = (code, message) => {
     const erro = new Error(message)
@@ -73,7 +101,10 @@ const ContainerRuntimeConnectionManager = (params = {}) => {
         connectionsFilePath,
         onReady,
         // Injetáveis para teste: sem eles, o caminho real é o dockerode.
-        CreateAdapter = (connectionOptions) => RequireContainerManager()({ connectionOptions }),
+        CreateAdapter = (connectionOptions) => {
+            ExigirClienteDeRuntime()
+            return ContainerManager({ connectionOptions })
+        },
         CreateProbeClient,
         DiscoverRuntimes = DiscoverLocalRuntimes,
         GenerateId = randomUUID,
@@ -214,9 +245,13 @@ const ContainerRuntimeConnectionManager = (params = {}) => {
         }
 
         try {
-            const cliente = CreateProbeClient
-                ? CreateProbeClient(resolucao.clientOptions)
-                : new (RequireRuntimeClient())(resolucao.clientOptions)
+            let cliente
+            if (CreateProbeClient) {
+                cliente = CreateProbeClient(resolucao.clientOptions)
+            } else {
+                ExigirClienteDeRuntime()
+                cliente = new RuntimeClient(resolucao.clientOptions)
+            }
 
             const version = await cliente.version()
             const detectado = DetectarRuntime(version)
