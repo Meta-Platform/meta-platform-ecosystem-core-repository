@@ -49,10 +49,15 @@ const ContainerManager = (params) => {
     
     const {
         onReady,
-        socketPath
+        socketPath,
+        // Conexão já resolvida (socket unix OU host TCP), usada quando o
+        // adaptador é instanciado por conexão em vez de fixado no boot
+        // (ContainerRuntimeConnection.manager, CTMG-8). `socketPath` continua
+        // sendo o caminho de quem monta este serviço pelo boot.json.
+        connectionOptions
     } = params
-    
-    const docker = new Docker({ socketPath })
+
+    const docker = new Docker(connectionOptions || { socketPath })
 
     const _Start = async () => {
 
@@ -81,7 +86,10 @@ const ContainerManager = (params) => {
             })
         })
 
-        onReady()
+        // Montado pelo boot.json, `onReady` sinaliza o supervisor. Instanciado
+        // por conexão, não há supervisor para avisar — e a ausência do sinal
+        // não pode derrubar o adaptador.
+        if (typeof onReady === "function") onReady()
     }
 
     _Start()

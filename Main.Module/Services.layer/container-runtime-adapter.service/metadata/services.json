@@ -9,5 +9,10 @@
         "path": "Services/ContainerRuntimeClient.service",
         "params": ["containerRuntimeSocketPath", "containerRuntimeServerManagerUrl"],
         "bound-params": ["commandExecutorLib"]
+    },
+    {
+        "namespace": "ContainerRuntimeConnectionManager",
+        "path": "Managers/ContainerRuntimeConnection.manager",
+        "params": ["storageDir", "?connectionsFilePath"]
     }
 ]
