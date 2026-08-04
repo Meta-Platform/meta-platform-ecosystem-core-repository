@@ -24,6 +24,15 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps) => {
 
     const { ComputeObjectHash, WebInterfaceBuilder } = runtimeDeps
 
+    // Os perfis vêm anexados ao builder injetado — esta lib vive noutro pacote e
+    // não pode alcançá-los por require relativo. O objeto vazio cobre um
+    // ecosystem-core anterior a este recurso: nesse caso o perfil não entra no
+    // nome do diretório, que é exatamente o comportamento antigo.
+    const BuildProfiles = WebInterfaceBuilder.BuildProfiles || {
+        GetProfileFingerprintKey: () => undefined,
+        ResolveBuildProfile: () => ({})
+    }
+
     const StartWebGraphicUserInterfaceService = async ({
         loaderParams
     }) => {
@@ -35,6 +44,12 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps) => {
             serverEndpointStatus,
             serverName,
             RT_ENV_GENERATED_DIR_NAME,
+            // Perfil de build. `RT_WEBGUI_BUILD_PROFILE` chega do ecosystem-defaults,
+            // que o gerador de parâmetros injeta em TODO endpoint — por isso nenhum
+            // .webgui precisa declarar nada para herdar o padrão do ecossistema.
+            webguiBuildProfile,
+            RT_WEBGUI_BUILD_PROFILE,
+            // Parâmetro legado dos 14 .webgui existentes; vira "debug-watch".
             isWatch,
             componentLibraries
         } = loaderParams
@@ -43,9 +58,17 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps) => {
         const environmentPath = nodejsPackageHandler.getEnvironmentPath()
         const nodeModulesPath = nodejsPackageHandler.getNodeModulesPath()
 
+        const buildProfile = webguiBuildProfile || RT_WEBGUI_BUILD_PROFILE
+
+        // O perfil entra no nome do diretório: assets de `release` e de `debug`
+        // são artefatos diferentes e não podem se sobrescrever.
+        const profileKey = BuildProfiles.GetProfileFingerprintKey(
+            BuildProfiles.ResolveBuildProfile({ profileName: buildProfile, isWatch })
+        )
+
         const outputDirName = ComputeObjectHash({
             url, entrypoint, htmlTemplate, serverEndpointStatus, serverName,
-            context, environmentPath, nodeModulesPath
+            context, environmentPath, nodeModulesPath, profileKey
         })
 
         const output = MountOutputDirPath({
@@ -63,6 +86,10 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps) => {
             url : serverEndpointStatus,
             serverAppName : serverName,
             componentLibraries: SerializeComponentLibraries(componentLibraries),
+            buildProfile,
+            isWatch,
+            environmentPath,
+            generatedDirName: RT_ENV_GENERATED_DIR_NAME,
             onChangeProgress : (percentage) => {
                 if(percentage < 100){
                         Log.info("WebUserInterfacePackager", `BUILDING ${percentage}%`)
@@ -70,20 +97,18 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps) => {
             }
         })
 
-        // Em watch, `Watch()` só resolve depois do PRIMEIRO bundle ficar pronto —
-        // quem chama registra o diretório estático sabendo que há o que servir.
-        // O `Close` devolvido é o único jeito de parar o watcher; sem ele o
-        // compilador ficava vivo (com polling de 1s) até o processo morrer.
-        //
-        // Em build de uma vez, o `Run()` já fecha o compilador sozinho e não há
-        // nada a encerrar depois — daí o `Close` inerte.
-        if(isWatch){
-            const watchHandle = await builder.Watch()
-            return { output, Close: watchHandle.Close }
-        }
+        Log.info("WebUserInterfacePackager", `perfil de build "${builder.profile.name}" para ${serverName}`)
 
-        await builder.Run()
-        return { output, Close: async () => {} }
+        // `Build()` escolhe entre compilar uma vez e observar conforme o perfil.
+        // Em watch ele só resolve depois do PRIMEIRO bundle ficar pronto, então
+        // quem chama registra o diretório estático sabendo que há o que servir; e
+        // o `Close` devolvido é o único jeito de parar o watcher.
+        //
+        // Em build de uma vez o compilador já se fecha sozinho, e o `Close`
+        // inerte mantém a mesma forma de retorno para os dois caminhos.
+        const result = await builder.Build()
+
+        return { output, Close: result.Close || (async () => {}) }
     }
 
     return StartWebGraphicUserInterfaceService
