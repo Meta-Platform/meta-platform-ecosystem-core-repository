@@ -1,6 +1,6 @@
 const { join } = require("path")
 const { randomUUID } = require("crypto")
-const { mkdirSync } = require("fs")
+const { mkdirSync, existsSync } = require("fs")
 
 const SmartRequire = require("../SmartRequire")
 const CreateTerminalSessionState = require("../Helpers/CreateTerminalSessionState")
@@ -110,11 +110,61 @@ const CommandLineRuntimeService = (params) => {
         return { terminalId, executableName, supervisorSocketPath }
     }
 
+    /**
+     * Executa um COMANDO CRU num terminal — sem pacote, sem boot.json, sem
+     * pkg-exec.
+     *
+     * `RunCommandLinePackage` resolve o executável a partir dos metadados do
+     * pacote, e é isso que se quer ao lançar um CLI do ecossistema. Mas há um
+     * caso que ele não cobre: rodar um comando de VERIFICAÇÃO declarado por
+     * quem chama (`node --test test/store.test.js`) e ficar com a saída e o
+     * código de saída. Até aqui, nada no ecossistema entregava as três coisas
+     * juntas — comando arbitrário, captura e exit code —, e cada consumidor
+     * acabava fazendo o próprio spawn, fora do monitor de instâncias.
+     *
+     * Reusa o MESMO registro de sessões: `AttachTerminal` já transmite a saída e
+     * já emite `{type:"exit", exitCode}` no fim, e `ListTerminals` já guarda o
+     * código de saída — a colheita do resultado sai de graça.
+     */
+    const RunCommand = async ({ command, args, cwd, cols, rows, env } = {}) => {
+
+        if(!command)
+            throw new Error("RunCommand: 'command' é obrigatório")
+        if(!cwd)
+            throw new Error("RunCommand: 'cwd' é obrigatório (o diretório onde o comando roda)")
+        // O pty NÃO valida o cwd: com diretório inexistente ele falha lá dentro,
+        // de um jeito que chega ao chamador como um código de saída estranho em
+        // vez de "esse caminho não existe".
+        if(!existsSync(cwd))
+            throw new Error(`RunCommand: o diretório '${cwd}' não existe`)
+
+        const commandArgs = Array.isArray(args) ? args.map(String) : []
+
+        const ptyProcess = pty.spawn(command, commandArgs, {
+            name: "xterm-color",
+            cols: cols || DEFAULT_COLS,
+            rows: rows || DEFAULT_ROWS,
+            cwd,
+            env: { ...process.env, ...(env || {}) }
+        })
+
+        // Sem supervisorDir: este processo não é uma instância supervisionada do
+        // ecossistema, é uma execução pontual que termina sozinha.
+        const terminalId = sessions.Register({
+            ptyProcess,
+            executableName: command,
+            packagePath: cwd
+        })
+
+        return { terminalId, command, args: commandArgs, cwd }
+    }
+
     if(onReady)
         onReady()
 
     return {
         RunCommandLinePackage,
+        RunCommand,
         AttachTerminal: sessions.Attach,
         WriteToTerminal: sessions.Write,
         ResizeTerminal: sessions.Resize,

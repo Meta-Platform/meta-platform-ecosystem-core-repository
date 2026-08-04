@@ -33,6 +33,49 @@
 			]
 		},
 		{
+			"summary": "RunCommand",
+			"method": "POST",
+			"path": "/run-command",
+			"parameters": [
+				{
+					"name": "command",
+					"in": "body",
+					"type": "string",
+					"required": true
+				},
+				{
+					"name": "args",
+					"in": "body",
+					"type": "object",
+					"required": false
+				},
+				{
+					"name": "cwd",
+					"in": "body",
+					"type": "string",
+					"required": true
+				},
+				{
+					"name": "cols",
+					"in": "body",
+					"type": "number",
+					"required": false
+				},
+				{
+					"name": "rows",
+					"in": "body",
+					"type": "number",
+					"required": false
+				},
+				{
+					"name": "env",
+					"in": "body",
+					"type": "object",
+					"required": false
+				}
+			]
+		},
+		{
 			"summary": "List",
 			"method": "GET",
 			"path": "/list"

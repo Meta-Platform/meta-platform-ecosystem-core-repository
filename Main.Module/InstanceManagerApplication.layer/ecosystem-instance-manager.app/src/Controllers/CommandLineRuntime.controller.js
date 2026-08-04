@@ -2,6 +2,7 @@
 //
 // Expõe, sobre o daemon, o serviço de terminal:
 //  - RunPackage       (POST) inicia um CLI num PTY e devolve o terminalId
+//  - RunCommand       (POST) executa um comando CRU e devolve o terminalId
 //  - List             (GET)  lista as sessões de terminal abertas
 //  - Kill             (POST) encerra uma sessão
 //  - TerminalStream   (WS)   canal bidirecional do terminal (I/O + resize)
@@ -10,6 +11,7 @@ const CommandLineRuntimeController = (params) => {
     const {
         commandLineRuntimeService: {
             RunCommandLinePackage,
+            RunCommand: RunRawCommand,
             AttachTerminal,
             WriteToTerminal,
             ResizeTerminal,
@@ -20,6 +22,11 @@ const CommandLineRuntimeController = (params) => {
 
     const RunPackage = ({ packagePath, commandLineArgs, cols, rows }) =>
         RunCommandLinePackage({ packagePath, commandLineArgs, cols, rows })
+
+    // Comando arbitrário com captura: quem chama abre o TerminalStream do
+    // terminalId devolvido e recebe a saída e, no fim, o código de saída.
+    const RunCommand = ({ command, args, cwd, cols, rows, env }) =>
+        RunRawCommand({ command, args, cwd, cols, rows, env })
 
     const List = () => ListTerminals()
 
@@ -63,6 +70,7 @@ const CommandLineRuntimeController = (params) => {
     return Object.freeze({
         controllerName: "CommandLineRuntimeController",
         RunPackage,
+        RunCommand,
         List,
         Kill,
         TerminalStream

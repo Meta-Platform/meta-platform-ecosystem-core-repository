@@ -1,12 +1,6 @@
-const { execFile } = require("child_process")
-
-// Executa `git` no diretório do repositório e resolve o stdout (ou rejeita).
-const RunGit = (args, cwd) => new Promise((resolve, reject) => {
-    execFile("git", args, { cwd, maxBuffer: 64 * 1024 * 1024 }, (error, stdout) => {
-        if(error) return reject(error)
-        resolve(stdout)
-    })
-})
+// O runner saiu daqui para src/RunGit.js quando a leitura de histórico entrou na
+// lib — os três leitores (status, log, detalhe de commit) usam o mesmo.
+const RunGit = require("./RunGit")
 
 // Traduz os dois caracteres de estado do porcelain (XY: X=index, Y=working tree)
 // para um rótulo simples usado na UI (tooltip/cores).

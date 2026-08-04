@@ -268,6 +268,13 @@ const CreateInstanceManagerClient = ({
         RunCommandLinePackage: ({ packagePath, commandLineArgs, cols, rows } = {}) =>
             _Call("CommandLineRuntime", "RunPackage", { packagePath, commandLineArgs, cols, rows }),
 
+        // Executa um COMANDO CRU (sem pacote/boot.json) num terminal e retorna
+        // { terminalId }. A saída e o código de saída vêm pelo TerminalStream —
+        // é o caminho para rodar um comando de verificação e ficar com o
+        // resultado sem sair do daemon.
+        RunCommand: ({ command, args, cwd, cols, rows, env } = {}) =>
+            _Call("CommandLineRuntime", "RunCommand", { command, args, cwd, cols, rows, env }),
+
         // Lista as sessões de terminal abertas.
         ListTerminals: () =>
             _Call("CommandLineRuntime", "List"),
