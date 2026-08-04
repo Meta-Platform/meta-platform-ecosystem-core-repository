@@ -399,6 +399,10 @@ const CreateImageOperations = ({ docker, StreamToBuffer, SafeFileName }) => {
     const CheckImageUpdate = async ({ reference, auth }) => {
         const resposta = {
             reference,
+            // O id local acompanha a resposta para que quem guarda o resultado
+            // saiba de QUAL imagem ele fala. A referência não serve para isso:
+            // ela muda de dono a cada `docker tag`.
+            imageId: null,
             localDigest: null,
             remoteDigest: null,
             updateAvailable: null,
@@ -413,6 +417,8 @@ const CreateImageOperations = ({ docker, StreamToBuffer, SafeFileName }) => {
             resposta.reason = "IMAGE_NOT_FOUND_LOCALLY"
             return resposta
         }
+
+        resposta.imageId = local.Id
 
         const digestsLocais = local.RepoDigests || []
         if (digestsLocais.length === 0) {

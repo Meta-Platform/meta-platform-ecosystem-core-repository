@@ -620,7 +620,7 @@ const CreateContainerOperations = ({ docker, StreamToBuffer, SafeFileName }) => 
             })
             const texto = Buffer.isBuffer(bruto) ? bruto.toString("utf-8") : String(bruto)
             // Remove os cabeçalhos de quadro que sobrariam como lixo binário.
-            return texto.replace(/[ --]/g, "")
+            return texto.replace(/[\x00-\x08\x0b-\x1f]/g, "")
         } catch (error) {
             return ""
         }
