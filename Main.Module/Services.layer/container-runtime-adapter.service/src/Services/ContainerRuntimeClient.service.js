@@ -114,6 +114,72 @@ const ContainerRuntimeClientService = (params) => {
     const PruneVolumes = (options) =>
         ContainerRuntimeCommand((API) => API.PruneVolumes({ options }))
 
+    /* ---------------------------------------------------- imagens (CTMG-45..48) */
+
+    const PullImage = (options) =>
+        ContainerRuntimeCommand((API) => API.PullImage({ options }))
+
+    const PushImage = (options) =>
+        ContainerRuntimeCommand((API) => API.PushImage({ options }))
+
+    const TagImage = (options) =>
+        ContainerRuntimeCommand((API) => API.TagImage({ options }))
+
+    const GetImageHistory = (imageIdOrName) =>
+        ContainerRuntimeCommand((API) => API.GetImageHistory({ imageIdOrName }))
+
+    const SearchImages = (options) =>
+        ContainerRuntimeCommand((API) => API.SearchImages({ options }))
+
+    const RegistryLogin = (options) =>
+        ContainerRuntimeCommand((API) => API.RegistryLogin({ options }))
+
+    const LoadImage = (options) =>
+        ContainerRuntimeCommand((API) => API.LoadImage({ options }))
+
+    const PruneImages = (options) =>
+        ContainerRuntimeCommand((API) => API.PruneImages({ options }))
+
+    const CheckImageUpdate = (options) =>
+        ContainerRuntimeCommand((API) => API.CheckImageUpdate({ options }))
+
+    /* ----------------------------------------------------- sistema (CTMG-50, 51) */
+
+    const GetRuntimeInfo = () =>
+        ContainerRuntimeCommand((API) => API.GetRuntimeInfo())
+
+    const GetRuntimeVersion = () =>
+        ContainerRuntimeCommand((API) => API.GetRuntimeVersion())
+
+    const PingRuntime = () =>
+        ContainerRuntimeCommand((API) => API.PingRuntime())
+
+    const GetDiskUsage = () =>
+        ContainerRuntimeCommand((API) => API.GetDiskUsage())
+
+    const PruneSystem = (options) =>
+        ContainerRuntimeCommand((API) => API.PruneSystem({ options }))
+
+    /* --------------------------------------- arquivos de container (CTMG-44) */
+
+    const MakeVolumeDirectory = (options) =>
+        ContainerRuntimeCommand((API) => API.MakeVolumeDirectory({ options }))
+
+    const ListContainerEntries = (options) =>
+        ContainerRuntimeCommand((API) => API.ListContainerEntries({ options }))
+
+    const CopyToContainer = (options) =>
+        ContainerRuntimeCommand((API) => API.CopyToContainer({ options }))
+
+    const CopyFromContainer = (options) =>
+        ContainerRuntimeCommand((API) => API.CopyFromContainer({ options }))
+
+    const DeleteContainerEntry = (options) =>
+        ContainerRuntimeCommand((API) => API.DeleteContainerEntry({ options }))
+
+    const MakeContainerDirectory = (options) =>
+        ContainerRuntimeCommand((API) => API.MakeContainerDirectory({ options }))
+
     const InspectNetwork = (networkIdOrName) =>
         ContainerRuntimeCommand((API) => API.InspectNetwork({ networkIdOrName }))
 
@@ -197,6 +263,7 @@ const ContainerRuntimeClientService = (params) => {
     const StreamContainerStats = RecusarPorSocket("StreamContainerStats")
     const OpenExecSession = RecusarPorSocket("OpenExecSession")
     const RegisterDockerEventListener = RecusarPorSocket("RegisterDockerEventListener")
+    const StreamRuntimeEvents = RecusarPorSocket("StreamRuntimeEvents")
 
     return Object.freeze({
         ListAllContainers,
@@ -228,6 +295,27 @@ const ContainerRuntimeClientService = (params) => {
         CommitContainer,
         PruneNetworks,
         PruneVolumes,
+        PullImage,
+        PushImage,
+        TagImage,
+        GetImageHistory,
+        SearchImages,
+        RegistryLogin,
+        LoadImage,
+        PruneImages,
+        CheckImageUpdate,
+        GetRuntimeInfo,
+        GetRuntimeVersion,
+        PingRuntime,
+        GetDiskUsage,
+        PruneSystem,
+        MakeVolumeDirectory,
+        ListContainerEntries,
+        CopyToContainer,
+        CopyFromContainer,
+        DeleteContainerEntry,
+        MakeContainerDirectory,
+        StreamRuntimeEvents,
         InspectNetwork,
         CreateNewNetwork,
         RemoveNetwork,

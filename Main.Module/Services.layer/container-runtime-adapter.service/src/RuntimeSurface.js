@@ -70,6 +70,15 @@ const RUNTIME_SURFACE = [
     { name: "ExportImage", kind: "call", clientSupported: true },
     { name: "BuildImageFromDockerfileString", kind: "call", clientSupported: true },
     { name: "BuildImageFromDockerfileContent", kind: "call", clientSupported: true },
+    { name: "PullImage", kind: "call", clientSupported: true },
+    { name: "PushImage", kind: "call", clientSupported: true },
+    { name: "TagImage", kind: "call", clientSupported: true },
+    { name: "GetImageHistory", kind: "call", clientSupported: true },
+    { name: "SearchImages", kind: "call", clientSupported: true },
+    { name: "RegistryLogin", kind: "call", clientSupported: true },
+    { name: "LoadImage", kind: "call", clientSupported: true },
+    { name: "PruneImages", kind: "call", clientSupported: true },
+    { name: "CheckImageUpdate", kind: "call", clientSupported: true },
 
     // ---- redes
     { name: "ListAllNetworks", kind: "call", clientSupported: true },
@@ -88,11 +97,26 @@ const RUNTIME_SURFACE = [
     { name: "PruneVolumes", kind: "call", clientSupported: true },
     { name: "ExportVolume", kind: "call", clientSupported: true },
 
+    // ---- sistema
+    { name: "GetRuntimeInfo", kind: "call", clientSupported: true },
+    { name: "GetRuntimeVersion", kind: "call", clientSupported: true },
+    { name: "PingRuntime", kind: "call", clientSupported: true },
+    { name: "GetDiskUsage", kind: "call", clientSupported: true },
+    { name: "PruneSystem", kind: "call", clientSupported: true },
+
     // ---- arquivos dentro do volume
     { name: "ListVolumeEntries", kind: "call", clientSupported: true },
     { name: "PutFileInVolume", kind: "call", clientSupported: true },
     { name: "GetFileFromVolume", kind: "call", clientSupported: true },
     { name: "DeleteVolumeEntry", kind: "call", clientSupported: true },
+    { name: "MakeVolumeDirectory", kind: "call", clientSupported: true },
+
+    // ---- arquivos dentro do container
+    { name: "ListContainerEntries", kind: "call", clientSupported: true },
+    { name: "CopyToContainer", kind: "call", clientSupported: true },
+    { name: "CopyFromContainer", kind: "call", clientSupported: true },
+    { name: "DeleteContainerEntry", kind: "call", clientSupported: true },
+    { name: "MakeContainerDirectory", kind: "call", clientSupported: true },
 
     // ---- entrega contínua
     {
@@ -114,6 +138,12 @@ const RUNTIME_SURFACE = [
         reason:
             "Sessão de mão dupla: a entrada do usuário precisa chegar ao processo " +
             "enquanto a saída volta. Só existe no adaptador em processo."
+    },
+    {
+        name: "StreamRuntimeEvents",
+        kind: "stream",
+        clientSupported: false,
+        reason: MOTIVO_STREAM
     },
     {
         name: "RegisterDockerEventListener",

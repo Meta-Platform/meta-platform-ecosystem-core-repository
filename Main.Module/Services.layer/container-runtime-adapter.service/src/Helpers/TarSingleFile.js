@@ -100,6 +100,20 @@ const ReadTarEntries = (buffer, { withContent = false } = {}) => {
         const size = parseInt(sizeOctal, 8)
         const typeflag = ReadString(header, 156, 1) || "0"
 
+        /*
+            Permissão e data de modificação (CTMG-44).
+
+            Só passaram a importar quando o navegador de ARQUIVOS DE CONTAINER
+            chegou: com o container parado não há processo para rodar `stat`, e
+            os cabeçalhos do tar são a única fonte desses campos. Sem eles, a
+            mesma tela mostraria colunas vazias dependendo de o container estar
+            de pé ou não.
+        */
+        const modeOctal = ReadString(header, 100, 8).trim()
+        const mtimeOctal = ReadString(header, 136, 12).trim()
+        const mode = modeOctal ? parseInt(modeOctal, 8) : null
+        const mtimeSeconds = mtimeOctal ? parseInt(mtimeOctal, 8) : null
+
         if (!name || Number.isNaN(size)) {
             truncated = true
             break
@@ -116,6 +130,8 @@ const ReadTarEntries = (buffer, { withContent = false } = {}) => {
             name,
             size,
             isDirectory: typeflag === "5" || name.endsWith("/"),
+            mode: Number.isNaN(mode) ? null : mode,
+            mtimeSeconds: Number.isNaN(mtimeSeconds) ? null : mtimeSeconds,
             ...(withContent && typeflag !== "5" ? { content: buffer.subarray(inicio, fim) } : {})
         })
 

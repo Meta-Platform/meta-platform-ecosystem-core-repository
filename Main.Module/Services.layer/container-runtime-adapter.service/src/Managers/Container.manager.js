@@ -77,12 +77,20 @@ const ContainerManager = (params) => {
 
     _Start()
 
+    /*
+        Containers vem primeiro porque Files depende do `RunExec` dele:
+        listar arquivo de container em execução É um exec, e reimplementá-lo
+        no outro módulo significaria manter duas decodificações do fluxo
+        binário do runtime — que foi exatamente o defeito do terminal.
+    */
+    const operacoesDeContainer = CreateContainerOperations(contexto)
+
     return {
-        ...CreateContainerOperations(contexto),
+        ...operacoesDeContainer,
         ...CreateImageOperations(contexto),
         ...CreateNetworkOperations(contexto),
         ...CreateVolumeOperations(contexto),
-        ...CreateFileOperations(contexto),
+        ...CreateFileOperations({ ...contexto, RunExec: operacoesDeContainer.RunExec }),
         ...CreateSystemOperations(contexto)
     }
 
