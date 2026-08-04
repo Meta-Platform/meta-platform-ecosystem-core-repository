@@ -162,6 +162,64 @@ const CreateContainerOperations = ({ docker, StreamToBuffer, SafeFileName }) => 
         }
     }
 
+    /*
+        PAUSAR, RETOMAR E RENOMEAR (CTMG-37).
+
+        `pause` congela os processos do container (via cgroup freezer) sem
+        derrubá-los: a memória fica de pé e a retomada é instantânea. É outra
+        coisa que `stop`, que manda SIGTERM e encerra — a diferença aparece
+        quando se quer segurar um banco por um minuto sem perder conexão nem
+        estado.
+    */
+    const PauseContainer = async (containerIdOrName) => {
+        try {
+            const container = docker.getContainer(containerIdOrName)
+            await container.pause()
+            return { success: true, message: `Container ${containerIdOrName} paused successfully` }
+        } catch (error) {
+            console.error(`Error pausing container ${containerIdOrName}:`, error)
+            throw error
+        }
+    }
+
+    const UnpauseContainer = async (containerIdOrName) => {
+        try {
+            const container = docker.getContainer(containerIdOrName)
+            await container.unpause()
+            return { success: true, message: `Container ${containerIdOrName} unpaused successfully` }
+        } catch (error) {
+            console.error(`Error unpausing container ${containerIdOrName}:`, error)
+            throw error
+        }
+    }
+
+    /*
+        Renomear é a operação que evita o ciclo "destrói e recria" só porque o
+        nome ficou errado — e é da qual `RecreateContainer` (CTMG-57) depende
+        para guardar o container antigo enquanto o novo sobe.
+    */
+    const RenameContainer = async ({ containerIdOrName, name }) => {
+        if (typeof name !== "string" || name.trim() === "") {
+            const erro = new Error("Informe o novo nome do container.")
+            erro.code = "INVALID_CONTAINER_NAME"
+            erro.httpStatus = 400
+            erro.statusCode = 400
+            throw erro
+        }
+
+        try {
+            const container = docker.getContainer(containerIdOrName)
+            await container.rename({ name: name.trim() })
+            return {
+                success: true,
+                message: `Container ${containerIdOrName} renamed to ${name.trim()}`
+            }
+        } catch (error) {
+            console.error(`Error renaming container ${containerIdOrName}:`, error)
+            throw error
+        }
+    }
+
     const InspectContainer = async (containerIdOrName) => {
         try {
             const container = docker.getContainer(containerIdOrName)
@@ -592,6 +650,9 @@ const CreateContainerOperations = ({ docker, StreamToBuffer, SafeFileName }) => 
         StopContainer,
         RestartContainer,
         KillContainer,
+        PauseContainer,
+        UnpauseContainer,
+        RenameContainer,
         RemoveContainer,
         InspectContainer,
         GetContainerLogHistory,

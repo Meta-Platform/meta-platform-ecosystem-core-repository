@@ -53,18 +53,21 @@ const SUPERFICIE_ESPERADA = [
     "ListAllVolumes/0",
     "ListVolumeEntries/1",
     "OpenExecSession/1",
+    "PauseContainer/1",
     "PutFileInVolume/1",
     "RegisterDockerEventListener/1",
     "RemoveContainer/1",
     "RemoveImage/1",
     "RemoveNetwork/1",
     "RemoveVolume/1",
+    "RenameContainer/1",
     "RestartContainer/1",
     "RunExec/1",
     "StartContainer/1",
     "StopContainer/1",
     "StreamContainerLogs/1",
-    "StreamContainerStats/1"
+    "StreamContainerStats/1",
+    "UnpauseContainer/1"
 ]
 
 const CriarAdaptador = () => ContainerManager({

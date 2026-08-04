@@ -75,6 +75,15 @@ const ContainerRuntimeClientService = (params) => {
     const RunExec = (options) =>
         ContainerRuntimeCommand((API) => API.RunExec({ options }))
 
+    const PauseContainer = (containerIdOrName) =>
+        ContainerRuntimeCommand((API) => API.PauseContainer({ containerIdOrName }))
+
+    const UnpauseContainer = (containerIdOrName) =>
+        ContainerRuntimeCommand((API) => API.UnpauseContainer({ containerIdOrName }))
+
+    const RenameContainer = (options) =>
+        ContainerRuntimeCommand((API) => API.RenameContainer({ options }))
+
     const InspectNetwork = (networkIdOrName) =>
         ContainerRuntimeCommand((API) => API.InspectNetwork({ networkIdOrName }))
 
@@ -176,6 +185,9 @@ const ContainerRuntimeClientService = (params) => {
         GetContainerLogHistory,
         ExportContainer,
         RunExec,
+        PauseContainer,
+        UnpauseContainer,
+        RenameContainer,
         InspectNetwork,
         CreateNewNetwork,
         RemoveNetwork,
