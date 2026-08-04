@@ -62,6 +62,10 @@ const RUNTIME_SURFACE = [
     { name: "ListContainerProcesses", kind: "call", clientSupported: true },
     { name: "GetContainerFileSystemChanges", kind: "call", clientSupported: true },
     { name: "CommitContainer", kind: "call", clientSupported: true },
+    // O spec de um container que existe, e a recriação a partir dele
+    // (CTMG-56, 57) — base de editar, duplicar e atualizar com um clique.
+    { name: "GetContainerSpec", kind: "call", clientSupported: true },
+    { name: "RecreateContainer", kind: "call", clientSupported: true },
 
     // ---- imagens
     { name: "ListAllImages", kind: "call", clientSupported: true },

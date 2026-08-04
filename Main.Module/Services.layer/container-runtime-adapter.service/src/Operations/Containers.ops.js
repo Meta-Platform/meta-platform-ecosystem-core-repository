@@ -14,9 +14,11 @@ const { PassThrough } = require('node:stream')
 
 const NormalizeContainerEnvironment =
     require("../Helpers/NormalizeContainerEnvironment")
-const {
-    BuildContainerNetworkConfiguration
-} = require("../Helpers/BuildContainerNetworkConfiguration")
+// O contrato de criação com ~60 campos, e a volta dele (CTMG-54, 55, 56).
+const { ValidateContainerSpec } = require("../Helpers/ContainerSpec")
+const BuildContainerCreateOptions = require("../Helpers/BuildContainerCreateOptions")
+const { NormalizeLegacySpec } = require("../Helpers/BuildContainerCreateOptions")
+const DescribeContainerSpec = require("../Helpers/DescribeContainerSpec")
 // Desenquadra o fluxo binário do runtime — que vem multiplexado ou cru, e nem
 // sempre no formato que foi pedido (CTMG-21).
 const CreateDockerStreamDecoder = require("../Helpers/DecodeDockerStream")
@@ -90,55 +92,190 @@ const CreateContainerOperations = ({ docker, StreamToBuffer, SafeFileName }) => 
     }
 
     /*
-        As três traduções que aqui aconteciam à mão — montagens, portas e
-        grupos do host — vivem em NormalizeContainerCreateInput.js, testáveis
-        sem daemon. Ver o cabeçalho daquele arquivo para o que estava errado
-        (CTMG-26, CTMG-28, CTMG-31).
+        CRIAÇÃO DE CONTAINER (CTMG-55).
+
+        A tradução dos ~60 campos vive em BuildContainerCreateOptions.js —
+        função pura, verificável sem daemon. Aqui só se chama.
+
+        A FORMA ANTIGA CONTINUA ENTRANDO. `CreateNewContainer` tem chamador em
+        outro repositório (ServiceOrchestrator.manager.js, VirtualDeskRepo, que
+        provisiona a nuvem corporativa): `NormalizeLegacySpec` reconhece
+        `imageName`/`containerName`/`networkmode` e produz o mesmo JSON de
+        sempre. Há teste de regressão com a chamada literal daquele arquivo.
+
+        A validação acontece antes e devolve TODOS os campos errados de uma vez
+        — um formulário de oito abas precisa marcar tudo junto, não um por
+        tentativa.
     */
-    const CreateNewContainer = async ({
-        imageName,
-        containerName,
-        ports = [],
-        networkmode,
-        networkAliases = [],
-        mounts = [],
-        environment = {},
-        groupAdd,
-        inheritHostGroups = false
+    const CreateNewContainer = async (spec) => {
+        const { valid, errors } = ValidateContainerSpec(NormalizeLegacySpec(spec || {}))
+
+        if (!valid) {
+            /*
+                COM UM ERRO SÓ, O ERRO É ELE.
+
+                A validação existe para o formulário de oito abas, que precisa
+                marcar todos os campos de uma vez. Mas quem chama a API com uma
+                montagem malformada já recebia `INVALID_MOUNT` com o campo
+                nomeado (CTMG-26), e trocar isso por um genérico
+                `INVALID_CONTAINER_SPEC` quebraria um contrato que existe e tem
+                teste — sem ganho nenhum, porque com um erro só não há o que
+                agregar.
+
+                `errors[]` vai junto nos dois casos: quem entende a forma nova
+                a usa, quem espera a antiga continua encontrando o que espera.
+            */
+            const unico = errors.length === 1 ? errors[0] : null
+
+            const erro = new Error(
+                unico
+                    ? unico.message
+                    : `Configuração inválida em: ${errors.map((e) => e.field).join(", ")}.`
+            )
+            erro.code = unico ? unico.code : "INVALID_CONTAINER_SPEC"
+            if (unico) erro.field = unico.field
+            erro.errors = errors
+            erro.httpStatus = 400
+            erro.statusCode = 400
+            throw erro
+        }
+
+        const container = await docker.createContainer(BuildContainerCreateOptions(spec))
+        return await container.inspect()
+    }
+
+    /*
+        LER O SPEC DE UM CONTAINER QUE EXISTE (CTMG-56).
+
+        Base de editar, duplicar, copiar o `docker run` e promover container
+        avulso a serviço de stack.
+    */
+    const GetContainerSpec = async (containerIdOrName) => {
+        const inspecao = await docker.getContainer(containerIdOrName).inspect()
+        return DescribeContainerSpec(inspecao, { imageEnv: await AmbienteDaImagem(inspecao) })
+    }
+
+    /*
+        O ambiente que veio da IMAGEM, para poder ser subtraído do spec.
+
+        Sem isto, o spec de um postgres sai com PG_VERSION, GOSU_VERSION e PATH
+        como se fossem do usuário — e recriar congelaria a versão da imagem
+        antiga. Custa um inspect a mais; falhar nele não pode impedir a leitura
+        do spec, então o pior caso é voltar ao comportamento anterior.
+    */
+    const AmbienteDaImagem = async (inspecaoDoContainer) => {
+        const referencia = inspecaoDoContainer?.Config?.Image || inspecaoDoContainer?.Image
+        if (!referencia) return []
+
+        try {
+            const imagem = await docker.getImage(referencia).inspect()
+            return imagem?.Config?.Env || []
+        } catch (error) {
+            return []
+        }
+    }
+
+    /*
+        RECRIAR PRESERVANDO CONFIGURAÇÃO E VOLUMES (CTMG-57).
+
+        É a operação por trás de "editar container" e de "atualizar imagem com
+        um clique". Como o Docker não altera a maior parte da configuração de
+        um container existente, mudar qualquer coisa significa destruir e criar
+        de novo — e é aí que se perde tudo, se for feito sem cuidado.
+
+        A SEQUÊNCIA, e o porquê de cada passo:
+
+          descrever   → o spec do que está lá, não o que alguém lembra
+          parar       → escrita em curso não pode virar dado pela metade
+          renomear    → o nome fica livre para o novo, e o antigo continua
+                        existindo como rede de segurança
+          criar/subir → o novo, com o patch aplicado
+          remover     → só depois de o novo estar de pé
+
+        E SE FALHAR NO MEIO: o antigo volta a ter o nome original e é religado.
+        Sem isso, um erro de digitação numa porta deixaria o usuário sem
+        serviço E sem o container de antes — o pior resultado possível de uma
+        operação que ele pediu para "editar".
+    */
+    const RecreateContainer = async ({
+        containerIdOrName,
+        specPatch = {},
+        keepName = true,
+        removeOld = true
     }) => {
-
-        const { exposedPorts, portBindings } = NormalizePorts(ports)
-        const normalizedMounts = NormalizeMounts(mounts)
-        const gruposSuplementares = ResolveGroupAdd({ groupAdd, inheritHostGroups })
-
-        const environmentVariables =
-            NormalizeContainerEnvironment(environment)
-        const networkConfiguration =
-            BuildContainerNetworkConfiguration({
-                networkmode,
-                networkAliases
-            })
-
-        const container = await docker.createContainer({
-            Image: imageName,
-            name: containerName,
-            ...(environmentVariables.length > 0
-                ? { Env: environmentVariables }
-                : {}),
-            ExposedPorts: exposedPorts,
-            HostConfig: {
-                PortBindings: portBindings,
-                NetworkMode: networkmode,
-                Mounts: normalizedMounts,
-                ...(gruposSuplementares.length > 0
-                    ? { GroupAdd: gruposSuplementares }
-                    : {})
-            },
-            ...networkConfiguration
+        const antigo = await docker.getContainer(containerIdOrName).inspect()
+        const specOriginal = DescribeContainerSpec(antigo, {
+            imageEnv: await AmbienteDaImagem(antigo)
         })
+        const estavaRodando = Boolean(antigo.State?.Running)
+        const nomeOriginal = String(antigo.Name || "").replace(/^\//, "")
 
-        const containerInfo = await container.inspect()
-        return containerInfo
+        const specNovo = {
+            ...specOriginal,
+            ...specPatch,
+            // Mesclagem rasa mudaria `resources` inteiro quando o patch traz um
+            // campo só; estes três são sempre objetos e merecem mesclagem.
+            ...(specPatch.resources ? { resources: { ...specOriginal.resources, ...specPatch.resources } } : {}),
+            ...(specPatch.security ? { security: { ...specOriginal.security, ...specPatch.security } } : {}),
+            ...(specPatch.network ? { network: { ...specOriginal.network, ...specPatch.network } } : {}),
+            ...(keepName ? { name: specPatch.name || nomeOriginal } : {})
+        }
+
+        const nomeDeReserva = `${nomeOriginal}-old-${Date.now()}`
+        let renomeado = false
+        let novoId = null
+
+        try {
+            if (estavaRodando) await docker.getContainer(antigo.Id).stop()
+
+            if (keepName) {
+                await docker.getContainer(antigo.Id).rename({ name: nomeDeReserva })
+                renomeado = true
+            }
+
+            const criado = await docker.createContainer(BuildContainerCreateOptions(specNovo))
+            novoId = criado.id || criado.Id
+
+            if (estavaRodando) await docker.getContainer(novoId).start()
+
+            const info = await docker.getContainer(novoId).inspect()
+
+            if (removeOld) {
+                try {
+                    await docker.getContainer(antigo.Id).remove({ force: true })
+                } catch (erroDeLimpeza) {
+                    // O novo já está de pé: falhar aqui não pode desfazer o que
+                    // deu certo. O antigo aparece como órfão na manutenção.
+                    console.error("Error removing old container after recreate:", erroDeLimpeza)
+                }
+            }
+
+            return { oldContainerId: antigo.Id, newContainerInfo: info, started: estavaRodando }
+        } catch (error) {
+            await RestaurarAntigo({ antigo, nomeOriginal, renomeado, novoId, estavaRodando })
+
+            const falha = new Error(
+                `Não foi possível recriar ${nomeOriginal}: ${error.message}. ` +
+                "O container anterior foi restaurado."
+            )
+            falha.code = "CONTAINER_RECREATE_FAILED"
+            falha.containerId = antigo.Id
+            falha.cause = error
+            throw falha
+        }
+    }
+
+    const RestaurarAntigo = async ({ antigo, nomeOriginal, renomeado, novoId, estavaRodando }) => {
+        // Limpa o novo, se chegou a nascer: ele é que sobra.
+        if (novoId) {
+            try { await docker.getContainer(novoId).remove({ force: true }) } catch (e) { /* segue */ }
+        }
+        if (renomeado) {
+            try { await docker.getContainer(antigo.Id).rename({ name: nomeOriginal }) } catch (e) { /* segue */ }
+        }
+        if (estavaRodando) {
+            try { await docker.getContainer(antigo.Id).start() } catch (e) { /* segue */ }
+        }
     }
 
     const RemoveContainer = async (containerIdOrName) => {
@@ -983,7 +1120,9 @@ const CreateContainerOperations = ({ docker, StreamToBuffer, SafeFileName }) => 
         UpdateContainerResources,
         ListContainerProcesses,
         GetContainerFileSystemChanges,
-        CommitContainer
+        CommitContainer,
+        GetContainerSpec,
+        RecreateContainer
     }
 }
 

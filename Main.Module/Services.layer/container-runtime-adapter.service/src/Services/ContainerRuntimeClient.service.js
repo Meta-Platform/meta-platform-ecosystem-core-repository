@@ -108,6 +108,12 @@ const ContainerRuntimeClientService = (params) => {
     const CommitContainer = (options) =>
         ContainerRuntimeCommand((API) => API.CommitContainer({ options }))
 
+    const GetContainerSpec = (containerIdOrName) =>
+        ContainerRuntimeCommand((API) => API.GetContainerSpec({ containerIdOrName }))
+
+    const RecreateContainer = (options) =>
+        ContainerRuntimeCommand((API) => API.RecreateContainer({ options }))
+
     const PruneNetworks = (options) =>
         ContainerRuntimeCommand((API) => API.PruneNetworks({ options }))
 
@@ -293,6 +299,8 @@ const ContainerRuntimeClientService = (params) => {
         ListContainerProcesses,
         GetContainerFileSystemChanges,
         CommitContainer,
+        GetContainerSpec,
+        RecreateContainer,
         PruneNetworks,
         PruneVolumes,
         PullImage,
