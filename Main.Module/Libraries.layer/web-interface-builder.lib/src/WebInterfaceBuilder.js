@@ -6,6 +6,7 @@ const exists            = promisify(fs.exists)
 const BuildProfiles           = require("./BuildProfiles")
 const CreateWebpackConfig     = require("./CreateWebpackConfig")
 const CreateBuildWorkerClient = require("./CreateBuildWorkerClient")
+const BuildCache              = require("./BuildCache")
 
 const CheckPackageDirExist = (path) => exists(`${path}`)
 
@@ -179,6 +180,44 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
         const _WorkerLog = (level, text) =>
             Log[level] ? Log[level]("webgui-build-worker", text) : Log.info("webgui-build-worker", text)
 
+        // Assinatura das entradas do build. Calculada ANTES de compilar, e
+        // válida depois — o diretório de saída não participa dela.
+        const _ComputeFingerprint = () => {
+            try {
+                return BuildCache.ComputeWebInterfaceFingerprint({
+                    context,
+                    nodeModules: nodeModulesPath,
+                    componentLibraries,
+                    buildProfile: profile.name,
+                    entrypoint,
+                    htmlTemplate
+                })
+            } catch(error){
+                // Sem assinatura não há cache — recompila, que é o comportamento
+                // seguro. Um erro aqui nunca pode impedir a interface de subir.
+                Log.warn("WebInterfaceBuilder", `não consegui assinar as entradas de ${serverAppName}: ${error.message}`)
+                return null
+            }
+        }
+
+        const _AfterBuild = (fingerprint) => {
+            if(fingerprint)
+                BuildCache.WriteBuildManifest(output, { fingerprint, serverAppName, profileName: profile.name })
+
+            // O nome do diretório de assets deriva da configuração, então mudar
+            // porta, URL ou perfil abandona o diretório anterior. Sem esta
+            // faxina, `.generated_data` só cresce.
+            if(!profile.watch && environmentPath && generatedDirName){
+                const removed = BuildCache.PurgeStaleWebInterfaceAssets({
+                    generatedDirPath: path.join(environmentPath, generatedDirName),
+                    keepDirNames: [output],
+                    maxAgeDays: Number(params.assetsRetentionDays) > 0 ? Number(params.assetsRetentionDays) : undefined
+                })
+                if(removed.length)
+                    Log.info("WebInterfaceBuilder", `removi ${removed.length} diretório(s) de assets órfãos`)
+            }
+        }
+
         const handleChangeProgress = _Debounce((_percentage) => {
             const percentage = parseInt(_percentage * 100)
             onChangeProgress && onChangeProgress(percentage)
@@ -255,6 +294,26 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
         const Run = async () => {
             await _AssertContextExists()
 
+            // Cache: se a assinatura das entradas bate com a do último build e
+            // os artefatos estão no disco, não há o que compilar. Antes, só a
+            // janela desktop tinha esse desvio — o endpoint HTTP recompilava do
+            // zero a cada subida da instância.
+            const fingerprint = _ComputeFingerprint()
+            if(BuildCache.IsWebInterfaceFresh({ output, fingerprint })){
+                Log.info("WebInterfaceBuilder", `A interface ${serverAppName} está atualizada — reaproveitando o build anterior`)
+                return { output, summary: { ok: true, fromCache: true }, fromCache: true, profileName: profile.name }
+            }
+
+            // Por que não reaproveitou. Sem isto, um cache que nunca acerta é
+            // indistinguível de um cache que não existe — e o sintoma (recompilar
+            // sempre) é exatamente o mesmo.
+            if(fingerprint){
+                const previous = BuildCache.ReadBuildManifest(output)
+                Log.info("WebInterfaceBuilder", previous
+                    ? `build necessário para ${serverAppName}: assinatura ${fingerprint.slice(0, 12)} ≠ ${String(previous.fingerprint).slice(0, 12)} (versão ${previous.cacheVersion})`
+                    : `build necessário para ${serverAppName}: sem build anterior em ${output}`)
+            }
+
             Log.info("WebInterfaceBuilder", `Iniciando a construção da interface ${context}`)
 
             if(_ShouldIsolate()){
@@ -274,7 +333,8 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
                     )
 
                 Log.info("WebInterfaceBuilder", `A interface ${serverAppName} foi construida com sucesso (processo isolado, pico de ${Math.round((summary.peakRssBytes || 0) / 1048576)} MB)`)
-                return { output, summary, fromCache: false, isolated: true }
+                _AfterBuild(fingerprint)
+                return { output, summary, fromCache: false, isolated: true, profileName: profile.name }
             }
 
             try {
@@ -297,7 +357,8 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
                 })
 
                 Log.info("WebInterfaceBuilder", `A interface ${serverAppName} foi construida com sucesso`)
-                return { output, summary, fromCache: false }
+                _AfterBuild(fingerprint)
+                return { output, summary, fromCache: false, profileName: profile.name }
 
             } finally {
                 // Build de uma vez só: o compiler não serve para mais nada depois
