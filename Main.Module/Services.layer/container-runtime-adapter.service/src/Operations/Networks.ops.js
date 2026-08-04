@@ -38,6 +38,81 @@ const CreateNetworkOperations = ({ docker }) => {
 
     }
 
+    /*
+        QUEM USA ESTA REDE (CTMG-102).
+
+        O `inspect` da rede já traz os containers conectados — mas só com IP e
+        nome. O que falta é justamente o que interessa para diagnosticar:
+
+        - os **aliases** de DNS, que são como um container acha o outro. Sem
+          eles, "por que o app não enxerga o banco?" não tem resposta na tela;
+        - a **stack** a que cada um pertence, que transforma uma lista de nomes
+          soltos em "estes cinco são o mesmo compose".
+
+        Os dois vivem no container, não na rede. Daí a segunda volta.
+    */
+    const GetNetworkUsage = async (networkIdOrName) => {
+        const rede = await docker.getNetwork(networkIdOrName).inspect()
+        const conectados = Object.entries(rede.Containers || {})
+
+        const containers = await Promise.all(conectados.map(async ([id, dados]) => {
+            const base = {
+                id,
+                name: dados.Name,
+                ipv4: (dados.IPv4Address || "").split("/")[0] || null,
+                ipv6: (dados.IPv6Address || "").split("/")[0] || null,
+                macAddress: dados.MacAddress || null,
+                aliases: [],
+                stack: null,
+                service: null,
+                state: null
+            }
+
+            try {
+                const inspecao = await docker.getContainer(id).inspect()
+                const naRede = inspecao.NetworkSettings?.Networks?.[rede.Name]
+                const labels = inspecao.Config?.Labels || {}
+
+                return {
+                    ...base,
+                    // O próprio id curto entra como alias em toda rede; ele não
+                    // é escolha de ninguém e só polui a lista.
+                    aliases: (naRede?.Aliases || []).filter((alias) => !id.startsWith(alias)),
+                    stack: labels["com.docker.compose.project"]
+                        || labels["com.metaplatform.container-manager.stack"]
+                        || null,
+                    service: labels["com.docker.compose.service"]
+                        || labels["com.metaplatform.container-manager.stack-service"]
+                        || null,
+                    state: inspecao.State?.Status || null
+                }
+            } catch (error) {
+                // Container que sumiu entre o inspect da rede e o dele: a rede
+                // ainda o lista, e mostrar o que se sabe é melhor que omitir.
+                return base
+            }
+        }))
+
+        const Distintos = (valores) =>
+            Array.from(new Set(valores.filter(Boolean)))
+
+        return {
+            id: rede.Id,
+            name: rede.Name,
+            driver: rede.Driver,
+            scope: rede.Scope,
+            internal: Boolean(rede.Internal),
+            ipam: rede.IPAM || null,
+            labels: rede.Labels || {},
+            containers,
+            stacks: Distintos(containers.map((c) => c.stack)),
+            services: Distintos(containers.map((c) => c.service)),
+            // As três redes que o Docker cria sozinho nunca são removíveis, e a
+            // tela precisa saber disso antes de oferecer o botão.
+            removable: !["bridge", "host", "none"].includes(rede.Name)
+        }
+    }
+
     const InspectNetwork = async (networkIdOrName) => {
         try {
             const network = docker.getNetwork(networkIdOrName)
@@ -153,7 +228,8 @@ const CreateNetworkOperations = ({ docker }) => {
         RemoveNetwork,
         PruneNetworks,
         ConnectContainerToNetwork,
-        DisconnectContainerFromNetwork
+        DisconnectContainerFromNetwork,
+        GetNetworkUsage
     }
 }
 

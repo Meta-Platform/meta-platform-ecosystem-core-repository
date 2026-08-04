@@ -92,6 +92,8 @@ const RUNTIME_SURFACE = [
     { name: "ConnectContainerToNetwork", kind: "call", clientSupported: true },
     { name: "DisconnectContainerFromNetwork", kind: "call", clientSupported: true },
     { name: "PruneNetworks", kind: "call", clientSupported: true },
+    // Quem está conectado, com alias e stack (CTMG-102).
+    { name: "GetNetworkUsage", kind: "call", clientSupported: true },
 
     // ---- volumes
     { name: "ListAllVolumes", kind: "call", clientSupported: true },
@@ -100,6 +102,12 @@ const RUNTIME_SURFACE = [
     { name: "RemoveVolume", kind: "call", clientSupported: true },
     { name: "PruneVolumes", kind: "call", clientSupported: true },
     { name: "ExportVolume", kind: "call", clientSupported: true },
+    // Backup que restaura, clone e esvaziar (CTMG-98, 99) — as três recusam
+    // volume em uso sem `force`. Mais o tamanho e quem depende (CTMG-100).
+    { name: "ImportVolume", kind: "call", clientSupported: true },
+    { name: "CloneVolume", kind: "call", clientSupported: true },
+    { name: "EmptyVolume", kind: "call", clientSupported: true },
+    { name: "GetVolumeUsage", kind: "call", clientSupported: true },
 
     // ---- sistema
     { name: "GetRuntimeInfo", kind: "call", clientSupported: true },

@@ -222,6 +222,23 @@ const ContainerRuntimeClientService = (params) => {
     const ExportVolume = (volumeName) =>
         ContainerRuntimeCommand((API) => API.ExportVolume({ volumeName }))
 
+    /* ------------------------------------------- volumes e redes (E8) */
+
+    const ImportVolume = (options) =>
+        ContainerRuntimeCommand((API) => API.ImportVolume({ options }))
+
+    const CloneVolume = (options) =>
+        ContainerRuntimeCommand((API) => API.CloneVolume({ options }))
+
+    const EmptyVolume = (options) =>
+        ContainerRuntimeCommand((API) => API.EmptyVolume({ options }))
+
+    const GetVolumeUsage = (volumeName) =>
+        ContainerRuntimeCommand((API) => API.GetVolumeUsage({ volumeName }))
+
+    const GetNetworkUsage = (networkIdOrName) =>
+        ContainerRuntimeCommand((API) => API.GetNetworkUsage({ networkIdOrName }))
+
     /*
         ---- o que faltava (CTMG-34) ----
 
@@ -302,6 +319,7 @@ const ContainerRuntimeClientService = (params) => {
         GetContainerSpec,
         RecreateContainer,
         PruneNetworks,
+        GetNetworkUsage,
         PruneVolumes,
         PullImage,
         PushImage,
@@ -340,6 +358,10 @@ const ContainerRuntimeClientService = (params) => {
         RemoveImage,
         ExportImage,
         ExportVolume,
+        ImportVolume,
+        CloneVolume,
+        EmptyVolume,
+        GetVolumeUsage,
         StreamContainerLogs,
         StreamContainerStats,
         OpenExecSession,

@@ -138,6 +138,28 @@ const BuildNetworkOptions = (options = {}) => {
         throw CriarErro("Informe o nome da rede.", "name")
     }
 
+    /*
+        SUB-REDE NO LUGAR ERRADO É O ERRO MAIS FÁCIL DE COMETER AQUI.
+
+        `{ name, subnet: "172.31.0.0/24" }` parece óbvio e é ignorado: o IPAM
+        do Docker mora em `ipam.config[]`. Sem esta checagem a rede NASCE — com
+        a sub-rede que o daemon escolher — e o erro só aparece quando alguém
+        estranha o IP do container, muito depois.
+
+        Recusar é a única resposta honesta: aceitar em silêncio faz o app
+        prometer uma configuração que não aplicou.
+    */
+    const FORA_DE_LUGAR = ["subnet", "gateway", "ipRange", "auxAddress", "auxiliaryAddresses"]
+    const perdido = FORA_DE_LUGAR.find((campo) => options[campo] !== undefined)
+    if (perdido) {
+        throw CriarErro(
+            `O campo "${perdido}" não vive na raiz: ele pertence a ipam.config[]. ` +
+            `Use { ipam: { config: [{ ${perdido}: ... }] } } — na raiz ele seria ` +
+            "ignorado em silêncio e a rede nasceria com a faixa que o daemon escolhesse.",
+            perdido
+        )
+    }
+
     const configuracoes = (ipam?.config ?? ipam?.Config ?? []).map(BuildIpamConfig)
 
     return {
