@@ -23,9 +23,28 @@ central aqui:
   consomem.
 
 Trocar um pelo outro não muda o código de quem consome — muda **quem tem a
-chave do runtime**. A única diferença de superfície é o stream de eventos do
-Docker (`RegisterDockerEventListener`), que só existe no adaptador em processo;
-no cliente ele lança erro explicando o motivo.
+chave do runtime**.
+
+### O manifesto de superfície
+
+`src/RuntimeSurface.js` declara, uma vez, tudo o que este pacote expõe: o nome,
+a natureza (`call`, `stream`, `session`, `local`), se o cliente por socket deve
+implementar e, quando não deve, **por quê**.
+
+`test/RuntimeSurfaceParity.test.js` compara o manifesto com as duas
+implementações e falha quando elas se afastam — operação no adaptador e ausente
+do manifesto, do manifesto e ausente do adaptador, ou marcada como suportada e
+ausente do cliente.
+
+Isso existe porque as duas superfícies já haviam divergido em oito métodos sem
+que nada avisasse: a diferença só aparecia quando um painel do Ring 1 chamava
+algo inexistente e recebia `undefined is not a function`. **Operação nova entra
+no manifesto junto com a implementação.**
+
+O que não atravessa o socket — `StreamContainerLogs`, `StreamContainerStats` e
+`OpenExecSession` — existe no cliente para lançar um erro que diz o motivo e
+para onde ir. Entrega contínua por callback não cabe no `CommandExecutor`, que
+é pergunta e resposta.
 
 ## Serviços expostos (`metadata/services.json`)
 
@@ -93,7 +112,20 @@ tratar erro linha a linha.
 `RemoveVolume`, `ExportVolume`, e as operações de arquivo dentro do volume:
 `ListVolumeEntries`, `PutFileInVolume`, `GetFileFromVolume`, `DeleteVolumeEntry`
 
-**Eventos** — `RegisterDockerEventListener` (só no `ContainerRuntimeAdapter`)
+**Eventos** — `RegisterDockerEventListener`, `GetEventStreamState`
+
+### O stream de eventos abre sob demanda
+
+A assinatura é o que abre o stream; sair o último assinante o fecha. Antes ele
+era aberto na construção do adaptador — e como o gerenciador de conexões mantém
+um adaptador em cache **por conexão cadastrada**, isso significava um socket
+aberto por conexão, mesmo sem ninguém escutando. Uma conexão remota fora do ar
+repetia o mesmo erro no log enquanto o operador trabalhava noutra.
+
+`RegisterDockerEventListener` devolve uma função para soltar a assinatura.
+Quem ignora o retorno continua funcionando, mas segura o stream aberto.
+`GetEventStreamState()` diz se está aberto, quantos assinantes há, qual foi o
+último erro e em quanto tempo será a próxima tentativa (backoff de 1s a 30s).
 
 **Streams** — `StreamContainerLogs`, `StreamContainerStats`, `OpenExecSession`
 

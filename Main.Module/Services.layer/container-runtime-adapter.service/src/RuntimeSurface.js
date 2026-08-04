@@ -1,0 +1,139 @@
+/*
+    A superfície do runtime, declarada uma vez (CTMG-33).
+
+    Este pacote publica DUAS implementações da mesma ideia: o
+    `ContainerRuntimeAdapter`, que fala direto com o socket, e o
+    `ContainerRuntimeClient`, que fala com o adaptador por unix socket. O README
+    dizia que as duas tinham a mesma superfície. Não tinham: faltavam oito
+    métodos no cliente, e nada no projeto impedia que o nono nascesse só de um
+    lado — a divergência só aparecia quando um painel do Ring 1 chamava algo que
+    não existia e recebia "undefined is not a function".
+
+    Este arquivo é a fonte única, e `test/RuntimeSurfaceParity.test.js` falha
+    quando a realidade se afasta dele. Operação nova entra aqui **junto** com a
+    implementação, não depois.
+
+    ## Os campos
+
+    - `kind`
+        - `call`    — pergunta e resposta; atravessa o socket sem problema
+        - `stream`  — entrega contínua por callback
+        - `session` — canal de mão dupla (entrada e saída ao vivo)
+        - `local`   — estado do próprio adaptador, sem sentido remoto
+
+    - `clientSupported` — se o `ContainerRuntimeClient` deve implementar.
+    - `reason` — obrigatório quando `false`. Por que não cabe, em uma linha.
+
+    ## Por que streams não atravessam
+
+    O `CommandExecutor` faz uma chamada e devolve um valor. Um callback que
+    dispara dez vezes por segundo não sobrevive a essa forma: seria preciso um
+    canal persistente, que é justamente o que o `container-orchestrator.webservice`
+    oferece por WebSocket, uma camada acima.
+*/
+
+const MOTIVO_STREAM =
+    "Entrega contínua por callback não atravessa o CommandExecutor, que é " +
+    "pergunta e resposta. Use as rotas de stream do container-orchestrator.webservice."
+
+const RUNTIME_SURFACE = [
+    // ---- containers
+    { name: "ListAllContainers", kind: "call", clientSupported: true },
+    { name: "CreateNewContainer", kind: "call", clientSupported: true },
+    { name: "StartContainer", kind: "call", clientSupported: true },
+    { name: "StopContainer", kind: "call", clientSupported: true },
+    { name: "RestartContainer", kind: "call", clientSupported: true },
+    { name: "KillContainer", kind: "call", clientSupported: true },
+    { name: "RemoveContainer", kind: "call", clientSupported: true },
+    { name: "InspectContainer", kind: "call", clientSupported: true },
+    { name: "GetContainerLogHistory", kind: "call", clientSupported: true },
+    { name: "ExportContainer", kind: "call", clientSupported: true },
+
+    // ---- imagens
+    { name: "ListAllImages", kind: "call", clientSupported: true },
+    { name: "InspectImage", kind: "call", clientSupported: true },
+    { name: "RemoveImage", kind: "call", clientSupported: true },
+    { name: "ExportImage", kind: "call", clientSupported: true },
+    { name: "BuildImageFromDockerfileString", kind: "call", clientSupported: true },
+    { name: "BuildImageFromDockerfileContent", kind: "call", clientSupported: true },
+
+    // ---- redes
+    { name: "ListAllNetworks", kind: "call", clientSupported: true },
+    { name: "InspectNetwork", kind: "call", clientSupported: true },
+    { name: "CreateNewNetwork", kind: "call", clientSupported: true },
+    { name: "RemoveNetwork", kind: "call", clientSupported: true },
+    { name: "ConnectContainerToNetwork", kind: "call", clientSupported: true },
+    { name: "DisconnectContainerFromNetwork", kind: "call", clientSupported: true },
+
+    // ---- volumes
+    { name: "ListAllVolumes", kind: "call", clientSupported: true },
+    { name: "InspectVolume", kind: "call", clientSupported: true },
+    { name: "CreateNewVolume", kind: "call", clientSupported: true },
+    { name: "RemoveVolume", kind: "call", clientSupported: true },
+    { name: "ExportVolume", kind: "call", clientSupported: true },
+
+    // ---- arquivos dentro do volume
+    { name: "ListVolumeEntries", kind: "call", clientSupported: true },
+    { name: "PutFileInVolume", kind: "call", clientSupported: true },
+    { name: "GetFileFromVolume", kind: "call", clientSupported: true },
+    { name: "DeleteVolumeEntry", kind: "call", clientSupported: true },
+
+    // ---- entrega contínua
+    {
+        name: "StreamContainerLogs",
+        kind: "stream",
+        clientSupported: false,
+        reason: MOTIVO_STREAM
+    },
+    {
+        name: "StreamContainerStats",
+        kind: "stream",
+        clientSupported: false,
+        reason: MOTIVO_STREAM
+    },
+    {
+        name: "OpenExecSession",
+        kind: "session",
+        clientSupported: false,
+        reason:
+            "Sessão de mão dupla: a entrada do usuário precisa chegar ao processo " +
+            "enquanto a saída volta. Só existe no adaptador em processo."
+    },
+    {
+        name: "RegisterDockerEventListener",
+        kind: "stream",
+        clientSupported: true,
+        // O cliente o implementa apenas para lançar um erro explicativo: é
+        // legado, e some quando StreamRuntimeEvents (CTMG-52) o substituir.
+        legacy: true
+    },
+
+    // ---- estado do próprio adaptador
+    {
+        name: "GetEventStreamState",
+        kind: "local",
+        clientSupported: false,
+        reason: "Estado interno do adaptador em processo; não descreve o runtime remoto."
+    }
+]
+
+const SURFACE_BY_NAME = RUNTIME_SURFACE.reduce((mapa, entrada) => {
+    mapa[entrada.name] = entrada
+    return mapa
+}, {})
+
+const CLIENT_SUPPORTED = RUNTIME_SURFACE
+    .filter((entrada) => entrada.clientSupported)
+    .map((entrada) => entrada.name)
+
+const UNSUPPORTED_REASON = (name) => {
+    const entrada = SURFACE_BY_NAME[name]
+    return entrada && entrada.reason ? entrada.reason : "Operação indisponível por unix socket."
+}
+
+module.exports = {
+    RUNTIME_SURFACE,
+    SURFACE_BY_NAME,
+    CLIENT_SUPPORTED,
+    UNSUPPORTED_REASON
+}
