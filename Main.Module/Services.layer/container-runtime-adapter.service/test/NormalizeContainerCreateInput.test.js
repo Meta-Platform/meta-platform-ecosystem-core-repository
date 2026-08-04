@@ -91,6 +91,19 @@ test("bind mount com caminho relativo é recusado", () => {
     )
 })
 
+test("erro de entrada sai como 400, não como falha do runtime", () => {
+    // Sem statusCode, o servidor responde 500 e a tela diz "erro interno"
+    // para o que é um campo preenchido errado.
+    assert.throws(
+        () => NormalizeMounts([{ type: "volume", source: "v" }]),
+        (erro) => erro.statusCode === 400 && erro.httpStatus === 400
+    )
+    assert.throws(
+        () => NormalizePorts([{ hostPort: 8080 }]),
+        (erro) => erro.statusCode === 400
+    )
+})
+
 test("lista vazia e ausente produzem nenhuma montagem", () => {
     assert.deepEqual(NormalizeMounts([]), [])
     assert.deepEqual(NormalizeMounts(), [])

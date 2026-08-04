@@ -32,9 +32,16 @@
 const TIPOS_DE_MONTAGEM = ["volume", "bind", "tmpfs"]
 const PROTOCOLOS = ["tcp", "udp", "sctp"]
 
+/*
+    Entrada malformada é erro de QUEM PEDIU, não do runtime: sai como 400 com o
+    campo citado. Sem `statusCode`, o servidor responde 500 e a tela mostra
+    "erro interno" para o que é, na verdade, um campo preenchido errado.
+*/
 const CriarErro = (code, message, field) => {
     const erro = new Error(message)
     erro.code = code
+    erro.httpStatus = 400
+    erro.statusCode = 400
     if (field !== undefined) erro.field = field
     return erro
 }
