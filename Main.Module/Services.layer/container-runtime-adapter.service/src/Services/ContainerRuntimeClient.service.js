@@ -84,6 +84,15 @@ const ContainerRuntimeClientService = (params) => {
     const RenameContainer = (options) =>
         ContainerRuntimeCommand((API) => API.RenameContainer({ options }))
 
+    const GetContainerStatsSnapshot = (containerIdOrName) =>
+        ContainerRuntimeCommand((API) => API.GetContainerStatsSnapshot({ containerIdOrName }))
+
+    const WaitContainer = (options) =>
+        ContainerRuntimeCommand((API) => API.WaitContainer({ options }))
+
+    const PruneContainers = (options) =>
+        ContainerRuntimeCommand((API) => API.PruneContainers({ options }))
+
     const InspectNetwork = (networkIdOrName) =>
         ContainerRuntimeCommand((API) => API.InspectNetwork({ networkIdOrName }))
 
@@ -188,6 +197,9 @@ const ContainerRuntimeClientService = (params) => {
         PauseContainer,
         UnpauseContainer,
         RenameContainer,
+        GetContainerStatsSnapshot,
+        WaitContainer,
+        PruneContainers,
         InspectNetwork,
         CreateNewNetwork,
         RemoveNetwork,

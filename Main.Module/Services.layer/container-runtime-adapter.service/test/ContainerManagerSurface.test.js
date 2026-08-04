@@ -40,6 +40,7 @@ const SUPERFICIE_ESPERADA = [
     "ExportImage/1",
     "ExportVolume/1",
     "GetContainerLogHistory/1",
+    "GetContainerStatsSnapshot/1",
     "GetEventStreamState/0",
     "GetFileFromVolume/1",
     "InspectContainer/1",
@@ -54,6 +55,7 @@ const SUPERFICIE_ESPERADA = [
     "ListVolumeEntries/1",
     "OpenExecSession/1",
     "PauseContainer/1",
+    "PruneContainers/0",
     "PutFileInVolume/1",
     "RegisterDockerEventListener/1",
     "RemoveContainer/1",
@@ -67,7 +69,8 @@ const SUPERFICIE_ESPERADA = [
     "StopContainer/1",
     "StreamContainerLogs/1",
     "StreamContainerStats/1",
-    "UnpauseContainer/1"
+    "UnpauseContainer/1",
+    "WaitContainer/1"
 ]
 
 const CriarAdaptador = () => ContainerManager({

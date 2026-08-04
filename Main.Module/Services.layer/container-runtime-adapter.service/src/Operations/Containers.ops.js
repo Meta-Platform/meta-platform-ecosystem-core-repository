@@ -20,6 +20,11 @@ const {
 // Desenquadra o fluxo binário do runtime — que vem multiplexado ou cru, e nem
 // sempre no formato que foi pedido (CTMG-21).
 const CreateDockerStreamDecoder = require("../Helpers/DecodeDockerStream")
+// A mesma tradução para quem acompanha e para quem tira uma foto (CTMG-40).
+const NormalizeContainerStats = require("../Helpers/NormalizeContainerStats")
+// Filtro de poda em forma errada é filtro IGNORADO — e poda ignora filtro
+// apagando mais do que foi pedido (CTMG-40).
+const BuildPruneOptions = require("../Helpers/BuildPruneOptions")
 // Traduz montagens, portas e grupos do host para o que a API espera, recusando
 // o que não reconhece em vez de descartar em silêncio (CTMG-26, 28, 31).
 const {
@@ -300,16 +305,6 @@ const CreateContainerOperations = ({ docker, StreamToBuffer, SafeFileName }) => 
 
         let restante = ""
 
-        const CalcularCpu = (amostra) => {
-            const cpu = amostra.cpu_stats || {}
-            const anterior = amostra.precpu_stats || {}
-            const deltaCpu = (cpu.cpu_usage?.total_usage || 0) - (anterior.cpu_usage?.total_usage || 0)
-            const deltaSistema = (cpu.system_cpu_usage || 0) - (anterior.system_cpu_usage || 0)
-            const nucleos = cpu.online_cpus || (cpu.cpu_usage?.percpu_usage || []).length || 1
-            if (deltaSistema <= 0 || deltaCpu <= 0) return 0
-            return (deltaCpu / deltaSistema) * nucleos * 100
-        }
-
         stream.on("data", (pedaco) => {
             restante += pedaco.toString("utf-8")
             const linhas = restante.split("\n")
@@ -325,36 +320,7 @@ const CreateContainerOperations = ({ docker, StreamToBuffer, SafeFileName }) => 
                         return
                     }
 
-                    const memoriaUsada = (amostra.memory_stats?.usage || 0) - (amostra.memory_stats?.stats?.cache || 0)
-                    const memoriaLimite = amostra.memory_stats?.limit || 0
-                    const redes = amostra.networks || {}
-                    const rede = Object.keys(redes).reduce((total, nome) => ({
-                        rx: total.rx + (redes[nome].rx_bytes || 0),
-                        tx: total.tx + (redes[nome].tx_bytes || 0)
-                    }), { rx: 0, tx: 0 })
-
-                    const blocos = (amostra.blkio_stats?.io_service_bytes_recursive || [])
-                        .reduce((total, entrada) => {
-                            const operacao = String(entrada.op || "").toLowerCase()
-                            if (operacao === "read") total.read += entrada.value || 0
-                            if (operacao === "write") total.write += entrada.value || 0
-                            return total
-                        }, { read: 0, write: 0 })
-
-                    onData && onData({
-                        readAt: amostra.read,
-                        cpuPercent: Number(CalcularCpu(amostra).toFixed(2)),
-                        memoryUsage: memoriaUsada,
-                        memoryLimit: memoriaLimite,
-                        memoryPercent: memoriaLimite > 0
-                            ? Number(((memoriaUsada / memoriaLimite) * 100).toFixed(2))
-                            : 0,
-                        networkRx: rede.rx,
-                        networkTx: rede.tx,
-                        blockRead: blocos.read,
-                        blockWrite: blocos.write,
-                        pids: amostra.pids_stats?.current || 0
-                    })
+                    onData && onData(NormalizeContainerStats(amostra))
                 })
         })
 
@@ -440,6 +406,88 @@ const CreateContainerOperations = ({ docker, StreamToBuffer, SafeFileName }) => 
                 try { stream.end() } catch (error) { /* já fechado */ }
                 try { stream.destroy() } catch (error) { /* já fechado */ }
             }
+        }
+    }
+
+    /*
+        UMA FOTO EM VEZ DE UM FILME (CTMG-40).
+
+        Até aqui só existia o stream. Para uma lista com cinquenta containers,
+        abrir cinquenta streams — cada um uma conexão viva com o runtime — é
+        impraticável, e no navegador esbarra no limite de sockets por host que
+        já derrubou as métricas da versão web uma vez.
+
+        Devolve EXATAMENTE a mesma forma do stream, pelo mesmo normalizador.
+
+        Sobre o percentual de CPU: com `stream: false` o runtime coleta DUAS
+        amostras antes de responder — por isso o percentual vem preenchido, e
+        por isso a chamada demora cerca de 2 SEGUNDOS (medido contra o Docker
+        29.6.2). Não é a mesma coisa que `one-shot`, que responde na hora e
+        devolveria sempre 0%.
+
+        Esses 2 segundos são por container: quem for pintar uma lista inteira
+        precisa disparar as chamadas em paralelo, não em sequência.
+    */
+    const GetContainerStatsSnapshot = async (containerIdOrName) => {
+        try {
+            const container = docker.getContainer(containerIdOrName)
+            const amostra = await container.stats({ stream: false })
+
+            // Conforme a versão do dockerode, a amostra vem como objeto ou
+            // como o texto cru da resposta.
+            const dados = Buffer.isBuffer(amostra) || typeof amostra === "string"
+                ? JSON.parse(String(amostra))
+                : amostra
+
+            return NormalizeContainerStats(dados)
+        } catch (error) {
+            console.error(`Error reading stats snapshot for container ${containerIdOrName}:`, error)
+            throw error
+        }
+    }
+
+    /*
+        ESPERA O CONTAINER TERMINAR (CTMG-40).
+
+        Bloqueia até a condição — é o que permite saber COM QUE CÓDIGO um
+        container morreu, que é a primeira pergunta de quem vê um serviço
+        parado sem explicação.
+
+        `condition` aceita `not-running` (padrão), `next-exit` e `removed`.
+    */
+    const WaitContainer = async ({ containerIdOrName, condition = "not-running" }) => {
+        try {
+            const container = docker.getContainer(containerIdOrName)
+            const resultado = await container.wait({ condition })
+            return {
+                StatusCode: resultado?.StatusCode ?? null,
+                Error: resultado?.Error ?? null
+            }
+        } catch (error) {
+            console.error(`Error waiting for container ${containerIdOrName}:`, error)
+            throw error
+        }
+    }
+
+    /*
+        PODA DE CONTAINERS PARADOS (CTMG-40).
+
+        Apaga TODOS os containers parados da conexão — inclusive os que não
+        foram criados por este app. Quem chama pela interface passa antes pela
+        prévia de CTMG-129, que lista nome por nome: um botão de limpeza que
+        não diz o que vai apagar é como se perde container parado que alguém
+        guardou de propósito para investigar.
+    */
+    const PruneContainers = async ({ filters } = {}) => {
+        try {
+            const resultado = await docker.pruneContainers(BuildPruneOptions(filters))
+            return {
+                ContainersDeleted: resultado?.ContainersDeleted || [],
+                SpaceReclaimed: resultado?.SpaceReclaimed || 0
+            }
+        } catch (error) {
+            console.error("Error pruning containers:", error)
+            throw error
         }
     }
 
@@ -660,7 +708,10 @@ const CreateContainerOperations = ({ docker, StreamToBuffer, SafeFileName }) => 
         StreamContainerLogs,
         StreamContainerStats,
         OpenExecSession,
-        RunExec
+        RunExec,
+        GetContainerStatsSnapshot,
+        WaitContainer,
+        PruneContainers
     }
 }
 
