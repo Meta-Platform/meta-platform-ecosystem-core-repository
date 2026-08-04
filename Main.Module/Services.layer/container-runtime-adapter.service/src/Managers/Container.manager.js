@@ -23,6 +23,13 @@ const {
 // Desenquadra o fluxo binário do runtime — que vem multiplexado ou cru, e nem
 // sempre no formato que foi pedido (CTMG-21).
 const CreateDockerStreamDecoder = require("../Helpers/DecodeDockerStream")
+// Traduz montagens, portas e grupos do host para o que a API espera, recusando
+// o que não reconhece em vez de descartar em silêncio (CTMG-26, 28, 31).
+const {
+    NormalizeMounts,
+    NormalizePorts,
+    ResolveGroupAdd
+} = require("../Helpers/NormalizeContainerCreateInput")
 
 const DOCKER_EVENT = Symbol('dockerEvent')
 
@@ -57,10 +64,20 @@ const ContainerManager = (params) => {
         // adaptador é instanciado por conexão em vez de fixado no boot
         // (ContainerRuntimeConnection.manager, CTMG-8). `socketPath` continua
         // sendo o caminho de quem monta este serviço pelo boot.json.
-        connectionOptions
+        connectionOptions,
+        /*
+            O cliente do runtime entra por parâmetro (CTMG-29) para que o
+            MAPEAMENTO de campos possa ser verificado sem daemon nenhum.
+
+            Este manager traduz um punhado de campos hoje e vai traduzir umas
+            seis dezenas: é justamente essa tradução que precisa de teste, e
+            ela não deveria exigir Docker instalado para ser exercitada. O
+            padrão é o cliente de verdade, então nada muda para quem já usa.
+        */
+        CreateClient = (options) => new Docker(options)
     } = params
 
-    const docker = new Docker(connectionOptions || { socketPath })
+    const docker = CreateClient(connectionOptions || { socketPath })
 
     const _Start = async () => {
 
@@ -242,6 +259,12 @@ const ContainerManager = (params) => {
         })
     }
 
+    /*
+        As três traduções que aqui aconteciam à mão — montagens, portas e
+        grupos do host — vivem em NormalizeContainerCreateInput.js, testáveis
+        sem daemon. Ver o cabeçalho daquele arquivo para o que estava errado
+        (CTMG-26, CTMG-28, CTMG-31).
+    */
     const CreateNewContainer = async ({
         imageName,
         containerName,
@@ -249,46 +272,15 @@ const ContainerManager = (params) => {
         networkmode,
         networkAliases = [],
         mounts = [],
-        environment = {}
+        environment = {},
+        groupAdd,
+        inheritHostGroups = false
     }) => {
 
-        const portBindings = {}
-        const exposedPorts = {}
+        const { exposedPorts, portBindings } = NormalizePorts(ports)
+        const normalizedMounts = NormalizeMounts(mounts)
+        const gruposSuplementares = ResolveGroupAdd({ groupAdd, inheritHostGroups })
 
-        ports.forEach(({ containerPort, hostPort }) => {
-            const containerPortKey = `${containerPort}/tcp`
-            exposedPorts[containerPortKey] = {}
-            portBindings[containerPortKey] = [
-                {
-                    HostPort: hostPort.toString()
-                }
-            ]
-        })
-
-        const volumeMounts = mounts
-            .filter(({ volumeName, target }) => volumeName && target)
-            .map(({ volumeName, target }) => ({
-                Type   : "volume",
-                Source : volumeName,
-                Target : target
-            }))
-
-        // Bind mounts: monta um caminho EXTERNO do host (dir ou arquivo) direto no container.
-        const bindMounts = mounts
-            .filter(({ hostPath, target }) => hostPath && target)
-            .map(({ hostPath, target }) => ({
-                Type   : "bind",
-                Source : hostPath,
-                Target : target,
-                BindOptions: { CreateMountpoint: true }
-            }))
-
-        // O container roda com o UID/GID do host (via Dockerfile). Aqui adicionamos também os
-        // grupos suplementares do processo do host (ex.: grupo "docker") para que bind mounts de
-        // recursos group-owned do host (como /var/run/docker.sock) sejam acessíveis sem EACCES.
-        const groupAdd = typeof process.getgroups === "function"
-            ? process.getgroups().map(String)
-            : []
         const environmentVariables =
             NormalizeContainerEnvironment(environment)
         const networkConfiguration =
@@ -307,8 +299,10 @@ const ContainerManager = (params) => {
             HostConfig: {
                 PortBindings: portBindings,
                 NetworkMode: networkmode,
-                Mounts: [...volumeMounts, ...bindMounts],
-                GroupAdd: groupAdd
+                Mounts: normalizedMounts,
+                ...(gruposSuplementares.length > 0
+                    ? { GroupAdd: gruposSuplementares }
+                    : {})
             },
             ...networkConfiguration
         })
