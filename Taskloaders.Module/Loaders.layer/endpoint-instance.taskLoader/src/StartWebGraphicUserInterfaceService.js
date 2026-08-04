@@ -70,10 +70,20 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps) => {
             }
         })
 
-        if(isWatch) await builder.Watch()
-        else await builder.Run()
+        // Em watch, `Watch()` só resolve depois do PRIMEIRO bundle ficar pronto —
+        // quem chama registra o diretório estático sabendo que há o que servir.
+        // O `Close` devolvido é o único jeito de parar o watcher; sem ele o
+        // compilador ficava vivo (com polling de 1s) até o processo morrer.
+        //
+        // Em build de uma vez, o `Run()` já fecha o compilador sozinho e não há
+        // nada a encerrar depois — daí o `Close` inerte.
+        if(isWatch){
+            const watchHandle = await builder.Watch()
+            return { output, Close: watchHandle.Close }
+        }
 
-        return output
+        await builder.Run()
+        return { output, Close: async () => {} }
     }
 
     return StartWebGraphicUserInterfaceService

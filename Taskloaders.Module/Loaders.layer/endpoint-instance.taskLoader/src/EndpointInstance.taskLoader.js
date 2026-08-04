@@ -24,8 +24,20 @@ const EndpointInstanceTaskLoader = (runtimeDeps) => {
 
         let wasStopped=false
         let isActive=false
+        // Handle do build da interface. Enquanto ele existir, existe um compilador
+        // webpack (e possivelmente um watcher) vivo neste processo — encerrá-lo é o
+        // que devolve essa memória ao sistema quando a task termina.
+        let webInterfaceHandle
 
         const { type } = loaderParams
+
+        const CloseWebInterface = async () => {
+            if(!webInterfaceHandle) return
+            const handle = webInterfaceHandle
+            webInterfaceHandle = undefined
+            try { await handle.Close() }
+            catch(e){ log.error("falha ao encerrar o build da interface", e) }
+        }
 
         const Start = async () => {
             executorChannel.emit(CommandChannelEventTypes.CHANGE_TASK_STATUS, TaskStatusTypes.STARTING)
@@ -38,16 +50,22 @@ const EndpointInstanceTaskLoader = (runtimeDeps) => {
                 else if(type === "web-graphic-user-interface") {
                     // Era mais uma cópia do formatador de log montada à mão aqui
                     // dentro. O emissor agora delega ao logger global.
-                    const output = await StartWebGraphicUserInterfaceService({ loaderParams })
+                    const { output, Close } = await StartWebGraphicUserInterfaceService({ loaderParams })
+                    webInterfaceHandle = { Close }
+
                     if(!wasStopped){
                         serverService.AddStaticEndpoint({ path:url, staticDir: output, needsAuth })
                         executorChannel.emit(CommandChannelEventTypes.CHANGE_TASK_STATUS, TaskStatusTypes.ACTIVE)
                     } else {
+                        // A task foi parada enquanto o build corria: o resultado não
+                        // será servido, então o compilador que sobrou vai junto.
+                        await CloseWebInterface()
                         executorChannel.emit(CommandChannelEventTypes.CHANGE_TASK_STATUS, TaskStatusTypes.TERMINATED)
                     }
                 } else throw `Tipo de endpoint "${type}" não encontrado`
 
             }catch(e){
+                await CloseWebInterface()
                 const reason = (e && (e.message || e.toString())) || String(e)
                 executorChannel.emit(CommandChannelEventTypes.CHANGE_TASK_STATUS, TaskStatusTypes.FAILURE, reason)
                 log.error("falha ao montar o endpoint", e)
@@ -56,9 +74,12 @@ const EndpointInstanceTaskLoader = (runtimeDeps) => {
 
         const Stop = () => {
             if(type === "controller" || isActive) {
-                executorChannel.emit(CommandChannelEventTypes.CHANGE_TASK_STATUS, TaskStatusTypes.TERMINATED)
+                CloseWebInterface()
+                    .finally(() => executorChannel.emit(CommandChannelEventTypes.CHANGE_TASK_STATUS, TaskStatusTypes.TERMINATED))
             }
             else if(type === "web-graphic-user-interface"){
+                // Build ainda em curso: sinaliza a parada (o Start em voo lê
+                // `wasStopped` e encerra o compilador ao terminar).
                 executorChannel.emit(CommandChannelEventTypes.CHANGE_TASK_STATUS, TaskStatusTypes.STOPPING)
             } else
                 executorChannel.emit(CommandChannelEventTypes.CHANGE_TASK_STATUS, TaskStatusTypes.FAILURE)
