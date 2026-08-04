@@ -22,6 +22,8 @@
     runtime nenhum.
 */
 
+const { StringDecoder } = require("node:string_decoder")
+
 const TIPOS_DE_FLUXO = {
     0: "stdin",
     1: "stdout",
@@ -39,9 +41,31 @@ const CreateDockerStreamDecoder = ({ onData }) => {
 
     let acumulado = Buffer.alloc(0)
 
+    /*
+        UM DECODIFICADOR POR FLUXO, e não `toString("utf-8")` por pedaço
+        (CTMG-83).
+
+        Um caractere multibyte pode ser partido entre dois quadros — "ã" são
+        dois bytes, e o quadro pode terminar no meio deles. Convertendo pedaço
+        a pedaço, cada metade vira U+FFFD e o texto ganha lixo no meio, sem
+        nenhuma pista de por quê.
+
+        O `StringDecoder` segura o byte incompleto até o próximo pedaço chegar.
+        Cada fluxo tem o seu porque eles se intercalam: um byte pendente do
+        stdout não pode ser completado por um byte do stderr.
+    */
+    const decodificadores = {
+        stdin: new StringDecoder("utf-8"),
+        stdout: new StringDecoder("utf-8"),
+        stderr: new StringDecoder("utf-8")
+    }
+
     const Emitir = (fluxo, dados) => {
         if (dados.length === 0) return
-        onData && onData({ stream: fluxo, data: dados.toString("utf-8") })
+        const texto = (decodificadores[fluxo] || decodificadores.stdout).write(dados)
+        // Pedaço que era SÓ o começo de um caractere não produz texto nenhum:
+        // emitir string vazia faria a tela receber eventos sem conteúdo.
+        if (texto.length > 0) onData && onData({ stream: fluxo, data: texto })
     }
 
     const Push = (pedaco) => {
@@ -83,9 +107,21 @@ const CreateDockerStreamDecoder = ({ onData }) => {
 
     // O que sobrou quando o fluxo termina: melhor entregar do que engolir.
     const Flush = () => {
-        if (acumulado.length === 0) return
-        Emitir("stdout", acumulado)
-        acumulado = Buffer.alloc(0)
+        if (acumulado.length > 0) {
+            Emitir("stdout", acumulado)
+            acumulado = Buffer.alloc(0)
+        }
+
+        /*
+            E o que ficou pendente DENTRO dos decodificadores: um caractere
+            partido no último pedaço do fluxo nunca seria completado. O `end()`
+            devolve os bytes órfãos como U+FFFD — feio, mas visível, que é
+            melhor que sumir.
+        */
+        for (const [fluxo, decodificador] of Object.entries(decodificadores)) {
+            const resto = decodificador.end()
+            if (resto.length > 0) onData && onData({ stream: fluxo, data: resto })
+        }
     }
 
     return { Push, Flush }

@@ -93,3 +93,60 @@ test("pedaço vazio não emite evento", () => {
 
     assert.deepEqual(eventos, [])
 })
+
+/*
+    Caractere multibyte partido entre pedaços (CTMG-83).
+
+    O sintoma clássico: um acento vira lixo no meio do texto do terminal, e
+    nada no log explica por quê. Acontece porque "ã" são dois bytes e o quadro
+    pode terminar entre eles — convertendo pedaço a pedaço, cada metade vira
+    U+FFFD.
+*/
+test("acento partido entre dois pedaços é remontado", () => {
+    const recebidos = []
+    const decodificador = CreateDockerStreamDecoder({
+        onData: ({ data }) => recebidos.push(data)
+    })
+
+    const texto = Buffer.from("informação\n", "utf-8")
+    // O "ç" ocupa dois bytes; cortamos no meio deles.
+    const meio = texto.indexOf(Buffer.from("ç", "utf-8")[0]) + 1
+
+    decodificador.Push(texto.subarray(0, meio))
+    decodificador.Push(texto.subarray(meio))
+    decodificador.Flush()
+
+    assert.equal(recebidos.join(""), "informação\n")
+    assert.equal(recebidos.join("").includes("�"), false)
+})
+
+test("stdout e stderr não completam o caractere um do outro", () => {
+    /*
+        Os fluxos se intercalam. Com um decodificador só, um byte pendente do
+        stdout seria completado por um byte do stderr — e as duas saídas
+        sairiam corrompidas.
+    */
+    const porFluxo = { stdout: "", stderr: "" }
+    const decodificador = CreateDockerStreamDecoder({
+        onData: ({ stream, data }) => { porFluxo[stream] += data }
+    })
+
+    const Quadro = (tipo, buffer) => {
+        const cabecalho = Buffer.alloc(8)
+        cabecalho[0] = tipo === "stderr" ? 2 : 1
+        cabecalho.writeUInt32BE(buffer.length, 4)
+        return Buffer.concat([cabecalho, buffer])
+    }
+
+    const saida = Buffer.from("ção", "utf-8")
+    const erro = Buffer.from("não", "utf-8")
+
+    // stdout entra pela metade, stderr inteiro no meio, stdout completa.
+    decodificador.Push(Quadro("stdout", saida.subarray(0, 1)))
+    decodificador.Push(Quadro("stderr", erro))
+    decodificador.Push(Quadro("stdout", saida.subarray(1)))
+    decodificador.Flush()
+
+    assert.equal(porFluxo.stdout, "ção")
+    assert.equal(porFluxo.stderr, "não")
+})
