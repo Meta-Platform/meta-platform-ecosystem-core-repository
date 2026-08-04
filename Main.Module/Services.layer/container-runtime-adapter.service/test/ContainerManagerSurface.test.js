@@ -60,6 +60,7 @@ const SUPERFICIE_ESPERADA = [
     "RemoveNetwork/1",
     "RemoveVolume/1",
     "RestartContainer/1",
+    "RunExec/1",
     "StartContainer/1",
     "StopContainer/1",
     "StreamContainerLogs/1",

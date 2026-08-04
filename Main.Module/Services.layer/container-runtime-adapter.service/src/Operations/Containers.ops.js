@@ -28,6 +28,17 @@ const {
     ResolveGroupAdd
 } = require("../Helpers/NormalizeContainerCreateInput")
 
+/*
+    O ambiente de um exec pode chegar das duas formas que se usa por aí: o
+    objeto `{ CHAVE: valor }` do resto deste pacote, ou a lista `["CHAVE=valor"]`
+    da API do Docker. Aceitar as duas evita que quem já tem a lista pronta
+    precise desmontá-la só para o adaptador remontar.
+*/
+const NormalizeExecEnvironment = (env) => {
+    if (Array.isArray(env)) return env.map(String)
+    return NormalizeContainerEnvironment(env)
+}
+
 const CreateContainerOperations = ({ docker, StreamToBuffer, SafeFileName }) => {
 
     const ListAllContainers = async () => {
@@ -374,6 +385,126 @@ const CreateContainerOperations = ({ docker, StreamToBuffer, SafeFileName }) => 
         }
     }
 
+    /*
+        EXEC DE UMA TACADA (CTMG-42).
+
+        `OpenExecSession` abre um terminal: TTY, entrada do usuário, sem fim
+        previsto. Isto é o oposto — rode um comando, me devolva o que ele
+        escreveu e com que código saiu. Metade das funcionalidades que faltam
+        precisa disto e não do terminal: navegador de arquivos do container,
+        healthcheck manual, clone de volume, diagnóstico.
+
+        SEM TTY de propósito: é o que faz o runtime entregar stdout e stderr
+        ENQUADRADOS e portanto separáveis. Com TTY os dois vêm misturados no
+        mesmo fluxo, e "o que foi para o erro?" deixa de ter resposta — que é
+        justamente a pergunta de quem chama isto.
+    */
+    const RunExec = async ({
+        containerIdOrName,
+        cmd,
+        user,
+        workingDir,
+        env,
+        timeoutMs = 30000
+    }) => {
+        if (!Array.isArray(cmd) || cmd.length === 0) {
+            const erro = new Error(
+                "Informe o comando como lista de argumentos, ex.: [\"sh\", \"-c\", \"ls -la\"]."
+            )
+            erro.code = "INVALID_EXEC_COMMAND"
+            erro.httpStatus = 400
+            erro.statusCode = 400
+            throw erro
+        }
+
+        const container = docker.getContainer(containerIdOrName)
+
+        const exec = await container.exec({
+            Cmd: cmd.map(String),
+            AttachStdin: false,
+            AttachStdout: true,
+            AttachStderr: true,
+            Tty: false,
+            ...(user ? { User: String(user) } : {}),
+            ...(workingDir ? { WorkingDir: String(workingDir) } : {}),
+            ...(env ? { Env: NormalizeExecEnvironment(env) } : {})
+        })
+
+        const stream = await exec.start({ hijack: true, stdin: false })
+
+        let stdout = ""
+        let stderr = ""
+
+        // O mesmo decodificador do terminal: ele OBSERVA o formato em vez de
+        // confiar no `Tty` que foi pedido — ver DecodeDockerStream.js.
+        const decodificador = CreateDockerStreamDecoder({
+            onData: ({ stream: fluxo, data }) => {
+                if (fluxo === "stderr") stderr += data
+                else stdout += data
+            }
+        })
+
+        const timedOut = await new Promise((resolve, reject) => {
+            let encerrado = false
+
+            const Encerrar = (expirou) => {
+                if (encerrado) return
+                encerrado = true
+                clearTimeout(temporizador)
+                resolve(expirou)
+            }
+
+            /*
+                Este temporizador NÃO leva `unref()`, ao contrário do de
+                reconexão em System.ops.
+
+                A diferença é quem espera: lá é uma tentativa de fundo, e um
+                processo ocioso deve poder terminar apesar dela. Aqui alguém
+                está `await`-ando esta promessa, e o temporizador é a única
+                coisa capaz de resolvê-la quando o comando não termina.
+                Soltá-lo do laço de eventos faria a promessa nunca resolver num
+                processo sem outro trabalho — que é exatamente o caso de um
+                script ou de um teste.
+            */
+            const temporizador = setTimeout(() => {
+                try { stream.destroy() } catch (error) { /* já fechado */ }
+                Encerrar(true)
+            }, timeoutMs)
+
+            stream.on("data", (pedaco) => decodificador.Push(pedaco))
+            stream.on("end", () => Encerrar(false))
+            stream.on("close", () => Encerrar(false))
+            stream.on("error", (erro) => {
+                if (encerrado) return
+                encerrado = true
+                clearTimeout(temporizador)
+                reject(erro)
+            })
+        })
+
+        decodificador.Flush()
+
+        /*
+            O código de saída vem do inspect do exec, não do stream.
+
+            Quando expirou, ele costuma vir `null`: o processo AINDA ESTÁ
+            RODANDO dentro do container. Soltar o fluxo não mata nada — a API
+            do Docker não oferece como matar um exec. Por isso `timedOut` é um
+            campo de resposta e não uma exceção: quem chamou precisa saber que
+            deixou algo para trás.
+        */
+        let exitCode = null
+        try {
+            const detalhes = await exec.inspect()
+            exitCode = detalhes && detalhes.ExitCode !== undefined ? detalhes.ExitCode : null
+        } catch (error) {
+            // Exec já colhido pelo runtime: sem código, e não é motivo para
+            // descartar a saída que chegou.
+        }
+
+        return { exitCode, stdout, stderr, timedOut }
+    }
+
     const GetContainerLogHistory = async (containerIdOrName) => {
         try {
             const container = docker.getContainer(containerIdOrName)
@@ -467,7 +598,8 @@ const CreateContainerOperations = ({ docker, StreamToBuffer, SafeFileName }) => 
         ExportContainer,
         StreamContainerLogs,
         StreamContainerStats,
-        OpenExecSession
+        OpenExecSession,
+        RunExec
     }
 }
 

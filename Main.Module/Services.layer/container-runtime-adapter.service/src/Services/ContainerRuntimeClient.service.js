@@ -70,6 +70,11 @@ const ContainerRuntimeClientService = (params) => {
     const ExportContainer = (containerIdOrName) =>
         ContainerRuntimeCommand((API) => API.ExportContainer({ containerIdOrName }))
 
+    // Pergunta e resposta: atravessa o socket, ao contrário do OpenExecSession
+    // (CTMG-42). O `timeoutMs` é do lado do adaptador, onde o exec acontece.
+    const RunExec = (options) =>
+        ContainerRuntimeCommand((API) => API.RunExec({ options }))
+
     const InspectNetwork = (networkIdOrName) =>
         ContainerRuntimeCommand((API) => API.InspectNetwork({ networkIdOrName }))
 
@@ -170,6 +175,7 @@ const ContainerRuntimeClientService = (params) => {
         InspectContainer,
         GetContainerLogHistory,
         ExportContainer,
+        RunExec,
         InspectNetwork,
         CreateNewNetwork,
         RemoveNetwork,

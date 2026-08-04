@@ -48,6 +48,9 @@ const RUNTIME_SURFACE = [
     { name: "InspectContainer", kind: "call", clientSupported: true },
     { name: "GetContainerLogHistory", kind: "call", clientSupported: true },
     { name: "ExportContainer", kind: "call", clientSupported: true },
+    // Exec de uma tacada (CTMG-42): pergunta e resposta, ao contrário do
+    // OpenExecSession — por isso atravessa o socket sem problema.
+    { name: "RunExec", kind: "call", clientSupported: true },
 
     // ---- imagens
     { name: "ListAllImages", kind: "call", clientSupported: true },
