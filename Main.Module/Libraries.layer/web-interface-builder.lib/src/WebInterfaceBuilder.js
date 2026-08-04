@@ -3,8 +3,9 @@ const { promisify }     = require("util")
 const fs                = require("fs")
 const exists            = promisify(fs.exists)
 
-const BuildProfiles      = require("./BuildProfiles")
-const CreateWebpackConfig = require("./CreateWebpackConfig")
+const BuildProfiles           = require("./BuildProfiles")
+const CreateWebpackConfig     = require("./CreateWebpackConfig")
+const CreateBuildWorkerClient = require("./CreateBuildWorkerClient")
 
 const CheckPackageDirExist = (path) => exists(`${path}`)
 
@@ -132,7 +133,11 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
             isWatch,
             buildOverrides,
             environmentPath,
-            generatedDirName
+            generatedDirName,
+            // Roda o build num processo filho que morre ao terminar. Quem pede
+            // isso é o hospedeiro de vida longa — hoje, a janela desktop.
+            isolateBuild,
+            paths
         } = params
 
         const profile = BuildProfiles.ResolveBuildProfile({
@@ -140,6 +145,39 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
             isWatch,
             overrides: buildOverrides
         })
+
+        const workerClient = CreateBuildWorkerClient({ smartRequire: SmartRequire })
+
+        // Só isola quando pedido E quando há de fato um runtime para o filho.
+        // Sem runtime, compilar no próprio processo é melhor do que não compilar.
+        const _ShouldIsolate = () => {
+            if(!isolateBuild) return false
+            if(!BuildProfiles.ResolveIsolationFlag({ value: params.buildIsolated })) return false
+            const runtime = workerClient.ResolveWorkerRuntime()
+            if(runtime) return true
+            Log.warn("WebInterfaceBuilder", `sem runtime para o worker de build; ${serverAppName} compila no próprio processo`)
+            return false
+        }
+
+        // O que o filho precisa saber para compilar sozinho. Note que só viajam
+        // dados — caminhos e valores primitivos. Handles e closures não
+        // atravessam o canal, por construção.
+        const _MountJob = () => ({
+            buildProfile: profile.name,
+            buildOverrides,
+            reportProgress: !!onChangeProgress,
+            smartRequirePath: (paths && paths.smartRequire) || process.env.META_SMART_REQUIRE_PATH,
+            installGlobalLoggerPath: (paths && paths.installGlobalLogger) || process.env.META_INSTALL_GLOBAL_LOGGER_PATH,
+            params: {
+                context, entrypoint, output, nodeModulesPath, htmlTemplate,
+                serverAppName, url, componentLibraries,
+                cacheDirectory: MountCacheDirectory({ environmentPath, generatedDirName, serverAppName }),
+                buildDate: profile.stableBuildDate ? "" : new Date().toISOString()
+            }
+        })
+
+        const _WorkerLog = (level, text) =>
+            Log[level] ? Log[level]("webgui-build-worker", text) : Log.info("webgui-build-worker", text)
 
         const handleChangeProgress = _Debounce((_percentage) => {
             const percentage = parseInt(_percentage * 100)
@@ -219,6 +257,26 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
 
             Log.info("WebInterfaceBuilder", `Iniciando a construção da interface ${context}`)
 
+            if(_ShouldIsolate()){
+                // O build inteiro — grafo de módulos, cache de arquivos lidos,
+                // minificação — acontece e desaparece com o processo filho. Este
+                // processo nunca chega a alocar nada disso.
+                const summary = await workerClient.RunBuildInWorker({
+                    job: _MountJob(),
+                    profile,
+                    onProgress: onChangeProgress,
+                    onLog: _WorkerLog
+                })
+
+                if(!summary.ok)
+                    throw new Error(
+                        `A interface ${serverAppName} não compilou (${summary.errorCount} erro(s)):\n${FormatErrors(summary.errors)}`
+                    )
+
+                Log.info("WebInterfaceBuilder", `A interface ${serverAppName} foi construida com sucesso (processo isolado, pico de ${Math.round((summary.peakRssBytes || 0) / 1048576)} MB)`)
+                return { output, summary, fromCache: false, isolated: true }
+            }
+
             try {
                 const summary = await new Promise((resolve, reject) => {
                     // Toda saída do callback ASSENTA a promise. A versão anterior
@@ -249,7 +307,30 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
             }
         }
 
-        const Watch = () => new Promise((resolve, reject) => {
+        const Watch = async () => {
+            if(_ShouldIsolate()){
+                await _AssertContextExists()
+
+                // Em watch o ganho é maior ainda: o compilador e o watcher vivem
+                // no filho pelo tempo todo que a interface ficar no ar, e somem
+                // por completo quando a task encerra.
+                const handle = await workerClient.StartWatchWorker({
+                    job: _MountJob(),
+                    profile,
+                    onProgress: onChangeProgress,
+                    onRebuild: (summary) => Log.info("WebInterfaceBuilder", summary.ok
+                        ? `A interface ${serverAppName} foi atualizada com sucesso`
+                        : `A interface ${serverAppName} tem erros de compilação:\n${FormatErrors(summary.errors)}`),
+                    onLog: _WorkerLog
+                })
+
+                return { output, summary: handle.summary, Close: handle.Close, pid: handle.pid, isolated: true }
+            }
+
+            return _WatchInProcess()
+        }
+
+        const _WatchInProcess = () => new Promise((resolve, reject) => {
             const watchOptions = {
                 ignored: /node_modules/,
                 aggregateTimeout: 300,
