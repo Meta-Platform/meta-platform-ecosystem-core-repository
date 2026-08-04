@@ -54,6 +54,7 @@ Documentação dedicada em [`docs/`](./docs/):
 | [supervision.md](./docs/supervision.md) | Supervisor sockets e a CLI `supervisor`. |
 | [repository-management.md](./docs/repository-management.md) | Repositórios em runtime. |
 | [runtime-environment-management.md](./docs/runtime-environment-management.md) | Ambientes de execução e task executor. |
+| [webgui-build.md](./docs/webgui-build.md) | Como um `.webgui` vira bundle: perfis de build, quanto custa em memória, cache e onde o build roda. |
 
 - Conceitos gerais: [Glossário](https://github.com/Meta-Platform/.github/blob/main/docs/glossario.md).
 

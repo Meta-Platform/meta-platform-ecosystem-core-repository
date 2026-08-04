@@ -16,8 +16,33 @@ execução de um plano.
 |--------|------------------|
 | `EndpointInstance.taskLoader.js` | Carrega/instancia o `endpoint-instance`. |
 | `StartControllerService.js` | Sobe um endpoint do tipo *controller*. |
-| `StartWebGraphicUserInterfaceService.js` | Sobe a interface web (web GUI). |
-| `WebInterfaceBuilder.js` | Constrói/empacota a interface web. |
+| `StartWebGraphicUserInterfaceService.js` | Resolve o perfil de build, monta o diretório de saída e sobe a interface web. |
+
+O construtor de bundles vive no
+[`web-interface-builder.lib`](../../../Main.Module/Libraries.layer/web-interface-builder.lib/README.md)
+e chega aqui por injeção do registry — este loader não o alcança por caminho
+relativo.
+
+## Ciclo de vida da interface web
+
+O `Start` guarda o handle devolvido pelo builder e o `Stop` o **fecha**. Isso não
+é detalhe: em watch existe um compilador webpack vivo enquanto a interface está
+no ar, e sem esse fechamento ele sobrevivia ao fim da task — o processo ficava
+carregando o build para sempre.
+
+O mesmo vale para os caminhos de falha: se a task é parada durante o build, ou
+se o build falha, o compilador é encerrado antes de a task mudar de estado.
+
+## Perfil de build
+
+O diretório de saída inclui o perfil no seu hash: assets de `release` e de
+`debug` são artefatos diferentes e não podem se sobrescrever.
+
+O perfil vem, nesta ordem, de `webguiBuildProfile` (declarado pelo pacote) ou
+`RT_WEBGUI_BUILD_PROFILE` (herdado do ecosystem-defaults, injetado em todo
+endpoint). O `isWatch` legado ainda funciona — mapeia para `debug-watch` com
+aviso de obsolescência —, mas **perde** para os dois acima. Ver a tabela de
+perfis e a armadilha do parâmetro booleano no README do builder.
 
 ## Registro (`metadata/taskloaders.json` do repositório)
 
