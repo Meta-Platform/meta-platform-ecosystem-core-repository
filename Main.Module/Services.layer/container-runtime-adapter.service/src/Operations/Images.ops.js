@@ -11,12 +11,25 @@ const { PassThrough } = require('node:stream')
 // TAR mínimo escrito à mão — a API do Docker só troca arquivo com container por
 // TAR, e este pacote tem uma dependência declarada só (VDRP-260).
 const { BuildTarWithSingleFile } = require("../Helpers/TarSingleFile")
+const NormalizeDockerFilters = require("../Helpers/NormalizeDockerFilters")
+
+const BuildFilterOption = (filters) => {
+    const normalizados = NormalizeDockerFilters(filters)
+    return normalizados === undefined ? {} : { filters: normalizados }
+}
 
 const CreateImageOperations = ({ docker, StreamToBuffer, SafeFileName }) => {
 
-    const ListAllImages = async () => {
+    /*
+        Chamada sem argumento mantém o comportamento de antes (CTMG-41).
+        `filters` aceita reference, label, dangling, before, since.
+    */
+    const ListAllImages = async ({ all, filters } = {}) => {
         try {
-            const images = await docker.listImages()
+            const images = await docker.listImages({
+                ...(all !== undefined ? { all: Boolean(all) } : {}),
+                ...BuildFilterOption(filters)
+            })
             return images
         }
         catch (error) {

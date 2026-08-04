@@ -30,7 +30,9 @@ const ContainerManager = require("../src/Managers/Container.manager")
 const SUPERFICIE_ESPERADA = [
     "BuildImageFromDockerfileContent/1",
     "BuildImageFromDockerfileString/1",
+    "CommitContainer/1",
     "ConnectContainerToNetwork/1",
+    "CreateAndStartContainer/1",
     "CreateNewContainer/1",
     "CreateNewNetwork/1",
     "CreateNewVolume/1",
@@ -39,6 +41,7 @@ const SUPERFICIE_ESPERADA = [
     "ExportContainer/1",
     "ExportImage/1",
     "ExportVolume/1",
+    "GetContainerFileSystemChanges/1",
     "GetContainerLogHistory/1",
     "GetContainerStatsSnapshot/1",
     "GetEventStreamState/0",
@@ -52,10 +55,13 @@ const SUPERFICIE_ESPERADA = [
     "ListAllImages/0",
     "ListAllNetworks/0",
     "ListAllVolumes/0",
+    "ListContainerProcesses/0",
     "ListVolumeEntries/1",
     "OpenExecSession/1",
     "PauseContainer/1",
     "PruneContainers/0",
+    "PruneNetworks/0",
+    "PruneVolumes/0",
     "PutFileInVolume/1",
     "RegisterDockerEventListener/1",
     "RemoveContainer/1",
@@ -70,6 +76,7 @@ const SUPERFICIE_ESPERADA = [
     "StreamContainerLogs/1",
     "StreamContainerStats/1",
     "UnpauseContainer/1",
+    "UpdateContainerResources/1",
     "WaitContainer/1"
 ]
 

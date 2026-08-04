@@ -22,9 +22,27 @@ const {
 const CreateDockerStreamDecoder = require("../Helpers/DecodeDockerStream")
 // A mesma tradução para quem acompanha e para quem tira uma foto (CTMG-40).
 const NormalizeContainerStats = require("../Helpers/NormalizeContainerStats")
-// Filtro de poda em forma errada é filtro IGNORADO — e poda ignora filtro
-// apagando mais do que foi pedido (CTMG-40).
+// Filtro em forma errada é filtro IGNORADO: na listagem mostra tudo, na poda
+// apaga tudo (CTMG-40, CTMG-41).
 const BuildPruneOptions = require("../Helpers/BuildPruneOptions")
+const NormalizeDockerFilters = require("../Helpers/NormalizeDockerFilters")
+const { ParseByteSize, CpusToNanoCpus } = require("../Helpers/ParseByteSize")
+
+const BuildFilterOption = (filters) => {
+    const normalizados = NormalizeDockerFilters(filters)
+    return normalizados === undefined ? {} : { filters: normalizados }
+}
+
+/*
+    Só inclui a chave quando há valor.
+
+    Ausência e vazio não são a mesma coisa para a API do Docker: mandar
+    `CpusetCpus: ""` num update REMOVE a restrição de núcleos, enquanto não
+    mandar o campo a preserva. Espalhar `{...(x ? {K:x} : {})}` por vinte
+    campos esconde essa regra; nomeá-la a torna visível.
+*/
+const ChaveSeDefinida = (chave, valor) =>
+    valor === undefined || valor === null || valor === "" ? {} : { [chave]: valor }
 // Traduz montagens, portas e grupos do host para o que a API espera, recusando
 // o que não reconhece em vez de descartar em silêncio (CTMG-26, 28, 31).
 const {
@@ -46,9 +64,23 @@ const NormalizeExecEnvironment = (env) => {
 
 const CreateContainerOperations = ({ docker, StreamToBuffer, SafeFileName }) => {
 
-    const ListAllContainers = async () => {
+    /*
+        LISTAGEM COM FILTRO (CTMG-41).
+
+        Chamada sem argumento continua fazendo exatamente o que fazia — todos
+        os containers, parados inclusive. É o que o service-orchestrator do
+        VirtualDeskRepo espera, e ele vive em outro repositório.
+
+        `filters` aceita o vocabulário do Docker: status, label, name,
+        ancestor, network, health, exited, before, since.
+    */
+    const ListAllContainers = async ({ all = true, filters, limit } = {}) => {
         try {
-            const containers = await docker.listContainers({ all: true })
+            const containers = await docker.listContainers({
+                all,
+                ...BuildFilterOption(filters),
+                ...(limit ? { limit: Number(limit) } : {})
+            })
             return containers
         } catch (error) {
             console.error('Error listing containers with details:', error)
@@ -410,6 +442,241 @@ const CreateContainerOperations = ({ docker, StreamToBuffer, SafeFileName }) => 
     }
 
     /*
+        CRIAR E SUBIR NUMA OPERAÇÃO (CTMG-43) — o equivalente a `docker run`.
+
+        A regra que importa aqui é o que acontece quando o start FALHA: o
+        container NÃO é removido. Apagá-lo destruiria a única evidência do que
+        deu errado — o log do processo que não subiu — e é exatamente por causa
+        dessa evidência que se recorre ao terminal quando a interface não
+        ajuda. O erro carrega o id e as últimas linhas, e o container fica lá
+        para ser inspecionado.
+    */
+    const CreateAndStartContainer = async (spec) => {
+        const containerInfo = await CreateNewContainer(spec)
+
+        try {
+            await docker.getContainer(containerInfo.Id).start()
+        } catch (error) {
+            const logs = await UltimasLinhasDoLog(containerInfo.Id)
+
+            const falha = new Error(
+                `O container ${containerInfo.Name || containerInfo.Id} foi criado mas não subiu: ${error.message}`
+            )
+            falha.code = "CONTAINER_START_FAILED"
+            falha.containerId = containerInfo.Id
+            falha.containerName = containerInfo.Name
+            falha.logs = logs
+            falha.cause = error
+            throw falha
+        }
+
+        const depoisDeSubir = await docker.getContainer(containerInfo.Id).inspect()
+        return { containerInfo: depoisDeSubir, started: true }
+    }
+
+    // Só para o diagnóstico da falha acima: o log de um container que não subiu
+    // costuma ser curto, e falhar ao lê-lo não pode esconder o erro original.
+    const UltimasLinhasDoLog = async (containerId) => {
+        try {
+            const bruto = await docker.getContainer(containerId).logs({
+                stdout: true, stderr: true, follow: false, tail: 100
+            })
+            const texto = Buffer.isBuffer(bruto) ? bruto.toString("utf-8") : String(bruto)
+            // Remove os cabeçalhos de quadro que sobrariam como lixo binário.
+            return texto.replace(/[ --]/g, "")
+        } catch (error) {
+            return ""
+        }
+    }
+
+    /*
+        RECURSOS DE UM CONTAINER EM EXECUÇÃO (CTMG-38).
+
+        Mudar memória, CPU ou política de reinício sem recriar — o que evita
+        derrubar um banco só para dar mais RAM a ele.
+
+        Os avisos do runtime são REPASSADOS, não engolidos: o Podman ignora
+        alguns campos em silêncio (NanoCpus, certos securityOpt), e quem pediu
+        precisa saber que o pedido não teve efeito. Ignorar em silêncio é o que
+        faz alguém achar que limitou um container e descobrir o contrário
+        quando a máquina trava.
+    */
+    const UpdateContainerResources = async ({ containerIdOrName, resources = {} }) => {
+        const {
+            memoryBytes,
+            memoryReservationBytes,
+            memorySwapBytes,
+            cpus,
+            nanoCpus,
+            cpuShares,
+            cpusetCpus,
+            pidsLimit,
+            blkioWeight,
+            restart
+        } = resources
+
+        const atualizacao = {
+            ...ChaveSeDefinida("Memory", ParseByteSize(memoryBytes, "resources.memoryBytes")),
+            ...ChaveSeDefinida("MemoryReservation", ParseByteSize(memoryReservationBytes, "resources.memoryReservationBytes")),
+            /*
+                -1 é o valor com que a API diz "swap ilimitado". É o único
+                negativo legítimo aqui, e por isso passa por fora do
+                ParseByteSize, que recusa negativos de propósito.
+            */
+            ...ChaveSeDefinida("MemorySwap", Number(memorySwapBytes) === -1
+                ? -1
+                : ParseByteSize(memorySwapBytes, "resources.memorySwapBytes")),
+            ...ChaveSeDefinida("NanoCpus", nanoCpus !== undefined
+                ? Number(nanoCpus)
+                : CpusToNanoCpus(cpus, "resources.cpus")),
+            ...ChaveSeDefinida("CpuShares", cpuShares !== undefined ? Number(cpuShares) : undefined),
+            ...ChaveSeDefinida("CpusetCpus", cpusetCpus),
+            ...ChaveSeDefinida("PidsLimit", pidsLimit !== undefined ? Number(pidsLimit) : undefined),
+            ...ChaveSeDefinida("BlkioWeight", blkioWeight !== undefined ? Number(blkioWeight) : undefined),
+            ...(restart
+                ? {
+                    RestartPolicy: {
+                        Name: String(restart.policy || "no"),
+                        MaximumRetryCount: Number(restart.maximumRetryCount || 0)
+                    }
+                }
+                : {})
+        }
+
+        if (Object.keys(atualizacao).length === 0) {
+            const erro = new Error("Informe ao menos um recurso a atualizar.")
+            erro.code = "NO_RESOURCES_TO_UPDATE"
+            erro.httpStatus = 400
+            erro.statusCode = 400
+            throw erro
+        }
+
+        try {
+            const container = docker.getContainer(containerIdOrName)
+            const resultado = await container.update(atualizacao)
+            return {
+                success: true,
+                applied: atualizacao,
+                warnings: (resultado && resultado.Warnings) || []
+            }
+        } catch (error) {
+            /*
+                MEMÓRIA SOZINHA NÃO PASSA (visto contra o Docker 29.6.2).
+
+                Baixar `Memory` num container cujo `MemorySwap` já está
+                definido é recusado com 409 e um texto que fala de
+                "memoryswap" — um campo que quem preencheu "256 MiB" no
+                formulário nunca ouviu falar. O `docker update -m` sofre do
+                mesmo, e a saída lá também é informar os dois.
+
+                Não escolhemos um swap por conta própria: seria decidir uma
+                política de memória no lugar de quem pediu. O que dá para
+                fazer é transformar o texto do daemon em algo acionável, com o
+                campo que falta nomeado.
+            */
+            const mencionaSwap = String(error && error.message || "").toLowerCase().includes("memoryswap")
+
+            if (mencionaSwap && atualizacao.Memory !== undefined && atualizacao.MemorySwap === undefined) {
+                const falha = new Error(
+                    "Para alterar o limite de memória deste container é preciso informar também o " +
+                    "limite de memória+swap (memorySwapBytes), porque ele já tem um definido. " +
+                    "O valor precisa ser MAIOR OU IGUAL ao da memória: igual proíbe swap, " +
+                    "maior permite a diferença em swap."
+                )
+                falha.code = "MEMORY_SWAP_REQUIRED"
+                falha.field = "resources.memorySwapBytes"
+                falha.httpStatus = 400
+                falha.statusCode = 400
+                falha.cause = error
+                throw falha
+            }
+
+            console.error(`Error updating resources of container ${containerIdOrName}:`, error)
+            throw error
+        }
+    }
+
+    /*
+        O QUE ESTÁ RODANDO LÁ DENTRO (CTMG-39).
+
+        `top` responde à pergunta que o log não responde: o processo ainda está
+        vivo? travou? virou zumbi? Sem isso, a única saída é abrir um terminal.
+    */
+    const ListContainerProcesses = async ({ containerIdOrName, psArgs } = {}) => {
+        try {
+            const container = docker.getContainer(containerIdOrName)
+            const resultado = await container.top(psArgs ? { ps_args: psArgs } : {})
+            return {
+                titles: resultado?.Titles || [],
+                processes: resultado?.Processes || []
+            }
+        } catch (error) {
+            console.error(`Error listing processes of container ${containerIdOrName}:`, error)
+            throw error
+        }
+    }
+
+    /*
+        O QUE MUDOU NO SISTEMA DE ARQUIVOS (CTMG-39).
+
+        A API devolve `Kind` como número, e nenhum consumidor deveria precisar
+        decorar que 1 é "adicionado". Traduzido aqui, uma vez.
+    */
+    const TIPOS_DE_MUDANCA = { 0: "modified", 1: "added", 2: "deleted" }
+
+    const GetContainerFileSystemChanges = async (containerIdOrName) => {
+        try {
+            const container = docker.getContainer(containerIdOrName)
+            const mudancas = await container.changes()
+            return (mudancas || []).map((mudanca) => ({
+                path: mudanca.Path,
+                kind: TIPOS_DE_MUDANCA[mudanca.Kind] || "modified",
+                kindCode: mudanca.Kind
+            }))
+        } catch (error) {
+            console.error(`Error reading filesystem changes of container ${containerIdOrName}:`, error)
+            throw error
+        }
+    }
+
+    /*
+        CONGELAR UM CONTAINER COMO IMAGEM (CTMG-39).
+
+        `pause: true` por padrão, como o `docker commit` faz: sem pausar, o
+        sistema de arquivos pode ser capturado no meio de uma escrita e a
+        imagem nasce com um arquivo pela metade.
+    */
+    const CommitContainer = async ({
+        containerIdOrName,
+        repo,
+        tag,
+        comment,
+        author,
+        changes,
+        pause = true
+    }) => {
+        try {
+            const container = docker.getContainer(containerIdOrName)
+            const resultado = await container.commit({
+                ...ChaveSeDefinida("repo", repo),
+                ...ChaveSeDefinida("tag", tag),
+                ...ChaveSeDefinida("comment", comment),
+                ...ChaveSeDefinida("author", author),
+                ...ChaveSeDefinida("changes", changes),
+                pause
+            })
+
+            const imageId = resultado?.Id || resultado?.ID
+            const imageInfo = imageId ? await docker.getImage(imageId).inspect() : null
+
+            return { imageId, imageInfo }
+        } catch (error) {
+            console.error(`Error committing container ${containerIdOrName}:`, error)
+            throw error
+        }
+    }
+
+    /*
         UMA FOTO EM VEZ DE UM FILME (CTMG-40).
 
         Até aqui só existia o stream. Para uma lista com cinquenta containers,
@@ -711,7 +978,12 @@ const CreateContainerOperations = ({ docker, StreamToBuffer, SafeFileName }) => 
         RunExec,
         GetContainerStatsSnapshot,
         WaitContainer,
-        PruneContainers
+        PruneContainers,
+        CreateAndStartContainer,
+        UpdateContainerResources,
+        ListContainerProcesses,
+        GetContainerFileSystemChanges,
+        CommitContainer
     }
 }
 

@@ -57,6 +57,11 @@ const RUNTIME_SURFACE = [
     { name: "GetContainerStatsSnapshot", kind: "call", clientSupported: true },
     { name: "WaitContainer", kind: "call", clientSupported: true },
     { name: "PruneContainers", kind: "call", clientSupported: true },
+    { name: "CreateAndStartContainer", kind: "call", clientSupported: true },
+    { name: "UpdateContainerResources", kind: "call", clientSupported: true },
+    { name: "ListContainerProcesses", kind: "call", clientSupported: true },
+    { name: "GetContainerFileSystemChanges", kind: "call", clientSupported: true },
+    { name: "CommitContainer", kind: "call", clientSupported: true },
 
     // ---- imagens
     { name: "ListAllImages", kind: "call", clientSupported: true },
@@ -73,12 +78,14 @@ const RUNTIME_SURFACE = [
     { name: "RemoveNetwork", kind: "call", clientSupported: true },
     { name: "ConnectContainerToNetwork", kind: "call", clientSupported: true },
     { name: "DisconnectContainerFromNetwork", kind: "call", clientSupported: true },
+    { name: "PruneNetworks", kind: "call", clientSupported: true },
 
     // ---- volumes
     { name: "ListAllVolumes", kind: "call", clientSupported: true },
     { name: "InspectVolume", kind: "call", clientSupported: true },
     { name: "CreateNewVolume", kind: "call", clientSupported: true },
     { name: "RemoveVolume", kind: "call", clientSupported: true },
+    { name: "PruneVolumes", kind: "call", clientSupported: true },
     { name: "ExportVolume", kind: "call", clientSupported: true },
 
     // ---- arquivos dentro do volume

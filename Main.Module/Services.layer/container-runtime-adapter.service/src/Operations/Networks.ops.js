@@ -9,12 +9,26 @@
 const {
     NormalizeNetworkAliases
 } = require("../Helpers/BuildContainerNetworkConfiguration")
+const NormalizeDockerFilters = require("../Helpers/NormalizeDockerFilters")
+const BuildPruneOptions = require("../Helpers/BuildPruneOptions")
+// Gateway fora da sub-rede é aceito pelo daemon e deixa a rede sem saída —
+// por isso a validação vem antes da chamada (CTMG-49).
+const BuildNetworkOptions = require("../Helpers/BuildNetworkOptions")
+
+const BuildFilterOption = (filters) => {
+    const normalizados = NormalizeDockerFilters(filters)
+    return normalizados === undefined ? {} : { filters: normalizados }
+}
 
 const CreateNetworkOperations = ({ docker }) => {
 
-    const ListAllNetworks = async () => {
+    /*
+        Chamada sem argumento mantém o comportamento de antes (CTMG-41).
+        `filters` aceita driver, label, name, scope, type.
+    */
+    const ListAllNetworks = async ({ filters } = {}) => {
         try {
-            const networks = await docker.listNetworks()
+            const networks = await docker.listNetworks(BuildFilterOption(filters))
             return networks
         }
         catch (error) {
@@ -36,13 +50,46 @@ const CreateNetworkOperations = ({ docker }) => {
         }
     }
 
+    /*
+        Criação de rede (CTMG-49).
+
+        Aceita as duas formas: o objeto do Docker (`{ Name, Driver, IPAM }`),
+        que é como sempre foi chamado, e a forma canônica em minúsculas com
+        IPAM validado. Reconhecer a forma antiga pelo `Name` maiúsculo evita
+        quebrar quem já chama certo.
+    */
     const CreateNewNetwork = async (options) => {
+        const pedido = options && options.Name !== undefined
+            ? options
+            : BuildNetworkOptions(options)
+
         try {
-            const network = await docker.createNetwork(options)
+            const network = await docker.createNetwork(pedido)
             return network
         }
         catch (error) {
-            console.error(`Error creating network ${options.Name || 'unknown'}:`, error)
+            console.error(`Error creating network ${pedido.Name || 'unknown'}:`, error)
+            throw error
+        }
+    }
+
+    /*
+        PODA DE REDES (CTMG-49).
+
+        Remove as redes sem nenhum container conectado. A menos destrutiva das
+        quatro podas — rede se recria com a mesma configuração —, mas ainda
+        assim leva junto a rede que alguém preparou para uma stack que ainda
+        não subiu.
+    */
+    const PruneNetworks = async ({ filters } = {}) => {
+        try {
+            const resultado = await docker.pruneNetworks(BuildPruneOptions(filters))
+            return {
+                NetworksDeleted: resultado?.NetworksDeleted || [],
+                SpaceReclaimed: resultado?.SpaceReclaimed || 0
+            }
+        } catch (error) {
+            console.error("Error pruning networks:", error)
             throw error
         }
     }
@@ -104,6 +151,7 @@ const CreateNetworkOperations = ({ docker }) => {
         InspectNetwork,
         CreateNewNetwork,
         RemoveNetwork,
+        PruneNetworks,
         ConnectContainerToNetwork,
         DisconnectContainerFromNetwork
     }

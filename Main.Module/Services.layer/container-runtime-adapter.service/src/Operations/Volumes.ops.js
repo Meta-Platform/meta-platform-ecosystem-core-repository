@@ -9,6 +9,14 @@
 
 const { PassThrough } = require('node:stream')
 
+const NormalizeDockerFilters = require("../Helpers/NormalizeDockerFilters")
+const BuildPruneOptions = require("../Helpers/BuildPruneOptions")
+
+const BuildFilterOption = (filters) => {
+    const normalizados = NormalizeDockerFilters(filters)
+    return normalizados === undefined ? {} : { filters: normalizados }
+}
+
 const NormalizedLabels = (labels) => {
     return Object.fromEntries(
         Object.entries(labels).map(([key, value]) => [ key, value == null ? "" : String(value) ])
@@ -19,9 +27,13 @@ const CreateVolumeOperations = ({ docker, SafeFileName, ephemeral }) => {
 
     const { VOLUME_EXPORT_IMAGE, EnsureVolumeExportImage } = ephemeral
 
-    const ListAllVolumes = async () => {
+    /*
+        Chamada sem argumento mantém o comportamento de antes (CTMG-41).
+        `filters` aceita dangling, driver, label, name.
+    */
+    const ListAllVolumes = async ({ filters } = {}) => {
         try {
-            const volumes = await docker.listVolumes()
+            const volumes = await docker.listVolumes(BuildFilterOption(filters))
             return volumes
         }
         catch (error) {
@@ -86,13 +98,59 @@ const CreateVolumeOperations = ({ docker, SafeFileName, ephemeral }) => {
         }
     }
 
-    const RemoveVolume = async (volumeName) => {
+    /*
+        Remoção de volume, agora com `force` (CTMG-49).
+
+        Aceita as DUAS formas: a string posicional de sempre — que o
+        service-orchestrator usa, de outro repositório — e o objeto
+        `{ volumeName, force }`. Trocar a assinatura sem aceitar a antiga
+        quebraria o provisionamento da nuvem em silêncio, porque
+        `getVolume(undefined)` não falha na hora.
+    */
+    const RemoveVolume = async (volumeNameOrOptions) => {
+        const { volumeName, force } = typeof volumeNameOrOptions === "string"
+            ? { volumeName: volumeNameOrOptions, force: false }
+            : (volumeNameOrOptions ?? {})
+
+        if (!volumeName) {
+            const erro = new Error("Informe o nome do volume a remover.")
+            erro.code = "INVALID_VOLUME_NAME"
+            erro.httpStatus = 400
+            erro.statusCode = 400
+            throw erro
+        }
+
         try {
             const volume = docker.getVolume(volumeName)
-            await volume.remove()
+            await volume.remove(force ? { force: true } : {})
             return { success: true, message: `Volume ${volumeName} removed successfully` }
         } catch (error) {
             console.error(`Error removing volume ${volumeName}:`, error)
+            throw error
+        }
+    }
+
+    /*
+        PODA DE VOLUMES (CTMG-49).
+
+        A mais perigosa das quatro podas: volume apagado é DADO apagado, sem
+        equivalente ao "baixa de novo" que salva imagem e container. Por padrão
+        o daemon só remove volumes sem nenhum container associado, mas isso
+        inclui o volume que alguém criou ontem para usar amanhã.
+
+        A interface passa antes pela prévia de CTMG-129, que lista nome por
+        nome. Aqui a responsabilidade é não silenciar o filtro — ver
+        NormalizeDockerFilters.
+    */
+    const PruneVolumes = async ({ filters } = {}) => {
+        try {
+            const resultado = await docker.pruneVolumes(BuildPruneOptions(filters))
+            return {
+                VolumesDeleted: resultado?.VolumesDeleted || [],
+                SpaceReclaimed: resultado?.SpaceReclaimed || 0
+            }
+        } catch (error) {
+            console.error("Error pruning volumes:", error)
             throw error
         }
     }
@@ -166,6 +224,7 @@ const CreateVolumeOperations = ({ docker, SafeFileName, ephemeral }) => {
         InspectVolume,
         CreateNewVolume,
         RemoveVolume,
+        PruneVolumes,
         ExportVolume
     }
 }

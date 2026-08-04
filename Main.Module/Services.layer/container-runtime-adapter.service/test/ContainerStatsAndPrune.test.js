@@ -227,10 +227,12 @@ test("filtro já em JSON passa intacto — quem montou sabia o que fazia", () =>
 })
 
 test("filtro em forma impossível é recusado como erro de entrada", () => {
+    // O mesmo código para listagem e poda: a normalização é uma só, porque o
+    // erro é o mesmo — só muda o tamanho da consequência.
     for (const invalido of [["label=a"], 42, true]) {
         assert.throws(
             () => BuildPruneOptions(invalido),
-            (erro) => erro.code === "INVALID_PRUNE_FILTERS" && erro.statusCode === 400
+            (erro) => erro.code === "INVALID_FILTERS" && erro.statusCode === 400
         )
     }
 })

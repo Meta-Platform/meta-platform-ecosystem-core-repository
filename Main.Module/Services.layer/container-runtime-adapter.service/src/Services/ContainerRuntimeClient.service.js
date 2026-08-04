@@ -93,6 +93,27 @@ const ContainerRuntimeClientService = (params) => {
     const PruneContainers = (options) =>
         ContainerRuntimeCommand((API) => API.PruneContainers({ options }))
 
+    const CreateAndStartContainer = (spec) =>
+        ContainerRuntimeCommand((API) => API.CreateAndStartContainer({ spec }))
+
+    const UpdateContainerResources = (options) =>
+        ContainerRuntimeCommand((API) => API.UpdateContainerResources({ options }))
+
+    const ListContainerProcesses = (options) =>
+        ContainerRuntimeCommand((API) => API.ListContainerProcesses({ options }))
+
+    const GetContainerFileSystemChanges = (containerIdOrName) =>
+        ContainerRuntimeCommand((API) => API.GetContainerFileSystemChanges({ containerIdOrName }))
+
+    const CommitContainer = (options) =>
+        ContainerRuntimeCommand((API) => API.CommitContainer({ options }))
+
+    const PruneNetworks = (options) =>
+        ContainerRuntimeCommand((API) => API.PruneNetworks({ options }))
+
+    const PruneVolumes = (options) =>
+        ContainerRuntimeCommand((API) => API.PruneVolumes({ options }))
+
     const InspectNetwork = (networkIdOrName) =>
         ContainerRuntimeCommand((API) => API.InspectNetwork({ networkIdOrName }))
 
@@ -200,6 +221,13 @@ const ContainerRuntimeClientService = (params) => {
         GetContainerStatsSnapshot,
         WaitContainer,
         PruneContainers,
+        CreateAndStartContainer,
+        UpdateContainerResources,
+        ListContainerProcesses,
+        GetContainerFileSystemChanges,
+        CommitContainer,
+        PruneNetworks,
+        PruneVolumes,
         InspectNetwork,
         CreateNewNetwork,
         RemoveNetwork,
