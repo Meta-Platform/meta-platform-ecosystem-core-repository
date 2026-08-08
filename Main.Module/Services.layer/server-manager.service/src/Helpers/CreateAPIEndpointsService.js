@@ -1,5 +1,7 @@
 const express  = require("express")
 
+const BuildErrorResponse = require("./BuildErrorResponse")
+
 const getAllParams = ({body, params:path, query}) => ({...path, ...body, ...query})
 
 const Send = async (typeResponse, response, data) => {
@@ -32,10 +34,29 @@ const CreateAPIEndpointsService = ({
 
     const router = express.Router()
 
+    /*
+        ERRO DE CONTROLLER VIRA JSON, NÃO PÁGINA DE STACK.
+
+        Erros de contrato deste ecossistema já carregam `code` + `httpStatus`/
+        `statusCode` (ContractError, ContainerRuntimeUnavailableError,
+        PlatformManagerUnavailableError, DelegatedCredentialsError...); a
+        tradução para status e corpo está em BuildErrorResponse.js, onde é
+        verificável sem subir servidor.
+    */
+    const _ErrorResponseMiddleware = (error, request, response, next) => {
+        if (response.headersSent) return next(error)
+        const { status, body } = BuildErrorResponse(error)
+        response.status(status).json(body)
+    }
+
     const Start = () => {
         apiTemplate
         .endpoints
         .forEach((endpoint) => AttachEndpoint(endpoint))
+
+        // Depois de TODAS as rotas: o Express só procura tratadores de erro
+        // adiante na pilha, então registrar antes não capturaria nada.
+        router.use(_ErrorResponseMiddleware)
     }
 
     const AttachEndpoint = ({
