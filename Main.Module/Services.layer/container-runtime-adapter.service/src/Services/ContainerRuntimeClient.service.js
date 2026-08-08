@@ -171,6 +171,9 @@ const ContainerRuntimeClientService = (params) => {
     const MakeVolumeDirectory = (options) =>
         ContainerRuntimeCommand((API) => API.MakeVolumeDirectory({ options }))
 
+    const MoveVolumeEntry = (options) =>
+        ContainerRuntimeCommand((API) => API.MoveVolumeEntry({ options }))
+
     const ListContainerEntries = (options) =>
         ContainerRuntimeCommand((API) => API.ListContainerEntries({ options }))
 
@@ -336,6 +339,7 @@ const ContainerRuntimeClientService = (params) => {
         GetDiskUsage,
         PruneSystem,
         MakeVolumeDirectory,
+        MoveVolumeEntry,
         ListContainerEntries,
         CopyToContainer,
         CopyFromContainer,

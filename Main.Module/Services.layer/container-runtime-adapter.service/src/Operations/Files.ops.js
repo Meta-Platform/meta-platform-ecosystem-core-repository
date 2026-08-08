@@ -529,12 +529,92 @@ const CreateFileOperations = ({ docker, StreamToBuffer, ephemeral, RunExec }) =>
         }
     }
 
+    /*
+        MOVER (e RENOMEAR) uma entrada dentro do volume.
+
+        Um método só para as duas coisas porque, no sistema de arquivos, elas
+        SÃO a mesma: renomear é mover para o mesmo diretório com outro nome.
+        Dois métodos significariam duas validações de caminho para manter em
+        sincronia, e é a validação que protege aqui.
+
+        NÃO SOBRESCREVE. `mv` calado por cima de um arquivo existente destrói
+        o que estava lá, e do outro lado da tela isso apareceria como "renomeei
+        e o outro arquivo sumiu". Existindo destino, a operação é recusada com
+        código próprio para a tela poder dizer o que houve.
+
+        Os dois caminhos passam pela mesma contenção do resto do módulo: o
+        conteúdo do volume é o limite, e nem origem nem destino escapam dele.
+    */
+    const MoveVolumeEntry = async ({ volumeName, path, destinationPath }) => {
+        const origem = RequireSafePath(path)
+        const destino = RequireSafePath(destinationPath)
+
+        if (origem.relative === "") {
+            const error = new Error("Não é possível mover a raiz do espaço.")
+            error.code = "INVALID_PATH"
+            throw error
+        }
+        if (destino.relative === "") {
+            const error = new Error("Informe o destino.")
+            error.code = "INVALID_PATH"
+            throw error
+        }
+        if (origem.relative === destino.relative) {
+            return { path: destino.relative, moved: false }
+        }
+        /*
+            Mover uma pasta para dentro dela mesma apaga a árvore em alguns
+            runtimes e cria um laço em outros. É recusado aqui, antes de o
+            comando existir.
+        */
+        if (destino.relative.indexOf(`${origem.relative}/`) === 0) {
+            const error = new Error("Não é possível mover uma pasta para dentro dela mesma.")
+            error.code = "INVALID_PATH"
+            throw error
+        }
+
+        let container
+        try {
+            const comando =
+                `[ -e '${origem.absolute}' ] || exit 3; ` +
+                `[ -e '${destino.absolute}' ] && exit 4; ` +
+                `mkdir -p "$(dirname '${destino.absolute}')" && mv '${origem.absolute}' '${destino.absolute}'`
+
+            container = await CreateEphemeralVolumeContainer({
+                volumeName, cmd: ["sh", "-c", comando], readOnly: false
+            })
+            const resultado = await RunEphemeralAndCollect(container)
+
+            if (resultado.statusCode === 3) {
+                const error = new Error("O item que se quer mover não existe mais.")
+                error.code = "PATH_NOT_FOUND"
+                throw error
+            }
+            if (resultado.statusCode === 4) {
+                const error = new Error("Já existe um item com esse nome no destino.")
+                error.code = "DESTINATION_EXISTS"
+                throw error
+            }
+            if (resultado.statusCode !== 0) {
+                throw new Error(`Falha ao mover (código ${resultado.statusCode}): ${resultado.stderr}`)
+            }
+
+            return { path: destino.relative, moved: true }
+        } catch (error) {
+            console.error(`Error moving entry in volume ${volumeName}:`, error)
+            throw error
+        } finally {
+            await RemoveEphemeral(container)
+        }
+    }
+
     return {
         ListVolumeEntries,
         PutFileInVolume,
         GetFileFromVolume,
         DeleteVolumeEntry,
         MakeVolumeDirectory,
+        MoveVolumeEntry,
         ListContainerEntries,
         CopyToContainer,
         CopyFromContainer,
