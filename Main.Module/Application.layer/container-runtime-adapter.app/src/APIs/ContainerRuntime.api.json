@@ -394,6 +394,93 @@
                     "required": true
                 }
             ]
+        },
+        {
+            "path": "/volume-directory/create",
+            "method": "POST",
+            "summary": "MakeVolumeDirectory",
+            "parameters": [
+                {
+                    "name": "volumeName",
+                    "in": "body",
+                    "type": "string",
+                    "required": true
+                },
+                {
+                    "name": "path",
+                    "in": "body",
+                    "type": "string",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "path": "/volume-entry/move",
+            "method": "POST",
+            "summary": "MoveVolumeEntry",
+            "parameters": [
+                {
+                    "name": "volumeName",
+                    "in": "body",
+                    "type": "string",
+                    "required": true
+                },
+                {
+                    "name": "path",
+                    "in": "body",
+                    "type": "string",
+                    "required": true
+                },
+                {
+                    "name": "destinationPath",
+                    "in": "body",
+                    "type": "string",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "path": "/volume-file/put-chunk",
+            "method": "POST",
+            "summary": "PutFileChunkInVolume",
+            "parameters": [
+                {
+                    "name": "volumeName",
+                    "in": "body",
+                    "type": "string",
+                    "required": true
+                },
+                {
+                    "name": "path",
+                    "in": "body",
+                    "type": "string",
+                    "required": false
+                },
+                {
+                    "name": "fileName",
+                    "in": "body",
+                    "type": "string",
+                    "required": true
+                },
+                {
+                    "name": "contentBase64",
+                    "in": "body",
+                    "type": "string",
+                    "required": true
+                },
+                {
+                    "name": "partIndex",
+                    "in": "body",
+                    "type": "number",
+                    "required": true
+                },
+                {
+                    "name": "isLast",
+                    "in": "body",
+                    "type": "boolean",
+                    "required": true
+                }
+            ]
         }
     ]
 }

@@ -1,6 +1,6 @@
 {
-	"name": "container-runtime-adapter.app",
-  "version": "0.0.3",
-	"author": "Kaio Cezar <kadisk.shark@gmail.com>",
-	"license": "BSD-3-Clause"
+  "name": "container-runtime-adapter.app",
+  "version": "0.0.4",
+  "author": "Kaio Cezar <kadisk.shark@gmail.com>",
+  "license": "BSD-3-Clause"
 }
