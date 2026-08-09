@@ -25,8 +25,31 @@ const HTTPServerService = (params) => {
 
     const app = express()
 
+    /*
+        TETO DO CORPO DA REQUISIÇÃO.
+
+        `bodyParser.json()` sem argumento aplica o padrão da biblioteca: 100 KB.
+        Isso é razoável para uma API de formulário e é pequeno demais para esta
+        plataforma, onde CONTEÚDO DE ARQUIVO trafega dentro de JSON (o upload
+        para espaço de dados manda o arquivo em base64, e o mesmo vale para os
+        contratos entre painéis). Na prática, qualquer arquivo acima de ~70 KB
+        era recusado com `PayloadTooLargeError: request entity too large` —
+        antes de chegar ao controller, então sem mensagem útil e sem registro
+        no log do serviço.
+
+        O valor é configurável por parâmetro do serviço; o padrão generoso
+        existe porque o custo de um teto baixo é uma funcionalidade que
+        simplesmente não funciona, enquanto o custo de um teto alto é memória
+        por requisição — que quem serve arquivo já paga de qualquer forma.
+
+        Upload multipart NÃO passa por aqui (é tratado por multer, em disco);
+        este limite governa só o que chega como JSON.
+    */
+    const jsonBodyLimit = params.jsonBodyLimit ?? "256mb"
+
     app.use(cors())
-    app.use(bodyParser.json())
+    app.use(bodyParser.json({ limit: jsonBodyLimit }))
+    app.use(bodyParser.urlencoded({ limit: jsonBodyLimit, extended: true }))
     app.use(cookieParser())
 
     // Criamos o http.Server explicitamente (em vez de deixar app.listen criar) para
