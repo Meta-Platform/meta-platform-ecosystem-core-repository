@@ -27,6 +27,7 @@ const ContainerRuntimeController = (params) => {
         MakeVolumeDirectory            : containerRuntimeAdapterService.MakeVolumeDirectory,
         MoveVolumeEntry                : containerRuntimeAdapterService.MoveVolumeEntry,
         PutFileChunkInVolume           : containerRuntimeAdapterService.PutFileChunkInVolume,
+        GetFileChunkFromVolume         : containerRuntimeAdapterService.GetFileChunkFromVolume,
         CreateNewContainer             : containerRuntimeAdapterService.CreateNewContainer,
         BuildImageFromDockerfileString : containerRuntimeAdapterService.BuildImageFromDockerfileString,
         RemoveContainer                : containerRuntimeAdapterService.RemoveContainer,

@@ -530,6 +530,72 @@ const CreateFileOperations = ({ docker, StreamToBuffer, ephemeral, RunExec }) =>
     }
 
     /*
+        LEITURA EM PARTES (VDRP-291) — o inverso do envio em partes.
+
+        `GetFileFromVolume` traz o arquivo inteiro num campo base64, então
+        baixar de volta um modelo de gigabytes era impossível pelo mesmo motivo
+        que enviá-lo era: a string não cabe no motor JavaScript. Subir e não
+        conseguir descer deixaria o espaço sendo um poço.
+
+        O trecho é lido com `dd` a partir de um deslocamento em MiB — nunca o
+        arquivo todo. `base64` do busybox quebra a saída em colunas, e as
+        quebras são removidas aqui: quem consome espera base64 puro.
+
+        O tamanho total NÃO é devolvido por esta chamada: quem baixa já o
+        conhece da listagem, e recalcular a cada bloco custaria um `stat` por
+        pedaço.
+    */
+    const GetFileChunkFromVolume = async ({ volumeName, path, offsetMiB, lengthMiB }) => {
+        const alvo = RequireSafePath(path)
+        if (alvo.relative === "") {
+            const error = new Error("Informe o arquivo a baixar.")
+            error.code = "INVALID_PATH"
+            throw error
+        }
+
+        const inicio = Number(offsetMiB)
+        const tamanho = Number(lengthMiB)
+        if (!Number.isInteger(inicio) || inicio < 0 || !Number.isInteger(tamanho) || tamanho <= 0) {
+            const error = new Error("offsetMiB e lengthMiB precisam ser inteiros (em MiB).")
+            error.code = "INVALID_RANGE"
+            throw error
+        }
+
+        let container
+        try {
+            const comando =
+                `[ -f '${alvo.absolute}' ] || exit 3; ` +
+                `dd if='${alvo.absolute}' bs=1048576 skip=${inicio} count=${tamanho} 2>/dev/null | base64`
+
+            container = await CreateEphemeralVolumeContainer({
+                volumeName, cmd: ["sh", "-c", comando], readOnly: true
+            })
+            const resultado = await RunEphemeralAndCollect(container)
+
+            if (resultado.statusCode === 3) {
+                const error = new Error("Arquivo não encontrado dentro do espaço.")
+                error.code = "PATH_NOT_FOUND"
+                throw error
+            }
+            if (resultado.statusCode !== 0) {
+                throw new Error(`Falha ao ler o trecho (código ${resultado.statusCode}): ${resultado.stderr}`)
+            }
+
+            return {
+                path          : alvo.relative,
+                offsetMiB     : inicio,
+                lengthMiB     : tamanho,
+                contentBase64 : String(resultado.stdout || "").replace(/\s+/g, "")
+            }
+        } catch (error) {
+            console.error(`Error reading chunk from volume ${volumeName}:`, error)
+            throw error
+        } finally {
+            await RemoveEphemeral(container)
+        }
+    }
+
+    /*
         ENVIO EM PARTES (VDRP-290) — o que permite arquivo de gigabytes.
 
         `PutFileInVolume` recebe o arquivo inteiro num campo base64. Isso tem um
@@ -718,6 +784,7 @@ const CreateFileOperations = ({ docker, StreamToBuffer, ephemeral, RunExec }) =>
         MakeVolumeDirectory,
         MoveVolumeEntry,
         PutFileChunkInVolume,
+        GetFileChunkFromVolume,
         ListContainerEntries,
         CopyToContainer,
         CopyFromContainer,

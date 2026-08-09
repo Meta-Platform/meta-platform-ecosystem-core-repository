@@ -481,6 +481,37 @@
                     "required": true
                 }
             ]
+        },
+        {
+            "path": "/volume-file/get-chunk",
+            "method": "POST",
+            "summary": "GetFileChunkFromVolume",
+            "parameters": [
+                {
+                    "name": "volumeName",
+                    "in": "body",
+                    "type": "string",
+                    "required": true
+                },
+                {
+                    "name": "path",
+                    "in": "body",
+                    "type": "string",
+                    "required": true
+                },
+                {
+                    "name": "offsetMiB",
+                    "in": "body",
+                    "type": "number",
+                    "required": true
+                },
+                {
+                    "name": "lengthMiB",
+                    "in": "body",
+                    "type": "number",
+                    "required": true
+                }
+            ]
         }
     ]
 }
