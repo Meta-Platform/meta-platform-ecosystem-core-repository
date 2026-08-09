@@ -16,6 +16,17 @@ const ContainerRuntimeController = (params) => {
         PutFileInVolume                : containerRuntimeAdapterService.PutFileInVolume,
         GetFileFromVolume              : containerRuntimeAdapterService.GetFileFromVolume,
         DeleteVolumeEntry              : containerRuntimeAdapterService.DeleteVolumeEntry,
+        /*
+            Organizar e transferir em partes (VDRP-287/288/290). Valem os DOIS
+            registros — esta lista e o manifesto: sem a linha aqui, o endpoint
+            existe no manifesto e responde "o summary está indefinido"; sem a
+            entrada no manifesto, nem endpoint há. Ter a operação implementada
+            não basta, e foi assim que estas três ficaram escritas e
+            inalcançáveis.
+        */
+        MakeVolumeDirectory            : containerRuntimeAdapterService.MakeVolumeDirectory,
+        MoveVolumeEntry                : containerRuntimeAdapterService.MoveVolumeEntry,
+        PutFileChunkInVolume           : containerRuntimeAdapterService.PutFileChunkInVolume,
         CreateNewContainer             : containerRuntimeAdapterService.CreateNewContainer,
         BuildImageFromDockerfileString : containerRuntimeAdapterService.BuildImageFromDockerfileString,
         RemoveContainer                : containerRuntimeAdapterService.RemoveContainer,
