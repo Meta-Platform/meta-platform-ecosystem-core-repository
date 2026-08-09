@@ -123,6 +123,7 @@ const RUNTIME_SURFACE = [
     { name: "DeleteVolumeEntry", kind: "call", clientSupported: true },
     { name: "MakeVolumeDirectory", kind: "call", clientSupported: true },
     { name: "MoveVolumeEntry", kind: "call", clientSupported: true },
+    { name: "PutFileChunkInVolume", kind: "call", clientSupported: true },
 
     // ---- arquivos dentro do container
     { name: "ListContainerEntries", kind: "call", clientSupported: true },

@@ -530,6 +530,108 @@ const CreateFileOperations = ({ docker, StreamToBuffer, ephemeral, RunExec }) =>
     }
 
     /*
+        ENVIO EM PARTES (VDRP-290) — o que permite arquivo de gigabytes.
+
+        `PutFileInVolume` recebe o arquivo inteiro num campo base64. Isso tem um
+        teto DURO que não é de política: uma string de 4 GB (o base64 de um
+        arquivo de 3 GB) simplesmente não existe no motor JavaScript, nem no
+        navegador nem aqui. Nenhum aumento de limite resolveria.
+
+        Aqui o arquivo chega em blocos. Cada bloco é gravado como uma parte
+        numerada dentro de um diretório temporário no PRÓPRIO volume — nunca em
+        memória — e a última chamada concatena as partes na ordem e renomeia
+        para o nome final. A memória usada é a de um bloco, seja o arquivo de
+        10 MB ou de 3 GB.
+
+        Por que as partes ficam no volume, e não em /tmp do container efêmero:
+        cada bloco roda num container novo, e o /tmp dele morre junto. O volume
+        é o único lugar que sobrevive entre as chamadas.
+
+        O nome temporário começa com ponto e carrega o nome do arquivo, então
+        duas transferências simultâneas para a mesma pasta não se misturam. Se
+        uma for abandonada no meio, o que fica é um diretório oculto — visível
+        para quem for procurar, e removível, em vez de um arquivo pela metade
+        se passando por completo.
+    */
+    const PutFileChunkInVolume = async ({ volumeName, path, fileName, contentBase64, partIndex, isLast }) => {
+        const destino = RequireSafePath(path)
+        const nome = RequireSafeFileName(fileName)
+
+        const parteNumero = Number(partIndex)
+        if (!Number.isInteger(parteNumero) || parteNumero < 0) {
+            const error = new Error("partIndex precisa ser um inteiro não negativo.")
+            error.code = "INVALID_PART_INDEX"
+            throw error
+        }
+
+        const conteudo = Buffer.from(contentBase64 ?? "", "base64")
+        const nomeDaParte = `part-${String(parteNumero).padStart(6, "0")}`
+
+        // O diretório temporário fica ao lado do destino, no mesmo volume.
+        const temporarioRelativo = destino.relative === ""
+            ? `.upload-${nome}`
+            : `${destino.relative}/.upload-${nome}`
+        const temporario = RequireSafePath(temporarioRelativo)
+
+        const tar = BuildTarWithSingleFile({
+            name: nomeDaParte,
+            content: conteudo,
+            mtimeSeconds: Math.floor(Date.now() / 1000)
+        })
+
+        let container
+        try {
+            container = await CreateEphemeralVolumeContainer({
+                volumeName, cmd: ["sh", "-c", `mkdir -p '${temporario.absolute}'`], readOnly: false
+            })
+            const preparo = await RunEphemeralAndCollect(container)
+            if (preparo.statusCode !== 0) {
+                throw new Error(`Falha ao preparar a transferência: ${preparo.stderr}`)
+            }
+
+            await container.putArchive(tar, { path: temporario.absolute })
+        } catch (error) {
+            console.error(`Error writing chunk into volume ${volumeName}:`, error)
+            throw error
+        } finally {
+            await RemoveEphemeral(container)
+        }
+
+        if (!isLast) {
+            return { path: destino.relative, name: nome, partIndex: parteNumero, completed: false }
+        }
+
+        /*
+            Fecho: concatena na ORDEM (o glob ordena porque os nomes são
+            zero-padded), grava com o nome final e só então remove o temporário.
+            A ordem importa — apagar antes de confirmar a escrita deixaria o
+            usuário sem as partes e sem o arquivo.
+        */
+        let fechamento
+        try {
+            const comando =
+                `set -e; ` +
+                `cat '${temporario.absolute}'/part-* > '${destino.absolute}/${nome}'; ` +
+                `rm -rf '${temporario.absolute}'`
+
+            fechamento = await CreateEphemeralVolumeContainer({
+                volumeName, cmd: ["sh", "-c", comando], readOnly: false
+            })
+            const resultado = await RunEphemeralAndCollect(fechamento)
+            if (resultado.statusCode !== 0) {
+                throw new Error(`Falha ao concluir a transferência (código ${resultado.statusCode}): ${resultado.stderr}`)
+            }
+
+            return { path: destino.relative, name: nome, partIndex: parteNumero, completed: true }
+        } catch (error) {
+            console.error(`Error completing chunked upload into volume ${volumeName}:`, error)
+            throw error
+        } finally {
+            await RemoveEphemeral(fechamento)
+        }
+    }
+
+    /*
         MOVER (e RENOMEAR) uma entrada dentro do volume.
 
         Um método só para as duas coisas porque, no sistema de arquivos, elas
@@ -615,6 +717,7 @@ const CreateFileOperations = ({ docker, StreamToBuffer, ephemeral, RunExec }) =>
         DeleteVolumeEntry,
         MakeVolumeDirectory,
         MoveVolumeEntry,
+        PutFileChunkInVolume,
         ListContainerEntries,
         CopyToContainer,
         CopyFromContainer,
