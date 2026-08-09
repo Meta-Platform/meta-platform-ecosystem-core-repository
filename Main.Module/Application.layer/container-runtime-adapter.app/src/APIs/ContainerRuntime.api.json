@@ -512,6 +512,44 @@
                     "required": true
                 }
             ]
+        },
+        {
+            "path": "/volume-file/inspect-upload",
+            "method": "POST",
+            "summary": "InspectVolumeUpload",
+            "parameters": [
+                {
+                    "name": "volumeName",
+                    "in": "body",
+                    "type": "string",
+                    "required": true
+                },
+                {
+                    "name": "path",
+                    "in": "body",
+                    "type": "string",
+                    "required": false
+                },
+                {
+                    "name": "fileName",
+                    "in": "body",
+                    "type": "string",
+                    "required": true
+                }
+            ]
+        },
+        {
+            "path": "/volume-usage",
+            "method": "POST",
+            "summary": "GetVolumeUsage",
+            "parameters": [
+                {
+                    "name": "volumeName",
+                    "in": "body",
+                    "type": "string",
+                    "required": true
+                }
+            ]
         }
     ]
 }

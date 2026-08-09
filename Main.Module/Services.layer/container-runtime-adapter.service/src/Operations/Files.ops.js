@@ -698,6 +698,50 @@ const CreateFileOperations = ({ docker, StreamToBuffer, ephemeral, RunExec }) =>
     }
 
     /*
+        O QUE JÁ SUBIU DE UM ENVIO EM PARTES (VDRP-292).
+
+        O envio em partes deixa cada bloco gravado num diretório oculto do
+        próprio volume, e só concatena quando o último chega. Isso já garantia
+        que uma queda no meio não produzisse arquivo pela metade — mas quem
+        reenviava recomeçava do zero, porque não havia como PERGUNTAR o que já
+        estava lá. Num modelo de gigabytes, isso é a diferença entre reenviar um
+        bloco e reenviar tudo.
+
+        O nome do diretório temporário é o mesmo que `PutFileChunkInVolume`
+        monta, e por isso as duas coisas moram no mesmo arquivo: se a convenção
+        do nome mudar num lugar e não no outro, a retomada passa a olhar um
+        diretório que não existe e volta a reenviar tudo — em silêncio.
+
+        Envio inexistente NÃO é erro: é a resposta "nada foi enviado ainda", com
+        lista vazia. Quem chama não tem como saber de antemão, e transformar o
+        caso normal em exceção obrigaria todo chamador a tratá-la.
+    */
+    const InspectVolumeUpload = async ({ volumeName, path, fileName }) => {
+        const destino = RequireSafePath(path)
+        const nome = RequireSafeFileName(fileName)
+
+        const temporarioRelativo = destino.relative === ""
+            ? `.upload-${nome}`
+            : `${destino.relative}/.upload-${nome}`
+
+        try {
+            const listagem = await ListVolumeEntries({ volumeName, path: temporarioRelativo })
+            return {
+                path  : destino.relative,
+                name  : nome,
+                parts : (listagem.entries || [])
+                    .filter((entrada) => !entrada.isDirectory)
+                    .map((entrada) => ({ name: entrada.name, size: entrada.size }))
+            }
+        } catch (error) {
+            if (error && error.code === "PATH_NOT_FOUND") {
+                return { path: destino.relative, name: nome, parts: [] }
+            }
+            throw error
+        }
+    }
+
+    /*
         MOVER (e RENOMEAR) uma entrada dentro do volume.
 
         Um método só para as duas coisas porque, no sistema de arquivos, elas
@@ -785,6 +829,7 @@ const CreateFileOperations = ({ docker, StreamToBuffer, ephemeral, RunExec }) =>
         MoveVolumeEntry,
         PutFileChunkInVolume,
         GetFileChunkFromVolume,
+        InspectVolumeUpload,
         ListContainerEntries,
         CopyToContainer,
         CopyFromContainer,

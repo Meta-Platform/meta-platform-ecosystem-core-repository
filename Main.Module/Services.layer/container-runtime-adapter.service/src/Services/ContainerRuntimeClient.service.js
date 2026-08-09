@@ -180,6 +180,9 @@ const ContainerRuntimeClientService = (params) => {
     const GetFileChunkFromVolume = (options) =>
         ContainerRuntimeCommand((API) => API.GetFileChunkFromVolume({ options }))
 
+    const InspectVolumeUpload = (options) =>
+        ContainerRuntimeCommand((API) => API.InspectVolumeUpload({ options }))
+
     const ListContainerEntries = (options) =>
         ContainerRuntimeCommand((API) => API.ListContainerEntries({ options }))
 
@@ -348,6 +351,7 @@ const ContainerRuntimeClientService = (params) => {
         MoveVolumeEntry,
         PutFileChunkInVolume,
         GetFileChunkFromVolume,
+        InspectVolumeUpload,
         ListContainerEntries,
         CopyToContainer,
         CopyFromContainer,

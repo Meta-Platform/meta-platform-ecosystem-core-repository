@@ -289,19 +289,31 @@ const CreateVolumeOperations = ({ docker, SafeFileName, ephemeral }) => {
                 volumeName,
                 readOnly: true,
                 /*
-                    `du -sb` não existe no BusyBox do alpine (é do coreutils):
-                    `du -s` devolve BLOCOS. Somar o tamanho aparente com
-                    `find -type f` e `wc -c` é o que dá o número que a pessoa
-                    espera ver — o mesmo que ela veria no host.
+                    `du -sb` não existe no BusyBox do alpine (é do coreutils),
+                    então o tamanho vem de `du -sk`: KiB de disco ocupado.
+
+                    O que estava aqui antes somava o tamanho aparente com `cat`
+                    de todos os arquivos — ou seja, LIA o volume inteiro byte a
+                    byte para descobrir quanto ele pesa. Num volume de dezenas de
+                    gigabytes (que é o caso desde que espaço de dados guarda
+                    modelo 3D) isso é minutos de CPU e disco para produzir um
+                    número, e é o mesmo caminho que a cota consulta antes de
+                    cada envio.
+
+                    O número muda de sentido: passa a ser o que o volume OCUPA,
+                    não a soma dos tamanhos. Para cota é o número certo — é o
+                    que enche o disco —, e a diferença só aparece com muitos
+                    arquivos pequenos.
                 */
                 cmd: ["sh", "-c",
-                    "find /data -type f -exec cat {} + 2>/dev/null | wc -c; " +
+                    "du -sk /data 2>/dev/null | cut -f1; " +
                     "find /data -type f 2>/dev/null | wc -l"]
             })
 
             const saida = await ephemeral.RunEphemeralAndCollect(container)
-            const [bytes, arquivos] = String(saida.stdout).trim().split(/\s+/)
-            sizeBytes = Number(bytes)
+            const [emKiB, arquivos] = String(saida.stdout).trim().split(/\s+/)
+            // `du` responde em KiB; quem consome espera bytes.
+            sizeBytes = Number(emKiB) * 1024
             fileCount = Number(arquivos)
         } catch (error) {
             // Medir é um extra: sem a medição a resposta segue com o resto, em

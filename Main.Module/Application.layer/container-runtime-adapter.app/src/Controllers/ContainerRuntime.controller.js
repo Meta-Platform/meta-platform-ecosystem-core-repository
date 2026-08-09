@@ -28,6 +28,10 @@ const ContainerRuntimeController = (params) => {
         MoveVolumeEntry                : containerRuntimeAdapterService.MoveVolumeEntry,
         PutFileChunkInVolume           : containerRuntimeAdapterService.PutFileChunkInVolume,
         GetFileChunkFromVolume         : containerRuntimeAdapterService.GetFileChunkFromVolume,
+        // Retomar envio interrompido e medir o volume (VDRP-292/294) — valem os
+        // mesmos três registros: operação, esta linha e o manifesto.
+        InspectVolumeUpload            : containerRuntimeAdapterService.InspectVolumeUpload,
+        GetVolumeUsage                 : containerRuntimeAdapterService.GetVolumeUsage,
         CreateNewContainer             : containerRuntimeAdapterService.CreateNewContainer,
         BuildImageFromDockerfileString : containerRuntimeAdapterService.BuildImageFromDockerfileString,
         RemoveContainer                : containerRuntimeAdapterService.RemoveContainer,
