@@ -4,7 +4,7 @@ import StatusBadge from "./StatusBadge"
 import CopyableMonoText from "./CopyableMonoText"
 
 // Cabeçalhos canônicos (§8.1, §9.3) e faixa de status (§8.2). Promovidos de
-// instance-manager.icomponents para o kit comum: o CSS deles (.mp-masthead,
+// instance-manager.uilib para o kit comum: o CSS deles (.mp-masthead,
 // .mp-entity-header, .mp-status-strip) já vivia aqui, e todo aplicativo tem
 // página com título e entidade com cabeçalho.
 

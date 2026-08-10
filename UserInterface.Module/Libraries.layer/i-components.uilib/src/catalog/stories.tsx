@@ -2,6 +2,7 @@ import * as React from "react"
 import { useState } from "react"
 import { Surface, Stack, Badge } from "../components/Primitives"
 import Icon from "../components/Icon"
+import { SYMBOL_NAMES, ALIASES, ALIASES_BY_SYMBOL } from "../components/icons/symbols"
 import { Button, IconButton, ButtonGroup, Toolbar } from "../components/Controls"
 import { FormField, TextInput, TextArea, SelectInput, CheckboxInput, RadioInput, SearchInput } from "../components/Inputs"
 import {
@@ -21,7 +22,7 @@ import type { ComponentStory, StoryCollection } from "./types"
 // componente exportado por @i-components tem EXATAMENTE uma história aqui —
 // promoveu componente para o kit, escreveu a história.
 
-const SOURCE = "@/i-components.icomponents"
+const SOURCE = "@/i-components.uilib"
 
 const Story = (story: Omit<ComponentStory, "sourcePackage">): ComponentStory => ({
     sourcePackage: SOURCE,
@@ -103,6 +104,67 @@ const ThemeGallery = () =>
                 </Stack>
             </Surface>) }
     </div>
+
+// Grade completa dos símbolos do kit. É a única página onde dá para conferir,
+// de olho, o que existe — e o que acontece com um nome que não existe.
+const IconGallery = ({ filter = "" }: any) => {
+    const term = String(filter).trim().toLowerCase()
+    const matches = (symbol: string) =>
+        !term
+        || symbol.indexOf(term) >= 0
+        || (ALIASES_BY_SYMBOL[symbol] || []).some((alias) => alias.indexOf(term) >= 0)
+    const visible = SYMBOL_NAMES.filter(matches)
+
+    return <Stack>
+        <div className="mp-kv__label">
+            {visible.length} de {SYMBOL_NAMES.length} símbolos · {Object.keys(ALIASES).length} apelidos
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(116px, 1fr))", gap: 6 }}>
+            { visible.map((symbol) => {
+                const aliases = ALIASES_BY_SYMBOL[symbol] || []
+                return <div
+                    key={symbol}
+                    title={aliases.length ? `${symbol}\nApelidos: ${aliases.join(", ")}` : symbol}
+                    style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 6,
+                        padding: "10px 4px",
+                        border: "var(--mp-border-thin, 1px solid var(--mp-line))",
+                        background: "var(--mp-surface)"
+                    }}>
+                    <span style={{ fontSize: 22, lineHeight: 1 }}><Icon name={symbol}/></span>
+                    <code style={{
+                        fontSize: 10,
+                        textAlign: "center",
+                        color: "var(--mp-muted)",
+                        wordBreak: "break-word"
+                    }}>{symbol}</code>
+                    { aliases.length > 0 &&
+                        <span style={{ fontSize: 9, color: "var(--mp-muted-2, var(--mp-muted))" }}>
+                            +{aliases.length}
+                        </span> }
+                </div>
+            }) }
+        </div>
+        <Surface style={{ padding: 12 }}>
+            <Stack>
+                <strong>Nome sem símbolo</strong>
+                <p style={{ margin: 0, color: "var(--mp-muted)" }}>
+                    Regra dura do kit: um nome que não existe NÃO some da tela. Ele vira um
+                    quadrado cortado, em vermelho, com o nome pedido no <code>title</code> e no
+                    <code> aria-label</code> — e o console recebe um aviso (uma vez por nome).
+                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 22 }}>
+                    <Icon name="cube"/>
+                    <Icon name="nome-que-nao-existe"/>
+                    <code style={{ fontSize: 12 }}>&lt;Icon name="nome-que-nao-existe"/&gt;</code>
+                </div>
+            </Stack>
+        </Surface>
+    </Stack>
+}
 
 /* ------------------------------------------------------------------ */
 /* Previews com estado                                                */
@@ -434,6 +496,19 @@ export const commonStories: StoryCollection = {
             usage: "import { ApplyTheme, applySavedTheme } from \"@i-components\"\n\napplySavedTheme()      // no boot, antes do render\nApplyTheme(\"dark\")     // troca explícita",
             tags: [ "tema" ]
         }),
+        Story({
+            id: "foundation.icons",
+            title: "Símbolos",
+            group: "Fundamentos",
+            description: "Todos os ícones que o kit sabe desenhar. SVG em linha, grade 24×24, traço herdando currentColor — o ícone acompanha o token de cor de quem o contém. O contador \"+n\" no card é o número de apelidos que caem naquele símbolo.",
+            component: IconGallery,
+            props: { filter: "" },
+            controls: { filter: { label: "Filtrar por nome", type: "text" } },
+            exportName: "Icon",
+            usage: "import { Icon } from \"@i-components\"\n\n<Icon name=\"check circle\" tone=\"success\"/>\n<Icon name=\"terminal\" size=\"large\"/>",
+            tags: [ "ícone", "símbolo" ],
+            notes: "Um nome sem símbolo desenha o marcador de ícone ausente — nunca nada."
+        }),
 
         /* --- Primitivas --- */
         Story({
@@ -479,7 +554,7 @@ export const commonStories: StoryCollection = {
             id: "primitive.icon",
             title: "Icon",
             group: "Primitivas",
-            description: "Ícone canônico. Encapsula o Semantic corrigindo margem e cor por token — é o componente mais usado da plataforma (151 chamadas antes da padronização).",
+            description: "Ícone canônico, desenhado pelo próprio kit: SVG em linha, grade 24×24, traço em currentColor. É o componente mais usado da plataforma (1.823 chamadas). A grade completa de símbolos está em Fundamentos › Símbolos.",
             component: ({ name = "cube", tone = "inherit" }: any) =>
                 <div style={{ display: "flex", alignItems: "center", gap: 18, fontSize: 22 }}>
                     <Icon name={name} tone={tone}/>
@@ -494,10 +569,11 @@ export const commonStories: StoryCollection = {
             exportName: "Icon",
             usage: "import { Icon } from \"@i-components\"\n\n<Icon name=\"check circle\" tone=\"success\"/>",
             propsDoc: [
-                { name: "name", type: "string", required: true, description: "Nome do ícone (conjunto Semantic/FA4)." },
+                { name: "name", type: "string", required: true, description: "Nome do símbolo. Os nomes herdados continuam valendo, como apelido. Nome sem símbolo desenha o marcador de ícone ausente." },
                 { name: "tone", type: "IconTone", default: "\"inherit\"", description: "neutral | muted | success | warning | danger | info | inherit." },
                 { name: "spaced", type: "boolean", default: "false", description: "Mantém a margem lateral original (texto corrido)." },
-                { name: "size", type: "string", description: "mini | tiny | small | large | big | huge." }
+                { name: "size", type: "string", description: "mini | tiny | small | large | big | huge | massive." },
+                { name: "color", type: "string", description: "Nome de cor herdado (red, green, blue…) traduzido para token --mp-*. Prefira tone." }
             ]
         }),
         Story({
@@ -940,9 +1016,9 @@ export const commonStories: StoryCollection = {
                         onClick={() => {}}/>
                     <ObjectCard
                         icon="cube"
-                        title="i-components.icomponents"
+                        title="i-components.uilib"
                         meta="Base.Module/Library.layer"
-                        chips={<span className="mp-type-chip">icomponents</span>}
+                        chips={<span className="mp-type-chip">uilib</span>}
                         selected
                         onClick={() => {}}/>
                 </div>,
@@ -1018,7 +1094,7 @@ export const commonStories: StoryCollection = {
                         <Button variant="subtle" icon="refresh">Recarregar</Button>
                         <Button variant="primary" icon="plus">Nova história</Button>
                     </>}>
-                    <StatusStrip right={<CopyableMonoText value="@/i-components.icomponents" maxChars={30}/>}>
+                    <StatusStrip right={<CopyableMonoText value="@/i-components.uilib" maxChars={30}/>}>
                         <StatusChip icon="check circle" tone="success" label="estáveis" count={44}/>
                         <StatusChip icon="flask" tone="info" label="beta" count={2}/>
                     </StatusStrip>

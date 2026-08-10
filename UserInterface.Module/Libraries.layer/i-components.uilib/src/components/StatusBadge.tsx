@@ -3,7 +3,7 @@ import Icon from "./Icon"
 
 // Tokens de status unificados (conexão de instância + status oficiais do Task
 // Executor). Fonte única de verdade para tom + ícone + severidade de TODA a
-// plataforma. Promovido de instance-manager.icomponents: status aparece em
+// plataforma. Promovido de instance-manager.uilib: status aparece em
 // painel, launcher, my-desktop e project manager — não é assunto de uma área.
 export type StatusTone = "success" | "warning" | "danger" | "info" | "neutral" | "done"
 

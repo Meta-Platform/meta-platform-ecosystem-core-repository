@@ -39,7 +39,7 @@ export type ComponentStory = {
     component: ComponentType<any>
     props?: Record<string, unknown>
     controls?: Record<string, StoryControl>
-    // Pacote de origem (@/i-components.icomponents) — de onde o componente vem.
+    // Pacote de origem (@/i-components.uilib) — de onde o componente vem.
     sourcePackage: string
     // Alias de import usado no código do aplicativo (@i-components).
     importFrom?: string

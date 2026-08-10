@@ -23,7 +23,54 @@
     border: 0;
 }
 
-.mp-icon { vertical-align: middle; }
+/* ================================================================== */
+/* Icon (src/components/Icon.tsx + src/components/icons/symbols.tsx)  */
+/* ================================================================== */
+/* O desenho é SVG do próprio kit (grade 24×24, traço em currentColor).
+ * A CAIXA repete a métrica clássica de 1.18em × 1em de propósito: assim a
+ * troca do ícone de terceiro pelo do kit não mexe no alinhamento de nenhuma
+ * tela já pronta. O seletor `i.mp-icon` ganha da folha de origem por ordem
+ * de import (controls.css entra depois), não por !important. */
+i.mp-icon,
+.mp-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.18em;
+    height: 1em;
+    line-height: 1;
+    vertical-align: middle;
+    font-style: normal;
+    flex: none;
+}
+.mp-icon > svg { display: block; width: 1em; height: 1em; overflow: visible; }
+
+/* Tamanhos: mesmos degraus de sempre, agora definidos pelo kit. */
+.mp-icon--mini    { font-size: .4em; }
+.mp-icon--tiny    { font-size: .5em; }
+.mp-icon--small   { font-size: .75em; }
+.mp-icon--large   { font-size: 1.5em; }
+.mp-icon--big     { font-size: 2em; }
+.mp-icon--huge    { font-size: 4em; }
+.mp-icon--massive { font-size: 8em; }
+
+.mp-icon--spaced   { margin-right: .25rem; }
+.mp-icon--link     { cursor: pointer; opacity: .8; }
+.mp-icon--link:hover { opacity: 1; }
+.mp-icon--disabled { opacity: .45; pointer-events: none; }
+.mp-icon--loading > svg { animation: mp-spin 1s linear infinite; }
+.mp-icon--bordered,
+.mp-icon--circular { width: 2em; height: 2em; border: var(--mp-border-thin, 1px solid var(--mp-line)); }
+.mp-icon--circular { border-radius: 50%; }
+.mp-icon--inverted { color: var(--mp-paper); }
+.mp-icon--flipped-horizontally > svg { transform: scaleX(-1); }
+.mp-icon--flipped-vertically   > svg { transform: scaleY(-1); }
+.mp-icon--rotated-clockwise        > svg { transform: rotate(90deg); }
+.mp-icon--rotated-counterclockwise > svg { transform: rotate(-90deg); }
+
+/* Nome sem símbolo: quadrado cortado, e em vermelho para ninguém achar que
+ * é decoração. O nome pedido vai no title/aria-label (ver Icon.tsx). */
+.mp-icon--missing { color: var(--mp-danger); }
 
 /* ================================================================== */
 /* Button / IconButton / ButtonGroup / Toolbar (§7)                   */
