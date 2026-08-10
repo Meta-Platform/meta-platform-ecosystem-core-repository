@@ -4,7 +4,7 @@ const { join } = require("node:path")
 const { mkdtempSync, mkdirSync, writeFileSync } = require("node:fs")
 const { tmpdir } = require("node:os")
 const test = require("node:test")
-const WebGuiLibraryTaskLoader = require("../src/WebGuiLibrary.taskLoader")
+const UiLibraryTaskLoader = require("../src/UiLibrary.taskLoader")
 
 const Events = {
     START_TASK: "start",
@@ -18,39 +18,7 @@ const Statuses = {
     TERMINATED: "TERMINATED"
 }
 
-test("publica e encerra um handle de biblioteca WebGui", () => {
-    const root = mkdtempSync(join(tmpdir(), "icomponents-"))
-    mkdirSync(join(root, "metadata"))
-    writeFileSync(join(root, "metadata", "webgui-library.json"), JSON.stringify({
-        alias: "@test-components",
-        framework: "react",
-        source: "src"
-    }))
-
-    const channel = new EventEmitter()
-    const statuses = []
-    channel.on(Events.CHANGE_TASK_STATUS, (status) => statuses.push(status))
-    const getHandle = WebGuiLibraryTaskLoader({
-        TaskStatusTypes: Statuses,
-        CommandChannelEventTypes: Events
-    })({
-        path: root,
-        environmentPath: "/tmp/environment",
-        tag: "@/test.icomponents",
-        EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES: "dependencies"
-    }, channel)
-
-    channel.emit(Events.START_TASK)
-    assert.equal(getHandle().getManifest().alias, "@test-components")
-    assert.equal(getHandle().getSourcePath(), join(root, "src"))
-    assert.deepEqual(statuses, [Statuses.STARTING, Statuses.ACTIVE])
-
-    channel.emit(Events.STOP_TASK)
-    assert.equal(getHandle(), undefined)
-    assert.equal(statuses.at(-1), Statuses.TERMINATED)
-})
-
-test("lê o manifesto novo, metadata/uilib.json", () => {
+test("publica e encerra um handle de biblioteca de UI", () => {
     const root = mkdtempSync(join(tmpdir(), "uilib-"))
     mkdirSync(join(root, "metadata"))
     writeFileSync(join(root, "metadata", "uilib.json"), JSON.stringify({
@@ -60,7 +28,9 @@ test("lê o manifesto novo, metadata/uilib.json", () => {
     }))
 
     const channel = new EventEmitter()
-    const getHandle = WebGuiLibraryTaskLoader({
+    const statuses = []
+    channel.on(Events.CHANGE_TASK_STATUS, (status) => statuses.push(status))
+    const getHandle = UiLibraryTaskLoader({
         TaskStatusTypes: Statuses,
         CommandChannelEventTypes: Events
     })({
@@ -72,30 +42,47 @@ test("lê o manifesto novo, metadata/uilib.json", () => {
 
     channel.emit(Events.START_TASK)
     assert.equal(getHandle().getManifest().alias, "@test-components")
+    assert.equal(getHandle().getRootPath(), root)
     assert.equal(getHandle().getSourcePath(), join(root, "src"))
+    assert.equal(getHandle().getEnvironmentPath(), "/tmp/environment")
+    assert.equal(
+        getHandle().getNodeModulesPath(),
+        join("/tmp/environment", "dependencies", "test.uilib", "node_modules")
+    )
+    assert.deepEqual(statuses, [Statuses.STARTING, Statuses.ACTIVE])
+
+    channel.emit(Events.STOP_TASK)
+    assert.equal(getHandle(), undefined)
+    assert.equal(statuses.at(-1), Statuses.TERMINATED)
 })
 
-// Um pacote em transição pode ter os dois arquivos. O novo tem de vencer, senão
-// renomear o manifesto não teria efeito enquanto o antigo não fosse apagado.
-test("o manifesto novo tem precedência sobre o antigo", () => {
-    const root = mkdtempSync(join(tmpdir(), "uilib-both-"))
+// A janela de compatibilidade fechou: `metadata/webgui-library.json` é apenas um
+// arquivo qualquer, e um pacote que só tenha ele não é mais uma biblioteca de UI.
+test("não aceita mais o manifesto antigo, webgui-library.json", () => {
+    const root = mkdtempSync(join(tmpdir(), "uilib-legacy-"))
     mkdirSync(join(root, "metadata"))
-    writeFileSync(join(root, "metadata", "uilib.json"), JSON.stringify({ alias: "@novo", source: "src" }))
-    writeFileSync(join(root, "metadata", "webgui-library.json"), JSON.stringify({ alias: "@antigo", source: "src" }))
+    writeFileSync(join(root, "metadata", "webgui-library.json"), JSON.stringify({
+        alias: "@antigo",
+        source: "src"
+    }))
 
     const channel = new EventEmitter()
-    const getHandle = WebGuiLibraryTaskLoader({
+    const statuses = []
+    channel.on(Events.CHANGE_TASK_STATUS, (...args) => statuses.push(args))
+
+    UiLibraryTaskLoader({
         TaskStatusTypes: Statuses,
         CommandChannelEventTypes: Events
     })({
         path: root,
         environmentPath: "/tmp/environment",
-        tag: "@/both.uilib",
+        tag: "@/legacy.uilib",
         EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES: "dependencies"
     }, channel)
 
     channel.emit(Events.START_TASK)
-    assert.equal(getHandle().getManifest().alias, "@novo")
+    assert.equal(statuses.at(-1)[0], Statuses.FAILURE)
+    assert.match(statuses.at(-1)[1], /metadata[\\/]uilib\.json/)
 })
 
 test("falha sem manifesto nenhum", () => {
@@ -105,7 +92,7 @@ test("falha sem manifesto nenhum", () => {
     const statuses = []
     channel.on(Events.CHANGE_TASK_STATUS, (...args) => statuses.push(args))
 
-    WebGuiLibraryTaskLoader({
+    UiLibraryTaskLoader({
         TaskStatusTypes: Statuses,
         CommandChannelEventTypes: Events
     })({
@@ -117,24 +104,24 @@ test("falha sem manifesto nenhum", () => {
 
     channel.emit(Events.START_TASK)
     assert.equal(statuses.at(-1)[0], Statuses.FAILURE)
-    assert.match(statuses.at(-1)[1], /metadata\/uilib\.json/)
+    assert.match(statuses.at(-1)[1], /metadata[\\/]uilib\.json/)
 })
 
 test("falha com manifesto incompleto", () => {
-    const root = mkdtempSync(join(tmpdir(), "icomponents-invalid-"))
+    const root = mkdtempSync(join(tmpdir(), "uilib-invalid-"))
     mkdirSync(join(root, "metadata"))
-    writeFileSync(join(root, "metadata", "webgui-library.json"), "{}")
+    writeFileSync(join(root, "metadata", "uilib.json"), "{}")
     const channel = new EventEmitter()
     const statuses = []
     channel.on(Events.CHANGE_TASK_STATUS, (...args) => statuses.push(args))
 
-    WebGuiLibraryTaskLoader({
+    UiLibraryTaskLoader({
         TaskStatusTypes: Statuses,
         CommandChannelEventTypes: Events
     })({
         path: root,
         environmentPath: "/tmp/environment",
-        tag: "@/invalid.icomponents",
+        tag: "@/invalid.uilib",
         EXECUTIONDATA_CONF_DIRNAME_DEPENDENCIES: "dependencies"
     }, channel)
 

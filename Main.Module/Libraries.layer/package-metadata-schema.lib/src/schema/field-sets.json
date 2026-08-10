@@ -212,6 +212,6 @@
         "webgui": ["package.json", "metadata/package.json", "metadata/endpoint-group.json"],
         "webapp": ["package.json", "metadata/package.json", "metadata/boot.json"],
         "app": ["package.json", "metadata/package.json", "metadata/boot.json"],
-        "icomponents": ["package.json", "metadata/package.json", "metadata/webgui-library.json"]
+        "uilib": ["package.json", "metadata/package.json", "metadata/uilib.json"]
     }
 }

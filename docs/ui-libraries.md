@@ -39,6 +39,7 @@ O `ui-library.taskLoader` valida o manifesto e publica um handle imutável:
 | `getSourcePath()` | raiz + `source` do manifesto |
 | `getEnvironmentPath()` | ambiente de execução do consumidor |
 | `getNodeModulesPath()` | `node_modules` das dependências da própria biblioteca |
+| `getFrameworkModulesPath()` | o mesmo diretório, **só** quando esta biblioteca provê o runtime do framework; `undefined` caso contrário |
 | `getManifest()` | cópia do manifesto |
 
 O gerador de parâmetros do Essential seleciona esse loader automaticamente para
@@ -152,4 +153,10 @@ mas o handle já é consumido também pelo caminho desktop. Os demais loaders da
 plataforma nomeiam o papel (`nodejs-package`, `endpoint-instance`,
 `desktop-window-instance`).
 
-Durante a janela de compatibilidade os nomes antigos continuam aceitos.
+A janela de compatibilidade **está fechada**: `.icomponents`,
+`objectLoaderType: "webgui-library"` e `metadata/webgui-library.json` não são mais
+reconhecidos em lugar nenhum. O package do loader também foi renomeado para
+`ui-library.taskLoader`.
+
+O tipo está especificado no Meta Platform Open Standard, em
+`specifications/packages/uilib-manifest-standard.md`.

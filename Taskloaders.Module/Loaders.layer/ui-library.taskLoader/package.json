@@ -1,0 +1,9 @@
+{
+  "name": "ui-library.taskLoader",
+  "version": "0.0.1",
+  "description": "Carrega pacotes .uilib como bibliotecas de interface.",
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "BSD-3-Clause"
+}
