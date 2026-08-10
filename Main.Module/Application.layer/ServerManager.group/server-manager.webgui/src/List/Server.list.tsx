@@ -1,7 +1,7 @@
 
 import * as React from "react"
 
-import {List} from "semantic-ui-react"
+import { ListRow } from "@i-components"
 
 type ListProps =
 {
@@ -11,38 +11,33 @@ type ListProps =
 	onSelectService    : Function
 }
 
+// Servidores HTTP em execução e, pendurados em cada um, os serviços que ele
+// publica. Dois níveis sempre abertos — o recuo do filho é do aplicativo
+// (.srv-tree__child), a linha em si é a do kit.
 const ServerList = ({list, selected, onSelectHTTPServer, onSelectService}:ListProps) => {
-	return <List selection animated>
+	return <div className="srv-tree">
 				{
-					list.map(({name, listServices, port}:any, key:number) => 
-					<List.Item 
-					    onClick={() => onSelectHTTPServer(name)}
-						key={key} > 
-						<List.Icon name="globe" />
-						<List.Content>
-							<List.Header>{name}</List.Header>
-							{port}
-							<List.List>
-								
-								{
-									listServices.map(({apiTemplate, path, staticDir}:any, key:any) => 
-									<List.Item 
-										title={staticDir}
-										key={key} 
-										active={apiTemplate && selected.webservice === apiTemplate.name && selected.webserver === name }
-										onClick={() => onSelectService({webservice:apiTemplate.name, webserver:name})}>
-										<List.Icon name="folder" />
-										<List.Content>
-											{apiTemplate && <List.Header>{apiTemplate.name}</List.Header>}
-											{!apiTemplate && <List.Content>{path}</List.Content>}
-										</List.Content>
-									</List.Item>)
-								}
-							</List.List>
-						</List.Content>
-					</List.Item>)
+					list.map(({name, listServices, port}:any, key:number) =>
+					<div key={key}>
+						<ListRow
+							icon    = "globe"
+							title   = {name}
+							meta    = {port}
+							onClick = {() => onSelectHTTPServer(name)}/>
+						{
+							listServices.map(({apiTemplate, path, staticDir}:any, key:any) =>
+							<div key={key} title={staticDir}>
+								<ListRow
+									className = "srv-tree__child"
+									icon      = "folder"
+									title     = {apiTemplate ? apiTemplate.name : path}
+									selected  = {apiTemplate && selected.webservice === apiTemplate.name && selected.webserver === name}
+									onClick   = {() => onSelectService({webservice:apiTemplate && apiTemplate.name, webserver:name})}/>
+							</div>)
+						}
+					</div>)
 				}
-			</List>
+			</div>
 }
 
 

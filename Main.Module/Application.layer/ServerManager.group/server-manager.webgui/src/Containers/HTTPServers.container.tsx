@@ -3,21 +3,16 @@ import { useEffect, useState}       from "react"
 import { connect }                  from "react-redux"
 import { bindActionCreators }       from "redux"
 
-import { 
-	Container,
-	Grid,
-	Tab
- } from "semantic-ui-react"
+import { Tabs } from "@i-components"
 
-import GlobalStyle          from "../Styles/Global.style"
 import GetRequestByServer   from "../Utils/GetRequestByServer"
 
 import WebServiceDetails    from "../Components/WebServiceDetails.component"
 import ServerList           from "../List/Server.list"
 import PanelServerContainer from "../Containers/PanelServer.container"
 
-const getIndexTab = (panes:Array<any>, tabName:string) =>
-	panes.indexOf(panes.find(({menuItem}) => menuItem === tabName))
+const getPaneByKey = (panes:Array<any>, key:string) =>
+	panes.find(({menuItem}) => menuItem === key)
 
 const HTTPServersContainer = ({
 	queryParams,
@@ -34,13 +29,13 @@ const HTTPServersContainer = ({
 	const [tabNameSelected, setTabNameSelected] = useState<string>()
 
 	useEffect(() => setRequest(GetRequestByServer(HTTPServerManager)(process.env.SERVER_APP_NAME, "HTTPServers")), [])
-	
+
 	useEffect(() => updateStatus(), [webServersRequest])
 
 	useEffect(() => {
 		if(tabNameSelected){
 			onChangeQueryParams({
-				...queryParams, 
+				...queryParams,
 				tab:tabNameSelected
 			})
 		}
@@ -54,7 +49,7 @@ const HTTPServersContainer = ({
 		}
 	}
 
-	const webServiceSelected = 
+	const webServiceSelected =
 		status
 		&& webserverSelected
 		&& webserviceSelected
@@ -66,56 +61,48 @@ const HTTPServersContainer = ({
 
 	const panes =
 	[
-		{ 
-			menuItem: "Status", 
-			render: () => 
-				<Tab.Pane>
-					<PanelServerContainer 
-						status              = {status}
-						queryParams         = {queryParams}
-						onChangeQueryParams = {onChangeQueryParams}/>
-				</Tab.Pane>
+		{
+			menuItem: "Status",
+			render: () =>
+				<PanelServerContainer
+					status              = {status}
+					queryParams         = {queryParams}
+					onChangeQueryParams = {onChangeQueryParams}/>
 		},
 		{
 			menuItem: "Handle",
-			render: () => 
-				<Tab.Pane>
-					<Grid columns="three" divided>
-						<Grid.Row>
-							<Grid.Column width={3}>
-								<ServerList 
-									selected={{webserver:webserverSelected, webservice:webserviceSelected}}
-									list={status || []}
-									onSelectHTTPServer={()=>{}}
-									onSelectService={({webservice, webserver}:any)=>{
-										setWebserverSelected(webserver)
-										setWebserviceSelected(webservice)
-									}}/>
-							</Grid.Column>
-							<Grid.Column width={5}>
-								{webServiceSelected && <WebServiceDetails webService={webServiceSelected}/>}
-							</Grid.Column>
-						</Grid.Row>
-					</Grid>
-				</Tab.Pane> 
+			render: () =>
+				<div className="srv-split">
+					<ServerList
+						selected={{webserver:webserverSelected, webservice:webserviceSelected}}
+						list={status || []}
+						onSelectHTTPServer={()=>{}}
+						onSelectService={({webservice, webserver}:any)=>{
+							setWebserverSelected(webserver)
+							setWebserviceSelected(webservice)
+						}}/>
+					{webServiceSelected && <WebServiceDetails webService={webServiceSelected}/>}
+				</div>
 		}
 	]
 
 	useEffect(() => {
-		if(!queryParams.tab && panes && panes.length > 0) 
+		if(!queryParams.tab && panes && panes.length > 0)
 			setTabNameSelected(panes[0].menuItem)
 	}, [queryParams.tab])
 
-	return <Container fluid={true}>
-				<GlobalStyle />
-				<div>
-						<Tab 
-							activeIndex = {getIndexTab(panes, queryParams.tab || tabNameSelected)} 
-							menu  		= {{ secondary: true, pointing: true }} 
-							onTabChange = {(event:any, data:any) => setTabNameSelected(panes[data.activeIndex].menuItem)}
-							panes 		= {panes} />
+	const activeKey  = queryParams.tab || tabNameSelected
+	const activePane = getPaneByKey(panes, activeKey)
+
+	return <div className="srv-page">
+				<Tabs
+					tabs      = {panes.map(({menuItem}) => ({ key: menuItem, label: menuItem }))}
+					activeKey = {activeKey}
+					onChange  = {(key:string) => setTabNameSelected(key)}/>
+				<div className="srv-page__body">
+					{ activePane && activePane.render() }
 				</div>
-			</Container>
+			</div>
 
 }
 
@@ -128,4 +115,3 @@ const mapStateToProps = ({HTTPServerManager}:any) => ({
 	HTTPServerManager
 })
 export default connect(mapStateToProps, mapDispatchToProps)(HTTPServersContainer)
-

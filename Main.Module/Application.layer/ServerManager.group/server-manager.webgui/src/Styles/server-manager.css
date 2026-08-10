@@ -1,0 +1,100 @@
+/*
+    Estilo do Server Manager.
+
+    Só o que o kit comum (@i-components) não cobre: composições locais destas
+    telas. Nada de cor crua — tudo sai dos tokens --mp-*, para o aplicativo
+    acompanhar tema claro e escuro sem regra própria. Prefixo `srv-` para não
+    colidir com o design system (as classes `.mp-*` são do kit e nunca são
+    redefinidas aqui).
+*/
+
+/* ------------------------------------------------------------------ página */
+
+.srv-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mp-space-3);
+    padding: var(--mp-space-4);
+    min-width: 0;
+}
+
+.srv-page__body {
+    padding-top: var(--mp-space-4);
+    min-width: 0;
+}
+
+/* Duas colunas: lista de servidores/serviços à esquerda, detalhe à direita.
+   Substitui o <Grid columns="three" divided> do Semantic. */
+.srv-split {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) minmax(0, 2fr);
+    gap: var(--mp-space-4);
+    align-items: start;
+    min-width: 0;
+}
+
+@media (max-width: 860px) {
+    .srv-split { grid-template-columns: 1fr; }
+}
+
+/* ------------------------------------------------- lista de servidores/APIs */
+
+.srv-tree { min-width: 0; }
+
+/* Serviços pendurados no servidor: recuo de um nível. */
+.srv-tree__child { padding-left: var(--mp-space-5); }
+
+/* ------------------------------------------------------- cartões de serviço */
+
+.srv-card-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--mp-space-3);
+    align-items: flex-start;
+}
+
+/* Cada cartão ocupa só a largura do próprio conteúdo (o antigo
+   `width: fit-content` do styled(Card)). */
+.srv-card {
+    width: fit-content;
+    max-width: 100%;
+    height: fit-content;
+}
+
+.srv-card__path {
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    color: var(--mp-muted);
+    overflow-wrap: anywhere;
+}
+
+.srv-card__service {
+    font-size: var(--mp-text-sm);
+    color: var(--mp-ink-2);
+}
+
+/* ------------------------------------------------------- método HTTP/socket */
+
+/* Etiqueta do verbo. Herda a caixa do `.mp-badge` do kit e só troca o tom. */
+.srv-method {
+    font-size: var(--mp-text-xs);
+    text-transform: uppercase;
+}
+
+.srv-method--get    { background: var(--mp-accent-blue-tint);   color: var(--mp-accent-blue); }
+.srv-method--post   { background: var(--mp-success-tint);       color: var(--mp-success); }
+.srv-method--put    { background: var(--mp-accent-orange-tint); color: var(--mp-accent-orange); }
+.srv-method--ws     { background: var(--mp-accent-cyan-tint);   color: var(--mp-accent-cyan); }
+.srv-method--delete { background: var(--mp-danger-tint);        color: var(--mp-danger); }
+.srv-method--none   { background: var(--mp-surface-muted);      color: var(--mp-muted); }
+
+/* ------------------------------------------------------ endpoint sem sumário */
+
+/* O endpoint declarado no template mas ausente do controller. Sinalizado por
+   tom E por ícone (nunca só por cor). */
+.srv-endpoint--missing { background: var(--mp-danger-tint); }
+
+.srv-endpoint__title--missing {
+    color: var(--mp-danger);
+    font-weight: 600;
+}

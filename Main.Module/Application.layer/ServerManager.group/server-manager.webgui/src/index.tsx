@@ -3,7 +3,10 @@ import ReactDOM                         from "react-dom/client"
 import { Provider }                     from "react-redux"
 import { combineReducers, createStore } from "redux"
 
-import "semantic-ui-css/semantic.css"
+import "@i-components/styles/index.css"
+import "./Styles/server-manager.css"
+
+import { applySavedTheme } from "@i-components/theme"
 
 import PagesMapper from "./Mappers/Pages.mapper"
 //@ts-ignore
@@ -21,6 +24,9 @@ const reducer = combineReducers({
 })
 
 const store = createStore(reducer)
+
+// Antes do render: evita o "flash" do tema base antes do tema salvo entrar.
+applySavedTheme()
 
 const root = ReactDOM.createRoot(document.getElementById("gui"))
 

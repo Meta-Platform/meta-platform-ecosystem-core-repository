@@ -1,43 +1,32 @@
 import React                 from "react"
 import {useEffect, useState} from "react"
-import { 
-	Menu,
-    Segment,
-    Card, 
-    List,
-    Label,
-    Tab
- } from "semantic-ui-react"
 
-import styled from "styled-components"
+import { Tabs, Panel, ListRow, Badge } from "@i-components"
 
-const getIndexTab = (panes:Array<any>, tabName:string) =>
-	panes.indexOf(panes.find(({menuItem}) => menuItem === tabName))
+const getPaneByKey = (panes:Array<any>, key:string) =>
+	panes.find(({menuItem}) => menuItem === key)
 
-const CardStyle = styled(Card)`
-    width: fit-content!important;
-    height: fit-content;
-`
-
-const GetColorByMethod = (method:string) => {
+// Verbo do endpoint → modificador de classe local. O tom sai dos tokens
+// --mp-* (ver Styles/server-manager.css); nenhuma cor literal aqui.
+const GetMethodModifier = (method:string) => {
 	switch(method){
 		case "GET":
-			return "blue"
+			return "get"
 		case "POST":
-			return "green"
+			return "post"
 		case "PUT":
-			return "orange"		
+			return "put"
 		case "WS":
-				return "olive"	
+			return "ws"
 		case "DELETE":
-			return "red"
+			return "delete"
 		default:
-			return "grey"
+			return "none"
 	}
 }
 
 const PanelServerContainer = ({
-    status, 
+    status,
     queryParams,
     addQueryParam
 }:any) =>{
@@ -50,74 +39,84 @@ const PanelServerContainer = ({
 		}
 	}, [serverNameSelected])
 
-    const panes = 
-        status 
+    const panes =
+        status
         ? status.map(({name, port, listServices}:any, key:any) => ({
                 menuItem: name + ":" + port,
-                render: () => 
-                        <Tab.Pane>
-                            <Card.Group>
-                                {    
-                                    listServices
-                                    .map(({
-                                        serviceName, 
-                                        type, 
-                                        path, 
-                                        apiTemplate, 
-                                        summariesNotFound
-                                    }:any, key:number) => 
-                                        <CardStyle key={key}>
-                                            <Card.Content>
-                                                <strong>{
-                                                    type.replace("Web", "")
-                                                    .replace("APIEndpoints", "API Endpoints")
-                                                    .replace("StaticEndpoints", "Static Endpoints")
-                                                }</strong>
-                                                <br/>{serviceName && serviceName.replace("Web", "")
-                                                }
-                                                <Card.Meta>{path}</Card.Meta>
-                                                {
-                                                    apiTemplate
-                                                    && <List divided relaxed>
-                                                    {
-                                                        apiTemplate
-                                                        .endpoints.map(({summary, path, method, parameters}:any, key:any) =>
-                                                            <List.Item key={key} style={summariesNotFound.indexOf(summary) > -1 ?{backgroundColor: "#ffe1e1"}:{}}>
-                                                            
-                                                                <List.Content>
-                                                                    <List.Header style={summariesNotFound.indexOf(summary) > -1 ?{color:"#FF0000"}:{}}>{summary}(<strong>{
-                                                                        parameters 
-                                                                        ? `{${parameters.map(({name}:any) => name).join(", ")}}`
-                                                                        : ""})</strong></List.Header>
-                                                                    <List.Description>
-                                                                        <Label size="tiny" color={GetColorByMethod(method)} horizontal>
-                                                                            {method || "NONE"}
-                                                                        </Label>
-                                                                        {path}
-                                                                    </List.Description>
-                                                                </List.Content>
-                                                            </List.Item>)
+                render: () =>
+                        <div className="srv-card-grid">
+                            {
+                                listServices
+                                .map(({
+                                    serviceName,
+                                    type,
+                                    path,
+                                    apiTemplate,
+                                    summariesNotFound
+                                }:any, key:number) =>
+                                    <Panel
+                                        key       = {key}
+                                        className = "srv-card"
+                                        title     = {
+                                            type.replace("Web", "")
+                                            .replace("APIEndpoints", "API Endpoints")
+                                            .replace("StaticEndpoints", "Static Endpoints")
+                                        }>
+                                        { serviceName &&
+                                            <div className="srv-card__service">{serviceName.replace("Web", "")}</div> }
+                                        <div className="srv-card__path">{path}</div>
+                                        {
+                                            apiTemplate
+                                            && apiTemplate.endpoints.map(({summary, path, method, parameters}:any, key:any) => {
+
+                                                const missing = summariesNotFound.indexOf(summary) > -1
+
+                                                const label = `${summary}(${
+                                                    parameters
+                                                    ? `{${parameters.map(({name}:any) => name).join(", ")}}`
+                                                    : ""})`
+
+                                                return <ListRow
+                                                    key       = {key}
+                                                    className = {missing ? "srv-endpoint--missing" : ""}
+                                                    title     = {
+                                                        missing
+                                                        ? <span className="srv-endpoint__title--missing" title="sumário não encontrado no controller">{label}</span>
+                                                        : label
                                                     }
-                                                    </List>
-                                                }
-                                            </Card.Content>
-                                        </CardStyle>)
-                                }
-                            </Card.Group>
-                        </Tab.Pane>
+                                                    meta      = {
+                                                        <>
+                                                            <Badge className={`srv-method srv-method--${GetMethodModifier(method)}`}>
+                                                                {method || "NONE"}
+                                                            </Badge>
+                                                            {path}
+                                                        </>
+                                                    }/>
+                                            })
+                                        }
+                                    </Panel>)
+                            }
+                        </div>
             }))
         : []
 
     useEffect(() => {
-        if(!queryParams.server && panes && panes.length > 0) 
+        if(!queryParams.server && panes && panes.length > 0)
             setServerNameSelected(panes[0].menuItem)
     }, [queryParams.server, panes])
 
-    return <Tab
-                activeIndex = {getIndexTab(panes, queryParams.server || serverNameSelected)} 
-                menu        = {{ secondary: true, pointing: true }} 
-                panes       = {panes} 
-                onTabChange = {(event:any, data:any) => setServerNameSelected(panes[data.activeIndex].menuItem)}/>
+    const activeKey = queryParams.server || serverNameSelected
+    const activePane = getPaneByKey(panes, activeKey)
+
+    return <>
+                <Tabs
+                    tabs      = {panes.map(({menuItem}:any) => ({ key: menuItem, label: menuItem }))}
+                    activeKey = {activeKey}
+                    onChange  = {(key:string) => setServerNameSelected(key)}/>
+                <div className="srv-page__body">
+                    { activePane && activePane.render() }
+                </div>
+            </>
 }
 
 export default PanelServerContainer
