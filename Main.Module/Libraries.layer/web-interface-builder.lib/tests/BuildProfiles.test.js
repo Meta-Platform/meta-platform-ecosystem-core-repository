@@ -260,6 +260,57 @@ describe("CreateWebpackConfig — o perfil chega na configuração", () => {
         assert.deepEqual(tsRule.use.options.compilerOptions.paths["@i-components"], ["/libs/i-components"])
     })
 
+    it("o React vem da biblioteca quando ela declara o runtime", () => {
+        const config = _Config(RELEASE, {
+            componentLibraries: [
+                {
+                    alias: "@i-components", sourcePath: "/libs/src", framework: "react",
+                    nodeModulesPath: "/libs/nm", frameworkModulesPath: "/libs/nm"
+                }
+            ]
+        })
+
+        assert.equal(config.resolve.alias.react, "/libs/nm/react")
+        assert.equal(config.resolve.alias["react-dom"], "/libs/nm/react-dom")
+    })
+
+    // Uma biblioteca de área declara react em peerDependencies e não instala
+    // nada. Se ela viesse primeiro na lista e o código olhasse só o framework, o
+    // alias apontaria para um node_modules sem React dentro.
+    it("ignora a biblioteca que não instalou o runtime e usa a que instalou", () => {
+        const config = _Config(RELEASE, {
+            componentLibraries: [
+                { alias: "@area", sourcePath: "/area/src", framework: "react", nodeModulesPath: "/area/nm" },
+                {
+                    alias: "@i-components", sourcePath: "/libs/src", framework: "react",
+                    nodeModulesPath: "/libs/nm", frameworkModulesPath: "/libs/nm"
+                }
+            ]
+        })
+
+        assert.equal(config.resolve.alias.react, "/libs/nm/react")
+    })
+
+    it("sem provedor de runtime, o React continua vindo do consumidor", () => {
+        const config = _Config(RELEASE, {
+            componentLibraries: [
+                { alias: "@area", sourcePath: "/area/src", framework: "react", nodeModulesPath: "/area/nm" }
+            ]
+        })
+
+        assert.ok(config.resolve.alias.react.endsWith("/react"))
+        assert.ok(!config.resolve.alias.react.startsWith("/area/nm"))
+    })
+
+    // Sem a entrada relativa, caminhos absolutos eliminam o walk ancestral do
+    // Node e qualquer node_modules aninhado fica invisível ao webpack.
+    it("mantém o walk ancestral do Node na busca de módulos", () => {
+        const config = _Config(RELEASE)
+        assert.ok(config.resolve.modules.includes("node_modules"))
+        assert.ok(config.resolveLoader.modules.includes("node_modules"))
+        assert.equal(config.resolve.modules.at(-1), "node_modules")
+    })
+
     it("é função pura: mesma entrada, mesma configuração", () => {
         assert.deepEqual(JSON.stringify(_Config(RELEASE)), JSON.stringify(_Config(RELEASE)))
     })

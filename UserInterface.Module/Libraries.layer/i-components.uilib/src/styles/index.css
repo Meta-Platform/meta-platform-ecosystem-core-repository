@@ -1,3 +1,10 @@
+/* A folha base do Semantic é responsabilidade do kit, não do aplicativo: quem
+ * consome a biblioteca não deve precisar saber que ela existe. Ela vem PRIMEIRO
+ * porque theme-retro-brutalist.css sobrescreve o Semantic — inverter a ordem
+ * devolve o visual de origem. Sai de vez na F5, quando o kit deixa de usar
+ * Semantic. */
+@import "semantic-ui-css/semantic.css";
+
 @import "./tokens.css";
 @import "./CorporateTheme.css";
 @import "./theme-retro-brutalist.css";

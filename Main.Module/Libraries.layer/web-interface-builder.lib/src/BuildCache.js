@@ -16,7 +16,13 @@ const { join, basename } = require("path")
 // v2: a configuração do webpack passou a depender do perfil de build (release
 // não emite mapa de código e minifica; debug faz o contrário). Bundles gerados
 // pela configuração anterior não correspondem mais a nenhum perfil.
-const CACHE_VERSION = 2
+//
+// v3: o alias `react`/`react-dom` passou a apontar para o node_modules da
+// biblioteca de UI que provê o runtime, em vez do consumidor. As entradas da
+// assinatura abaixo — conteúdo das fontes e stat dos node_modules — NÃO mudam
+// com esse retarget: sem o bump, IsWebInterfaceFresh devolveria true e serviria
+// o bundle antigo, com o React do lugar errado dentro.
+const CACHE_VERSION = 3
 const MANIFEST_FILE = ".meta-build-manifest.json"
 const ASSETS_SUFFIX = ".webInterfaceAssets"
 
@@ -102,7 +108,7 @@ const ComputeWebInterfaceFingerprint = ({
     hash.update("[node_modules]\n")
     if(nodeModules) _HashTree(hash, nodeModules, nodeModules, HASH_MODE.STAT)
     for(const library of componentLibraries){
-        hash.update(`[icomponents:${library.alias || ""}]\n`)
+        hash.update(`[uilib:${library.alias || ""}]\n`)
         if(library.sourcePath) _HashTree(hash, library.sourcePath, library.sourcePath, HASH_MODE.CONTENT)
         // O node_modules de uma biblioteca também influencia o bundle dela.
         if(library.nodeModulesPath) _HashTree(hash, library.nodeModulesPath, library.nodeModulesPath, HASH_MODE.STAT)

@@ -3,13 +3,18 @@ const path = require("path")
 const NormalizeComponentLibraries = (componentLibraries = []) =>
     componentLibraries.map((library) => {
         if (!library || !library.alias || !library.sourcePath)
-            throw new Error("Biblioteca iComponents inválida: alias e sourcePath são obrigatórios")
+            throw new Error("Biblioteca de UI inválida: alias e sourcePath são obrigatórios")
         return {
             alias: library.alias,
             sourcePath: path.resolve(library.sourcePath),
             framework: library.framework || "agnostic",
             nodeModulesPath: library.nodeModulesPath
                 ? path.resolve(library.nodeModulesPath)
+                : undefined,
+            // Presente só na biblioteca que instalou o runtime do framework nas
+            // próprias dependencies. Ausente nas que declaram em peerDependencies.
+            frameworkModulesPath: library.frameworkModulesPath
+                ? path.resolve(library.frameworkModulesPath)
                 : undefined
         }
     })
@@ -49,12 +54,35 @@ const CreateWebpackConfig = ({
         result[alias] = sourcePath
         return result
     }, {})
+    // UM React por bundle. A raiz do runtime é a da PRIMEIRA biblioteca que
+    // declara o framework nas próprias dependencies; se nenhuma declarar, cai no
+    // node_modules do consumidor (comportamento anterior a este recurso).
+    //
+    // O alias vale para TODO módulo do grafo, inclusive os de dentro de
+    // node_modules — é o que impede que uma cópia duplicada em disco (o npm
+    // instala peers automaticamente para react-redux e react-router-dom) vire
+    // uma segunda instância de React no bundle. Duas instâncias passam no build
+    // e quebram só em execução, com "Invalid hook call".
+    //
+    // `react-dom` sem `$` faz prefix matching de propósito: `react-dom/client`,
+    // usado em todo index.tsx, precisa resolver para a mesma raiz.
+    const frameworkProvider = libraries.find(({ framework, frameworkModulesPath }) =>
+        framework === "react" && frameworkModulesPath)
+    const frameworkRoot = frameworkProvider
+        ? frameworkProvider.frameworkModulesPath
+        : nodeModulesPath
     const frameworkAliases = libraries.some(({ framework }) => framework === "react")
         ? {
-            react: path.resolve(nodeModulesPath, "react"),
-            "react-dom": path.resolve(nodeModulesPath, "react-dom")
+            react: path.resolve(frameworkRoot, "react"),
+            "react-dom": path.resolve(frameworkRoot, "react-dom")
         }
         : {}
+    // Caminhos ABSOLUTOS não fazem o walk ancestral do Node: com só eles, um
+    // node_modules ANINHADO — o que o npm cria quando há conflito de versão —
+    // fica invisível ao webpack. A entrada relativa no fim devolve esse walk sem
+    // mudar a precedência: o consumidor e as bibliotecas continuam vindo antes.
+    const moduleSearchPaths = [ nodeModulesPath, ...libraryNodeModules, "node_modules" ]
+
     // O alias do webpack resolve o bundle, mas o ts-loader também precisa
     // conhecer a mesma topologia para typecheck de imports externos.
     const libraryTypeScriptPaths = libraries.reduce((result, { alias, sourcePath }) => {
@@ -166,14 +194,14 @@ const CreateWebpackConfig = ({
         devtool: profile.devtool,
         resolve: {
             extensions:[".ts", ".tsx", ".js", ".json"],
-            modules: [ nodeModulesPath, ...libraryNodeModules ],
-            // Bibliotecas compiladas por fonte devem reutilizar o runtime
-            // React do consumidor. Isso evita hooks quebrados e cópias
-            // duplicadas de React no mesmo WebGui.
+            modules: moduleSearchPaths,
+            // Um único runtime React por bundle, vindo da biblioteca que o
+            // declarou (ver frameworkAliases acima). Cópias duplicadas em disco
+            // são inofensivas; duplicadas no bundle quebram os hooks.
             alias: { ...frameworkAliases, ...aliases }
         },
         resolveLoader:{
-            modules: [ nodeModulesPath, ...libraryNodeModules ]
+            modules: moduleSearchPaths
         },
         module: { rules },
         plugins,
