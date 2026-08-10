@@ -6,7 +6,11 @@ const LOADER_ALIASES:any = {
     "application-instance"               : "app",
     "service-instance"                   : "service",
     "endpoint-instance"                  : "endpoint",
-    "command-application"                : "cli app"
+    "command-application"                : "cli app",
+    "desktop-window-instance"            : "desktop window",
+    "ui-library"                         : "ui lib",
+    // Nome antigo do mesmo loader; sai quando a janela de compatibilidade fechar.
+    "webgui-library"                     : "ui lib"
 }
 
 export const LoaderAlias = (objectLoaderType:string):string =>
