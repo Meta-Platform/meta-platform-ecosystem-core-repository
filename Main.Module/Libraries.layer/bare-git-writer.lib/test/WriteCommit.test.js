@@ -1,6 +1,7 @@
 const test = require("node:test")
 const assert = require("node:assert")
 const fs = require("fs")
+const { execFileSync } = require("child_process")
 
 const {
     AUTHOR,
@@ -358,5 +359,63 @@ test("autor é obrigatório porque commit-tree sem identidade falha", async () =
         await assert.rejects(
             () => writer.WriteCommit({ gitDirPath, message: "m", changes: [Put("a.txt", "um\n")], author: { name: "x" } }),
             { code: "INVALID_AUTHOR" })
+    })
+})
+
+test("rascunho vive FORA da história: nem branch, nem tag, nem no log", async () => {
+    await WithRepository(async ({ gitDirPath, writer }) => {
+        await Commit(writer, gitDirPath, [Put("a.txt", "um\n")])
+
+        const gravado = await writer.WriteDraft({
+            gitDirPath, name: "u-alice/main", content: '{"files":{"a.txt":{"content":"editado"}}}'
+        })
+        assert.match(gravado.ref, /^refs\/workspace-drafts\//)
+
+        const lido = await writer.ReadDraft({ gitDirPath, name: "u-alice/main" })
+        assert.equal(lido.content, '{"files":{"a.txt":{"content":"editado"}}}')
+
+        /*
+            A garantia que faz o rascunho ser rascunho: ele não aparece em
+            nenhuma listagem de branch nem no histórico. Se aparecesse, o
+            "não commitado" viraria commit aos olhos de quem lê o repositório.
+        */
+        assert.deepEqual((await writer.ListBranches({ gitDirPath })).map(({ name }) => name), ["main"],
+            "rascunho não é branch")
+        assert.equal(Git(gitDirPath, ["tag", "--list"]), "", "nem tag")
+        assert.equal(Git(gitDirPath, ["rev-list", "--count", "--all"]), "1",
+            "e não entra na contagem de commits de --all")
+
+        // Isolado por dono e por branch: o mesmo arquivo tem conteúdo diferente
+        // em cada um, e misturá-los gravaria no lugar errado.
+        assert.equal(await writer.ReadDraft({ gitDirPath, name: "u-bob/main" }), undefined)
+        assert.equal(await writer.ReadDraft({ gitDirPath, name: "u-alice/outro" }), undefined)
+
+        await writer.DeleteDraft({ gitDirPath, name: "u-alice/main" })
+        assert.equal(await writer.ReadDraft({ gitDirPath, name: "u-alice/main" }), undefined,
+            "descartar remove o ref")
+    })
+})
+
+test("rascunho sobrevive ao gc — um ref é raiz de alcançabilidade", async () => {
+    await WithRepository(async ({ gitDirPath, writer }) => {
+        await Commit(writer, gitDirPath, [Put("a.txt", "um\n")])
+        await writer.WriteDraft({ gitDirPath, name: "u-alice/main", content: "precisa sobreviver" })
+
+        // `gc --prune=now --aggressive` varre tudo que não é alcançável. Blob
+        // solto SEM ref morreria aqui; com ref, não.
+        execFileSync("git", ["--git-dir", gitDirPath, "gc", "--prune=now", "--quiet"], { stdio: "pipe" })
+
+        const lido = await writer.ReadDraft({ gitDirPath, name: "u-alice/main" })
+        assert.equal(lido && lido.content, "precisa sobreviver")
+    })
+})
+
+test("nome de rascunho não escapa do namespace", async () => {
+    await WithRepository(async ({ gitDirPath, writer }) => {
+        for (const invalido of ["../heads/main", "a..b", "", "-x", "x.lock"]) {
+            await assert.rejects(
+                () => writer.WriteDraft({ gitDirPath, name: invalido, content: "x" }),
+                { code: "INVALID_DRAFT" }, `"${invalido}" deveria ser recusado`)
+        }
     })
 })

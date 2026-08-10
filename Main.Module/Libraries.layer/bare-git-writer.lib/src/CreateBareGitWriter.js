@@ -162,6 +162,66 @@ const CreateBareGitWriter = ({ gitExecutable = "git", scratchRootPath, limits = 
         return result.stdout.split("\0").filter(Boolean)
     }
 
+    /*
+        RASCUNHO NO SERVIDOR — conteúdo guardado FORA da história.
+
+        Um rascunho não é um commit: não tem mensagem, não tem pai, e não deve
+        aparecer em `git log`. A forma nativa do git para isso é um blob solto
+        apontado por um ref próprio em `refs/workspace-drafts/`, que:
+
+          · não é branch nem tag, então nenhuma tela de histórico o mostra;
+          · não é clonado por padrão (`git clone` traz refs/heads e refs/tags);
+          · sobrevive ao gc, porque um ref é raiz de alcançabilidade — que é
+            exatamente o que um blob solto sem ref NÃO teria.
+
+        O ref guarda um blob (o JSON do rascunho), não uma árvore: o formato é
+        assunto de quem chama, e a lib só precisa de um lugar durável.
+    */
+    const AssertDraftRef = (name) => {
+        const value = typeof name === "string" ? name.trim() : ""
+        // Mesma validação de nome de ref, sem permitir escapar do namespace de
+        // rascunhos: `..` ou barra inicial levaria a escrita para refs/heads.
+        if (!BRANCH_NAME_PATTERN.test(value) || value.includes("..") || value.endsWith(".lock")) {
+            throw new InvalidChangeError("Nome de rascunho inválido.", "INVALID_DRAFT")
+        }
+        return `refs/workspace-drafts/${value}`
+    }
+
+    const WriteDraft = async ({ gitDirPath, name, content, scratchPath }) => {
+        const ref = AssertDraftRef(name)
+        const path = scratchPath ?? join(scratchRootPath, randomUUID())
+        await fs.promises.mkdir(path, { recursive: true })
+        try {
+            const temporaryPath = join(path, "draft")
+            await fs.promises.writeFile(temporaryPath, content)
+            const hashed = await Git(InGitDir(gitDirPath, ["hash-object", "-w", "--no-filters", "--", temporaryPath]))
+            const oid = hashed.stdout.trim()
+            // Sem compare-and-swap aqui de propósito: rascunho é do dono da
+            // sessão e a última escrita é a que vale — a garantia de concorrência
+            // pertence ao COMMIT, não ao rascunho.
+            await Git(InGitDir(gitDirPath, ["update-ref", ref, oid]))
+            return { ref, oid, bytes: Buffer.byteLength(content) }
+        } finally {
+            await fs.promises.rm(path, { recursive: true, force: true })
+        }
+    }
+
+    const ReadDraft = async ({ gitDirPath, name }) => {
+        const ref = AssertDraftRef(name)
+        const resolved = await TryGit(InGitDir(gitDirPath, ["rev-parse", "--verify", "--quiet", ref]))
+        const oid = resolved?.stdout?.trim()
+        if (!oid) return undefined
+        const blob = await TryGit(InGitDir(gitDirPath, ["cat-file", "blob", oid]))
+        if (!blob) return undefined
+        return { ref, oid, content: blob.stdout }
+    }
+
+    const DeleteDraft = async ({ gitDirPath, name }) => {
+        const ref = AssertDraftRef(name)
+        await TryGit(InGitDir(gitDirPath, ["update-ref", "-d", ref]))
+        return { ref }
+    }
+
     const CollectGarbage = ({ gitDirPath }) =>
         TryGit(InGitDir(gitDirPath, ["gc", "--auto", "--quiet"]), { timeoutMs: 5 * 60 * 1000 })
 
@@ -484,6 +544,9 @@ const CreateBareGitWriter = ({ gitExecutable = "git", scratchRootPath, limits = 
 
     return Object.freeze({
         WriteCommit,
+        WriteDraft,
+        ReadDraft,
+        DeleteDraft,
         ResolveBranchTip,
         ListBranches,
         CreateBranch,

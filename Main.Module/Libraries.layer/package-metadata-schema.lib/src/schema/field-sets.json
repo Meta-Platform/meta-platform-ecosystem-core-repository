@@ -1,0 +1,217 @@
+{
+    "schemaVersion": 1,
+    "referencePrefixes": ["@/", "@@/", "@//"],
+    "referenceHint": "Referência de pacote: @/ para pacote instalado, @@/ para serviço deste boot, @// para o próprio pacote",
+    "files": [
+        {
+            "file": "metadata/boot.json",
+            "title": "Boot",
+            "entities": [
+                {
+                    "id": "boot.params",
+                    "title": "Params",
+                    "path": "params",
+                    "labelField": null,
+                    "itemNoun": "parâmetro",
+                    "fields": [
+                        {
+                            "name": "",
+                            "label": "Nome do parâmetro",
+                            "kind": "text",
+                            "required": true,
+                            "hint": "Prefixe com ? para opcional"
+                        }
+                    ]
+                },
+                {
+                    "id": "boot.services",
+                    "title": "Services",
+                    "path": "services",
+                    "labelField": "namespace",
+                    "itemNoun": "serviço",
+                    "fields": [
+                        { "name": "namespace", "label": "Namespace", "kind": "reference", "required": true },
+                        { "name": "dependency", "label": "Dependency", "kind": "reference", "required": true },
+                        { "name": "params", "label": "Params", "kind": "map" },
+                        { "name": "bound-params", "label": "Bound-params", "kind": "map" }
+                    ]
+                },
+                {
+                    "id": "boot.endpoints",
+                    "title": "Endpoints",
+                    "path": "endpoints",
+                    "labelField": "dependency",
+                    "itemNoun": "endpoint",
+                    "fields": [
+                        { "name": "dependency", "label": "Dependency", "kind": "reference", "required": true },
+                        { "name": "params", "label": "Params", "kind": "map" },
+                        { "name": "bound-params", "label": "Bound-params", "kind": "map" }
+                    ]
+                },
+                {
+                    "id": "boot.executables",
+                    "title": "Executables",
+                    "path": "executables",
+                    "labelField": "executableName",
+                    "itemNoun": "executável",
+                    "fields": [
+                        { "name": "dependency", "label": "Dependency", "kind": "reference", "required": true },
+                        { "name": "executableName", "label": "Nome do executável", "kind": "text", "required": true },
+                        { "name": "params", "label": "Params", "kind": "map" },
+                        { "name": "bound-params", "label": "Bound-params", "kind": "map" }
+                    ]
+                },
+                {
+                    "id": "boot.windows",
+                    "title": "Windows",
+                    "path": "windows",
+                    "labelField": "title",
+                    "itemNoun": "janela",
+                    "fields": [
+                        { "name": "dependency", "label": "Dependency", "kind": "reference", "required": true },
+                        { "name": "title", "label": "Título", "kind": "text" },
+                        { "name": "width", "label": "Largura", "kind": "text" },
+                        { "name": "height", "label": "Altura", "kind": "text" }
+                    ]
+                }
+            ]
+        },
+        {
+            "file": "metadata/services.json",
+            "title": "Services",
+            "entities": [
+                {
+                    "id": "services.list",
+                    "title": "Serviços expostos",
+                    "path": "",
+                    "labelField": "namespace",
+                    "itemNoun": "serviço",
+                    "fields": [
+                        {
+                            "name": "namespace",
+                            "label": "Namespace",
+                            "kind": "text",
+                            "required": true,
+                            "hint": "Nome pelo qual o boot de terceiros referencia este serviço"
+                        },
+                        {
+                            "name": "path",
+                            "label": "Caminho do módulo",
+                            "kind": "text",
+                            "required": true,
+                            "hint": "Relativo a src/, ex.: Services/GitStatusManager.service"
+                        },
+                        {
+                            "name": "params",
+                            "label": "Params aceitos",
+                            "kind": "list",
+                            "hint": "Param que não estiver aqui chega undefined, em silêncio"
+                        },
+                        { "name": "bound-params", "label": "Bound-params aceitos", "kind": "list" }
+                    ]
+                }
+            ]
+        },
+        {
+            "file": "metadata/endpoint-group.json",
+            "title": "Endpoint group",
+            "entities": [
+                {
+                    "id": "endpointGroup.params",
+                    "title": "Params",
+                    "path": "params",
+                    "labelField": null,
+                    "itemNoun": "parâmetro",
+                    "fields": [
+                        {
+                            "name": "",
+                            "label": "Nome do parâmetro",
+                            "kind": "text",
+                            "required": true,
+                            "hint": "Prefixe com ? para opcional"
+                        }
+                    ]
+                },
+                {
+                    "id": "endpointGroup.boundParams",
+                    "title": "Bound-params",
+                    "path": "bound-params",
+                    "labelField": null,
+                    "itemNoun": "bound-param",
+                    "fields": [
+                        { "name": "", "label": "Nome do bound-param", "kind": "text", "required": true }
+                    ]
+                },
+                {
+                    "id": "endpointGroup.endpoints",
+                    "title": "Endpoints",
+                    "path": "endpoints",
+                    "labelField": "url",
+                    "itemNoun": "endpoint",
+                    "fields": [
+                        { "name": "url", "label": "URL", "kind": "text", "required": true },
+                        {
+                            "name": "type",
+                            "label": "Tipo",
+                            "kind": "text",
+                            "required": true,
+                            "hint": "controller, web-graphic-user-interface, …"
+                        },
+                        { "name": "params", "label": "Params", "kind": "map" },
+                        { "name": "bound-params", "label": "Bound-params", "kind": "map" }
+                    ]
+                }
+            ]
+        },
+        {
+            "file": "metadata/command-group.json",
+            "title": "Command group",
+            "entities": [
+                {
+                    "id": "commandGroup.commands",
+                    "title": "Comandos",
+                    "path": "commands",
+                    "labelField": "command",
+                    "itemNoun": "comando",
+                    "fields": [
+                        { "name": "command", "label": "Comando", "kind": "text", "required": true },
+                        { "name": "describe", "label": "Descrição", "kind": "text" },
+                        { "name": "handler", "label": "Handler", "kind": "text" }
+                    ]
+                }
+            ]
+        },
+        {
+            "file": "metadata/package.json",
+            "title": "Package",
+            "entities": [
+                {
+                    "id": "package.identity",
+                    "title": "Identidade",
+                    "path": "@root",
+                    "labelField": null,
+                    "itemNoun": "pacote",
+                    "fields": [
+                        {
+                            "name": "namespace",
+                            "label": "Namespace",
+                            "kind": "text",
+                            "required": true,
+                            "hint": "Começa com @/ — é por ele que outros pacotes referenciam este"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "requiredFilesByPackageType": {
+        "lib": ["package.json", "metadata/package.json"],
+        "cli": ["package.json", "metadata/package.json", "metadata/boot.json", "metadata/command-group.json"],
+        "service": ["package.json", "metadata/package.json", "metadata/services.json"],
+        "webservice": ["package.json", "metadata/package.json", "metadata/endpoint-group.json"],
+        "webgui": ["package.json", "metadata/package.json", "metadata/endpoint-group.json"],
+        "webapp": ["package.json", "metadata/package.json", "metadata/boot.json"],
+        "app": ["package.json", "metadata/package.json", "metadata/boot.json"],
+        "icomponents": ["package.json", "metadata/package.json", "metadata/webgui-library.json"]
+    }
+}
