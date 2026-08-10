@@ -1,5 +1,5 @@
 {
     "namespace": "EcosystemCoreRepo",
     "dependencies": ["EssentialRepo"],
-    "supportedPackageTypes": ["webapp", "webgui", "webservice", "icomponents"]
+    "supportedPackageTypes": ["webapp", "webgui", "webservice", "icomponents", "uilib"]
 }

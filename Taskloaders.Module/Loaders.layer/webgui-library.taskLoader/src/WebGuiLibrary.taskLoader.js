@@ -1,16 +1,26 @@
 const fs = require("fs")
 const { join } = require("path")
 
-const MANIFEST_PATH = join("metadata", "webgui-library.json")
+// O nome do manifesto acompanha o nome do tipo de pacote: `.uilib` traz
+// `metadata/uilib.json`. O nome antigo continua sendo aceito enquanto a janela de
+// compatibilidade existir — é o que permite renomear os pacotes num repositório
+// sem depender do `repo update` do core ter chegado antes. Sem o fallback, os
+// dois updates precisariam ser atômicos, e não há commit atômico entre
+// repositórios git independentes.
+const MANIFEST_CANDIDATES = [
+    join("metadata", "uilib.json"),
+    join("metadata", "webgui-library.json")
+]
 
 const ReadManifest = (rootPath) => {
-    const manifestPath = join(rootPath, MANIFEST_PATH)
-    if (!fs.existsSync(manifestPath))
-        throw new Error(`Pacote iComponents sem ${MANIFEST_PATH}: ${rootPath}`)
+    const relativePath = MANIFEST_CANDIDATES.find((candidate) => fs.existsSync(join(rootPath, candidate)))
+    if (!relativePath)
+        throw new Error(`Biblioteca de UI sem ${MANIFEST_CANDIDATES[0]}: ${rootPath}`)
 
+    const manifestPath = join(rootPath, relativePath)
     const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"))
     if (!manifest.alias || !manifest.source)
-        throw new Error(`Manifesto iComponents inválido em ${manifestPath}: alias e source são obrigatórios`)
+        throw new Error(`Manifesto de biblioteca de UI inválido em ${manifestPath}: alias e source são obrigatórios`)
     return manifest
 }
 

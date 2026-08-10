@@ -19,6 +19,14 @@
             "entry": "src/WebGuiLibrary.taskLoader",
             "npmDependencies": {},
             "injectsDeps": true
+        },
+        {
+            "objectLoaderType": "ui-library",
+            "package": "@/webgui-library.taskLoader",
+            "path": "Taskloaders.Module/Loaders.layer/webgui-library.taskLoader",
+            "entry": "src/WebGuiLibrary.taskLoader",
+            "npmDependencies": {},
+            "injectsDeps": true
         }
     ]
 }
