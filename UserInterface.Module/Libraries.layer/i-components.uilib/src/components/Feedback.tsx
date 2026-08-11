@@ -83,6 +83,20 @@ export const SkeletonList = ({ rows = 4, className = "" }: any) =>
             </div>) }
     </div>
 
+// Grade de cards em carregamento (telas de coleção que exibem ObjectCard).
+// A classe .mp-skeleton-cards já existia no CSS comum sem componente.
+export const SkeletonCards = ({ cards = 6, className = "" }: any) =>
+    <div className={`mp-skeleton-cards ${className}`.trim()} aria-hidden="true">
+        { Array.from({ length: cards }).map((_, index) =>
+            <div className="mp-skeleton-card" key={index}>
+                <Skeleton variant="icon"/>
+                <div className="mp-skeleton-card__lines">
+                    <Skeleton variant="md"/>
+                    <Skeleton variant="sm"/>
+                </div>
+            </div>) }
+    </div>
+
 // Pilha de avisos temporários. O estado de vida do toast é do aplicativo; aqui
 // fica só a apresentação (posicionamento, tom, ação de fechar).
 export type ToastItem = {

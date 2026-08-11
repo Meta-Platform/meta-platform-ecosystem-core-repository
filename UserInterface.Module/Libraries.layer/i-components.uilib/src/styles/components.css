@@ -507,6 +507,13 @@
     background: var(--mp-surface);
     box-shadow: var(--mp-shadow-1);
 }
+.mp-skeleton-card__lines {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
 
 /* ================================================================== */
 /* Offcanvas / drawers — chrome padronizado (§10.9)                   */
