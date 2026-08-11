@@ -4,17 +4,17 @@ import {useEffect, useState}  from "react"
 import useWebSocket from "../../Hooks/useWebSocket"
 
 import {
+	Button,
+	CopyableMonoText,
+	EmptyState,
 	Icon,
-	Label,
-	Segment,
-	Table
- } from "semantic-ui-react"
+	PageMasthead,
+	StatusBadge,
+	StatusChip,
+	StatusStrip,
+	TruncateMiddle
+} from "@i-components"
 
-import StatusBadge from "../../Components/StatusBadge"
-import CopyValue   from "../../Components/CopyValue"
-import PageMasthead from "../../Components/ui/PageMasthead"
-import StatusStrip, { StatusChip } from "../../Components/ui/StatusStrip"
-import { TruncateMiddle } from "../../Utils/Format"
 import { openLogWindow, subscribeLogWindows } from "../../Utils/logWindows"
 
 const NormalizePath = (value:string) => (value || "").replace(/\\/g, "/").replace(/\/+$/, "")
@@ -61,12 +61,12 @@ const AppInfo = ({ merged }:any) => {
 		? PrimitiveEntries(merged).filter((k) => HIGHLIGHT_KEYS.includes(k) && k !== "executableName" && String(merged[k]) !== "").slice(0, 2)
 		: []
 	if(!exeName && otherKeys.length === 0)
-		return <span style={{ color: "var(--mp-muted-2)", fontSize: ".85em" }}>no app data</span>
-	return <span style={{ fontSize: ".85em", color: "var(--mp-ink-3)", display: "inline-flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-		{ exeName && <Label size="mini" color="blue"><Icon name="terminal"/> {exeName}</Label> }
+		return <span className="ecp-socket-cell__hint">no app data</span>
+	return <span className="ecp-socket-cell__app">
+		{ exeName && <span className="mp-type-chip"><Icon name="terminal"/> {exeName}</span> }
 		{
 			otherKeys.map((key:string, index:number) => <span key={index}>
-				<span style={{ color: "var(--mp-muted-2)" }}>{key}: </span>
+				<span className="ecp-socket-cell__key">{key}: </span>
 				<strong>{String(merged[key])}</strong>
 			</span>)
 		}
@@ -106,50 +106,58 @@ const SocketRow = ({ supervisorAPI, monitoringStateKey, filePath, status, onSele
 	const _port = _svcTask && _svcTask.staticParameters && _svcTask.staticParameters.port
 	const serverUrl = (_port !== undefined && _port !== null) ? `localhost:${_port}` : undefined
 
-	return <Table.Row style={{ cursor: "pointer", opacity: isConnected ? 1 : 0.78 }} onClick={() => onSelect(monitoringStateKey)}>
-		<Table.Cell style={{ overflow: "hidden" }}>
-			<Icon name="plug" color={isConnected ? "green" : "red"}/>
-			<strong style={{ whiteSpace: "nowrap" }}>{socketName}</strong>
-			{ logOpen && <Icon name="terminal" color="blue" className="eco-log-live" style={{ marginLeft: "6px" }} title="log stream ao vivo"/> }
-		</Table.Cell>
-		<Table.Cell><StatusBadge status={status}/></Table.Cell>
-		<Table.Cell style={{ fontFamily: "monospace", color: "var(--mp-ink-3)" }}>
-			{ !isConnected ? "—" : (isLoading ? "…" : (pid != null ? String(pid) : "—")) }
-		</Table.Cell>
-		<Table.Cell style={{ overflow: "hidden" }} title={filePath}>
-			<span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-				<span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "monospace", fontSize: ".82em", color: "var(--mp-muted)" }}>{TruncateMiddle(filePath, 36)}</span>
-				<CopyValue value={filePath}/>
+	return <tr
+		className={`is-clickable ecp-socket-row ${isConnected ? "" : "is-dim"}`.trim()}
+		onClick={() => onSelect(monitoringStateKey)}>
+		<td>
+			<span className="ecp-socket-cell__name">
+				<Icon name="plug" tone={isConnected ? "success" : "danger"}/>
+				<strong>{socketName}</strong>
+				{ logOpen && <Icon name="terminal" tone="info" className="ecp-live-pulse" title="log stream ao vivo"/> }
 			</span>
-		</Table.Cell>
-		<Table.Cell style={{ overflow: "hidden" }}>
+		</td>
+		<td><StatusBadge status={status}/></td>
+		<td className="is-mono">
+			{ !isConnected ? "—" : (isLoading ? "…" : (pid != null ? String(pid) : "—")) }
+		</td>
+		<td title={filePath}>
+			<CopyableMonoText value={filePath} maxChars={36}/>
+		</td>
+		<td>
 			{
 				!isConnected
-				? <span style={{ color: "var(--mp-danger)", fontSize: ".85em" }}><Icon name="warning circle"/> unavailable</span>
+				? <span className="ecp-socket-cell__unavailable"><Icon name="warning circle"/> unavailable</span>
 				: isLoading
-					? <span style={{ color: "var(--mp-muted-2)", fontSize: ".85em" }}>loading…</span>
+					? <span className="ecp-socket-cell__hint">loading…</span>
 					: (appNamespace || serverUrl)
-						? <div style={{ fontSize: ".85em", display: "flex", flexDirection: "column", gap: "1px", overflow: "hidden" }}>
-							{ appNamespace && <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={appNamespace}><Icon name="cube" style={{ color: "var(--mp-muted)" }}/> <strong>{appNamespace}</strong></span> }
-							{ serverUrl && <span style={{ color: "var(--mp-ink-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={serverUrl}><Icon name="server" style={{ color: "var(--mp-muted)" }}/> {TruncateMiddle(serverUrl, 38)}</span> }
+						? <div className="ecp-socket-cell__app-lines">
+							{ appNamespace && <span className="ecp-truncate" title={appNamespace}><Icon name="cube" tone="muted"/> <strong>{appNamespace}</strong></span> }
+							{ serverUrl && <span className="ecp-truncate" title={serverUrl}><Icon name="server" tone="muted"/> {TruncateMiddle(serverUrl, 38)}</span> }
 						</div>
 						: <AppInfo merged={merged}/>
 			}
-		</Table.Cell>
-		<Table.Cell textAlign="right" onClick={(e:any) => e.stopPropagation()}>
+		</td>
+		<td className="ecp-socket-cell__actions" onClick={(event:any) => event.stopPropagation()}>
 			{
 				isConnected &&
-				<a className="eco-action-link" title={logOpen ? "view open log stream" : "open log stream"}
-					onClick={() => openLogWindow({ monitoringStateKey, socketName })}
-					style={{ color: logOpen ? "#21862e" : "#3a6ea5", cursor: "pointer", marginRight: "8px", fontSize: ".85em", whiteSpace: "nowrap", fontWeight: logOpen ? 600 : 400 }}>
-					<Icon name={logOpen ? "eye" : "terminal"}/> {logOpen ? "view log" : "log"}
-				</a>
+				<Button
+					variant="ghost"
+					size="sm"
+					icon={logOpen ? "eye" : "terminal"}
+					title={logOpen ? "view open log stream" : "open log stream"}
+					onClick={() => openLogWindow({ monitoringStateKey, socketName })}>
+					{ logOpen ? "view log" : "log" }
+				</Button>
 			}
-			<a className="eco-action-link" onClick={() => onSelect(monitoringStateKey)} style={{ color: "var(--mp-accent-blue)", cursor: "pointer", fontSize: ".85em", whiteSpace: "nowrap" }}>
-				inspect <Icon name="arrow right"/>
-			</a>
-		</Table.Cell>
-	</Table.Row>
+			<Button
+				variant="ghost"
+				size="sm"
+				trailingIcon="arrow right"
+				onClick={() => onSelect(monitoringStateKey)}>
+				inspect
+			</Button>
+		</td>
+	</tr>
 }
 
 const OverviewSocketPanel = ({
@@ -202,7 +210,10 @@ const OverviewSocketPanel = ({
 	const connectedCount = keys.filter((k) => overview[k]?.status === "CONNECTED").length
 	const unavailableCount = keys.filter((k) => overview[k]?.status === "UNAVAILABLE").length
 
-	return <Segment style={{ margin: "10px" }}>
+	// Padrão Collection (§4): PageMasthead + StatusStrip + ledger table. A tabela
+	// é escrita à mão (e não com DataTable) porque tem linha de GRUPO em colSpan e
+	// cada linha carrega estado próprio (pid/tasks buscados por socket).
+	return <div className="ecp-socket-overview">
 		<PageMasthead
 			icon="server"
 			title="Supervisor Sockets"
@@ -213,44 +224,49 @@ const OverviewSocketPanel = ({
 				<StatusChip icon="plug" count={keys.length} label="sockets"/>
 			</StatusStrip>
 		</PageMasthead>
-		<div style={{ overflowX: "auto" }}>
-			<Table selectable striped unstackable style={{ tableLayout: "fixed", width: "100%" }}>
-				<Table.Header>
-					<Table.Row>
-						<Table.HeaderCell width={3}>socket</Table.HeaderCell>
-						<Table.HeaderCell width={2}>status</Table.HeaderCell>
-						<Table.HeaderCell width={2}>pid</Table.HeaderCell>
-						<Table.HeaderCell width={4}>path</Table.HeaderCell>
-						<Table.HeaderCell width={3}>app</Table.HeaderCell>
-						<Table.HeaderCell width={2}></Table.HeaderCell>
-					</Table.Row>
-				</Table.Header>
-				<Table.Body>
-					{
-						groupedKeyList.map((group:any) =>
-							<React.Fragment key={group.groupKey}>
-								<Table.Row>
-									<Table.Cell colSpan={6} style={{ background: "var(--mp-surface-2)", color: "var(--mp-muted)", fontWeight: 700, textTransform: "uppercase", fontSize: ".84em" }}>
-										{group.groupLabel}
-									</Table.Cell>
-								</Table.Row>
-								{
-									group.items.map((monitoringStateKey:string, key:number) =>
-										<SocketRow
-											key={`${group.groupKey}-${key}`}
-											supervisorAPI={supervisorAPI}
-											monitoringStateKey={monitoringStateKey}
-											filePath={overview[monitoringStateKey].filePath}
-											status={overview[monitoringStateKey].status}
-											logOpen={logKeys.includes(monitoringStateKey)}
-											onSelect={onSelect}/>)
-								}
-							</React.Fragment>)
-					}
-				</Table.Body>
-			</Table>
-		</div>
-	</Segment>
+		{
+			keys.length === 0
+			? <EmptyState
+				icon="plug"
+				title="No supervisor sockets"
+				message="No package executor is exposing a supervisor socket right now."/>
+			: <div className="mp-table-wrap">
+				<table className="mp-table ecp-socket-table">
+					<thead>
+						<tr>
+							<th style={{ width: "18.75%" }}>socket</th>
+							<th style={{ width: "12.5%" }}>status</th>
+							<th style={{ width: "10%" }}>pid</th>
+							<th style={{ width: "25%" }}>path</th>
+							<th style={{ width: "18.75%" }}>app</th>
+							<th style={{ width: "15%" }}/>
+						</tr>
+					</thead>
+					<tbody>
+						{
+							groupedKeyList.map((group:any) =>
+								<React.Fragment key={group.groupKey}>
+									<tr className="ecp-socket-table__group">
+										<td colSpan={6}>{group.groupLabel}</td>
+									</tr>
+									{
+										group.items.map((monitoringStateKey:string, key:number) =>
+											<SocketRow
+												key={`${group.groupKey}-${key}`}
+												supervisorAPI={supervisorAPI}
+												monitoringStateKey={monitoringStateKey}
+												filePath={overview[monitoringStateKey].filePath}
+												status={overview[monitoringStateKey].status}
+												logOpen={logKeys.includes(monitoringStateKey)}
+												onSelect={onSelect}/>)
+									}
+								</React.Fragment>)
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	</div>
 }
 
 export default OverviewSocketPanel

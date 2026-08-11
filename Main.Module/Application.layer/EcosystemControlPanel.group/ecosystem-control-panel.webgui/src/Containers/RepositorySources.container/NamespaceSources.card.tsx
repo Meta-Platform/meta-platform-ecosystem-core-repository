@@ -2,11 +2,12 @@ import * as React from "react"
 
 import {
     Button,
-    Card,
+    ButtonGroup,
+    EmptyState,
     Icon,
-    Label,
-    Segment
-} from "semantic-ui-react"
+    Panel,
+    StatusChip
+} from "@i-components"
 
 import SourceParamsTable from "./SourceParams.table"
 
@@ -34,82 +35,78 @@ const NamespaceSourcesCard = ({
             && busyAction.action === action
             && (sourceType === undefined || busyAction.sourceType === sourceType)
 
-    return <Card style={{ width: "440px" }}>
-        <Card.Content>
-            <Card.Header>
-                <Icon name="cubes"/> {repositoryNamespace}
-                {
-                    isInstalled
-                    ? <Label color="green" size="tiny" style={{ marginLeft: "8px" }}>installed</Label>
-                    : <Label size="tiny" style={{ marginLeft: "8px" }}>not installed</Label>
-                }
-            </Card.Header>
-            <Card.Meta>{sources.length} fonte(s) registrada(s)</Card.Meta>
-        </Card.Content>
-
-        <Card.Content>
-            {
-                sources.length === 0
-                && <Segment placeholder textAlign="center" style={{ color: "grey" }}>nenhuma fonte registrada</Segment>
-            }
-            {
-                sources.map((source:any, key:number) => {
-                    const isActive = isInstalled && source.sourceType === activeSourceType
-                    return <Segment key={key} style={{ background: isActive ? "honeydew" : undefined }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <strong>
-                                <Icon name={isActive ? "check circle" : "feed"} color={isActive ? "green" : undefined}/>
-                                {source.sourceType}
-                            </strong>
-                            { isActive && <Label color="green" size="tiny">active source</Label> }
-                        </div>
-                        <SourceParamsTable repositorySourceData={source}/>
-                        <Button.Group size="tiny" fluid>
-                            <Button
-                                primary
-                                loading={isBusy("install", source.sourceType)}
-                                onClick={() => onInstall(repositoryNamespace, source.sourceType)}>
-                                <Icon name="download"/> install
-                            </Button>
-                            {
-                                isInstalled && !isActive &&
-                                <Button
-                                    loading={isBusy("change", source.sourceType)}
-                                    onClick={() => onChangeSource(repositoryNamespace, source.sourceType)}>
-                                    <Icon name="exchange"/> set active
-                                </Button>
-                            }
-                            <Button
-                                color="red"
-                                basic
-                                loading={isBusy("removeSource", source.sourceType)}
-                                onClick={() => onRemoveSource(repositoryNamespace, source.sourceType)}>
-                                <Icon name="trash"/> remove
-                            </Button>
-                        </Button.Group>
-                    </Segment>
-                })
-            }
-        </Card.Content>
-
-        <Card.Content extra>
-            <Button.Group fluid size="small">
+    return <Panel
+        className="ecp-namespace-card"
+        icon="cubes"
+        title={repositoryNamespace}
+        actions={
+            isInstalled
+            ? <StatusChip icon="check circle" tone="success" label="installed"/>
+            : <StatusChip label="not installed"/>
+        }
+        footer={
+            <ButtonGroup>
                 <Button
-                    onClick={() => onRegisterSourceForNamespace(repositoryNamespace)}>
-                    <Icon name="plus"/> add source
-                </Button>
+                    icon="plus"
+                    onClick={() => onRegisterSourceForNamespace(repositoryNamespace)}>add source</Button>
                 {
                     isInstalled &&
                     <Button
-                        color="teal"
+                        icon="refresh"
                         loading={isBusy("update")}
-                        onClick={() => onUpdate(repositoryNamespace)}>
-                        <Icon name="refresh"/> update repository
-                    </Button>
+                        onClick={() => onUpdate(repositoryNamespace)}>update repository</Button>
                 }
-            </Button.Group>
-        </Card.Content>
-    </Card>
+            </ButtonGroup>
+        }>
+
+        <div className="ecp-namespace-card__count">{sources.length} source(s) registered</div>
+
+        {
+            sources.length === 0
+            && <EmptyState icon="feed" message="no sources registered"/>
+        }
+        {
+            sources.map((source:any, key:number) => {
+                const isActive = isInstalled && source.sourceType === activeSourceType
+                return <section
+                    key={key}
+                    className={`ecp-source-block ${isActive ? "is-active" : ""}`.trim()}>
+                    <header className="ecp-source-block__head">
+                        <Icon
+                            name={isActive ? "check circle" : "feed"}
+                            tone={isActive ? "success" : "muted"}/>
+                        <strong className="ecp-source-block__type">{source.sourceType}</strong>
+                        { isActive && <StatusChip tone="success" label="active source"/> }
+                    </header>
+
+                    <SourceParamsTable repositorySourceData={source}/>
+
+                    <ButtonGroup className="ecp-source-block__actions">
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            icon="download"
+                            loading={isBusy("install", source.sourceType)}
+                            onClick={() => onInstall(repositoryNamespace, source.sourceType)}>install</Button>
+                        {
+                            isInstalled && !isActive &&
+                            <Button
+                                size="sm"
+                                icon="exchange"
+                                loading={isBusy("change", source.sourceType)}
+                                onClick={() => onChangeSource(repositoryNamespace, source.sourceType)}>set active</Button>
+                        }
+                        <Button
+                            variant="danger"
+                            size="sm"
+                            icon="trash"
+                            loading={isBusy("removeSource", source.sourceType)}
+                            onClick={() => onRemoveSource(repositoryNamespace, source.sourceType)}>remove</Button>
+                    </ButtonGroup>
+                </section>
+            })
+        }
+    </Panel>
 }
 
 export default NamespaceSourcesCard

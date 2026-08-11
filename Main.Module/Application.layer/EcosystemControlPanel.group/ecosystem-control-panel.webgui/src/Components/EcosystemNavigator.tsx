@@ -2,18 +2,17 @@ import * as React from "react"
 import { useState, useEffect } from "react"
 
 import {
-    Accordion,
+    Button,
     Icon,
-    Image,
-    Input,
-    List,
-    Label,
-    Loader
-} from "semantic-ui-react"
+    SearchInput,
+    SidePanel,
+    Spinner,
+    TreeRow,
+    GetStatusTone
+} from "@i-components"
 
 import GetAPI       from "../Utils/GetAPI"
 import useWebSocket from "../Hooks/useWebSocket"
-import { GetStatusColor } from "./StatusBadge"
 import { subscribeLogWindows } from "../Utils/logWindows"
 import GetExecutableIconURL from "../Utils/GetExecutableIconURL"
 
@@ -83,15 +82,26 @@ const GetSocketName = (filePath:string) => {
     return base.replace(/\.sock$/, "")
 }
 
+// O vocabulário de status do kit inclui "done", que não é um tom de ícone;
+// nos sockets ele nunca aparece, mas o mapa protege o caso.
+const StatusIconTone = (status:string):any => {
+    const tone = GetStatusTone(status)
+    return tone === "done" ? "muted" : tone
+}
+
 const ExecutableIcon = ({ executable, fallbackIcon, serverManagerInformation }:any) => {
     const iconURL = executable.hasPackageIcon
         ? GetExecutableIconURL({ serverManagerInformation, executableName: executable.executableName })
         : undefined
 
     if(iconURL)
-        return <Image src={iconURL} title="icone do pacote" style={{ width: "18px", height: "18px", objectFit: "contain", flex: "0 0 auto", margin: 0 }}/>
+        return <img
+            src={iconURL}
+            alt=""
+            title="icone do pacote"
+            className="ecp-nav-leaf__img"/>
 
-    return <Icon name={fallbackIcon}/>
+    return <Icon name={fallbackIcon} tone="muted"/>
 }
 
 const GroupEnvironmentsByPackageIdentity = (environmentNameList:string[]) =>
@@ -102,16 +112,6 @@ const GroupEnvironmentsByPackageIdentity = (environmentNameList:string[]) =>
         groups[identity].push(environmentName)
         return groups
     }, {})
-
-// Título de seção: layout flex para que o rótulo trunque com reticências e o
-// contador fique SEMPRE fixo à direita, na mesma linha (antes o badge quebrava
-// para a linha de baixo em sidebars estreitas).
-const SectionTitle = ({ iconName, label, count }:any) =>
-    <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", minWidth: 0, flex: "1 1 auto", verticalAlign: "middle" }}>
-        <Icon name={iconName} style={{ flex: "0 0 auto", margin: 0 }}/>
-        <strong style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{label}</strong>
-        { count !== undefined && <Label circular size="mini" style={{ flex: "0 0 auto", margin: 0 }}>{count}</Label> }
-    </span>
 
 const EcosystemNavigator = ({
     serverManagerInformation,
@@ -244,206 +244,244 @@ const EcosystemNavigator = ({
     const filteredRepoNames = repoNamespaceList.filter((n:string) => matchNav(n))
     const filteredConfigFiles = configFileList.filter((n:string) => matchNav(n))
 
-    return <div className="eco-navigator">
+    // Cada seção mantém o comportamento antigo do Accordion.Title: um clique
+    // abre/fecha E navega. Com o TreeRow do kit a seta e o rótulo são botões
+    // distintos, então ambos recebem o MESMO handler.
+    const _OpenSockets = () => {
+        toggleSection("sockets")
+        onNavigate({ panel: "instance supervisor", params: { monitoringStateKey: undefined } })
+    }
+    const _OpenExecutables = () => {
+        toggleSection("executables")
+        onNavigate({ panel: "executables", params: { executableName: undefined, executableType: undefined, executableRepo: undefined, executableStatus: undefined } })
+    }
+    const _OpenRepositories = () => {
+        toggleSection("repositories")
+        onNavigate({ panel: "repositories", params: { tab: selection.tab || "packages" } })
+    }
+    const _OpenConfigFiles = () => {
+        toggleSection("configFiles")
+        onNavigate({ panel: "config files", params: { configFileName: undefined } })
+    }
 
-        { isLoading && <Loader active inline="centered" size="small" style={{ margin: "20px" }}/> }
+    return <SidePanel className="ecp-navigator">
 
-        <Input
-            icon="search"
-            size="small"
-            fluid
-            placeholder="search..."
-            value={navFilter}
-            onChange={(e, { value }) => setNavFilter(value)}
-            style={{ marginBottom: "6px" }}/>
+        <div className="ecp-nav-search">
+            <SearchInput
+                value={navFilter}
+                onValueChange={setNavFilter}
+                placeholder="search..."/>
+        </div>
 
-        <Accordion fluid styled>
+        { isLoading && <div className="ecp-nav-loading"><Spinner label="loading ecosystem…"/></div> }
+
+        <div className="ecp-nav-tree">
 
             { /* Sockets — clique abre o Overview e lista os sockets */ }
-            <Accordion.Title
-                active={openSections.sockets}
-                onClick={() => { toggleSection("sockets"); onNavigate({ panel: "instance supervisor", params: { monitoringStateKey: undefined } }) }}>
-                <Icon name="dropdown"/>
-                <SectionTitle iconName="server" label="Supervisor Sockets" count={visibleOverviewKeys.length}/>
-            </Accordion.Title>
-            <Accordion.Content active={openSections.sockets || filtering}>
-                {
-                    overviewSocketGroupList.map((group:any) =>
-                        <div key={group.groupKey} style={{ marginBottom: "6px" }}>
-                            <div style={{ padding: "5px 6px", color: "var(--mp-muted)", fontSize: ".85em", fontWeight: 700, textTransform: "uppercase" }}>
-                                {group.groupLabel}
-                            </div>
-                            <List selection size="small" style={{ marginTop: 0 }}>
+            <TreeRow
+                icon="server"
+                label="Supervisor Sockets"
+                meta={visibleOverviewKeys.length}
+                hasChildren
+                expanded={openSections.sockets || filtering}
+                selected={isActivePanel("instance supervisor") && !selection.monitoringStateKey}
+                onToggle={_OpenSockets}
+                onSelect={_OpenSockets}/>
+            {
+                (openSections.sockets || filtering) &&
+                <div className="ecp-nav-children">
+                    {
+                        overviewSocketGroupList.map((group:any) =>
+                            <div key={group.groupKey} className="ecp-nav-block">
+                                <div className="ecp-nav-group">{group.groupLabel}</div>
                                 {
                                     group.items.map((monitoringStateKey:string, key:number) => {
                                         const info = overview[monitoringStateKey] || {}
                                         const socketName = GetSocketName(info.filePath) || ShortHash(monitoringStateKey)
-                                        return <List.Item
+                                        return <TreeRow
                                             key={key}
-                                            active={selection.monitoringStateKey === monitoringStateKey}
-                                            onClick={() => onNavigate({ panel: "instance supervisor", params: { monitoringStateKey } })}>
-                                            <List.Content>
-                                                <Icon name="plug" size="small" color={GetStatusColor(info.status)}/>
-                                                <span title={monitoringStateKey}>{socketName}</span>
-                                                { logKeys.includes(monitoringStateKey) && <Icon name="terminal" size="small" color="blue" className="eco-log-live" style={{ marginLeft: "6px" }} title="log stream ao vivo"/> }
-                                            </List.Content>
-                                        </List.Item>
-                                        })
+                                            depth={1}
+                                            selected={selection.monitoringStateKey === monitoringStateKey}
+                                            onSelect={() => onNavigate({ panel: "instance supervisor", params: { monitoringStateKey } })}
+                                            label={
+                                                <span className="ecp-nav-leaf">
+                                                    <Icon name="plug" size="small" tone={StatusIconTone(info.status)}/>
+                                                    <span className="ecp-nav-leaf__name" title={monitoringStateKey}>{socketName}</span>
+                                                    {
+                                                        logKeys.includes(monitoringStateKey) &&
+                                                        <Icon name="terminal" size="small" tone="info" className="ecp-log-live" title="log stream ao vivo"/>
+                                                    }
+                                                </span>
+                                            }/>
+                                    })
                                 }
-                            </List>
-                        </div>)
-                }
-                { hiddenUnavailableCount > 0 && <div style={{ color: "var(--mp-muted)", fontSize: ".85em", padding: "6px 6px 0" }}>{hiddenUnavailableCount} unavailable sockets hidden</div> }
-            </Accordion.Content>
+                            </div>)
+                    }
+                    { hiddenUnavailableCount > 0 && <div className="ecp-nav-note">{hiddenUnavailableCount} unavailable sockets hidden</div> }
+                </div>
+            }
 
             { /* Executables (executables/) — 2º nó, irmão de repos/ no EcosystemData */ }
-            <Accordion.Title
-                active={openSections.executables}
-                onClick={() => { toggleSection("executables"); onNavigate({ panel: "executables", params: { executableName: undefined, executableType: undefined, executableRepo: undefined, executableStatus: undefined } }) }}>
-                <Icon name="dropdown"/>
-                <SectionTitle iconName="terminal" label="Executables"
-                    count={executableList.filter((e:any) => !IsIgnoredExecutable(e.executableName) && !e.isDebug).length}/>
-            </Accordion.Title>
-            <Accordion.Content active={openSections.executables || filtering}>
-                {
-                    execTypeGroups.map((group:any) => {
-                        if(group.items.length === 0) return null
-                        const typeOpen = openExecGroups[group.type] || filtering
-                        return <div key={group.type} style={{ marginBottom: "4px" }}>
-                            <div
-                                onClick={() => {
-                                    setOpenExecGroups({ ...openExecGroups, [group.type]: !openExecGroups[group.type] })
-                                    onNavigate({ panel: "executables", params: { executableType: group.type, executableRepo: undefined, executableName: undefined } })
-                                }}
-                                className={`eco-nav-subtitle ${selection.executableType === group.type && !selection.executableRepo ? "active" : ""}`}>
-                                <Icon name={typeOpen ? "caret down" : "caret right"} style={{ flex: "0 0 auto", margin: 0 }}/>
-                                <Icon name={group.icon} style={{ flex: "0 0 auto", margin: 0 }}/>
-                                <span style={{ flex: "1 1 auto", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{group.label}</span>
-                                <Label circular size="mini" style={{ flex: "0 0 auto", margin: 0 }}>{group.items.length}</Label>
-                            </div>
-                            {
-                                typeOpen &&
-                                <div style={{ paddingLeft: "10px" }}>
-                                    {
-                                        group.repoGroups.map((repoGroup:any) => {
-                                            const repoKey = `${group.type}::${repoGroup.repo}`
-                                            const repoOpen = openExecRepos[repoKey] || filtering
-                                            const items = repoGroup.items.sort((a:any, b:any) => a.executableName.localeCompare(b.executableName))
-                                            return <div key={repoGroup.repo} style={{ marginBottom: "2px" }}>
-                                                <div
-                                                    onClick={() => {
-                                                        setOpenExecRepos({ ...openExecRepos, [repoKey]: !openExecRepos[repoKey] })
-                                                        onNavigate({ panel: "executables", params: { executableType: group.type, executableRepo: repoGroup.repo, executableName: undefined } })
-                                                    }}
-                                                    title={repoGroup.repositoryPath}
-                                                    className={`eco-nav-repo-title ${selection.executableType === group.type && selection.executableRepo === repoGroup.repo ? "active" : ""}`}>
-                                                    <Icon name={repoOpen ? "caret down" : "caret right"} style={{ flex: "0 0 auto", margin: 0 }}/>
-                                                    <Icon name="cubes" style={{ flex: "0 0 auto", margin: 0 }}/>
-                                                    <span style={{ flex: "1 1 auto", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{repoGroup.repo}</span>
-                                                    <Label circular size="mini" style={{ flex: "0 0 auto", margin: 0 }}>{items.length}</Label>
-                                                </div>
-                                                {
-                                                    repoOpen &&
-                                                    <List selection size="small">
-                                                        {
-                                                            items.map((executable:any, key:number) =>
-                                                                <List.Item
-                                                                    key={key}
-                                                                    active={selection.executableName === executable.executableName}
-                                                                    onClick={() => onNavigate({ panel: "executables", params: { executableName: executable.executableName } })}>
-                                                                    <List.Content>
-                                                                        <List.Header style={{ paddingLeft: "14px", display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
-                                                                            <ExecutableIcon executable={executable} fallbackIcon={group.icon} serverManagerInformation={serverManagerInformation}/>
-                                                                            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{executable.executableName}</span>
-                                                                            <Label size="mini" basic color={executable.isInstalled ? "green" : "grey"} style={{ marginLeft: "auto", flex: "0 0 auto" }}>
-                                                                                {executable.isInstalled ? "in" : "out"}
-                                                                            </Label>
-                                                                        </List.Header>
-                                                                    </List.Content>
-                                                                </List.Item>)
-                                                        }
-                                                    </List>
-                                                }
-                                            </div>
-                                        })
-                                    }
-                                </div>
+            <TreeRow
+                icon="terminal"
+                label="Executables"
+                meta={executableList.filter((e:any) => !IsIgnoredExecutable(e.executableName) && !e.isDebug).length}
+                hasChildren
+                expanded={openSections.executables || filtering}
+                selected={isActivePanel("executables") && !selection.executableType && !selection.executableName}
+                onToggle={_OpenExecutables}
+                onSelect={_OpenExecutables}/>
+            {
+                (openSections.executables || filtering) &&
+                <div className="ecp-nav-children">
+                    {
+                        execTypeGroups.map((group:any) => {
+                            if(group.items.length === 0) return null
+                            const typeOpen = openExecGroups[group.type] || filtering
+                            const _OpenType = () => {
+                                setOpenExecGroups({ ...openExecGroups, [group.type]: !openExecGroups[group.type] })
+                                onNavigate({ panel: "executables", params: { executableType: group.type, executableRepo: undefined, executableName: undefined } })
                             }
-                        </div>
-                    })
-                }
-                <div onClick={() => setShowDebugExecutables(!showDebugExecutables)} className="eco-nav-debug-toggle">
-                    <Icon name={showDebugExecutables ? "eye slash" : "eye"}/>
-                    {showDebugExecutables ? "hide -dbg" : "show -dbg"}
+                            return <div key={group.type} className="ecp-nav-block">
+                                <TreeRow
+                                    depth={1}
+                                    icon={group.icon}
+                                    label={group.label}
+                                    meta={group.items.length}
+                                    hasChildren
+                                    expanded={typeOpen}
+                                    selected={selection.executableType === group.type && !selection.executableRepo}
+                                    onToggle={_OpenType}
+                                    onSelect={_OpenType}/>
+                                {
+                                    typeOpen &&
+                                    group.repoGroups.map((repoGroup:any) => {
+                                        const repoKey = `${group.type}::${repoGroup.repo}`
+                                        const repoOpen = openExecRepos[repoKey] || filtering
+                                        const items = repoGroup.items.sort((a:any, b:any) => a.executableName.localeCompare(b.executableName))
+                                        const _OpenRepo = () => {
+                                            setOpenExecRepos({ ...openExecRepos, [repoKey]: !openExecRepos[repoKey] })
+                                            onNavigate({ panel: "executables", params: { executableType: group.type, executableRepo: repoGroup.repo, executableName: undefined } })
+                                        }
+                                        return <div key={repoGroup.repo}>
+                                            <TreeRow
+                                                depth={2}
+                                                icon="cubes"
+                                                label={<span title={repoGroup.repositoryPath}>{repoGroup.repo}</span>}
+                                                meta={items.length}
+                                                hasChildren
+                                                expanded={repoOpen}
+                                                selected={selection.executableType === group.type && selection.executableRepo === repoGroup.repo}
+                                                onToggle={_OpenRepo}
+                                                onSelect={_OpenRepo}/>
+                                            {
+                                                repoOpen &&
+                                                items.map((executable:any, key:number) =>
+                                                    <TreeRow
+                                                        key={key}
+                                                        depth={3}
+                                                        selected={selection.executableName === executable.executableName}
+                                                        onSelect={() => onNavigate({ panel: "executables", params: { executableName: executable.executableName } })}
+                                                        label={
+                                                            <span className="ecp-nav-leaf">
+                                                                <ExecutableIcon executable={executable} fallbackIcon={group.icon} serverManagerInformation={serverManagerInformation}/>
+                                                                <span className="ecp-nav-leaf__name">{executable.executableName}</span>
+                                                            </span>
+                                                        }
+                                                        meta={
+                                                            <span className={`mp-type-chip ecp-nav-chip ecp-nav-chip--${executable.isInstalled ? "in" : "out"}`}>
+                                                                {executable.isInstalled ? "in" : "out"}
+                                                            </span>
+                                                        }/>)
+                                            }
+                                        </div>
+                                    })
+                                }
+                            </div>
+                        })
+                    }
+                    <Button
+                        variant="subtle"
+                        size="sm"
+                        className="ecp-nav-debug-toggle"
+                        icon={showDebugExecutables ? "eye slash" : "eye"}
+                        onClick={() => setShowDebugExecutables(!showDebugExecutables)}>
+                        {showDebugExecutables ? "hide -dbg" : "show -dbg"}
+                    </Button>
                 </div>
-            </Accordion.Content>
+            }
 
             { /* Environments — não lista (são muitos); abre um painel com a lista */ }
-            <Accordion.Title
-                active={isActivePanel("environments")}
-                onClick={() => onNavigate({ panel: "environments", params: { environmentName: undefined } })}>
-                <Icon name="dropdown" style={{ visibility: "hidden" }}/>
-                <SectionTitle iconName="sitemap" label="Environments" count={environmentNameList.length}/>
-            </Accordion.Title>
+            <TreeRow
+                icon="sitemap"
+                label="Environments"
+                meta={environmentNameList.length}
+                selected={isActivePanel("environments")}
+                onSelect={() => onNavigate({ panel: "environments", params: { environmentName: undefined } })}/>
 
             { /* Repositories & Packages (repos/, sources.json) — lista de repos */ }
-            <Accordion.Title
-                active={openSections.repositories}
-                onClick={() => { toggleSection("repositories"); onNavigate({ panel: "repositories", params: { tab: selection.tab || "packages" } }) }}>
-                <Icon name="dropdown"/>
-                <SectionTitle iconName="cubes" label="Repositories & Packages" count={repoNamespaceList.length}/>
-            </Accordion.Title>
-            <Accordion.Content active={openSections.repositories || filtering}>
-                <List selection size="small">
+            <TreeRow
+                icon="cubes"
+                label="Repositories & Packages"
+                meta={repoNamespaceList.length}
+                hasChildren
+                expanded={openSections.repositories || filtering}
+                selected={isActivePanel("repositories") && !selection.repo}
+                onToggle={_OpenRepositories}
+                onSelect={_OpenRepositories}/>
+            {
+                (openSections.repositories || filtering) &&
+                <div className="ecp-nav-children">
                     {
                         filteredRepoNames.map((repositoryNamespace:string, key:number) =>
-                            <List.Item
+                            <TreeRow
                                 key={key}
-                                active={selection.repo === repositoryNamespace}
-                                onClick={() => onNavigate({ panel: "repositories", params: { repo: repositoryNamespace, tab: selection.tab || "packages" } })}>
-                                <List.Content>
-                                    <List.Header><Icon name="cubes"/> {repositoryNamespace}</List.Header>
-                                </List.Content>
-                            </List.Item>)
+                                depth={1}
+                                icon="cubes"
+                                label={repositoryNamespace}
+                                selected={selection.repo === repositoryNamespace}
+                                onSelect={() => onNavigate({ panel: "repositories", params: { repo: repositoryNamespace, tab: selection.tab || "packages" } })}/>)
                     }
-                </List>
-            </Accordion.Content>
+                </div>
+            }
 
             { /* Config Files */ }
-            <Accordion.Title
-                active={openSections.configFiles}
-                onClick={() => { toggleSection("configFiles"); onNavigate({ panel: "config files", params: { configFileName: undefined } }) }}>
-                <Icon name="dropdown"/>
-                <SectionTitle iconName="cogs" label="Config Files" count={configFileList.length}/>
-            </Accordion.Title>
-            <Accordion.Content active={openSections.configFiles || filtering}>
-                <List selection size="small">
+            <TreeRow
+                icon="cogs"
+                label="Config Files"
+                meta={configFileList.length}
+                hasChildren
+                expanded={openSections.configFiles || filtering}
+                selected={isActivePanel("config files") && !selection.configFileName}
+                onToggle={_OpenConfigFiles}
+                onSelect={_OpenConfigFiles}/>
+            {
+                (openSections.configFiles || filtering) &&
+                <div className="ecp-nav-children">
                     {
                         filteredConfigFiles.map((configFileName:string, key:number) =>
-                            <List.Item
+                            <TreeRow
                                 key={key}
-                                active={selection.configFileName === configFileName}
-                                onClick={() => onNavigate({ panel: "config files", params: { configFileName } })}>
-                                <List.Content>
-                                    <List.Header><Icon name="file alternate outline"/> {configFileName}</List.Header>
-                                </List.Content>
-                            </List.Item>)
+                                depth={1}
+                                icon="file alternate outline"
+                                label={configFileName}
+                                selected={selection.configFileName === configFileName}
+                                onSelect={() => onNavigate({ panel: "config files", params: { configFileName } })}/>)
                     }
-                </List>
-            </Accordion.Content>
+                </div>
+            }
 
             { /* Logs — o histórico do ecossistema. A árvore de arquivos vive
                  dentro do próprio painel, porque ela vem do backend e muda a
                  cada execução; aqui fica só a porta de entrada. */ }
-            <Accordion.Title
-                active={activeItem === "logs"}
-                onClick={() => onNavigate({ panel: "logs" })}>
-                <Icon name="dropdown"/>
-                <SectionTitle iconName="file alternate outline" label="Logs"/>
-            </Accordion.Title>
+            <TreeRow
+                icon="file alternate outline"
+                label="Logs"
+                selected={isActivePanel("logs")}
+                onSelect={() => onNavigate({ panel: "logs" })}/>
 
-        </Accordion>
-    </div>
+        </div>
+    </SidePanel>
 }
 
 export default EcosystemNavigator

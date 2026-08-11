@@ -1,41 +1,34 @@
 import * as React from "react"
 
-import {
-    TableHeaderCell,
-    Table,
-    TableRow,
-    TableHeader,
-    TableBody,
-    TableCell
-} from "semantic-ui-react"
+import { DataTable, CopyableMonoText } from "@i-components"
 
-
+// Parâmetros de uma fonte de repositório (path, repoOwner, fileId…).
+// As colunas são dados puros -> DataTable. O valor pode ser um path longo,
+// por isso passa por CopyableMonoText (truncamento central + copiar).
 const SourceParamsTable = ({
     repositorySourceData
 }) => {
 
-    return <Table basic='very' celled collapsing style={{"backgroundColor":"antiquewhite", "padding":"10px"}}>
-                <TableHeader>
-                    <TableRow>
-                        <TableHeaderCell>Parameter</TableHeaderCell>
-                        <TableHeaderCell>value</TableHeaderCell>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {
-                        Object
-                        .keys(repositorySourceData)
-                        .filter((property) => property !== "repositoryNamespace" && property !== "sourceType")
-                        .map((property) => <TableRow>
-                                                <TableCell>{property}</TableCell>
-                                                <TableCell><strong>{repositorySourceData[property]}</strong></TableCell>
-                                                {/*<TableCell style={{"padding":"5px"}}><Button size="mini" primary>edit</Button></TableCell>*/}
-                                            </TableRow>)
-                    }
-                </TableBody>
-            </Table>
+    const rows = Object
+        .keys(repositorySourceData)
+        .filter((property) => property !== "repositoryNamespace" && property !== "sourceType")
+        .map((property) => ({ property, value: repositorySourceData[property] }))
 
+    return <DataTable
+        dense
+        className="ecp-source-params"
+        rowKey={(row:any) => row.property}
+        emptyMessage="no parameters"
+        columns={[
+            { key: "property", header: "Parameter", width: "38%" },
+            {
+                key: "value",
+                header: "Value",
+                render: (row:any) =>
+                    <CopyableMonoText value={String(row.value ?? "")} maxChars={40}/>
+            }
+        ]}
+        rows={rows}/>
 }
-
 
 export default SourceParamsTable

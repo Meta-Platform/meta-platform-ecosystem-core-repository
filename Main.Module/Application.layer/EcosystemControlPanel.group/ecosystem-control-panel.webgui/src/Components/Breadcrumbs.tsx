@@ -1,16 +1,16 @@
 import * as React from "react"
-import { Breadcrumb } from "semantic-ui-react"
+import { Icon } from "@i-components"
 
 // Breadcrumb compacto de contexto da entidade. `items` é uma lista de strings.
 const Breadcrumbs = ({ items = [] }:any) =>
-    <Breadcrumb size="small" style={{ marginBottom: "8px", color: "var(--mp-muted)" }}>
+    <nav className="ecp-breadcrumbs" aria-label="breadcrumb">
         {
             items.filter(Boolean).map((item:string, index:number, arr:string[]) =>
                 <React.Fragment key={index}>
-                    { index > 0 && <Breadcrumb.Divider icon="right angle"/> }
-                    <Breadcrumb.Section active={index === arr.length - 1}>{item}</Breadcrumb.Section>
+                    { index > 0 && <Icon name="right angle" className="ecp-breadcrumbs__sep"/> }
+                    <span className={`ecp-breadcrumbs__item${index === arr.length - 1 ? " is-active" : ""}`}>{item}</span>
                 </React.Fragment>)
         }
-    </Breadcrumb>
+    </nav>
 
 export default Breadcrumbs

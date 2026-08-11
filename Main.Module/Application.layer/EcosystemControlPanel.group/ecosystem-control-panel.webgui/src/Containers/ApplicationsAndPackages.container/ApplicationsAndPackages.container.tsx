@@ -3,11 +3,7 @@ import { useState, useEffect } from "react"
 import { connect }             from "react-redux"
 import { bindActionCreators }  from "redux"
 
-import { 
-	MenuItem,
-	TabPane, 
-	Tab
- } from "semantic-ui-react"
+import { PageMasthead, Tabs } from "@i-components"
 
 import GetAPI from "../../Utils/GetAPI"
 
@@ -26,10 +22,13 @@ const ApplicationsAndPackagesContainer = ({ serverManagerInformation, QueryParam
     const [ isApplicationListLoading, setIsApplicationListLoading ] = useState(true)
     const [ isPackageListLoading, setIsPackageListLoading ] = useState(true)
 
-    const _GetApplicationsAndPackagesAPI = () => 
-        GetAPI({ 
-            apiName:"ApplicationsAndPackages",  
-            serverManagerInformation 
+    // `Tabs` do kit é só a barra: o painel ativo é renderizado aqui embaixo.
+    const [ activeTab, setActiveTab ] = useState<string>("applications")
+
+    const _GetApplicationsAndPackagesAPI = () =>
+        GetAPI({
+            apiName:"ApplicationsAndPackages",
+            serverManagerInformation
         })
 
     useEffect(() => {
@@ -74,46 +73,52 @@ const ApplicationsAndPackagesContainer = ({ serverManagerInformation, QueryParam
         setInstalledApplicationList(installedApplicationList)
         setIsApplicationListLoading(false)
     }
-    
+
     const filterInstalledApplicationList = () => {
         const filteredList = installedApplicationList
         .filter(({repositoryParams}:any) => {
-            return Object.values(repositoryParams).some(param => 
+            return Object.values(repositoryParams).some(param =>
                 param.toString().toLowerCase().includes(filterValue.toLowerCase())
             )
         })
         setPackageListFiltered(filteredList)
     }
 
-    const mainPanes = [
-		{
-			menuItem: <MenuItem key='tasks' style={{background: "aliceblue"}}>
-							installed applications
-					</MenuItem>,
-		   render: () => 
-			<TabPane style={{background: "aliceblue"}}>
-				<ApplicationsTabs
-                    isLoading={isApplicationListLoading}
-                    installedApplicationList={(installedApplicationListFiltered || installedApplicationList)}
-                    serverManagerInformation={serverManagerInformation}/>
-			</TabPane>
-		},
+    const tabs = [
         {
-			menuItem: <MenuItem key='tasks' style={{background: "lightsteelblue"}}>
-						installed packages
-					</MenuItem>,
-		   render: () => 
-			<TabPane style={{background: "lightsteelblue"}}>
-				<PackageList 
-                    packageList={installedPackageList}
-                    isLoading={isPackageListLoading}
-                    serverManagerInformation={serverManagerInformation}/>
-			</TabPane>
-		}
-	]
+            key: "applications",
+            label: "installed applications",
+            icon: "rocket",
+            count: (installedApplicationListFiltered || installedApplicationList).length
+        },
+        {
+            key: "packages",
+            label: "installed packages",
+            icon: "cubes",
+            count: installedPackageList.length
+        }
+    ]
 
-    return  <Tab  style={{margin:"15px"}} panes={mainPanes} />
-         
+    return <div className="ecp-apps-page">
+        <PageMasthead
+            icon="cubes"
+            title="Applications & Packages"
+            subtitle="what is installed in this ecosystem"/>
+
+        <Tabs tabs={tabs} activeKey={activeTab} onChange={setActiveTab}/>
+
+        {
+            activeTab === "applications"
+            ? <ApplicationsTabs
+                isLoading={isApplicationListLoading}
+                installedApplicationList={(installedApplicationListFiltered || installedApplicationList)}
+                serverManagerInformation={serverManagerInformation}/>
+            : <PackageList
+                packageList={installedPackageList}
+                isLoading={isPackageListLoading}
+                serverManagerInformation={serverManagerInformation}/>
+        }
+    </div>
 }
 
 const mapDispatchToProps = (dispatch:any) => bindActionCreators({

@@ -1,0 +1,371 @@
+/* Ecosystem Control Panel — CSS de produto: config-executables.
+   Só classes .ecp-*, só sobre tokens --mp-*. Nunca redefinir .mp-*. */
+
+/* ================================================================== */
+/* Chips compartilhados (Config Files + Executables)                  */
+/* ================================================================== */
+
+/* contador ao final de um cabeçalho de grupo */
+.ecp-count {
+    margin-left: auto;
+    flex: 0 0 auto;
+    min-width: 22px;
+    padding: 0 6px;
+    background: var(--mp-surface-2);
+    border: 1px solid var(--mp-line-soft);
+    border-radius: var(--mp-radius-sm);
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    font-weight: 700;
+    color: var(--mp-ink-3);
+    text-align: center;
+}
+
+/* estado binário de um arquivo/executável (read-only|editable,
+   not installed|installed). Nunca só cor: o texto sempre está lá. */
+.ecp-flag {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    padding: 1px 8px;
+    background: var(--mp-surface-2);
+    border: 1px solid var(--mp-line-soft);
+    border-radius: var(--mp-radius-sm);
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    font-weight: 700;
+    color: var(--mp-muted);
+    white-space: nowrap;
+}
+.ecp-flag--ok {
+    background: var(--mp-success-tint);
+    border-color: var(--mp-success);
+    color: var(--mp-ink-2);
+}
+
+/* ================================================================== */
+/* Config Files — editor de configuração                              */
+/* ================================================================== */
+.ecp-cfg-page { padding: var(--mp-space-4); }
+
+.ecp-cfg-shell {
+    border: var(--mp-border-thin);
+    border-radius: var(--mp-radius-md);
+    overflow: hidden;
+    background: var(--mp-surface);
+    box-shadow: var(--mp-shadow-1);
+}
+
+/* faixa com o nome do arquivo aberto */
+.ecp-cfg-filehead {
+    display: flex;
+    align-items: center;
+    gap: var(--mp-space-2);
+    flex-wrap: wrap;
+    padding: 6px var(--mp-space-3);
+    background: var(--mp-paper-2);
+    border-bottom: 1px solid var(--mp-line-faint);
+}
+.ecp-cfg-filehead__names {
+    display: flex;
+    align-items: baseline;
+    gap: var(--mp-space-2);
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+}
+.ecp-cfg-filehead__title {
+    color: var(--mp-ink);
+    font-size: var(--mp-text-sm);
+    white-space: nowrap;
+}
+.ecp-cfg-filehead__subtitle {
+    color: var(--mp-muted);
+    font-size: var(--mp-text-xs);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ecp-cfg-toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--mp-space-2);
+    flex-wrap: wrap;
+    padding: var(--mp-space-2) var(--mp-space-4);
+    background: var(--mp-surface-2);
+    border-bottom: 1px solid var(--mp-line-faint);
+}
+/* dentro da toolbar a faixa é um item de flex — sem a margem de bloco */
+.ecp-cfg-banner { flex: 1 1 420px; margin-bottom: 0; }
+.ecp-cfg-search { margin-left: auto; min-width: 260px; }
+
+.ecp-cfg-loading { padding: var(--mp-space-4); }
+
+/* grupo colapsável (o kit não tem Accordion): botão subtle + bloco */
+.ecp-cfg-group { margin: var(--mp-space-3) var(--mp-space-4) 0; }
+.ecp-cfg-group__head {
+    display: flex;
+    width: 100%;
+    height: auto;
+    min-height: 32px;
+    padding: 6px var(--mp-space-3);
+    justify-content: flex-start;
+    gap: var(--mp-space-2);
+    background: var(--mp-paper-2);
+    border: 1px solid var(--mp-line-soft);
+    border-radius: var(--mp-radius-sm);
+    box-shadow: var(--mp-shadow-none);
+    font-size: var(--mp-text-sm);
+}
+.ecp-cfg-group__head[aria-expanded="false"] { background: var(--mp-surface-2); }
+.ecp-cfg-group__head--sub {
+    background: var(--mp-surface);
+    border-left: 3px solid var(--mp-accent-blue);
+}
+.ecp-cfg-group__head--sub[aria-expanded="false"] { background: var(--mp-surface-2); }
+.ecp-cfg-group__name { color: var(--mp-ink); }
+.ecp-cfg-group__body {
+    margin-top: var(--mp-space-2);
+    padding-left: var(--mp-space-2);
+    border-left: 2px solid var(--mp-line-faint);
+}
+
+.ecp-cfg-subgroup { margin-top: var(--mp-space-2); }
+.ecp-cfg-subgroup__tag {
+    color: var(--mp-muted-2);
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    font-weight: 400;
+}
+.ecp-cfg-subgroup__name {
+    color: var(--mp-ink-2);
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+}
+
+.ecp-cfg-tablewrap { margin-top: var(--mp-space-2); }
+.ecp-cfg-col-type { width: 12%; }
+.ecp-cfg-col-actions { width: 96px; text-align: center; }
+
+.ecp-cfg-key {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mp-space-1);
+    min-width: 0;
+}
+.ecp-cfg-key__prefix {
+    color: var(--mp-muted-2);
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+}
+.ecp-cfg-key__name {
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    color: var(--mp-ink);
+    overflow-wrap: anywhere;
+}
+
+.ecp-cfg-readvalue {
+    display: flex;
+    align-items: center;
+    gap: var(--mp-space-1);
+    min-width: 0;
+}
+.ecp-cfg-value {
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    color: var(--mp-ink-2);
+    overflow-wrap: anywhere;
+}
+.ecp-cfg-value--block {
+    display: block;
+    white-space: pre-wrap;
+    max-height: 180px;
+    overflow: auto;
+}
+.ecp-cfg-value--inline { margin-left: var(--mp-space-1); }
+.ecp-cfg-null { color: var(--mp-muted-2); }
+.ecp-cfg-warn {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--mp-space-2);
+    color: var(--mp-warning);
+}
+.ecp-cfg-input { width: 100%; }
+
+/* tipo do valor (bool/number/list/object/file/path/string) */
+.ecp-vtype {
+    display: inline-block;
+    padding: 1px 7px;
+    background: var(--mp-surface-2);
+    border: 1px solid var(--mp-line-soft);
+    border-radius: var(--mp-radius-sm);
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    color: var(--mp-ink-3);
+}
+.ecp-vtype--bool   { border-color: var(--mp-accent-cyan);   color: var(--mp-accent-cyan); }
+.ecp-vtype--number { border-color: var(--mp-accent-blue);   color: var(--mp-accent-blue); }
+.ecp-vtype--list   { border-color: var(--mp-accent-violet); color: var(--mp-accent-violet); }
+.ecp-vtype--file   { border-color: var(--mp-accent-orange); color: var(--mp-accent-orange); }
+.ecp-vtype--path   { border-color: var(--mp-success);       color: var(--mp-success); }
+.ecp-vtype--object { border-color: var(--mp-line-soft);     color: var(--mp-muted); }
+.ecp-vtype--string { border-color: var(--mp-line-soft);     color: var(--mp-muted); }
+
+/* ================================================================== */
+/* Executables — coleção                                              */
+/* ================================================================== */
+.ecp-exec-page {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 110px);
+    padding: var(--mp-space-3);
+}
+.ecp-exec-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+}
+.ecp-exec-search { min-width: 220px; }
+
+.ecp-exec-group { margin-bottom: var(--mp-space-4); }
+.ecp-exec-group__head {
+    display: flex;
+    align-items: center;
+    gap: var(--mp-space-2);
+    margin-bottom: var(--mp-space-2);
+    color: var(--mp-muted);
+    font-size: var(--mp-text-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+}
+.ecp-exec-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: var(--mp-space-3);
+}
+
+/* acento lateral por tipo de executável (o ObjectCard do kit não tem `accent`) */
+.ecp-exec-card { border-left-width: 5px; }
+.ecp-exec-card--cli     { border-left-color: var(--mp-accent-cyan); }
+.ecp-exec-card--app     { border-left-color: var(--mp-accent-blue); }
+.ecp-exec-card--desktop { border-left-color: var(--mp-accent-violet); }
+
+.ecp-exec-cardicon {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+}
+
+.ecp-kind {
+    display: inline-block;
+    padding: 1px 7px;
+    background: var(--mp-surface-2);
+    border: 1px solid var(--mp-line-soft);
+    border-radius: var(--mp-radius-sm);
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    color: var(--mp-ink-3);
+}
+.ecp-kind--cli     { border-color: var(--mp-accent-cyan);   color: var(--mp-accent-cyan); }
+.ecp-kind--app     { border-color: var(--mp-accent-blue);   color: var(--mp-accent-blue); }
+.ecp-kind--desktop { border-color: var(--mp-accent-violet); color: var(--mp-accent-violet); }
+
+/* ================================================================== */
+/* Executables — detalhe                                              */
+/* ================================================================== */
+.ecp-exec-page--detail {
+    display: block;
+    height: auto;
+    padding: var(--mp-space-4);
+}
+.ecp-exec-back { margin-bottom: var(--mp-space-2); }
+.ecp-exec-loading {
+    display: grid;
+    place-items: center;
+    padding: var(--mp-space-12);
+}
+.ecp-exec-empty {
+    min-height: 200px;
+    display: grid;
+    place-items: center;
+    background: var(--mp-surface);
+    border: var(--mp-border-thin);
+    border-radius: var(--mp-radius-md);
+}
+.ecp-exec-detailbox {
+    background: var(--mp-surface);
+    border: var(--mp-border);
+    border-radius: var(--mp-radius-md);
+    box-shadow: var(--mp-shadow-1);
+    padding: var(--mp-space-4);
+}
+/* em coluna flex, cabeçalho e abas são espremidos a zero e somem */
+.ecp-exec-entityheader { flex: 0 0 auto; }
+.ecp-exec-tabs { flex: 0 0 auto; margin-top: var(--mp-space-3); }
+.ecp-tabpanel { padding-top: var(--mp-space-3); }
+
+.ecp-pkgicon {
+    object-fit: contain;
+    flex: 0 0 auto;
+}
+
+.ecp-section-head {
+    display: flex;
+    align-items: center;
+    gap: var(--mp-space-1);
+    margin: var(--mp-space-4) 0 var(--mp-space-2);
+    padding-bottom: var(--mp-space-1);
+    border-bottom: 1px solid var(--mp-line-faint);
+    color: var(--mp-ink-2);
+    font-weight: 700;
+    font-size: var(--mp-text-md);
+}
+
+.ecp-manifest-empty { color: var(--mp-muted-2); }
+
+/* ---- lista de comandos do command-group ---- */
+.ecp-cmd-list { margin-top: var(--mp-space-1); }
+.ecp-cmd { margin-bottom: var(--mp-space-3); }
+.ecp-cmd--child {
+    padding-left: var(--mp-space-3);
+    border-left: 2px solid var(--mp-line-faint);
+}
+.ecp-cmd__line {
+    display: flex;
+    align-items: center;
+    gap: var(--mp-space-1);
+}
+.ecp-cmd__invocation {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--mp-space-2);
+    padding: 6px var(--mp-space-3);
+    background: var(--mp-surface-2);
+    border: 1px solid var(--mp-line-faint);
+    border-radius: var(--mp-radius-sm);
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    color: var(--mp-ink-2);
+    overflow: auto;
+}
+.ecp-cmd__prompt { flex: 0 0 auto; color: var(--mp-muted-2); }
+.ecp-cmd__text { white-space: nowrap; }
+.ecp-cmd__description {
+    margin: 5px 0 0 2px;
+    color: var(--mp-ink-3);
+    font-size: var(--mp-text-sm);
+}
+.ecp-cmd__params { margin: var(--mp-space-1) 0 0 2px; }
+.ecp-cmd__param {
+    margin: 1px 0;
+    color: var(--mp-muted);
+    font-size: var(--mp-text-xs);
+    word-break: break-word;
+}
+.ecp-cmd__paramkey { font-family: var(--mp-font-mono); color: var(--mp-muted); }
+.ecp-cmd__paramtype { margin: 0 6px; color: var(--mp-muted-2); }

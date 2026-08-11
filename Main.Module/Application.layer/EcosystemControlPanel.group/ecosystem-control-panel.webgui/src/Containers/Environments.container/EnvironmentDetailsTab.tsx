@@ -1,15 +1,21 @@
 import * as React from "react"
+import { useState } from "react"
 
-import {
-    Tab,
-    TabPane,
-    Loader
-} from "semantic-ui-react"
+import { Spinner, Tabs } from "@i-components"
 
 import MetadataHierarchyDiagram from "./MetadataHierarchyDiagram"
 import ExecutionPlanView from "./ExecutionPlanView"
 import ExecutionPlanDiagram from "./ExecutionPlanDiagram"
 import EnvironmentLogsTab from "./EnvironmentLogsTab"
+
+// `Tabs` do kit é SÓ a barra: o estado da aba ativa e a renderização do painel
+// são deste componente.
+const TABS = [
+    { key: "plan",     label: "execution plan",     icon: "list ol" },
+    { key: "diagram",  label: "diagram",            icon: "sitemap" },
+    { key: "metadata", label: "metadata hierarchy", icon: "code branch" },
+    { key: "logs",     label: "logs",               icon: "file alternate outline" }
+]
 
 const EnvironmentDetailsTab = ({
     metadataHierarchy,
@@ -19,46 +25,33 @@ const EnvironmentDetailsTab = ({
     environmentName
 }) => {
 
-    const panes = [
-        {
-            menuItem: 'execution plan',
-            render: () => <TabPane>
-                <ExecutionPlanView
-                    executionParams={executionParams}
-                    onSaveExecutionParams={onSaveExecutionParams}/>
-            </TabPane>
-        },
-        {
-            menuItem: 'diagram',
-            render: () => <TabPane>
-                {
-                    executionParams
+    const [ activeTab, setActiveTab ] = useState<string>("plan")
+
+    const RenderPanel = () => {
+        switch(activeTab){
+            case "diagram":
+                return executionParams
                     ? <ExecutionPlanDiagram executionParams={executionParams}/>
-                    : <Loader/>
-                }
-            </TabPane>
-        },
-        {
-            menuItem: 'metadata hierarchy',
-            render: () => <TabPane>
-                {
-                    metadataHierarchy
+                    : <Spinner label="loading execution plan"/>
+            case "metadata":
+                return metadataHierarchy
                     ? <MetadataHierarchyDiagram metadataHierarchy={metadataHierarchy}/>
-                    : <Loader/>
-                }
-            </TabPane>
-        },
-        {
-            menuItem: 'logs',
-            render: () => <TabPane>
-                <EnvironmentLogsTab
+                    : <Spinner label="loading metadata hierarchy"/>
+            case "logs":
+                return <EnvironmentLogsTab
                     serverManagerInformation={serverManagerInformation}
                     environmentName={environmentName}/>
-            </TabPane>
+            default:
+                return <ExecutionPlanView
+                    executionParams={executionParams}
+                    onSaveExecutionParams={onSaveExecutionParams}/>
         }
-    ]
+    }
 
-    return <Tab menu={{ secondary: true, pointing: true }} panes={panes} />
+    return <>
+        <Tabs tabs={TABS} activeKey={activeTab} onChange={setActiveTab}/>
+        <div className="ecp-env-tabpanel">{RenderPanel()}</div>
+    </>
 }
 
 export default EnvironmentDetailsTab

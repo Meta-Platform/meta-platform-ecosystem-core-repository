@@ -3,26 +3,25 @@ import { useState } from "react"
 
 import {
     Button,
-    Label,
-    List,
-    Segment,
-    Tab,
+    CopyableMonoText,
+    EmptyState,
+    EntityHeader,
     Icon,
-    Image
-} from "semantic-ui-react"
+    KeyValueList,
+    ListRow,
+    Tabs
+} from "@i-components"
 
 import GetExecutableIconURL from "../../Utils/GetExecutableIconURL"
-import EmptyState from "../../Components/EmptyState"
 import KeyValuePanel from "../../Components/KeyValuePanel"
 import CopyValue from "../../Components/CopyValue"
-import EntityHeader from "../../Components/ui/EntityHeader"
-import CopyableMonoText from "../../Components/ui/CopyableMonoText"
 import { toastSuccess, toastError, errorMessage } from "../../Utils/toast"
 
-// Cabeçalho de seção leve (evita o "icon header" do Semantic que amplia o ícone).
+// Cabeçalho de seção leve (o kit não tem componente para isto; o Panel do kit é
+// uma moldura completa e pesa demais dentro do painel de aba).
 const SectionHeader = ({ icon, children }:any) =>
-    <div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 700, fontSize: "1rem", color: "var(--mp-ink-2)", borderBottom: "1px solid var(--mp-line-faint)", paddingBottom: "6px", margin: "16px 0 8px" }}>
-        <Icon name={icon} style={{ fontSize: "1em", margin: 0 }}/> {children}
+    <div className="ecp-section-head">
+        <Icon name={icon}/> {children}
     </div>
 
 const ExecutablePackageIcon = ({ executableInformation, serverManagerInformation, size = 26, fallbackIcon = "terminal" }:any) => {
@@ -31,7 +30,12 @@ const ExecutablePackageIcon = ({ executableInformation, serverManagerInformation
         : undefined
 
     if(iconURL)
-        return <Image src={iconURL} title="icone do pacote" style={{ width: `${size}px`, height: `${size}px`, objectFit: "contain", flex: "0 0 auto", margin: 0 }}/>
+        return <img
+            className="ecp-pkgicon"
+            src={iconURL}
+            alt=""
+            title="icone do pacote"
+            style={{ width: `${size}px`, height: `${size}px` }}/>
 
     return <Icon name={fallbackIcon}/>
 }
@@ -47,27 +51,25 @@ const CommandRow = ({ command, prefix, depth = 0 }:any) => {
     const childPrefix = `${prefix} ${commandStr.split(" ")[0]}`.trim()
 
     return <>
-        <div style={{ marginLeft: depth * 16, marginBottom: "14px", borderLeft: depth > 0 ? "2px solid var(--mp-line-faint)" : "none", paddingLeft: depth > 0 ? "12px" : 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <div style={{
-                    flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: "8px",
-                    background: "var(--mp-surface-2)", border: "1px solid var(--mp-line-faint)", padding: "6px 10px", borderRadius: "6px",
-                    fontFamily: "monospace", fontSize: ".88em", color: "var(--mp-ink-2)", overflow: "auto"
-                }}>
-                    <span style={{ color: "var(--mp-muted-2)", flex: "0 0 auto" }}>$</span>
-                    <span style={{ whiteSpace: "nowrap" }}>{prefix} <strong>{commandStr}</strong></span>
+        <div
+            className={`ecp-cmd ${depth > 0 ? "ecp-cmd--child" : ""}`.trim()}
+            style={{ marginLeft: depth * 16 }}>
+            <div className="ecp-cmd__line">
+                <div className="ecp-cmd__invocation">
+                    <span className="ecp-cmd__prompt">$</span>
+                    <span className="ecp-cmd__text">{prefix} <strong>{commandStr}</strong></span>
                 </div>
                 <CopyValue value={invocation}/>
             </div>
-            { command.description && <div style={{ color: "var(--mp-ink-3)", margin: "5px 0 0 2px", fontSize: ".92em" }}>{command.description}</div> }
+            { command.description && <div className="ecp-cmd__description">{command.description}</div> }
             {
                 parameters.length > 0 &&
-                <div style={{ margin: "4px 0 0 2px" }}>
+                <div className="ecp-cmd__params">
                     {
                         parameters.map((p:any, k:number) =>
-                            <div key={k} style={{ fontSize: ".82em", color: "var(--mp-muted)", margin: "1px 0", wordBreak: "break-word" }}>
-                                <span style={{ fontFamily: "monospace", color: "var(--mp-muted)" }}>{p.paramType === "positional" ? `[${p.key}]` : `--${p.key}`}</span>
-                                <span style={{ margin: "0 6px", color: "var(--mp-muted-2)" }}>{p.valueType}{p.paramType !== "positional" ? " · option" : ""}</span>
+                            <div key={k} className="ecp-cmd__param">
+                                <span className="ecp-cmd__paramkey">{p.paramType === "positional" ? `[${p.key}]` : `--${p.key}`}</span>
+                                <span className="ecp-cmd__paramtype">{p.valueType}{p.paramType !== "positional" ? " · option" : ""}</span>
                                 { p.describe && <span>— {p.describe}</span> }
                             </div>)
                     }
@@ -84,14 +86,16 @@ const CommandRow = ({ command, prefix, depth = 0 }:any) => {
 const ExecutableInformation = ({ executableInformation, serverManagerInformation, onInstall }:any) => {
 
     const [ isInstalling, setIsInstalling ] = useState(false)
+    // O Tabs do kit é só a barra: a aba ativa e o painel são desta tela.
+    const [ activeTab, setActiveTab ] = useState("info")
 
     if(!executableInformation)
-        return <Segment placeholder style={{ minHeight: "200px" }}>
+        return <div className="ecp-exec-empty">
             <EmptyState
                 icon="terminal"
                 title="No executable selected"
-                description="Select an executable in the Executables tree (sidebar) to view its details and actions."/>
-        </Segment>
+                message="Select an executable in the Executables tree (sidebar) to view its details and actions."/>
+        </div>
 
     const {
         executableName,
@@ -108,84 +112,67 @@ const ExecutableInformation = ({ executableInformation, serverManagerInformation
         package: packageMetadata
     } = executableInformation
 
-    const infoPane = () => <Tab.Pane>
-        <List relaxed size="small">
-            <List.Item>
-                <List.Icon verticalAlign="middle">
-                    <ExecutablePackageIcon executableInformation={executableInformation} serverManagerInformation={serverManagerInformation} size={18} fallbackIcon="folder outline"/>
-                </List.Icon>
-                <List.Content>
-                    <List.Header>package</List.Header>
-                    <List.Description><CopyableMonoText value={packageRepoPath} maxChars={64}/></List.Description>
-                </List.Content>
-            </List.Item>
-            <List.Item>
-                <List.Icon name="cubes" verticalAlign="middle"/>
-                <List.Content>
-                    <List.Header>repository</List.Header>
-                    <List.Description><CopyableMonoText value={repositoryPath} maxChars={64}/></List.Description>
-                </List.Content>
-            </List.Item>
-            {
-                (supervisorSocketPath || supervisorSocketFileName) && <List.Item>
-                    <List.Icon name="plug" verticalAlign="middle"/>
-                    <List.Content>
-                        <List.Header>supervisor socket</List.Header>
-                        <List.Description><CopyableMonoText value={supervisorSocketPath || supervisorSocketFileName} maxChars={64}/></List.Description>
-                    </List.Content>
-                </List.Item>
-            }
-            {
-                packageMetadata && packageMetadata.version && <List.Item>
-                    <List.Icon name="tag" verticalAlign="middle"/>
-                    <List.Content>
-                        <List.Header>version</List.Header>
-                        <List.Description>{packageMetadata.version}</List.Description>
-                    </List.Content>
-                </List.Item>
-            }
-        </List>
+    const infoPane = () => <>
+        <KeyValueList items={[
+            { label: "package", value: <CopyableMonoText value={packageRepoPath} maxChars={64}/> },
+            { label: "repository", value: <CopyableMonoText value={repositoryPath} maxChars={64}/> },
+            (supervisorSocketPath || supervisorSocketFileName)
+                ? { label: "supervisor socket", value: <CopyableMonoText value={supervisorSocketPath || supervisorSocketFileName} maxChars={64}/> }
+                : undefined,
+            (packageMetadata && packageMetadata.version)
+                ? { label: "version", value: packageMetadata.version, mono: true }
+                : undefined
+        ].filter(Boolean)}/>
         {
             startupParams && Object.keys(startupParams).length > 0 && <>
                 <SectionHeader icon="sliders horizontal">Startup params ({Object.keys(startupParams).length})</SectionHeader>
                 <KeyValuePanel data={startupParams}/>
             </>
         }
-    </Tab.Pane>
+    </>
 
-    const panes:any[] = [
-        { menuItem: { key: "info", content: <span><Icon name="info circle"/> info</span> }, render: infoPane }
-    ]
-    if(commandGroup && Array.isArray(commandGroup.commands))
-        panes.push({
-            menuItem: { key: "commands", content: <span><Icon name="terminal"/> commands ({commandGroup.commands.length})</span> },
-            render: () => <Tab.Pane>
-                <div style={{ marginTop: "4px" }}>
-                    { commandGroup.commands.map((command:any, key:number) => <CommandRow key={key} command={command} prefix={executableName}/>) }
-                </div>
-            </Tab.Pane>
-        })
+    const hasCommands = !!(commandGroup && Array.isArray(commandGroup.commands))
+
+    const tabs:any[] = [ { key: "info", label: "info", icon: "info circle" } ]
+    if(hasCommands)
+        tabs.push({ key: "commands", label: "commands", icon: "terminal", count: commandGroup.commands.length })
     else if(boot)
-        panes.push({
-            menuItem: { key: "manifest", content: <span><Icon name="cubes"/> manifest</span> },
-            render: () => <Tab.Pane><BootManifestView boot={boot}/></Tab.Pane>
-        })
+        tabs.push({ key: "manifest", label: "manifest", icon: "cubes" })
 
-    return <Segment>
+    // Trocar de executável pode deixar `activeTab` apontando para uma aba que
+    // não existe mais — cai para "info" sem perder o estado do usuário.
+    const currentTab = tabs.some((tab:any) => tab.key === activeTab) ? activeTab : "info"
+
+    const renderPane = () => {
+        if(currentTab === "commands")
+            return <div className="ecp-cmd-list">
+                { commandGroup.commands.map((command:any, key:number) => <CommandRow key={key} command={command} prefix={executableName}/>) }
+            </div>
+        if(currentTab === "manifest")
+            return <BootManifestView boot={boot}/>
+        return infoPane()
+    }
+
+    return <div className="ecp-exec-detailbox">
         <EntityHeader
+            className="ecp-exec-entityheader"
             iconNode={<ExecutablePackageIcon executableInformation={executableInformation} serverManagerInformation={serverManagerInformation} size={28}/>}
             title={executableName}
             subtitle={packageRepoPath}
             typeLabel={type}
             badges={<>
-                <Label size="tiny" basic color={isInstalled ? "green" : "grey"}>{isInstalled ? "installed" : "not installed"}</Label>
-                { isDebug && <Label size="tiny" color="grey">debug</Label> }
+                <span className={`ecp-flag ${isInstalled ? "ecp-flag--ok" : ""}`.trim()}>{isInstalled ? "installed" : "not installed"}</span>
+                { isDebug && <span className="mp-type-chip">debug</span> }
             </>}
             meta={packageMetadata && packageMetadata.version ? [{ label: "version", value: packageMetadata.version }] : []}
             technicalRef={{ label: "repository", value: repositoryPath }}
             actions={
                 !isInstalled && onInstall &&
-                <Button color="green" size="small" loading={isInstalling} disabled={isInstalling} style={{ flex: "0 0 auto" }}
+                <Button
+                    variant="primary"
+                    size="sm"
+                    icon="download"
+                    loading={isInstalling}
                     onClick={async () => {
                         setIsInstalling(true)
                         try {
@@ -196,12 +183,11 @@ const ExecutableInformation = ({ executableInformation, serverManagerInformation
                         } finally {
                             setIsInstalling(false)
                         }
-                    }}>
-                    <Icon name="download"/> install
-                </Button>
+                    }}>install</Button>
             }/>
-        <Tab menu={{ secondary: true, pointing: true }} panes={panes} style={{ marginTop: "12px" }}/>
-    </Segment>
+        <Tabs className="ecp-exec-tabs" tabs={tabs} activeKey={currentTab} onChange={setActiveTab}/>
+        <div className="ecp-tabpanel">{renderPane()}</div>
+    </div>
 }
 
 // Visualiza o que o pacote expõe a partir do boot.json (aprendido com o
@@ -216,45 +202,27 @@ const BootManifestView = ({ boot }:any) => {
         {
             executables.length > 0 && <>
                 <SectionHeader icon="terminal">Executables ({executables.length})</SectionHeader>
-                <List bulleted>
-                    { executables.map((e:any, k:number) =>
-                        <List.Item key={k}>{e.executableName} — <i style={{ color: "var(--mp-muted)" }}>{e.dependency}</i></List.Item>) }
-                </List>
+                { executables.map((e:any, k:number) =>
+                    <ListRow key={k} icon="terminal" title={e.executableName} meta={e.dependency}/>) }
             </>
         }
         {
             services.length > 0 && <>
                 <SectionHeader icon="cogs">Services ({services.length})</SectionHeader>
-                <List divided size="small">
-                    { services.map((s:any, k:number) =>
-                        <List.Item key={k}>
-                            <List.Icon name="cog" verticalAlign="middle"/>
-                            <List.Content>
-                                <List.Header>{s.namespace}</List.Header>
-                                <List.Description style={{ color: "var(--mp-muted)", wordBreak: "break-all" }}>{s.dependency}</List.Description>
-                            </List.Content>
-                        </List.Item>) }
-                </List>
+                { services.map((s:any, k:number) =>
+                    <ListRow key={k} icon="cog" title={s.namespace} meta={s.dependency}/>) }
             </>
         }
         {
             endpoints.length > 0 && <>
                 <SectionHeader icon="plug">Endpoints ({endpoints.length})</SectionHeader>
-                <List divided size="small">
-                    { endpoints.map((e:any, k:number) =>
-                        <List.Item key={k}>
-                            <List.Icon name="linkify" verticalAlign="middle"/>
-                            <List.Content>
-                                <List.Header>{e.url || e.dependency}</List.Header>
-                                { e.url && <List.Description style={{ color: "var(--mp-muted)", wordBreak: "break-all" }}>{e.dependency}</List.Description> }
-                            </List.Content>
-                        </List.Item>) }
-                </List>
+                { endpoints.map((e:any, k:number) =>
+                    <ListRow key={k} icon="linkify" title={e.url || e.dependency} meta={e.url ? e.dependency : undefined}/>) }
             </>
         }
         {
             services.length === 0 && endpoints.length === 0 && executables.length === 0 &&
-            <span style={{ color: "var(--mp-muted-2)" }}>boot.json sem services/endpoints declarados</span>
+            <span className="ecp-manifest-empty">boot.json sem services/endpoints declarados</span>
         }
     </>
 }

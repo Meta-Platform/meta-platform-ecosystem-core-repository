@@ -1,14 +1,19 @@
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
+
 import {
-	Segment,
-	Input,
-	Dropdown,
+	Banner,
 	Button,
+	EmptyState,
 	Icon,
-	Label,
-	Loader
-} from "semantic-ui-react"
+	IconButton,
+	SearchInput,
+	SelectInput,
+	Spinner,
+	StatusChip,
+	TextInput,
+	Toolbar
+} from "@i-components"
 
 import GetAPI from "../../Utils/GetAPI"
 
@@ -22,18 +27,17 @@ import GetAPI from "../../Utils/GetAPI"
 
 const NIVEIS = ["trace", "debug", "info", "message", "warn", "error", "fatal"]
 
-const COR_POR_NIVEL:any = {
-	trace   : "#9aa0a6",
-	debug   : "#7e57c2",
-	info    : "#1565c0",
-	message : "#2e7d32",
-	warn    : "#ef6c00",
-	error   : "#c62828",
-	fatal   : "#b71c1c"
+/* Tom do chip de cada nível (a COR do texto do nível está no CSS, sobre os
+   tokens --mp-terminal-*: o corpo do log é uma superfície de terminal). */
+const TOM_POR_NIVEL:any = {
+	trace   : "neutral",
+	debug   : "neutral",
+	info    : "info",
+	message : "success",
+	warn    : "warning",
+	error   : "danger",
+	fatal   : "danger"
 }
-
-/* Seleção MÚLTIPLA: o backend entende lista como conjunto exato de níveis. */
-const OPCOES_DE_NIVEL = NIVEIS.map((nivel) => ({ key : nivel, value : nivel, text : nivel }))
 
 const LogViewer = ({ serverManagerInformation, filePath, fileName, siblings, onSelectSibling }:any) => {
 
@@ -114,106 +118,115 @@ const LogViewer = ({ serverManagerInformation, filePath, fileName, siblings, onS
 			fimDaListaRef.current.scrollIntoView({ behavior : "smooth" })
 	}, [ registros, acompanhando ])
 
+	/* Liga/desliga um nível: o backend entende a lista como conjunto exato. */
+	const _AlternarNivel = (nivel:string) =>
+		setNiveis(niveis.includes(nivel)
+			? niveis.filter((n) => n !== nivel)
+			: [ ...niveis, nivel ])
+
 	if(!filePath)
-		return <Segment placeholder textAlign="center">
-					<Icon name="file alternate outline" size="huge" color="grey"/>
-					<p style={{ marginTop : 12, color : "#666" }}>Escolha um log na árvore ao lado.</p>
-				</Segment>
+		return <EmptyState
+			icon="file alternate outline"
+			title="Nenhum log selecionado"
+			message="Escolha um log na árvore ao lado."/>
 
-	return <Segment.Group>
+	return <div className="ecp-log-viewer">
 
-		<Segment secondary style={{ display : "flex", gap : 8, alignItems : "center", flexWrap : "wrap" }}>
+		<Toolbar className="ecp-fixed ecp-log-viewer__bar">
 
-			<Icon name="file alternate"/>
+			<Icon name="file alternate" tone="muted"/>
 
 			{
 				/* Navegação por dia: os outros arquivos do MESMO log. */
 				siblings && siblings.length > 1
-					? <Dropdown
-						selection
-						compact
+					? <SelectInput
+						className="ecp-log-viewer__file"
 						value={filePath}
-						options={siblings.map((irmao:any) => ({ key : irmao.path, value : irmao.path, text : irmao.name }))}
-						onChange={(_:any, { value }:any) => onSelectSibling && onSelectSibling(siblings.find((i:any) => i.path === value))}
-						style={{ minWidth : 190, marginRight : 8 }}/>
-					: <strong style={{ marginRight : 8 }}>{fileName || filePath}</strong>
+						options={siblings.map((irmao:any) => ({ value : irmao.path, label : irmao.name }))}
+						onChange={(evento:any) => onSelectSibling && onSelectSibling(siblings.find((i:any) => i.path === evento.target.value))}/>
+					: <strong className="ecp-log-viewer__filename">{fileName || filePath}</strong>
 			}
 
-			<Dropdown
-				selection
-				multiple
-				clearable
-				placeholder="todos os níveis"
-				options={OPCOES_DE_NIVEL}
-				value={niveis}
-				onChange={(_:any, { value }:any) => setNiveis(value)}
-				style={{ minWidth : 220 }}/>
+			<Toolbar.Separator/>
 
-			<Input
-				icon="code"
-				iconPosition="left"
+			{/* Seleção MÚLTIPLA de níveis: chip ligado = nível no conjunto.
+			    Nenhum chip ligado = todos os níveis (é o que a API entende). */}
+			<span className="ecp-log-viewer__levels">
+				{
+					NIVEIS.map((nivel) =>
+						<StatusChip
+							key={nivel}
+							label={nivel}
+							tone={TOM_POR_NIVEL[nivel]}
+							active={niveis.includes(nivel)}
+							onClick={() => _AlternarNivel(nivel)}/>)
+				}
+			</span>
+
+			<Toolbar.Separator/>
+
+			<TextInput
+				className="ecp-log-viewer__source"
 				placeholder="source"
 				value={source}
-				onChange={(_:any, { value }:any) => setSource(value)}
-				style={{ width : 160 }}/>
+				onChange={(evento:any) => setSource(evento.target.value)}/>
 
-			<Input
-				icon="search"
-				iconPosition="left"
+			<SearchInput
+				className="ecp-log-viewer__search"
 				placeholder="buscar no texto"
 				value={busca}
-				onChange={(_:any, { value }:any) => setBusca(value)}
-				style={{ width : 200 }}/>
+				onValueChange={(valor:string) => setBusca(valor)}/>
 
 			<Button
-				size="small"
-				icon
-				labelPosition="left"
-				color={acompanhando ? "green" : undefined}
+				size="sm"
+				variant={acompanhando ? "primary" : "default"}
+				icon={acompanhando ? "pause" : "play"}
 				onClick={() => setAcompanhando(!acompanhando)}>
-				<Icon name={acompanhando ? "pause" : "play"}/>
 				{acompanhando ? "acompanhando" : "acompanhar"}
 			</Button>
 
-			<Button size="small" icon="refresh" onClick={_Carregar} title="recarregar"/>
+			<IconButton icon="refresh" label="recarregar" size="sm" onClick={_Carregar}/>
 
-			<Label basic size="small">{registros.length} linha(s)</Label>
-		</Segment>
+			<Toolbar.Spacer/>
 
-		<Segment style={{ maxHeight : "60vh", overflow : "auto", background : "#fbfbfb", fontFamily : "monospace", fontSize : 12 }}>
+			<StatusChip icon="list" count={registros.length} label="linha(s)"/>
 
-			{ carregando && <Loader active inline="centered" size="small"/> }
-			{ erro && <Label color="red" basic>{erro}</Label> }
+		</Toolbar>
+
+		{/* Carregamento e erro ficam FORA do corpo: o corpo é superfície de
+		    terminal (escura) e engoliria o girador e a faixa de aviso. */}
+		{ carregando && <div className="ecp-log-viewer__loading"><Spinner label="lendo o log…"/></div> }
+		{ erro && <Banner tone="danger" className="ecp-fixed">{erro}</Banner> }
+
+		<div className="ecp-log-viewer__body">
 
 			{
 				!carregando && registros.length === 0 &&
-				<p style={{ color : "#777" }}>Nenhuma linha para o filtro atual.</p>
+				<p className="ecp-log-viewer__empty">Nenhuma linha para o filtro atual.</p>
 			}
 
 			{
 				registros.map((registro:any, indice:number) =>
-					<div key={indice} style={{ padding : "2px 0", borderBottom : "1px solid #f0f0f0", whiteSpace : "pre-wrap", wordBreak : "break-word" }}>
+					<div key={indice} className="ecp-log-line">
 						{
 							registro.raw
 								? <>
-									<Label size="mini" color="grey" style={{ marginRight : 6 }} title="linha sem estrutura: veio do stdout de um processo">
-										raw
-									</Label>
-									<span style={{ color : "#555" }}>{registro.message}</span>
+									<span className="ecp-log-line__raw" title="linha sem estrutura: veio do stdout de um processo">raw</span>
+									<span className="ecp-log-line__message">{registro.message}</span>
 								</>
 								: <>
-									<span style={{ color : "#999" }}>{registro.ts}</span>
+									<span className="ecp-log-line__ts">{registro.ts}</span>
 									{" "}
-									<span style={{ color : COR_POR_NIVEL[registro.level] || "#333", fontWeight : 600 }}>
+									<span className={`ecp-log-line__level ecp-log-line__level--${registro.level || "trace"}`}>
 										{String(registro.level || "").padEnd(7)}
 									</span>
 									{" "}
-									<span style={{ color : "#00695c" }}>[{registro.source}]</span>
+									<span className="ecp-log-line__source">[{registro.source}]</span>
 									{" "}
 									<span>{registro.message}</span>
 									{
 										registro.data &&
-										<div style={{ color : "#8d6e63", paddingLeft : 24 }}>
+										<div className="ecp-log-line__data">
 											{JSON.stringify(registro.data)}
 										</div>
 									}
@@ -224,8 +237,8 @@ const LogViewer = ({ serverManagerInformation, filePath, fileName, siblings, onS
 			}
 
 			<div ref={fimDaListaRef}/>
-		</Segment>
-	</Segment.Group>
+		</div>
+	</div>
 }
 
 export default LogViewer

@@ -1,0 +1,265 @@
+/* Ecosystem Control Panel — CSS de produto: repositories.
+   Só classes .ecp-*, só sobre tokens --mp-*. Nunca redefinir .mp-*. */
+
+/* ================================================================== */
+/* Repository Sources — coleção (masthead + acordeão de namespaces)    */
+/* ================================================================== */
+/* Grade em linhas: cabeçalho, faixa de status e corpo nunca são
+   espremidos (em coluna flex o masthead/tabs somem). */
+.ecp-sources-page {
+    display: grid;
+    gap: var(--mp-space-3);
+    padding: var(--mp-space-4);
+}
+
+.ecp-sources-page__body {
+    padding: var(--mp-space-4);
+}
+
+.ecp-sources-page__new-repo {
+    max-width: 440px;
+    margin-bottom: var(--mp-space-3);
+}
+
+/* Só o corpo da lista rola. */
+.ecp-sources-page__scroll {
+    max-height: 72vh;
+    overflow: auto;
+}
+
+/* ================================================================== */
+/* Acordeão de namespaces (SourcesList.table)                          */
+/* ================================================================== */
+.ecp-sources-list {
+    display: grid;
+    gap: var(--mp-space-2);
+}
+
+.ecp-ns-block {
+    border: var(--mp-border-thin);
+    border-radius: var(--mp-radius-md);
+    background: var(--mp-surface);
+    overflow: hidden;
+}
+
+.ecp-ns-block__head {
+    display: flex;
+    align-items: center;
+    gap: var(--mp-space-2);
+    padding-right: var(--mp-space-2);
+}
+
+/* O gatilho do acordeão é um <button> que ocupa a linha inteira. */
+.ecp-ns-block__toggle {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--mp-space-2);
+    padding: var(--mp-space-2) var(--mp-space-3);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: var(--mp-font-ui);
+    font-size: var(--mp-text-sm);
+    color: var(--mp-ink-2);
+}
+.ecp-ns-block__toggle:hover { background: var(--mp-surface-2); }
+
+.ecp-ns-block__name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--mp-ink);
+}
+
+.ecp-ns-block__count {
+    flex: 0 0 auto;
+    font-size: var(--mp-text-xs);
+    color: var(--mp-muted-2);
+}
+
+.ecp-ns-block__body {
+    border-top: var(--mp-border-thin);
+}
+
+.ecp-ns-block__empty {
+    padding: var(--mp-space-2) var(--mp-space-3) var(--mp-space-2) var(--mp-space-8);
+    font-size: var(--mp-text-sm);
+    color: var(--mp-muted-2);
+}
+
+.ecp-ns-block__foot {
+    padding: var(--mp-space-2) var(--mp-space-3) var(--mp-space-3) var(--mp-space-8);
+}
+
+/* ================================================================== */
+/* Linha de fonte (acordeão e aba Sources do workspace)                */
+/* ================================================================== */
+.ecp-source-row {
+    display: flex;
+    align-items: center;
+    gap: var(--mp-space-3);
+    min-width: 0;
+    padding: var(--mp-space-2) var(--mp-space-3);
+    border-top: var(--mp-border-thin);
+}
+.ecp-source-row:first-child { border-top: none; }
+.ecp-source-row.is-active { background: var(--mp-success-tint); }
+
+.ecp-source-row__type {
+    flex: 0 0 auto;
+    width: 120px;
+    font-weight: 700;
+    font-size: var(--mp-text-sm);
+    color: var(--mp-ink-2);
+}
+
+/* Path/owner da fonte: dado técnico truncado, nunca estica a linha. */
+.ecp-source-row__summary {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.ecp-source-row__actions {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mp-space-1);
+}
+
+/* ================================================================== */
+/* Cartões de namespace / novo namespace / repositório                 */
+/* ================================================================== */
+.ecp-namespace-card {
+    width: 440px;
+    max-width: 100%;
+}
+
+.ecp-namespace-card__count {
+    font-size: var(--mp-text-xs);
+    color: var(--mp-muted);
+    margin-bottom: var(--mp-space-3);
+}
+
+.ecp-source-block {
+    border: var(--mp-border-thin);
+    border-radius: var(--mp-radius-md);
+    padding: var(--mp-space-3);
+    margin-bottom: var(--mp-space-3);
+    background: var(--mp-surface);
+}
+.ecp-source-block.is-active {
+    background: var(--mp-success-tint);
+    border-color: var(--mp-success);
+}
+
+.ecp-source-block__head {
+    display: flex;
+    align-items: center;
+    gap: var(--mp-space-2);
+    margin-bottom: var(--mp-space-2);
+}
+.ecp-source-block__type {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--mp-ink);
+}
+
+.ecp-source-block__actions { margin-top: var(--mp-space-3); }
+
+.ecp-new-repo-card {
+    width: 440px;
+    max-width: 100%;
+}
+.ecp-new-repo-card__actions { margin-top: var(--mp-space-3); }
+
+.ecp-repo-source-card {
+    width: 400px;
+    max-width: 100%;
+}
+.ecp-repo-source-card__pane {
+    padding: var(--mp-space-3) 0;
+    font-size: var(--mp-text-sm);
+    color: var(--mp-ink-3);
+}
+
+/* ================================================================== */
+/* Modal de registro de fonte                                          */
+/* ================================================================== */
+.ecp-register-source-form {
+    display: grid;
+    gap: var(--mp-space-3);
+}
+.ecp-register-source-note { margin-top: var(--mp-space-3); }
+
+/* Aviso dentro de um diálogo de confirmação. */
+.ecp-confirm-note { margin-top: var(--mp-space-2); }
+
+/* ================================================================== */
+/* Repositories & Packages — workspace (entidade + abas)               */
+/* ================================================================== */
+.ecp-repos-page {
+    display: grid;
+    gap: var(--mp-space-3);
+    padding: var(--mp-space-3);
+}
+
+/* Barra de ações do topo: as ações ficam à direita (Toolbar.Spacer) e a
+   barra não pode encolher junto com o conteúdo. */
+.ecp-repos-page__bar { min-width: 0; }
+
+.ecp-repos-page__entity {
+    display: grid;
+    gap: var(--mp-space-3);
+}
+
+.ecp-repos-page__pane {
+    min-width: 0;
+}
+
+/* Aba Packages: árvore à esquerda, detalhe do pacote à direita. */
+.ecp-repo-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: var(--mp-space-4);
+    align-items: start;
+}
+@media (max-width: 1100px) {
+    .ecp-repo-split { grid-template-columns: minmax(0, 1fr); }
+}
+
+.ecp-repo-split__tree {
+    min-width: 0;
+    display: grid;
+    gap: var(--mp-space-2);
+}
+
+.ecp-repo-split__scroll {
+    max-height: 62vh;
+    overflow: auto;
+    font-size: var(--mp-text-sm);
+}
+
+.ecp-repo-split__detail { min-width: 0; }
+
+.ecp-package-detail__header { margin-bottom: var(--mp-space-3); }
+
+/* Aba Sources dentro do workspace. */
+.ecp-repo-sources {
+    border: var(--mp-border-thin);
+    border-radius: var(--mp-radius-md);
+    background: var(--mp-surface);
+    overflow: hidden;
+}
+.ecp-repo-sources__foot {
+    padding: var(--mp-space-2) var(--mp-space-3);
+    border-top: var(--mp-border-thin);
+}

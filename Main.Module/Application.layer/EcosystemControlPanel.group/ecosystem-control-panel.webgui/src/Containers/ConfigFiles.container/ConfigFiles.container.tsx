@@ -3,21 +3,20 @@ import { useState, useEffect } from "react"
 
 import {
     Button,
-    Header,
+    ButtonGroup,
+    Dialog,
+    EmptyState,
     Icon,
-    Input,
-    Label,
-    Loader,
-    Modal,
-    Segment,
-    Table
-} from "semantic-ui-react"
+    IconButton,
+    PageMasthead,
+    SearchInput,
+    SkeletonList,
+    SystemBanner,
+    TextInput
+} from "@i-components"
 
 import GetAPI from "../../Utils/GetAPI"
 import CopyValue from "../../Components/CopyValue"
-import SystemBanner from "../../Components/ui/SystemBanner"
-import PageMasthead from "../../Components/ui/PageMasthead"
-import ListSkeleton from "../../Components/Skeleton"
 import { toastSuccess, toastError, errorMessage } from "../../Utils/toast"
 
 const IsScalar = (value:any) =>
@@ -41,18 +40,20 @@ const GetValueType = (value:any) => {
     if(s.startsWith("/") || s.startsWith("~") || s.includes("/")) return "path"
     return "string"
 }
-const VALUE_TYPE_COLOR:any = { bool: "teal", number: "blue", list: "purple", object: "grey", file: "orange", path: "olive", string: "grey" }
+
+// A cor por tipo saiu do `color` do Label e virou classe de produto
+// (.ecp-vtype--*), pintada só com tokens --mp-*.
 const ValueTypeBadge = ({ value }:any) => {
     const t = GetValueType(value)
-    return <Label size="mini" basic color={VALUE_TYPE_COLOR[t]}>{t}</Label>
+    return <span className={`ecp-vtype ecp-vtype--${t}`}>{t}</span>
 }
 
 const RenderReadValue = (value:any) => {
     if(value === null || value === undefined)
-        return <i style={{ color: "var(--mp-muted-2)" }}>—</i>
+        return <i className="ecp-cfg-null">—</i>
     if(typeof value === "object")
-        return <code style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(value, null, 2)}</code>
-    return <code>{String(value)}</code>
+        return <code className="ecp-cfg-value ecp-cfg-value--block">{JSON.stringify(value, null, 2)}</code>
+    return <code className="ecp-cfg-value">{String(value)}</code>
 }
 
 // Títulos amigáveis por arquivo de configuração.
@@ -63,116 +64,80 @@ const GetConfigTitle = (configFileName?:string) => {
 }
 
 const ConfirmSaveModal = ({ configFileName, paramName, newValue, onCancel, onConfirm, isSaving }:any) =>
-    <Modal size="small" open={true} onClose={onCancel}>
-        <Modal.Header><Icon name="warning sign" color="orange"/> Confirm change</Modal.Header>
-        <Modal.Content>
-            <p>
-                Change <strong>{paramName}</strong> in <strong>{configFileName}</strong> to
-                <code style={{ marginLeft: "6px" }}>{String(newValue)}</code>?
-            </p>
-            <p style={{ color: "var(--mp-warning)" }}>
-                <Icon name="warning sign"/>
-                Config changes can <strong>impact or break the ecosystem</strong> and affect running instances.
-            </p>
-        </Modal.Content>
-        <Modal.Actions>
+    <Dialog
+        open={true}
+        size="sm"
+        icon="warning sign"
+        title="Confirm change"
+        onClose={onCancel}
+        actions={<>
             <Button onClick={onCancel} disabled={isSaving}>cancel</Button>
-            <Button color="orange" loading={isSaving} onClick={onConfirm}>
-                <Icon name="save"/> save variable
-            </Button>
-        </Modal.Actions>
-    </Modal>
+            <Button variant="primary" icon="save" loading={isSaving} onClick={onConfirm}>save variable</Button>
+        </>}>
+        <p>
+            Change <strong>{paramName}</strong> in <strong>{configFileName}</strong> to
+            <code className="ecp-cfg-value ecp-cfg-value--inline">{String(newValue)}</code>?
+        </p>
+        <p className="ecp-cfg-warn">
+            <Icon name="warning sign"/>
+            Config changes can <strong>impact or break the ecosystem</strong> and affect running instances.
+        </p>
+    </Dialog>
 
 const RegistryShell = ({ children }:any) =>
-    <div style={{
-        border: "var(--mp-border-thin)",
-        borderRadius: "var(--mp-radius-md)",
-        overflow: "hidden",
-        background: "var(--mp-surface)",
-        boxShadow: "var(--mp-shadow-1)"
-    }}>
-        {children}
-    </div>
+    <div className="ecp-cfg-shell">{children}</div>
 
 // Faixa enxuta: sem o bloco de título grande (o nome da seção já está no header
 // superior). Mantém só um ícone, o nome do arquivo pequeno e o badge de estado.
 const RegistryHeader = ({ title, subtitle, canEdit }:any) =>
-    <div style={{
-        padding: "6px 12px",
-        background: "var(--mp-paper-2)",
-        borderBottom: "1px solid var(--mp-line-faint)",
-        display: "flex",
-        alignItems: "center",
-        gap: "10px",
-        flexWrap: "wrap"
-    }}>
-        <Icon name={canEdit ? "edit" : "file alternate outline"} style={{ color: canEdit ? "var(--mp-success)" : "var(--mp-muted)", margin: 0, flex: "0 0 auto" }}/>
-        <div style={{ minWidth: 0, flex: 1, display: "flex", alignItems: "baseline", gap: "8px", overflow: "hidden" }}>
-            <strong style={{ fontSize: ".92rem", color: "var(--mp-ink)", whiteSpace: "nowrap" }}>{title}</strong>
-            <span style={{ color: "var(--mp-muted)", fontSize: ".82rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{subtitle}</span>
+    <div className="ecp-cfg-filehead">
+        <Icon
+            name={canEdit ? "edit" : "file alternate outline"}
+            tone={canEdit ? "success" : "muted"}/>
+        <div className="ecp-cfg-filehead__names">
+            <strong className="ecp-cfg-filehead__title">{title}</strong>
+            <span className="ecp-cfg-filehead__subtitle">{subtitle}</span>
         </div>
-        <Label basic color={canEdit ? "green" : "grey"} size="small" style={{ margin: 0, flex: "0 0 auto" }}>
+        <span className={`ecp-flag ${canEdit ? "ecp-flag--ok" : ""}`.trim()}>
             {canEdit ? "editable" : "read-only"}
-        </Label>
+        </span>
     </div>
 
 const RegistryToolbar = ({ children }:any) =>
-    <div style={{
-        padding: "10px 14px",
-        borderBottom: "1px solid var(--mp-line-faint)",
-        background: "var(--mp-surface-2)",
-        display: "flex",
-        alignItems: "center",
-        gap: "10px",
-        flexWrap: "wrap"
-    }}>
-        {children}
-    </div>
+    <div className="ecp-cfg-toolbar">{children}</div>
 
+// Grupo colapsável: o kit não tem Accordion; o padrão do guia é botão subtle +
+// bloco condicional (o CSS do grupo é de produto, .ecp-cfg-group*).
 const RegistryGroupHeader = ({ name, count, isClosed, onToggle }:any) =>
-    <div
-        onClick={onToggle}
-        style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "7px 10px",
-            cursor: "pointer",
-            background: isClosed ? "var(--mp-surface-2)" : "var(--mp-paper-2)",
-            border: "1px solid var(--mp-line-soft)",
-            borderRadius: "var(--mp-radius-sm)",
-            boxShadow: "none"
-        }}>
-        <Icon name={isClosed ? "caret right" : "caret down"} style={{ color: "var(--mp-muted)", margin: 0 }}/>
-        <Icon name="folder open outline" style={{ color: "var(--mp-ink-3)", margin: 0 }}/>
-        <strong style={{ color: "var(--mp-ink)", letterSpacing: 0 }}>{name}</strong>
-        <Label circular size="mini" style={{ marginLeft: "auto" }}>{count}</Label>
-    </div>
+    <button
+        type="button"
+        className="mp-button mp-button--subtle mp-button--sm ecp-cfg-group__head"
+        aria-expanded={!isClosed}
+        onClick={onToggle}>
+        <Icon name={isClosed ? "caret right" : "caret down"} tone="muted"/>
+        <Icon name="folder open outline"/>
+        <strong className="ecp-cfg-group__name">{name}</strong>
+        <span className="ecp-count">{count}</span>
+    </button>
 
 const RegistrySubGroupHeader = ({ label, count, isClosed, onToggle }:any) =>
-    <div
-        onClick={onToggle}
-        style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "6px 10px",
-            cursor: "pointer",
-            background: "var(--mp-surface)",
-            border: "1px solid var(--mp-line-faint)",
-            borderLeft: "3px solid var(--mp-accent-blue)",
-            borderRadius: "var(--mp-radius-sm)"
-        }}>
-        <Icon name={isClosed ? "caret right" : "caret down"} style={{ color: "var(--mp-muted)", margin: 0 }}/>
-        <span style={{ color: "var(--mp-muted-2)", fontFamily: "var(--mp-font-mono)", fontSize: ".8rem" }}>subkey</span>
-        <strong style={{ color: "var(--mp-ink-2)", fontFamily: "var(--mp-font-mono)", fontSize: ".88rem" }}>{label}</strong>
-        <Label circular size="mini" style={{ marginLeft: "auto" }}>{count}</Label>
-    </div>
+    <button
+        type="button"
+        className="mp-button mp-button--subtle mp-button--sm ecp-cfg-group__head ecp-cfg-group__head--sub"
+        aria-expanded={!isClosed}
+        onClick={onToggle}>
+        <Icon name={isClosed ? "caret right" : "caret down"} tone="muted"/>
+        <span className="ecp-cfg-subgroup__tag">subkey</span>
+        <strong className="ecp-cfg-subgroup__name">{label}</strong>
+        <span className="ecp-count">{count}</span>
+    </button>
 
 const RegistryTable = ({ children }:any) =>
-    <Table basic="very" compact unstackable className="eco-registry-table" style={{ marginTop: 0, border: "none" }}>
-        {children}
-    </Table>
+    <div className="mp-table-wrap ecp-cfg-tablewrap">
+        <table className="mp-table is-dense">
+            <tbody>{children}</tbody>
+        </table>
+    </div>
 
 const ConfigFilesContainer = ({ serverManagerInformation, configFileName }:any) => {
 
@@ -251,7 +216,7 @@ const ConfigFilesContainer = ({ serverManagerInformation, configFileName }:any) 
         } catch(e) { toastError(errorMessage(e)) } finally { setIsSaving(false) }
     }
 
-    return <Segment style={{ margin: "15px" }}>
+    return <div className="ecp-cfg-page">
         <PageMasthead
             icon="cogs"
             title="Config Files"
@@ -266,61 +231,67 @@ const ConfigFilesContainer = ({ serverManagerInformation, configFileName }:any) 
                     tone={canEdit ? "info" : "readonly"}
                     icon={canEdit ? "edit" : "lock"}
                     title="parameter editor"
-                    style={{ margin: 0, flex: "1 1 420px" }}>
+                    className="ecp-cfg-banner">
                     { canEdit
                         ? "Edit one value at a time. Confirmation is required because these keys can change ecosystem behavior."
                         : "This file is read-only. Open another file to edit." }
                 </SystemBanner>
-                <Input
-                    icon="search"
-                    size="small"
+                <SearchInput
+                    className="ecp-cfg-search"
                     placeholder="filter parameters..."
                     value={filterValue}
-                    onChange={(e, { value }) => setFilterValue(value)}
-                    style={{ marginLeft: "auto", minWidth: "260px" }}/>
+                    onValueChange={(value:string) => setFilterValue(value)}/>
             </RegistryToolbar>
 
         {
             isLoading
-            ? <ListSkeleton lines={10}/>
+            ? <div className="ecp-cfg-loading"><SkeletonList rows={10}/></div>
             : (() => {
                 const renderRow = (key:string, stripPrefix?:string) => {
                     const isEditingThis = editingKey === key
                     const editable = canEdit && IsScalar(currentContent[key])
                     const prefix = stripPrefix !== undefined ? stripPrefix : GetPrefix(key)
                     const shortName = (prefix && key.startsWith(prefix + "_")) ? key.slice(prefix.length + 1) : key
-                    return <Table.Row key={key} active={isEditingThis}>
-                        <Table.Cell>
-                            <Icon name="key" style={{ color: "var(--mp-muted-2)" }}/>
-                            <span style={{ color: "var(--mp-muted-2)", fontFamily: "var(--mp-font-mono)", fontSize: ".92em" }}>*_</span>
-                            <strong title={key} style={{ fontFamily: "monospace", fontSize: ".92em" }}>{shortName}</strong>
-                        </Table.Cell>
-                        <Table.Cell width={2}><ValueTypeBadge value={currentContent[key]}/></Table.Cell>
-                        <Table.Cell>
+                    return <tr key={key} className={isEditingThis ? "is-selected" : undefined}>
+                        <td>
+                            <span className="ecp-cfg-key">
+                                <Icon name="key" tone="muted"/>
+                                <span className="ecp-cfg-key__prefix">*_</span>
+                                <strong title={key} className="ecp-cfg-key__name">{shortName}</strong>
+                            </span>
+                        </td>
+                        <td className="ecp-cfg-col-type">
+                            <ValueTypeBadge value={currentContent[key]}/>
+                        </td>
+                        <td>
                             {
                                 isEditingThis
-                                ? <Input fluid size="small" autoFocus value={draftValue} onChange={(e, { value }) => setDraftValue(value)}/>
-                                : <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                ? <TextInput
+                                    className="ecp-cfg-input"
+                                    autoFocus
+                                    value={draftValue}
+                                    onChange={(event:any) => setDraftValue(event.target.value)}/>
+                                : <span className="ecp-cfg-readvalue">
                                     {RenderReadValue(currentContent[key])}
                                     { IsScalar(currentContent[key]) && currentContent[key] != null && <CopyValue value={String(currentContent[key])}/> }
                                 </span>
                             }
-                        </Table.Cell>
+                        </td>
                         {
-                            canEdit && <Table.Cell textAlign="center" width={2}>
+                            canEdit && <td className="ecp-cfg-col-actions">
                                 {
                                     isEditingThis
-                                    ? <Button.Group size="mini">
-                                        <Button icon color="green" onClick={() => requestSave(key)}><Icon name="check"/></Button>
-                                        <Button icon onClick={cancelEdit}><Icon name="close"/></Button>
-                                    </Button.Group>
+                                    ? <ButtonGroup>
+                                        <IconButton icon="check" label="save variable" variant="primary" size="sm" onClick={() => requestSave(key)}/>
+                                        <IconButton icon="close" label="cancel edit" variant="default" size="sm" onClick={cancelEdit}/>
+                                    </ButtonGroup>
                                     : editable
-                                        ? <Button icon size="mini" basic onClick={() => startEdit(key)} disabled={!!editingKey}><Icon name="pencil"/></Button>
-                                        : <Icon name="lock" style={{ color: "var(--mp-line-soft)" }}/>
+                                        ? <IconButton icon="pencil" label={`edit ${key}`} size="sm" onClick={() => startEdit(key)} disabled={!!editingKey}/>
+                                        : <Icon name="lock" tone="muted"/>
                                 }
-                            </Table.Cell>
+                            </td>
                         }
-                    </Table.Row>
+                    </tr>
                 }
 
                 const lowerFilter = filterValue.toLowerCase()
@@ -360,14 +331,14 @@ const ConfigFilesContainer = ({ serverManagerInformation, configFileName }:any) 
 
                 const renderTable = (rowKeys:string[], stripPrefix:string) =>
                     <RegistryTable>
-                        <Table.Body>{ rowKeys.map((k:string) => renderRow(k, stripPrefix)) }</Table.Body>
+                        { rowKeys.map((k:string) => renderRow(k, stripPrefix)) }
                     </RegistryTable>
 
                 return <>
                     {
                         groupNames.map((groupName:string) => {
                             const isClosed = closedGroups[groupName]
-                            return <div key={groupName} style={{ margin: "12px 14px 0" }}>
+                            return <div key={groupName} className="ecp-cfg-group">
                                 <RegistryGroupHeader
                                     name={groupName}
                                     count={groups[groupName].length}
@@ -376,12 +347,12 @@ const ConfigFilesContainer = ({ serverManagerInformation, configFileName }:any) 
                                 {
                                     !isClosed && (() => {
                                         const { subGroups, flat } = buildSubGroups(groupName, groups[groupName])
-                                        return <div style={{ marginTop: "8px", paddingLeft: "10px", borderLeft: "2px solid #dbe2ea" }}>
+                                        return <div className="ecp-cfg-group__body">
                                             {
                                                 subGroups.map((sg:any) => {
                                                     const subKey = `${groupName}/${sg.subPrefix}`
                                                     const subClosed = closedGroups[subKey]
-                                                    return <div key={subKey} style={{ marginTop: "8px" }}>
+                                                    return <div key={subKey} className="ecp-cfg-subgroup">
                                                         <RegistrySubGroupHeader
                                                             label={sg.subPrefix}
                                                             count={sg.keys.length}
@@ -398,7 +369,7 @@ const ConfigFilesContainer = ({ serverManagerInformation, configFileName }:any) 
                             </div>
                         })
                     }
-                    { groupNames.length === 0 && <div style={{ color: "var(--mp-muted)", padding: "16px 14px 18px" }}>no parameters match the filter</div> }
+                    { groupNames.length === 0 && <EmptyState icon="filter" message="no parameters match the filter"/> }
                 </>
             })()
         }
@@ -413,7 +384,7 @@ const ConfigFilesContainer = ({ serverManagerInformation, configFileName }:any) 
                 onConfirm={confirmSave}/>
         }
         </RegistryShell>
-    </Segment>
+    </div>
 }
 
 export default ConfigFilesContainer

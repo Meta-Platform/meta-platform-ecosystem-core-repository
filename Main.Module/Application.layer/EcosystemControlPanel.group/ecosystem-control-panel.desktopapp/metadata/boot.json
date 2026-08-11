@@ -19,6 +19,7 @@
             },
             "bound-params": {
                 "ecosystemControlPanelWebgui": "@/ecosystem-control-panel.webgui",
+                "iComponents": "@/i-components.uilib",
                 "ecosystemControlPanelGuiService": "@/ecosystem-control-panel-gui.service",
                 "ecosystemControlPanelService": "@/ecosystem-control-panel.service",
                 "ecosystemControlPanelWebservice": "@/ecosystem-control-panel.webservice",
@@ -33,6 +34,9 @@
             },
             "gui-host": {
                 "webgui": "ecosystemControlPanelWebgui",
+                "componentLibraries": {
+                    "@i-components": "iComponents"
+                },
                 "guiService": "guiService",
                 "serviceGraph": [
                     {

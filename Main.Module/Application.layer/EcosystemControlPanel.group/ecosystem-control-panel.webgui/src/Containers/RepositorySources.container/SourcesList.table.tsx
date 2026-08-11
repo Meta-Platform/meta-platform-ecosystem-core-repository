@@ -3,11 +3,10 @@ import { useState } from "react"
 
 import {
     Button,
+    CopyableMonoText,
     Icon,
-    Label,
-    Popup,
-    Segment
-} from "semantic-ui-react"
+    StatusChip
+} from "@i-components"
 
 const SourceParamSummary = (source:any) => {
     const sp = source
@@ -39,7 +38,7 @@ const SourcesListTable = ({
         busyAction && busyAction.namespace === ns && busyAction.action === action
             && (sourceType === undefined || busyAction.sourceType === sourceType)
 
-    return <div>
+    return <div className="ecp-sources-list">
         {
             Object.keys(groupedSources).sort().map((ns:string, nsKey:number) => {
                 const sources = groupedSources[ns]
@@ -47,77 +46,97 @@ const SourcesListTable = ({
                 const activeSourceType = getActiveSourceType(ns)
                 const isOpen = openMap[ns]
 
-                return <Segment key={nsKey} style={{ padding: 0, marginBottom: "8px" }}>
-                    { /* cabeçalho do namespace */ }
-                    <div
-                        onClick={() => toggle(ns)}
-                        style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px", cursor: "pointer" }}>
-                        <Icon name={isOpen ? "caret down" : "caret right"} style={{ color: "var(--mp-muted-2)" }}/>
-                        <Icon name="cubes" style={{ color: "var(--mp-muted)" }}/>
-                        <strong style={{ flex: 1 }}>{ns}</strong>
-                        {
-                            installed
-                            ? <Label size="tiny" color="green" basic>installed · {activeSourceType}</Label>
-                            : <Label size="tiny" basic>not installed</Label>
-                        }
-                        <span style={{ color: "var(--mp-muted-2)", fontSize: ".85em" }}>{sources.length} src</span>
+                return <section key={nsKey} className="ecp-ns-block">
+                    { /* cabeçalho do namespace (acordeão) */ }
+                    <div className="ecp-ns-block__head">
+                        <button
+                            type="button"
+                            className="ecp-ns-block__toggle"
+                            aria-expanded={Boolean(isOpen)}
+                            onClick={() => toggle(ns)}>
+                            <Icon name={isOpen ? "caret down" : "caret right"} tone="muted"/>
+                            <Icon name="cubes" tone="muted"/>
+                            <strong className="ecp-ns-block__name">{ns}</strong>
+                            {
+                                installed
+                                ? <StatusChip tone="success" label={`installed · ${activeSourceType}`}/>
+                                : <StatusChip label="not installed"/>
+                            }
+                            <span className="ecp-ns-block__count">{sources.length} src</span>
+                        </button>
                         {
                             installed &&
-                            <Button size="mini" basic icon title="update repository"
+                            <Button
+                                variant="subtle"
+                                size="sm"
+                                icon="refresh"
+                                title="update repository"
+                                aria-label="update repository"
                                 loading={isBusy(ns, "update")}
-                                onClick={(e:any) => { e.stopPropagation(); onUpdate(ns) }}>
-                                <Icon name="refresh"/>
-                            </Button>
+                                onClick={(e:any) => { e.stopPropagation(); onUpdate(ns) }}/>
                         }
                     </div>
 
                     { /* fontes (expandido) */ }
                     {
-                        isOpen && <div style={{ borderTop: "1px solid var(--mp-line-faint)" }}>
+                        isOpen && <div className="ecp-ns-block__body">
                             {
                                 sources.length === 0 &&
-                                <div style={{ padding: "8px 12px 8px 36px", color: "var(--mp-muted-2)" }}>nenhuma fonte registrada</div>
+                                <div className="ecp-ns-block__empty">no sources registered</div>
                             }
                             {
                                 sources.map((source:any, sKey:number) => {
                                     const isActive = installed && source.sourceType === activeSourceType
-                                    return <div key={sKey}
-                                        style={{ display: "flex", alignItems: "center", gap: "10px", padding: "7px 12px 7px 36px",
-                                            background: isActive ? "#f4fbf5" : undefined, borderTop: sKey > 0 ? "1px solid #f3f3f3" : undefined }}>
-                                        <Icon name={isActive ? "check circle" : "feed"} color={isActive ? "green" : "grey"}/>
-                                        <span style={{ width: "120px", fontWeight: 500 }}>{source.sourceType}</span>
-                                        <span style={{ flex: 1, color: "var(--mp-muted)", fontFamily: "monospace", fontSize: ".82em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-                                            title={SourceParamSummary(source)}>
-                                            {SourceParamSummary(source)}
+                                    return <div key={sKey} className={`ecp-source-row ${isActive ? "is-active" : ""}`.trim()}>
+                                        <Icon
+                                            name={isActive ? "check circle" : "feed"}
+                                            tone={isActive ? "success" : "muted"}/>
+                                        <span className="ecp-source-row__type">{source.sourceType}</span>
+                                        <span className="ecp-source-row__summary">
+                                            <CopyableMonoText value={SourceParamSummary(source) || ""} maxChars={52}/>
                                         </span>
-                                        <Button.Group size="mini" basic>
-                                            <Popup content="install" trigger={
-                                                <Button icon loading={isBusy(ns, "install", source.sourceType)} onClick={() => onInstall(ns, source.sourceType)}>
-                                                    <Icon name="download" color="blue"/>
-                                                </Button>}/>
+                                        <span className="ecp-source-row__actions">
+                                            <Button
+                                                variant="subtle"
+                                                size="sm"
+                                                icon="download"
+                                                title="install"
+                                                aria-label="install"
+                                                loading={isBusy(ns, "install", source.sourceType)}
+                                                onClick={() => onInstall(ns, source.sourceType)}/>
                                             {
                                                 installed && !isActive &&
-                                                <Popup content="set as active source" trigger={
-                                                    <Button icon loading={isBusy(ns, "change", source.sourceType)} onClick={() => onChangeSource(ns, source.sourceType)}>
-                                                        <Icon name="exchange"/>
-                                                    </Button>}/>
+                                                <Button
+                                                    variant="subtle"
+                                                    size="sm"
+                                                    icon="exchange"
+                                                    title="set as active source"
+                                                    aria-label="set as active source"
+                                                    loading={isBusy(ns, "change", source.sourceType)}
+                                                    onClick={() => onChangeSource(ns, source.sourceType)}/>
                                             }
-                                            <Popup content="remove source" trigger={
-                                                <Button icon loading={isBusy(ns, "removeSource", source.sourceType)} onClick={() => onRemoveSource(ns, source.sourceType)}>
-                                                    <Icon name="trash" color="red"/>
-                                                </Button>}/>
-                                        </Button.Group>
+                                            <Button
+                                                variant="danger"
+                                                size="sm"
+                                                icon="trash"
+                                                title="remove source"
+                                                aria-label="remove source"
+                                                loading={isBusy(ns, "removeSource", source.sourceType)}
+                                                onClick={() => onRemoveSource(ns, source.sourceType)}/>
+                                        </span>
                                     </div>
                                 })
                             }
-                            <div style={{ padding: "6px 12px 8px 36px" }}>
-                                <Button size="mini" basic compact onClick={() => onRegisterSourceForNamespace(ns)}>
-                                    <Icon name="plus"/> add source
-                                </Button>
+                            <div className="ecp-ns-block__foot">
+                                <Button
+                                    variant="subtle"
+                                    size="sm"
+                                    icon="plus"
+                                    onClick={() => onRegisterSourceForNamespace(ns)}>add source</Button>
                             </div>
                         </div>
                     }
-                </Segment>
+                </section>
             })
         }
     </div>

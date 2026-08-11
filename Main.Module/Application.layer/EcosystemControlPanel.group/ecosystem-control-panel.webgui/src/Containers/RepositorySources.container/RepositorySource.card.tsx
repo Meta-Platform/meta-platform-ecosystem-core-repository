@@ -2,14 +2,12 @@ import * as React from "react"
 import { useState } from "react"
 
 import {
-    Segment,
     Button,
     ButtonGroup,
-    Card,
-    Loader,
-    Tab,
-    MenuItem
-} from "semantic-ui-react"
+    Panel,
+    Spinner,
+    Tabs
+} from "@i-components"
 
 import GetAPI from "../../Utils/GetAPI"
 
@@ -21,14 +19,16 @@ const RepositorySourceCard = ({
 }) => {
 
     const [ isUpdating, setIsUpdating ] = useState(false)
+    // O `Tabs` do kit é só a barra: o estado da aba ativa é da tela.
+    const [ activeTabKey, setActiveTabKey ] = useState<string>("LOCAL_FS")
 
     const activeSourceData = activeSourceList
         .find((activeSourceData) => activeSourceData.repositoryNamespace === repositoryNamespace)
 
-    const _GetSourcesAPI = () => 
-        GetAPI({ 
-            apiName:"Sources",  
-            serverManagerInformation 
+    const _GetSourcesAPI = () =>
+        GetAPI({
+            apiName:"Sources",
+            serverManagerInformation
         })
 
     const UpdateRepository = async () => {
@@ -45,34 +45,22 @@ const RepositorySourceCard = ({
 
     const handleUpdateRepository = () => UpdateRepository()
 
-    const panes = [
-        {
-			menuItem: 
-            <MenuItem key='tasks'>
-                LOCAL_FS
-            </MenuItem>,
-			render: () => 
-				<Tab.Pane>
-					dfgdfgsdfg
-				</Tab.Pane>
-		}
-    ]
+    const tabs = [ { key: "LOCAL_FS", label: "LOCAL_FS" } ]
 
-    return <Card style={{"width":"400px", "padding":"15px"}}>
+    return <Panel title={repositoryNamespace} icon="cubes" className="ecp-repo-source-card">
         {
             activeSourceData
             ? <>
-                <strong style={{"fontSize": "large"}}>{repositoryNamespace}</strong>
-                <Tab panes={panes} />
+                <Tabs tabs={tabs} activeKey={activeTabKey} onChange={setActiveTabKey}/>
+                <div className="ecp-repo-source-card__pane">dfgdfgsdfg</div>
                 <ButtonGroup>
                     <Button onClick={() => onOpenSwitchSource(repositoryNamespace)}>switch source</Button>
-                    <Button primary loading={isUpdating} onClick={handleUpdateRepository}>update repository</Button>
+                    <Button variant="primary" loading={isUpdating} onClick={handleUpdateRepository}>update repository</Button>
                 </ButtonGroup>
             </>
-            : <Loader/>
+            : <Spinner/>
         }
-        
-    </Card>
+    </Panel>
 }
 
 export default RepositorySourceCard

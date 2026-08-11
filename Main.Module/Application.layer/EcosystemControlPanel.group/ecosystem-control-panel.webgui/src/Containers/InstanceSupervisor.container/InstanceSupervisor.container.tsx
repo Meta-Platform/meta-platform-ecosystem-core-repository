@@ -2,19 +2,18 @@ import * as React             from "react"
 import {useEffect, useState}  from "react"
 import { connect }            from "react-redux"
 import { bindActionCreators } from "redux"
-import { 
-	Grid,
-	MenuItem,
-	Label,
-	TabPane, 
-	Tab,
-	Segment,
-	MenuMenu,
+
+import {
+	Badge,
+	Button,
+	Drawer,
+	EmptyState,
+	EntityHeader,
 	Icon,
-	Input,
-	Menu,
-	Button
- } from "semantic-ui-react"
+	IconButton,
+	SearchInput,
+	Toolbar
+} from "@i-components"
 
 import qs from "query-string"
 import {
@@ -24,8 +23,6 @@ import {
 
 import GetAPI from "../../Utils/GetAPI"
 import AppModal from "../../Components/AppModal"
-import EmptyState from "../../Components/EmptyState"
-import EntityHeader from "../../Components/ui/EntityHeader"
 import { ShortId } from "../../Utils/Format"
 import Tasks from "./Tasks"
 
@@ -34,8 +31,6 @@ import QueryParamsActionsCreator from "../../Actions/QueryParams.actionsCreator"
 import useFetchInstanceTaskList    from "../../Hooks/useFetchInstanceTaskList"
 import useFetchStartupArguments    from "../../Hooks/useFetchStartupArguments"
 import useFetchInstanceInformation from "../../Hooks/useFetchInstanceInformation"
-
-const Column = Grid.Column
 
 import OverviewSocketPanel from "./OverviewSocketPanel"
 import StartupArguments from "./StartupArguments"
@@ -68,8 +63,8 @@ const InstanceSupervisorContainer = ({
   	const navigate = useNavigate()
 	const queryParams = qs.parse(location.search.substr(1))
 
-	const _GetSupervisorAPI = () => 
-		GetAPI({ 
+	const _GetSupervisorAPI = () =>
+		GetAPI({
 			apiName:"InstancesSupervisor",
 			serverManagerInformation: HTTPServerManager
 		})
@@ -101,7 +96,7 @@ const InstanceSupervisorContainer = ({
 
 		if(monitoringStateKeySelected)
 			AddQueryParam("monitoringStateKey", monitoringStateKeySelected)
-		
+
 	}, [monitoringStateKeySelected])
 
 	useEffect(() => {
@@ -113,24 +108,24 @@ const InstanceSupervisorContainer = ({
 
 	}, [taskIdSelected])
 
-	const instanceTaskListCurrent = 
+	const instanceTaskListCurrent =
         useFetchInstanceTaskList({
             monitoringStateKeySelected,
             HTTPServerManager
         })
 
-	const startupArgumentsCurrent = 
+	const startupArgumentsCurrent =
 		useFetchStartupArguments({
 			monitoringStateKeySelected,
 			HTTPServerManager
 		})
 
-	const instanceProcessInformationCurrent = 
+	const instanceProcessInformationCurrent =
 		useFetchInstanceInformation({
 			monitoringStateKeySelected,
 			HTTPServerManager
 		})
-	const fetchTaskInformation = () => 
+	const fetchTaskInformation = () =>
 		_GetSupervisorAPI()
 		.GetTaskInformation({ monitoringStateKey:monitoringStateKeySelected, taskId:taskIdSelected })
 		.then(({data}:any) => setTaskInformationSelected(data))
@@ -147,20 +142,20 @@ const InstanceSupervisorContainer = ({
 	useEffect(() => {
 		_GetSupervisorAPI().Overview().then(({data}:any) => setOverview(data)).catch(() => setOverview({}))
 	}, [monitoringStateKeySelected])
-	
+
 	const resetTaskSelection = () => {
 		setTaskIdSelected(undefined)
 		setTaskInformationSelected(undefined)
 		RemoveQueryParam("taskId")
 	}
-	
+
 	const handleSelectInstance = (socketFileName) => {
 		resetTaskSelection()
 		setSocketFileNameSelected(socketFileName)
 		RemoveQueryParam("taskId")
 	}
 
-	const handleSelectTask = (taskId) => 
+	const handleSelectTask = (taskId) =>
 		setTaskIdSelected(taskId)
 
 	const KillInstance = () => {
@@ -183,73 +178,76 @@ const InstanceSupervisorContainer = ({
 
 	const selectedStatus = overview ? overview[monitoringStateKeySelected]?.status : undefined
 	const isUnavailable = overview !== undefined && selectedStatus !== "CONNECTED"
+	const isLogOpen = logKeys.includes(monitoringStateKeySelected)
 
 	return monitoringStateKeySelected
-		? <Segment style={{ margin: "15px", height: "calc(100vh - 110px)", display: "flex", flexDirection: "column" }}>
+		? <div className="ecp-socket-detail">
+				{/* Entity detail (§4): EntityHeader + conteúdo. Numa coluna flex de
+				    altura fixa o cabeçalho é espremido a zero — daí o .ecp-fixed. */}
 				<EntityHeader
+					className="ecp-fixed"
 					icon="plug"
 					title={_GetSocketName(monitoringStateKeySelected)}
 					status={selectedStatus}
 					technicalRef={{ label: "key", value: monitoringStateKeySelected, maxChars: 22 }}
 					actions={<>
-						<Button basic icon size="small" onClick={() => handleBackTOverview()} title="back to overview"><Icon name="arrow left"/></Button>
-						{ !isUnavailable && <Button basic size="small" onClick={() => setSecondaryPanel("startup")} title="startup arguments"><Icon name="sliders horizontal"/> startup args</Button> }
-						{ !isUnavailable && <Button basic size="small" onClick={() => setSecondaryPanel("process")} title="instance process information"><Icon name="microchip"/> process info</Button> }
+						<IconButton icon="arrow left" label="back to overview" size="sm" onClick={() => handleBackTOverview()}/>
+						{ !isUnavailable && <Button size="sm" icon="sliders horizontal" onClick={() => setSecondaryPanel("startup")} title="startup arguments">startup args</Button> }
+						{ !isUnavailable && <Button size="sm" icon="microchip" onClick={() => setSecondaryPanel("process")} title="instance process information">process info</Button> }
 						{
 							!isUnavailable &&
 							<Button
-								basic size="small"
-								color={logKeys.includes(monitoringStateKeySelected) ? "green" : "blue"}
+								size="sm"
+								variant={isLogOpen ? "primary" : "default"}
+								icon={isLogOpen ? "eye" : "terminal"}
 								onClick={() => openLogWindow({ monitoringStateKey: monitoringStateKeySelected, socketName: _GetSocketName(monitoringStateKeySelected) })}
-								title={logKeys.includes(monitoringStateKeySelected) ? "view open log stream" : "open process log stream"}>
-								<Icon name={logKeys.includes(monitoringStateKeySelected) ? "eye" : "terminal"}/>
-								{ logKeys.includes(monitoringStateKeySelected) ? "view log" : "log stream" }
+								title={isLogOpen ? "view open log stream" : "open process log stream"}>
+								{ isLogOpen ? "view log" : "log stream" }
 							</Button>
 						}
 						{
 							!isUnavailable &&
-							<Button color="red" basic size="small" onClick={() => setIsConfirmKillOpen(true)} title="kill instance"><Icon name="close"/> kill</Button>
+							<Button size="sm" variant="danger" icon="times" onClick={() => setIsConfirmKillOpen(true)} title="kill instance">kill</Button>
 						}
 					</>}/>
 				{
 					isUnavailable
 					? <EmptyState
-						icon={<Icon.Group size="huge" style={{ color: "var(--mp-line-soft)" }}>
-							<Icon name="plug"/>
-							<Icon corner name="dont" color="red"/>
-						</Icon.Group>}
+						className="ecp-socket-detail__empty"
+						icon="plug"
 						title="Instance unavailable"
-						description="The supervisor socket is not responding — the instance is not running or was terminated. There are no tasks to inspect."
-						action={<Button basic icon labelPosition="left" onClick={() => handleBackTOverview()}><Icon name="arrow left"/> back to overview</Button>}/>
+						message="The supervisor socket is not responding — the instance is not running or was terminated. There are no tasks to inspect."
+						actions={<Button icon="arrow left" onClick={() => handleBackTOverview()}>back to overview</Button>}/>
 					: <>
-						<div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", flexWrap: "wrap", flex: "0 0 auto" }}>
-							<span style={{ fontWeight: 800, display: "inline-flex", alignItems: "center", gap: "6px", color: "var(--mp-ink)" }}>
-								<Icon name="tasks" style={{ margin: 0 }}/> Tasks <Label circular size="mini">{instanceTaskListCurrent.length}</Label>
+						<Toolbar className="ecp-fixed ecp-socket-detail__taskbar">
+							<span className="mp-panel__title">
+								<Icon name="tasks"/> Tasks
 							</span>
-							<Input icon="search" size="small" placeholder="filter tasks..." value={taskFilter}
-								onChange={(e:any, { value }:any) => setTaskFilter(value)} style={{ marginLeft: "auto" }}/>
-						</div>
-						<div style={{ flex: "1 1 auto", minHeight: 0, display: "flex", flexDirection: "column" }}>
+							<Badge>{instanceTaskListCurrent.length}</Badge>
+							<Toolbar.Spacer/>
+							<SearchInput
+								className="ecp-socket-detail__filter"
+								value={taskFilter}
+								onValueChange={(value:string) => setTaskFilter(value)}
+								placeholder="filter tasks…"/>
+						</Toolbar>
+						<div className="ecp-socket-detail__body">
 							<Tasks taskId={taskIdSelected} instanceTaskList={instanceTaskListCurrent} taskInformation={taskInformationSelected} taskFilter={taskFilter} onSelectTask={handleSelectTask} onCloseTask={resetTaskSelection}/>
 						</div>
 					</>
 				}
 
 				{
-					!isUnavailable && secondaryPanel && <>
-						<div className="mp-offcanvas__scrim" onClick={() => setSecondaryPanel(null)} style={{ zIndex: 1400 }}/>
-						<div className="mp-offcanvas" style={{ width: "460px", maxWidth: "92vw", zIndex: 1450 }}>
-							<div style={{ height: "56px", flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 14px", borderBottom: "2px solid var(--mp-line-strong)", background: "var(--mp-paper-2)" }}>
-								<strong style={{ fontFamily: "var(--mp-font-display)" }}>{ secondaryPanel === "startup" ? "Startup arguments" : "Instance process information" }</strong>
-								<Button circular basic icon size="mini" onClick={() => setSecondaryPanel(null)}><Icon name="close"/></Button>
-							</div>
-							<div style={{ padding: "12px", overflow: "auto", flex: "1 1 auto" }}>
-								{ secondaryPanel === "startup"
-									? <StartupArguments startupArguments={startupArgumentsCurrent}/>
-									: <InstanceProcessInformation processInformation={instanceProcessInformationCurrent}/> }
-							</div>
-						</div>
-					</>
+					!isUnavailable && secondaryPanel &&
+					<Drawer
+						open={true}
+						width={460}
+						title={ secondaryPanel === "startup" ? "Startup arguments" : "Instance process information" }
+						onClose={() => setSecondaryPanel(null)}>
+						{ secondaryPanel === "startup"
+							? <StartupArguments startupArguments={startupArgumentsCurrent}/>
+							: <InstanceProcessInformation processInformation={instanceProcessInformationCurrent}/> }
+					</Drawer>
 				}
 
 				<AppModal
@@ -261,11 +259,11 @@ const InstanceSupervisorContainer = ({
 					onCancel={() => setIsConfirmKillOpen(false)}
 					onConfirm={() => { setIsConfirmKillOpen(false); KillInstance() }}>
 					<p>Terminate instance <code>{ShortId(monitoringStateKeySelected, 10, 8)}</code>?</p>
-					<p style={{ color: "var(--mp-danger)" }}>
-						<Icon name="warning sign"/> <strong>Destructive and irreversible</strong> action: kills the package executor process and all its tasks.
+					<p className="ecp-danger-note">
+						<Icon name="warning sign" tone="danger"/> <strong>Destructive and irreversible</strong> action: kills the package executor process and all its tasks.
 					</p>
 				</AppModal>
-			</Segment>
+			</div>
 		: <OverviewSocketPanel
 			onSelect={handleSelectInstance}
 			supervisorAPI={_GetSupervisorAPI()}/>

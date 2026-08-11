@@ -2,32 +2,16 @@ import * as React from "react"
 import { useState, useEffect } from "react"
 
 import {
-    Dimmer,
-    Grid,
-    Header,
+    Badge,
     Icon,
-    Input,
-    Label,
-    List,
-    Loader,
-    Segment
-} from "semantic-ui-react"
+    ListRow,
+    LoadingOverlay,
+    SearchInput,
+    Surface,
+    TreeRow
+} from "@i-components"
 
 import PackageIcon from "../../Components/PackageIcon"
-
-// Cor por tipo de pacote (extensão), como num package explorer de IDE.
-const GetExtColor = (ext:string):any => {
-    switch(ext){
-        case "app"       : return "blue"
-        case "cli"       : return "teal"
-        case "webapp"    : return "purple"
-        case "webgui"    : return "violet"
-        case "webservice": return "orange"
-        case "service"   : return "olive"
-        case "lib"       : return "grey"
-        default          : return "grey"
-    }
-}
 
 // Constroi a árvore hierárquica do Meta Platform a partir da lista plana:
 // Repository > Module > Layer > (Group?) > Package.
@@ -47,34 +31,36 @@ const BuildPackageTree = (packageList:any[]) => {
     return rootNode.__children
 }
 
-// Recuo por aninhamento: cada nível recua o container filho em INDENT px,
-// então a tabulação fica sempre correta independente da profundidade.
-const INDENT = 16
-
 export const PackageKey = (pkg:any) =>
     `${pkg.namespaceRepo}/${pkg.moduleName}/${pkg.layerName}/${pkg.parentGroup || ""}/${pkg.packageName}.${pkg.ext}`
 
-const PackageLeaf = ({ pkg, selectedKey, onSelectPackage, serverManagerInformation }:any) => {
+// O recuo é o mesmo do TreeRow do kit (8 + depth * 14), para que a folha
+// montada à mão fique alinhada com a linha de pasta.
+const RowIndent = (depth:number) => 8 + depth * 14
+
+// Folha da árvore. O ícone é a IMAGEM do pacote (icon.svg), e TreeRow só
+// desenha ícone por nome — por isso a linha é montada aqui.
+const PackageLeaf = ({ pkg, depth = 0, selectedKey, onSelectPackage, serverManagerInformation }:any) => {
     const selectable = !!onSelectPackage
     const isSelected = selectable && selectedKey === PackageKey(pkg)
-    return <div
+    return <button
+        type="button"
         onClick={selectable ? () => onSelectPackage(pkg) : undefined}
         role={selectable ? "option" : undefined}
         aria-selected={selectable ? isSelected : undefined}
-        style={{
-            padding: "3px 4px", paddingLeft: "20px", display: "flex", alignItems: "center", gap: "4px",
-            cursor: selectable ? "pointer" : "default", borderRadius: "var(--mp-radius-sm)",
-            background: isSelected ? "var(--mp-accent-blue-tint)" : undefined,
-            boxShadow: isSelected ? "inset 3px 0 0 var(--mp-accent-blue)" : undefined,
-            fontWeight: isSelected ? 700 : undefined
-        }}>
+        className={[
+            "ecp-pkg-leaf",
+            selectable ? "is-clickable" : "",
+            isSelected ? "is-selected" : ""
+        ].filter(Boolean).join(" ")}
+        style={{ paddingLeft: RowIndent(depth) + 14 }}>
         <PackageIcon packageData={pkg} serverManagerInformation={serverManagerInformation} size={16}/>
-        <span style={{ color: "var(--mp-ink)" }}>{pkg.packageName}</span>
-        <Label size="mini" color={GetExtColor(pkg.ext)} style={{ marginLeft: "6px" }}>{pkg.ext}</Label>
-    </div>
+        <span className="ecp-pkg-leaf__name">{pkg.packageName}</span>
+        <span className="mp-type-chip">{pkg.ext}</span>
+    </button>
 }
 
-const TreeNode = ({ name, node, defaultOpen, selectedKey, onSelectPackage, serverManagerInformation }:any) => {
+const TreeNode = ({ name, node, defaultOpen, depth = 0, selectedKey, onSelectPackage, serverManagerInformation }:any) => {
     const [ open, setOpen ] = useState<boolean>(defaultOpen)
 
     const childNames = Object.keys(node.__children).sort()
@@ -82,23 +68,24 @@ const TreeNode = ({ name, node, defaultOpen, selectedKey, onSelectPackage, serve
     const totalDescendants = packages.length + childNames.length
 
     return <div>
-        <div
-            onClick={() => setOpen(!open)}
-            role="button" aria-expanded={open}
-            style={{ padding: "3px 4px", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", userSelect: "text" }}>
-            <Icon name={open ? "caret down" : "caret right"} style={{ color: "var(--mp-muted)", width: "14px", flex: "0 0 auto" }}/>
-            <Icon name={open ? "folder open" : "folder"} color="yellow"/>
-            <strong style={{ color: "var(--mp-ink-2)" }}>{name}</strong>
-            <Label circular size="mini" style={{ marginLeft: "6px" }}>{totalDescendants}</Label>
-        </div>
+        <TreeRow
+            label={name}
+            icon={open ? "folder open" : "folder"}
+            depth={depth}
+            expanded={open}
+            hasChildren={totalDescendants > 0}
+            meta={<Badge>{totalDescendants}</Badge>}
+            onToggle={() => setOpen(!open)}
+            onSelect={() => setOpen(!open)}/>
         {
-            open && <div style={{ marginLeft: `${INDENT}px`, borderLeft: "1px dashed var(--mp-line-faint)" }}>
-                { childNames.map((childName:string, key:number) =>
+            open && <>
+                { childNames.map((childName:string) =>
                     <TreeNode
-                        key={key}
+                        key={childName}
                         name={childName}
                         node={node.__children[childName]}
                         defaultOpen={false}
+                        depth={depth + 1}
                         selectedKey={selectedKey}
                         onSelectPackage={onSelectPackage}
                         serverManagerInformation={serverManagerInformation}/>) }
@@ -106,10 +93,11 @@ const TreeNode = ({ name, node, defaultOpen, selectedKey, onSelectPackage, serve
                     <PackageLeaf
                         key={key}
                         pkg={pkg}
+                        depth={depth + 1}
                         selectedKey={selectedKey}
                         onSelectPackage={onSelectPackage}
                         serverManagerInformation={serverManagerInformation}/>) }
-            </div>
+            </>
         }
     </div>
 }
@@ -148,57 +136,47 @@ const PackageTree = ({ packageList, isLoading, serverManagerInformation }:any) =
     const tree = BuildPackageTree(repoPackages)
     const repoNode = repoSelected && tree[repoSelected]
 
-    return <Segment style={{ minHeight: "120px" }}>
-        {
-            isLoading && <Dimmer active><Loader/></Dimmer>
-        }
-        <Grid divided>
-            <Grid.Column width={5}>
-                <Header as="h5"><Icon name="cubes"/> Repositories</Header>
-                <List selection size="small">
-                    {
-                        repoNames.map((repoName:string, key:number) =>
-                            <List.Item
-                                key={key}
-                                active={repoSelected === repoName}
-                                onClick={() => setRepoSelected(repoName)}>
-                                <List.Content floated="right">
-                                    <Label circular size="mini">{repoCounts[repoName]}</Label>
-                                </List.Content>
-                                <List.Icon name="cubes" color={repoSelected === repoName ? "blue" : "grey"}/>
-                                <List.Content>
-                                    <List.Header>{repoName}</List.Header>
-                                </List.Content>
-                            </List.Item>)
-                    }
-                </List>
-            </Grid.Column>
-            <Grid.Column width={11}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                    <Header as="h5" style={{ margin: 0 }}>{repoSelected || "—"}</Header>
-                    <Input
-                        icon="search"
-                        size="small"
-                        placeholder="filter in this repo..."
-                        value={filterValue}
-                        onChange={(e, { value }) => setFilterValue(value)}/>
-                </div>
-                <div style={{ overflow: "auto", maxHeight: "72vh", fontFamily: "system-ui, sans-serif", fontSize: ".95em" }}>
-                    {
-                        repoNode
-                        ? Object.keys(repoNode.__children).sort().map((moduleName:string, k:number) =>
-                            <TreeNode
-                                key={moduleName}
-                                name={moduleName}
-                                node={repoNode.__children[moduleName]}
-                                defaultOpen={true}
-                                serverManagerInformation={serverManagerInformation}/>)
-                        : <div style={{ color: "var(--mp-muted)", padding: "20px" }}>select a repository</div>
-                    }
-                </div>
-            </Grid.Column>
-        </Grid>
-    </Segment>
+    return <Surface className="ecp-pkgtree">
+        { isLoading && <LoadingOverlay message="loading packages"/> }
+
+        <div className="ecp-pkgtree__side">
+            <div className="mp-panel__title"><Icon name="cubes"/> Repositories</div>
+            {
+                repoNames.map((repoName:string, key:number) =>
+                    <ListRow
+                        key={key}
+                        icon="cubes"
+                        title={repoName}
+                        right={<Badge>{repoCounts[repoName]}</Badge>}
+                        selected={repoSelected === repoName}
+                        onClick={() => setRepoSelected(repoName)}/>)
+            }
+        </div>
+
+        <div className="ecp-pkgtree__main">
+            <div className="ecp-pkgtree__head">
+                <span className="mp-panel__title">{repoSelected || "—"}</span>
+                <SearchInput
+                    className="ecp-pkgtree__search"
+                    value={filterValue}
+                    placeholder="filter in this repo..."
+                    onValueChange={setFilterValue}/>
+            </div>
+            <div className="ecp-pkgtree__scroll">
+                {
+                    repoNode
+                    ? Object.keys(repoNode.__children).sort().map((moduleName:string) =>
+                        <TreeNode
+                            key={moduleName}
+                            name={moduleName}
+                            node={repoNode.__children[moduleName]}
+                            defaultOpen={true}
+                            serverManagerInformation={serverManagerInformation}/>)
+                    : <div className="ecp-pkgtree__empty">select a repository</div>
+                }
+            </div>
+        </div>
+    </Surface>
 }
 
 export { BuildPackageTree, TreeNode }

@@ -3,13 +3,15 @@ import { useEffect, useState } from "react"
 import AnsiToHtml              from "ansi-to-html"
 import { connect }             from "react-redux"
 import {
-	Loader,
-	Segment,
-	Header,
-	Button,
+	AppShell,
+	Badge,
+	EmptyState,
 	Icon,
-	Label
-} from "semantic-ui-react"
+	IconButton,
+	Spinner,
+	StatusChip,
+	StatusStrip
+} from "@i-components"
 
 
 const ansiConverter = new AnsiToHtml({
@@ -45,7 +47,6 @@ import MainMenu from "../Components/MainMenu"
 import WelcomePanel from "../Components/WelcomePanel"
 import ToastContainer from "../Components/ToastContainer"
 import LogDock from "../Components/LogDock"
-import { StatusChip } from "../Components/ui/StatusStrip"
 
 import QueryParamsActionsCreator from "../Actions/QueryParams.actionsCreator"
 
@@ -62,14 +63,17 @@ const PANEL_TITLES:any = {
 	"logs":                { title: "Logs",                   icon: "file alternate outline" }
 }
 
+// Apresentação por tipo de notificação: ícone, cor do ícone (o `color` do kit
+// já resolve cada nome para um token --mp-*) e a faixa de severidade do card,
+// que vem por classe (.ecp-notif-card--*) para não ter cor literal no TSX.
 const NOTIFICATION_TYPE_PROPS:any = {
-	log       : { icon: "terminal", color: "grey" },
-	message   : { icon: "info circle", color: "blue" },
-	socket    : { icon: "plug", color: "teal" },
-	source    : { icon: "feed", color: "orange" },
-	package   : { icon: "cube", color: "violet" },
-	repository: { icon: "cubes", color: "green" },
-	error     : { icon: "warning sign", color: "red" }
+	log       : { icon: "terminal",     color: "grey",   stripe: "neutral" },
+	message   : { icon: "info circle",  color: "blue",   stripe: "info" },
+	socket    : { icon: "plug",         color: "teal",   stripe: "cyan" },
+	source    : { icon: "feed",         color: "orange", stripe: "orange" },
+	package   : { icon: "cube",         color: "violet", stripe: "violet" },
+	repository: { icon: "cubes",        color: "green",  stripe: "success" },
+	error     : { icon: "warning sign", color: "red",    stripe: "danger" }
 }
 
 const ToText = (value:any) => {
@@ -187,6 +191,9 @@ const NOTIF_FILTERS:any = [
 	{ key: "system",  label: "system" }
 ]
 
+// Gaveta de notificações (§3 do ui-style-guide): cabeçalho paper-2 com borda
+// forte, chips de filtro, cards com faixa de severidade, agrupamento de
+// repetidos e line-clamp de 3 linhas no corpo.
 const NotificationPanel = ({ onClose, notificationStateList }) => {
 
 	const [ filter, setFilter ] = useState<string>("all")
@@ -200,75 +207,60 @@ const NotificationPanel = ({ onClose, notificationStateList }) => {
 		: notificationStateList.filter((n:any) => NotificationBucket(n.payload) === filter)
 	const grouped = GroupConsecutive(filtered)
 
-	return <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-		<div style={{
-			height: "56px", flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "space-between",
-			padding: "0 14px", borderBottom: "2px solid var(--mp-line-strong)", background: "var(--mp-paper-2)"
-		}}>
-			<Header as='h4' style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
-				<Icon name='bell outline' />
-				<Header.Content>Notifications</Header.Content>
-			</Header>
-			<Button circular icon='close' basic size="mini" onClick={onClose} />
-		</div>
+	return <aside className="mp-offcanvas ecp-notif-drawer" role="dialog" aria-label="Notifications">
+		<header className="ecp-notif-drawer__head">
+			<span className="ecp-notif-drawer__title">
+				<Icon name="bell outline"/>
+				Notifications
+			</span>
+			<IconButton icon="close" label="close notifications" size="sm" onClick={onClose}/>
+		</header>
 
-		{/* filter chips */}
-		<div style={{ flex: "0 0 auto", display: "flex", gap: "6px", padding: "8px 12px", borderBottom: "1px solid var(--mp-line-faint)", background: "var(--mp-surface-2)", flexWrap: "wrap" }}>
-			{ NOTIF_FILTERS.map((f:any) => {
-				const n = f.key === "all" ? notificationStateList.length : (counts[f.key] || 0)
-				return <StatusChip key={f.key} tone={f.tone || "neutral"} count={n} label={f.label}
-					active={filter === f.key} onClick={() => setFilter(f.key)}/>
-			}) }
-		</div>
+		{/* chips de filtro */}
+		<StatusStrip className="ecp-notif-drawer__filters">
+			{
+				NOTIF_FILTERS.map((f:any) => {
+					const n = f.key === "all" ? notificationStateList.length : (counts[f.key] || 0)
+					return <StatusChip key={f.key} tone={f.tone || "neutral"} count={n} label={f.label}
+						active={filter === f.key} onClick={() => setFilter(f.key)}/>
+				})
+			}
+		</StatusStrip>
 
-		<div style={{ overflow: 'auto', flex: "1 1 auto", padding: "12px", background: "var(--mp-paper)" }}>
+		<div className="ecp-notif-drawer__list">
 			{
 				grouped.length === 0
-				&& <Segment placeholder textAlign="center" style={{ color: "var(--mp-muted)", minHeight: "160px" }}>
-					<Icon name="bell slash outline" size="large"/>
-					<div>No notifications yet</div>
-				</Segment>
+				&& <EmptyState icon="bell slash outline" message="No notifications yet"/>
 			}
 			{
 				grouped.map((g:any, key:number) => {
 					const view = g.view
 					const messageHtml = ansiConverter.toHtml(view.body)
-					const stripe = view.color === "red" ? "var(--mp-danger)" : view.color === "orange" ? "var(--mp-accent-orange)" : view.color === "green" ? "var(--mp-success)" : view.color === "violet" ? "var(--mp-accent-violet)" : view.color === "teal" ? "var(--mp-accent-cyan)" : view.color === "blue" ? "var(--mp-accent-blue)" : "var(--mp-neutral)"
 
-					return <div
+					return <article
 						key={key}
-						style={{
-							opacity: g.wasSeen ? 0.72 : 1,
-							background: "var(--mp-surface)",
-							border: "1px solid var(--mp-line)",
-							borderLeft: `6px solid ${stripe}`,
-							borderRadius: "var(--mp-radius-md)",
-							padding: "10px 12px",
-							marginBottom: "10px",
-							boxShadow: "var(--mp-shadow-1)"
-						}}>
-						<div style={{ display: "flex", alignItems: "flex-start", gap: "8px", minWidth: 0 }}>
-							<Icon name={view.icon} color={view.color} style={{ marginTop: "2px", flex: "0 0 auto" }}/>
-							<div style={{ minWidth: 0, flex: 1 }}>
-								<div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
-									<strong style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{view.title}</strong>
-									{ g.count > 1 && <Label circular size="mini" style={{ flex: "0 0 auto" }}>×{g.count}</Label> }
-									{ !g.wasSeen && <Label circular empty color="orange" size="mini" style={{ flex: "0 0 auto" }}/> }
-								</div>
-								<div title={view.body}
-									style={{ color: "var(--mp-ink-3)", fontSize: ".9em", marginTop: "5px", wordBreak: "break-word", fontFamily: "var(--mp-font-mono)", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}
-									dangerouslySetInnerHTML={{ __html: messageHtml }}/>
-								<div style={{ display: "flex", justifyContent: "space-between", gap: "8px", color: "var(--mp-muted-2)", fontSize: ".78em", marginTop: "8px" }}>
-									<span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{view.origin || "system"}</span>
-									<span style={{ flex: "0 0 auto" }}>{view.date}</span>
-								</div>
+						className={`ecp-notif-card ecp-notif-card--${view.stripe} ${g.wasSeen ? "is-seen" : ""}`.trim()}>
+						<Icon name={view.icon} color={view.color} className="ecp-notif-card__icon"/>
+						<div className="ecp-notif-card__body">
+							<div className="ecp-notif-card__titleline">
+								<strong className="ecp-notif-card__title">{view.title}</strong>
+								{ g.count > 1 && <Badge className="ecp-notif-card__count">×{g.count}</Badge> }
+								{ !g.wasSeen && <span className="ecp-notif-card__dot" aria-label="unread"/> }
+							</div>
+							<div
+								className="ecp-notif-card__message"
+								title={view.body}
+								dangerouslySetInnerHTML={{ __html: messageHtml }}/>
+							<div className="ecp-notif-card__foot">
+								<span className="ecp-notif-card__origin">{view.origin || "system"}</span>
+								<span className="ecp-notif-card__date">{view.date}</span>
 							</div>
 						</div>
-					</div>
+					</article>
 				})
 			}
 		</div>
-	</div>
+	</aside>
 }
 
 const ControlPanelPage = ({
@@ -439,60 +431,56 @@ const ControlPanelPage = ({
 		}
 	}
 
+	const renderNavigator = (onNavigateTarget:any) =>
+		<EcosystemNavigator
+			serverManagerInformation={HTTPServerManager}
+			ecosystemdataPath={ecosystemdataPathSelected}
+			activeItem={activeItem}
+			selection={navigatorSelection}
+			onNavigate={onNavigateTarget}/>
+
 	return isLoading
-			? <Loader active style={{margin: "50px"}}/>
-			:<div className="eco-control-shell">
-					<MainMenu
-						nUnreadNotifications={nUnreadNotifications}
-						ecosystemdataPath={ecosystemdataPathSelected}
-						activePanelTitle={PANEL_TITLES[activeItem]?.title}
-						activePanelIcon={PANEL_TITLES[activeItem]?.icon}
-						onClickOpenEcosystemDataPathModal={handleOpenEcosystemDataModal}
-						onClickOpenNotificationPanel={handleOpenNotificationPanel}
-						onClickLogo={() => handleNavigate({ panel: "welcome" })}
-						showSidebarToggle={isNarrow}
-						onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}/>
-					<div className="eco-control-body">
-						{
-							!isNarrow &&
-							<aside className="eco-sidebar-fixed">
-								<EcosystemNavigator
-									serverManagerInformation={HTTPServerManager}
-									ecosystemdataPath={ecosystemdataPathSelected}
-									activeItem={activeItem}
-									selection={navigatorSelection}
-									onNavigate={handleNavigate}/>
-							</aside>
+			? <div className="ecp-boot"><Spinner label="loading control panel…"/></div>
+			: <>
+					<AppShell
+						topbar={
+							<MainMenu
+								nUnreadNotifications={nUnreadNotifications}
+								ecosystemdataPath={ecosystemdataPathSelected}
+								activePanelTitle={PANEL_TITLES[activeItem]?.title}
+								activePanelIcon={PANEL_TITLES[activeItem]?.icon}
+								onClickOpenEcosystemDataPathModal={handleOpenEcosystemDataModal}
+								onClickOpenNotificationPanel={handleOpenNotificationPanel}
+								onClickLogo={() => handleNavigate({ panel: "welcome" })}
+								showSidebarToggle={isNarrow}
+								onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}/>
 						}
-						<main className={isNarrow ? "eco-main-content eco-main-content-full" : "eco-main-content"}>
-							{ renderActivePanel() }
-						</main>
-					</div>
+						sidebar={
+							!isNarrow
+								? <div className="ecp-sidebar">{ renderNavigator(handleNavigate) }</div>
+								: undefined
+						}>
+						{ renderActivePanel() }
+					</AppShell>
 
 					{
 						/* Sidebar como DRAWER em telas estreitas (tablet). */
 						isNarrow && isSidebarOpen && <>
-							<div className="mp-offcanvas__scrim" onClick={() => setIsSidebarOpen(false)} style={{ zIndex: 1500 }}/>
-							<div className="eco-sidebar-drawer">
-								<EcosystemNavigator
-									serverManagerInformation={HTTPServerManager}
-									ecosystemdataPath={ecosystemdataPathSelected}
-									activeItem={activeItem}
-									selection={navigatorSelection}
-									onNavigate={(target:any) => { handleNavigate(target); setIsSidebarOpen(false) }}/>
-							</div>
+							<div className="mp-offcanvas__scrim ecp-nav-drawer__scrim" onClick={() => setIsSidebarOpen(false)}/>
+							<aside className="mp-offcanvas mp-offcanvas--left ecp-nav-drawer">
+								{ renderNavigator((target:any) => { handleNavigate(target); setIsSidebarOpen(false) }) }
+							</aside>
 						</>
 					}
 
 					{
 						/* Notificações como OVERLAY: não empurra o conteúdo. */
 						isOpenNotificationPanel &&
-						<div className="mp-offcanvas" style={{ width: "380px", maxWidth: "92vw", zIndex: 1000, overflow: "hidden" }}>
-							<NotificationPanel
-								onClose={handleCloseNotificationPanel}
-								notificationStateList={notificationStateList}/>
-						</div>
+						<NotificationPanel
+							onClose={handleCloseNotificationPanel}
+							notificationStateList={notificationStateList}/>
 					}
+
 					<EcosystemDataPathModal
 						ecosystemdataPath={ecosystemdataPathSelected}
 					 	open={isEcosystemDataPathModalOpen}
@@ -501,7 +489,7 @@ const ControlPanelPage = ({
 
 					<ToastContainer/>
 					<LogDock/>
-			</div>
+			</>
 
 }
 

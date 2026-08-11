@@ -1,50 +1,25 @@
-import styled from "styled-components"
 import * as React from "react"
-import { Segment, Loader, Dimmer, Divider } from "semantic-ui-react"
+
+import {
+	EmptyState,
+	ObjectCard,
+	SkeletonCards
+} from "@i-components"
+
 import PackageIcon from "../../Components/PackageIcon"
 
-const GridContainer = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  width: 100%;
-  justify-content: flex-start;
-`
-
-const FlexibleSegment = styled(Segment)`
-  flex: 0 0 auto;
-  max-width: 400px;
-  min-width: 200px;
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  height: auto;
-  padding: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.24);
-  transition: all 0.3s ease-in-out;
-
-  &:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 0 3px 3px rgba(0, 0, 0, 0.24);
-  }
-`
-
+// O ícone do pacote é IMAGEM (icon.svg), então entra por `iconNode` — o slot
+// `icon` do kit só aceita nome de ícone.
 const PackageDataGrid = ({ packageList, serverManagerInformation }) =>
-	<GridContainer>
+	<div className="ecp-apps-grid">
 		{packageList.map((packageInformation) => (
-			<FlexibleSegment key={packageInformation.packageName}>
-				<div style={{ display: "flex", alignItems: "center", gap: "8px", margin: "0 0 8px 0", minWidth: 0 }}>
-					<PackageIcon packageData={packageInformation} serverManagerInformation={serverManagerInformation} size={24}/>
-					<h3 style={{ margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-						{packageInformation.packageName}.{packageInformation.ext}
-					</h3>
-				</div>
-				<p style={{ margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-					<i>{`${packageInformation.moduleName}.${packageInformation.layerName}${packageInformation.parentGroup ? `.${packageInformation.parentGroup}` : ""}`}</i>
-				</p>
-			</FlexibleSegment>
+			<ObjectCard
+				key={`${packageInformation.packageName}.${packageInformation.ext}`}
+				iconNode={<PackageIcon packageData={packageInformation} serverManagerInformation={serverManagerInformation} size={24}/>}
+				title={`${packageInformation.packageName}.${packageInformation.ext}`}
+				meta={`${packageInformation.moduleName}.${packageInformation.layerName}${packageInformation.parentGroup ? `.${packageInformation.parentGroup}` : ""}`}/>
 		))}
-	</GridContainer>
+	</div>
 
 const GroupByNamespaceRepo = (packageList) => packageList
 	.reduce((acc, packageInformation) => {
@@ -57,24 +32,33 @@ const GroupByNamespaceRepo = (packageList) => packageList
 
 const PackageList = ({ isLoading, packageList, serverManagerInformation }) =>{
 
-	const groupedPackageInformation = GroupByNamespaceRepo(packageList)
+	if(isLoading) return <SkeletonCards cards={8}/>
 
-	return 	<Segment placeholder>
-				{isLoading && (
-					<Dimmer active>
-						<Loader />
-					</Dimmer>
-				)}
-				
-				{
-					Object.keys(groupedPackageInformation)
-					.map(namespaceRepo => <>
-						<h2>{namespaceRepo} ({groupedPackageInformation[namespaceRepo].length})</h2>
-						<Divider style={{"marginTop":"0px"}}/>
-						<PackageDataGrid packageList={groupedPackageInformation[namespaceRepo]} serverManagerInformation={serverManagerInformation} />
-					</>)
-				}
-			</Segment>
+	const groupedPackageInformation = GroupByNamespaceRepo(packageList)
+	const namespaceRepoList = Object.keys(groupedPackageInformation)
+
+	if(namespaceRepoList.length === 0)
+		return <EmptyState
+					icon="cubes"
+					title="No package"
+					message="No package installed in this ecosystem."/>
+
+	return <>
+		{
+			namespaceRepoList
+			.map(namespaceRepo => <div key={namespaceRepo}>
+				<div className="ecp-apps-group-head">
+					<span className="mp-panel__title">{namespaceRepo}</span>
+					<span className="ecp-apps-group-head__count">
+						{groupedPackageInformation[namespaceRepo].length}
+					</span>
+				</div>
+				<PackageDataGrid
+					packageList={groupedPackageInformation[namespaceRepo]}
+					serverManagerInformation={serverManagerInformation}/>
+			</div>)
+		}
+	</>
 }
 
 

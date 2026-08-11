@@ -1,13 +1,11 @@
 import * as React from "react"
+import { useState } from "react"
 
 import {
-    Tab, 
-    Loader,
-    Dimmer,
-    TabPane,
-    Header,
-    CardGroup
-} from "semantic-ui-react"
+    EmptyState,
+    SkeletonCards,
+    Tabs
+} from "@i-components"
 
 import ItemApplication from "../../Components/ItemApplication"
 
@@ -28,25 +26,41 @@ const GroupDataListByRepositoryNamespace = (applicationList) => {
 const ApplicationDataCardGroup = ({applicationList, serverManagerInformation}) => {
 
     const applicationDataGrouped = GroupDataListByRepositoryNamespace(applicationList)
+    const repositoryNamespaceList = Object.keys(applicationDataGrouped)
+
+    if(repositoryNamespaceList.length === 0)
+        return <EmptyState
+                    icon="rocket"
+                    title="No application"
+                    message="No installed application of this kind."/>
 
     return <>
         {
-            Object.keys(applicationDataGrouped)
-            .map((repositoryNamespace) => <>
-                <Header dividing>{repositoryNamespace}</Header>
-                <CardGroup>
+            repositoryNamespaceList
+            .map((repositoryNamespace) => <div key={repositoryNamespace}>
+                <div className="ecp-apps-group-head">
+                    <span className="mp-panel__title">{repositoryNamespace}</span>
+                    <span className="ecp-apps-group-head__count">
+                        {applicationDataGrouped[repositoryNamespace].length}
+                    </span>
+                </div>
+                <div className="ecp-apps-grid">
                     {
                         applicationDataGrouped[repositoryNamespace]
-                        .map((applicationData:any, key) => 
+                        .map((applicationData:any, key) =>
                             <ItemApplication key={key} applicationData={applicationData} serverManagerInformation={serverManagerInformation}/>)
                     }
-                </CardGroup> 
-            </>)
-
+                </div>
+            </div>)
         }
-        
-    </> 
+    </>
 }
+
+// `Tabs` do kit desenha só a barra — o painel do tipo escolhido é montado aqui.
+const APP_TYPE_TABS = [
+    { key: "APP", label: "standard application", icon: "rocket" },
+    { key: "CLI", label: "command line application", icon: "terminal" }
+]
 
 const ApplicationsTabs = ({
     isLoading,
@@ -54,39 +68,23 @@ const ApplicationsTabs = ({
     serverManagerInformation
 }) => {
 
-    const applicationListByRepo =
-        installedApplicationList
-        .reduce((acc, applicationData) => {
+    const [ activeAppType, setActiveAppType ] = useState<string>("APP")
 
-            if(!acc[applicationData.repositoryNamespace]){
-                acc[applicationData.repositoryNamespace] = []
-            }
+    if(isLoading) return <SkeletonCards cards={6}/>
 
-            acc[applicationData.repositoryNamespace].push(applicationData)
+    const tabs = APP_TYPE_TABS.map((tab) => ({
+        ...tab,
+        count: installedApplicationList.filter(({appType}) => appType === tab.key).length
+    }))
 
-            return acc
-        }, {})
-
-    const panes = [
-        {
-            menuItem: 'standard aplication',
-            render: () => <TabPane attached={false} style={{"backgroundColor": "mistyrose"}}> 
-                                <ApplicationDataCardGroup applicationList={installedApplicationList
-                                        .filter(({appType}) => appType === "APP")}
-                                    serverManagerInformation={serverManagerInformation} />
-                        </TabPane>,
-        },
-        {
-            menuItem: 'command line application',
-            render: () => <TabPane attached={false} style={{"backgroundColor": "mintcream"}}>
-                                <ApplicationDataCardGroup applicationList={installedApplicationList
-                                        .filter(({appType}) => appType === "CLI")}
-                                    serverManagerInformation={serverManagerInformation} />
-                        </TabPane>,
-        }
-    ]
-
-    return isLoading ? <Dimmer active><Loader/></Dimmer>: <Tab menu={{ secondary: true, pointing: true }} panes={panes} />
+    return <>
+        <Tabs tabs={tabs} activeKey={activeAppType} onChange={setActiveAppType}/>
+        <div className="ecp-apps-tabpanel">
+            <ApplicationDataCardGroup
+                applicationList={installedApplicationList.filter(({appType}) => appType === activeAppType)}
+                serverManagerInformation={serverManagerInformation}/>
+        </div>
+    </>
 }
 
 export default ApplicationsTabs

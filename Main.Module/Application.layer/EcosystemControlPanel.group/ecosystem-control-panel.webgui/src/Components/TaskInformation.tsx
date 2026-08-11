@@ -1,29 +1,27 @@
 import * as React from "react"
+import { useState } from "react"
 
 import {
-	Button,
-	Icon,
-	Label,
-	Tab,
-	TabPane
- } from "semantic-ui-react"
+	Badge,
+	EntityHeader,
+	IconButton,
+	Tabs
+ } from "@i-components"
 
-import StatusBadge from "./StatusBadge"
 import KeyValuePanel from "./KeyValuePanel"
-import EntityHeader from "./ui/EntityHeader"
 
 // Regras (&&) empilhadas (propriedade ACIMA do valor), padronizadas com o modo
 // stacked do KeyValuePanel para otimizar o espaço estreito do off-canvas.
 const RulesTable = ({ rules }:any) => {
 	const andRules = (rules && rules["&&"]) || []
 	if(andRules.length === 0)
-		return <span style={{ color: "var(--mp-muted-2)" }}>sem regras</span>
+		return <span className="ecp-kv__empty">sem regras</span>
 	return <div>
 		{
 			andRules.map((rule:any, key:number) =>
-				<div key={key} style={{ padding: "8px 0", borderBottom: key < andRules.length - 1 ? "1px solid var(--mp-line-faint)" : "none" }}>
-					<div style={{ fontFamily: "monospace", fontSize: ".78em", color: "var(--mp-muted)", fontWeight: 600, marginBottom: "2px", wordBreak: "break-all" }}>{rule.property}</div>
-					<code style={{ wordBreak: "break-all" }}>{String(rule["="])}</code>
+				<div key={key} className={`ecp-rule ${key < andRules.length - 1 ? "has-divider" : ""}`.trim()}>
+					<div className="ecp-rule__property">{rule.property}</div>
+					<code className="ecp-rule__value">{String(rule["="])}</code>
 				</div>)
 		}
 	</div>
@@ -32,47 +30,66 @@ const RulesTable = ({ rules }:any) => {
 const TaskInformation = ({ taskInformation, onClose }:any) => {
 
 	// Cada seção vira uma aba — só aparecem as que têm dados, evitando um
-	// painel muito comprido com tudo empilhado.
-	const panes:any[] = []
-	if(taskInformation.staticParameters)
-		panes.push({ menuItem: "params", render: () => <TabPane style={{ border: "none", padding: "10px 14px" }}><KeyValuePanel data={taskInformation.staticParameters} stacked/></TabPane> })
-	if(taskInformation.linkedParameters)
-		panes.push({ menuItem: "linked", render: () => <TabPane style={{ border: "none", padding: "10px 14px" }}><KeyValuePanel data={taskInformation.linkedParameters} stacked/></TabPane> })
-	if(taskInformation.activationRules)
-		panes.push({ menuItem: "activation", render: () => <TabPane style={{ border: "none", padding: "10px 14px" }}><RulesTable rules={taskInformation.activationRules}/></TabPane> })
-	if(taskInformation.agentLinkRules && taskInformation.agentLinkRules.length > 0)
-		panes.push({
-			menuItem: "agent links",
-			render: () => <TabPane style={{ border: "none", padding: "10px 14px" }}>
+	// painel muito comprido com tudo empilhado. `Tabs` do kit é SÓ A BARRA:
+	// o estado da aba ativa e o corpo são responsabilidade daqui.
+	const tabs:any[] = []
+	const bodyByKey:any = {}
+
+	if(taskInformation.staticParameters){
+		tabs.push({ key: "params", label: "params" })
+		bodyByKey["params"] = <KeyValuePanel data={taskInformation.staticParameters} stacked/>
+	}
+	if(taskInformation.linkedParameters){
+		tabs.push({ key: "linked", label: "linked" })
+		bodyByKey["linked"] = <KeyValuePanel data={taskInformation.linkedParameters} stacked/>
+	}
+	if(taskInformation.activationRules){
+		tabs.push({ key: "activation", label: "activation" })
+		bodyByKey["activation"] = <RulesTable rules={taskInformation.activationRules}/>
+	}
+	if(taskInformation.agentLinkRules && taskInformation.agentLinkRules.length > 0){
+		tabs.push({ key: "agent links", label: "agent links" })
+		bodyByKey["agent links"] =
+			<>
 				{
 					taskInformation.agentLinkRules.map((linkRule:any, key:number) =>
-						<div key={key} style={{ marginBottom: "10px" }}>
-							<div style={{ fontFamily: "monospace", fontSize: ".82em", marginBottom: "4px" }}>{linkRule.referenceName}</div>
+						<div key={key} className="ecp-agent-link">
+							<div className="ecp-agent-link__name">{linkRule.referenceName}</div>
 							<RulesTable rules={linkRule.requirement}/>
 						</div>)
 				}
-			</TabPane>
-		})
+			</>
+	}
 
-	return <div style={{ padding: "14px 16px" }}>
+	const [ activeTab, setActiveTab ] = useState<string>()
+	const currentTab = activeTab && bodyByKey[activeTab] ? activeTab : tabs[0]?.key
+
+	return <div className="ecp-task-information">
 		<EntityHeader
+			className="ecp-task-information__header"
 			icon="tasks"
 			title={`Task ${taskInformation.taskId}`}
 			status={taskInformation.status}
 			subtitle={taskInformation.objectLoaderType}
 			badges={ taskInformation.pTaskId !== undefined && taskInformation.pTaskId !== null
-				? <Label size="tiny" basic>parent {taskInformation.pTaskId}</Label>
+				? <Badge>parent {taskInformation.pTaskId}</Badge>
 				: undefined }
 			actions={ onClose
-				? <Button icon basic size="small" title="fechar detalhe" onClick={onClose}><Icon name="close"/></Button>
+				? <IconButton icon="close" label="fechar detalhe" size="sm" onClick={onClose}/>
 				: undefined }/>
 
 		{
-			panes.length > 0 &&
-			<Tab
-				menu={{ secondary: true, pointing: true, size: "small" }}
-				panes={panes}
-				style={{ marginTop: "10px" }}/>
+			tabs.length > 0 &&
+			<>
+				<Tabs
+					className="ecp-task-information__tabs"
+					tabs={tabs}
+					activeKey={currentTab}
+					onChange={(key:string) => setActiveTab(key)}/>
+				<div className="ecp-task-information__body">
+					{ bodyByKey[currentTab] }
+				</div>
+			</>
 		}
 	</div>
 }

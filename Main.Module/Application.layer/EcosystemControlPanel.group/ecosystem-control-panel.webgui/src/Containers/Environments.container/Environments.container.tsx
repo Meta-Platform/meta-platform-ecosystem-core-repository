@@ -2,18 +2,27 @@ import * as React from "react"
 import { useState, useEffect } from "react"
 import { connect }            from "react-redux"
 import { bindActionCreators } from "redux"
-import { Button, Icon, Input, Label, Segment, Table } from "semantic-ui-react"
 import qs from "query-string"
 import {
 	useNavigate
   } from "react-router-dom"
 
+import {
+    Button,
+    DataTable,
+    EmptyState,
+    EntityHeader,
+    Icon,
+    PageMasthead,
+    SearchInput,
+    SkeletonList,
+    StatusChip,
+    StatusStrip
+} from "@i-components"
+
 import QueryParamsActionsCreator from "../../Actions/QueryParams.actionsCreator"
 import GetAPI from "../../Utils/GetAPI"
 import Breadcrumbs from "../../Components/Breadcrumbs"
-import ListSkeleton from "../../Components/Skeleton"
-import EmptyState from "../../Components/EmptyState"
-import EntityHeader from "../../Components/ui/EntityHeader"
 import { ShortId } from "../../Utils/Format"
 import { toastSuccess, toastError, errorMessage } from "../../Utils/toast"
 
@@ -113,7 +122,7 @@ const EnvironmentsContainer = ({
 
     // ---- DETALHE ----
     if(environmentNameSelected)
-        return <Segment style={{ margin: "15px" }}>
+        return <div className="ecp-env-detail">
             <Breadcrumbs items={[ "Environments", ExtractPackageIdentity(environmentNameSelected), ShortId(ExtractEnvironmentHash(environmentNameSelected), 8, 6) ]}/>
             <EntityHeader
                 icon="sitemap"
@@ -122,8 +131,8 @@ const EnvironmentsContainer = ({
                 typeLabel={ExtractType(ExtractPackageIdentity(environmentNameSelected))}
                 technicalRef={{ label: "hash", value: ExtractEnvironmentHash(environmentNameSelected), maxChars: 20 }}
                 actions={
-                    <Button size="small" basic icon labelPosition="left" onClick={backToList}>
-                        <Icon name="arrow left"/> list
+                    <Button size="sm" variant="subtle" icon="arrow left" onClick={backToList}>
+                        list
                     </Button>
                 }/>
             <EnvironmentDetailsTab
@@ -132,78 +141,108 @@ const EnvironmentsContainer = ({
                 onSaveExecutionParams={handleSaveExecutionParams}
                 serverManagerInformation={HTTPServerManager}
                 environmentName={environmentNameSelected}/>
-        </Segment>
+        </div>
 
     // ---- LISTA ----
     const filtered = environmentNameList.filter((n) => !filterValue || n.toLowerCase().includes(filterValue.toLowerCase()))
     const grouped = GroupByIdentity(filtered)
     const identities = Object.keys(grouped).sort()
 
-    return <Segment style={{ margin: "10px", height: "calc(100vh - 110px)", display: "flex", flexDirection: "column" }}>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "10px", flex: "0 0 auto" }}>
-            <Label size="large"><Icon name="sitemap"/> {environmentNameList.length} environments</Label>
-            <Label basic>{identities.length} packages</Label>
-            <Input icon="search" size="small" placeholder="filter environments..." value={filterValue}
-                onChange={(e, { value }) => setFilterValue(value)} style={{ marginLeft: "auto" }}/>
-        </div>
+    // A tabela do kit é dirigida por DADOS: a árvore (identidade + instâncias
+    // abertas) é achatada aqui, e cada linha carrega o que fazer no clique.
+    const tableRows:any[] = []
+    identities.forEach((identity:string) => {
+        const instances = grouped[identity]
+        const isOpen = !!openGroups[identity]
+        tableRows.push({ kind: "group", key: `g-${identity}`, identity, instances, isOpen })
+        if(instances.length > 1 && isOpen)
+            instances.forEach((name:string) =>
+                tableRows.push({ kind: "instance", key: `i-${name}`, identity, name }))
+    })
 
+    const OpenHint = () =>
+        <span className="ecp-env-open">open <Icon name="arrow right" size="small"/></span>
+
+    const columns = [
         {
-            isLoadingList
-            ? <ListSkeleton lines={10}/>
-            : identities.length === 0
-                ? <EmptyState icon="sitemap" title="No environments" description="Run a package to generate an environment."/>
-                : <div style={{ overflow: "auto", flex: "1 1 auto", minHeight: 0 }}>
-                    <Table celled striped compact>
-                        <Table.Header>
-                            <Table.Row>
-                                <Table.HeaderCell width={8}>package</Table.HeaderCell>
-                                <Table.HeaderCell width={2}>type</Table.HeaderCell>
-                                <Table.HeaderCell width={3}>instances</Table.HeaderCell>
-                                <Table.HeaderCell width={3}></Table.HeaderCell>
-                            </Table.Row>
-                        </Table.Header>
-                        <Table.Body>
-                            {
-                                identities.map((identity:string, gi:number) => {
-                                    const instances = grouped[identity]
-                                    const isOpen = openGroups[identity]
-                                    const rows:any[] = []
-                                    rows.push(
-                                        <Table.Row key={`g-${gi}`} style={{ cursor: instances.length > 1 ? "pointer" : "default" }}
-                                            onClick={() => instances.length > 1 ? setOpenGroups({ ...openGroups, [identity]: !isOpen }) : selectEnvironment(instances[0])}>
-                                            <Table.Cell>
-                                                { instances.length > 1 && <Icon name={isOpen ? "caret down" : "caret right"} style={{ color: "var(--mp-muted-2)" }}/> }
-                                                <Icon name="cube" style={{ color: "var(--mp-muted)" }}/> <strong>{identity}</strong>
-                                            </Table.Cell>
-                                            <Table.Cell><Label size="mini">{ExtractType(identity)}</Label></Table.Cell>
-                                            <Table.Cell>{instances.length}</Table.Cell>
-                                            <Table.Cell textAlign="right">
-                                                {
-                                                    instances.length === 1 &&
-                                                    <span style={{ color: "var(--mp-accent-blue)" }}>open <Icon name="arrow right"/></span>
-                                                }
-                                            </Table.Cell>
-                                        </Table.Row>
-                                    )
-                                    if(instances.length > 1 && isOpen)
-                                        instances.forEach((name:string, ii:number) =>
-                                            rows.push(
-                                                <Table.Row key={`i-${gi}-${ii}`} style={{ cursor: "pointer" }} onClick={() => selectEnvironment(name)}>
-                                                    <Table.Cell style={{ paddingLeft: "34px", fontFamily: "monospace", color: "var(--mp-ink-3)" }}>
-                                                        <Icon name="hashtag" style={{ color: "var(--mp-muted-2)" }}/> {ShortId(ExtractEnvironmentHash(name), 12, 8)}
-                                                    </Table.Cell>
-                                                    <Table.Cell/>
-                                                    <Table.Cell/>
-                                                    <Table.Cell textAlign="right"><span style={{ color: "var(--mp-accent-blue)" }}>open <Icon name="arrow right"/></span></Table.Cell>
-                                                </Table.Row>))
-                                    return rows
-                                })
-                            }
-                        </Table.Body>
-                    </Table>
-                </div>
+            key: "package",
+            header: "package",
+            width: "50%",
+            render: (row:any) =>
+                row.kind === "group"
+                ? <span className="ecp-env-group-name">
+                    { row.instances.length > 1 && <Icon name={row.isOpen ? "caret down" : "caret right"} tone="muted"/> }
+                    <Icon name="cube" tone="muted"/>
+                    <strong>{row.identity}</strong>
+                </span>
+                : <span className="ecp-env-instance-name">
+                    <Icon name="hashtag" tone="muted"/>
+                    {ShortId(ExtractEnvironmentHash(row.name), 12, 8)}
+                </span>
+        },
+        {
+            key: "type",
+            header: "type",
+            width: "14%",
+            render: (row:any) =>
+                row.kind === "group" ? <span className="mp-type-chip">{ExtractType(row.identity)}</span> : null
+        },
+        {
+            key: "instances",
+            header: "instances",
+            width: "16%",
+            render: (row:any) => row.kind === "group" ? row.instances.length : null
+        },
+        {
+            key: "action",
+            header: "",
+            width: "20%",
+            align: "right" as const,
+            render: (row:any) =>
+                row.kind === "instance" || row.instances.length === 1 ? <OpenHint/> : null
         }
-    </Segment>
+    ]
+
+    const handleRowClick = (row:any) => {
+        if(row.kind === "instance") return selectEnvironment(row.name)
+        if(row.instances.length > 1)
+            return setOpenGroups({ ...openGroups, [row.identity]: !row.isOpen })
+        return selectEnvironment(row.instances[0])
+    }
+
+    return <div className="ecp-env-page">
+        <PageMasthead
+            icon="sitemap"
+            title="Environments"
+            subtitle="runtime environment generated for each executed package"/>
+
+        <StatusStrip
+            right={
+                <SearchInput
+                    className="ecp-env-search"
+                    value={filterValue}
+                    placeholder="filter environments..."
+                    onValueChange={setFilterValue}/>
+            }>
+            <StatusChip icon="sitemap" count={environmentNameList.length} label="environments"/>
+            <StatusChip icon="cube" count={identities.length} label="packages" tone="info"/>
+        </StatusStrip>
+
+        <div className="ecp-env-page__body">
+            {
+                isLoadingList
+                ? <SkeletonList rows={10}/>
+                : identities.length === 0
+                    ? <EmptyState icon="sitemap" title="No environments" message="Run a package to generate an environment."/>
+                    : <DataTable
+                        columns={columns}
+                        rows={tableRows}
+                        rowKey={(row:any) => row.key}
+                        onRowClick={handleRowClick}
+                        dense/>
+            }
+        </div>
+    </div>
 }
 
 const mapDispatchToProps = (dispatch:any) => bindActionCreators({

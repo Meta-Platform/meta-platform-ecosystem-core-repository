@@ -2,15 +2,19 @@ import * as React from "react"
 import { useState } from "react"
 
 import {
+    Badge,
+    Banner,
     Button,
+    DataTable,
+    Dialog,
     Icon,
-    Input,
-    Label,
-    Loader,
-    Message,
-    Modal,
-    Table
-} from "semantic-ui-react"
+    IconButton,
+    SearchInput,
+    SkeletonList,
+    StatusChip,
+    StatusStrip,
+    TextInput
+} from "@i-components"
 
 const GetIconByLoaderType = (objectLoaderType:string):any => {
     switch(objectLoaderType){
@@ -67,7 +71,7 @@ const ExecutionPlanView = ({ executionParams, onSaveExecutionParams }:any) => {
     const [ isSaving, setIsSaving ]       = useState(false)
 
     if(!executionParams)
-        return <Loader active style={{ margin: "50px" }}/>
+        return <SkeletonList rows={8}/>
 
     const canEdit = !!onSaveExecutionParams
 
@@ -104,105 +108,125 @@ const ExecutionPlanView = ({ executionParams, onSaveExecutionParams }:any) => {
         } catch(e) { console.log(e) } finally { setIsSaving(false) }
     }
 
-    return <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px", marginBottom: "10px" }}>
-            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                {
-                    Object.keys(countsByType).map((type:string, key:number) =>
-                        <Label key={key} basic size="small">
-                            {type}<Label.Detail>{countsByType[type]}</Label.Detail>
-                        </Label>)
-                }
-            </div>
-            <Input icon="search" size="small" placeholder="filter plan..." value={filterValue} onChange={(e, { value }) => setFilterValue(value)}/>
-        </div>
+    const columns = [
+        {
+            key: "index",
+            header: "#",
+            width: "6%",
+            mono: true,
+            render: ({ rootIndex }:any) => rootIndex !== undefined ? rootIndex : ""
+        },
+        {
+            key: "type",
+            header: "type",
+            width: "26%",
+            render: ({ task }:any) =>
+                <span className="ecp-plan-task">
+                    <Icon name={GetIconByLoaderType(task.objectLoaderType)} tone="muted"/>
+                    {task.objectLoaderType}
+                </span>
+        },
+        {
+            key: "name",
+            header: "name",
+            width: "32%",
+            // O recuo é por nível da árvore, então vai inline (valor calculado).
+            render: ({ task, depth }:any) =>
+                <span className="ecp-plan-task" style={{ paddingLeft: `${depth * 22}px` }}>
+                    { depth > 0 && <span className="ecp-plan-task__arrow">↳</span> }
+                    <strong>{GetTaskName(task)}</strong>
+                    { task.children && task.children.length > 0 && <Badge>{task.children.length}</Badge> }
+                </span>
+        },
+        {
+            key: "preconditions",
+            header: "preconditions",
+            width: "28%",
+            render: ({ task }:any) => {
+                const preconditions = GetPreconditionsSummary(task)
+                return preconditions.length === 0
+                    ? <span className="ecp-plan-none">—</span>
+                    : preconditions.map((rule:string, key:number) =>
+                        <div key={key} className="ecp-plan-rule">{rule}</div>)
+            }
+        },
+        ...(canEdit ? [{
+            key: "edit",
+            header: "edit",
+            width: "8%",
+            align: "center" as const,
+            render: ({ task, path }:any) =>
+                <IconButton icon="pencil" label="edit task" size="sm" onClick={() => startEdit(path, task)}/>
+        }] : [])
+    ]
 
-        <div style={{ overflow: "auto", maxHeight: "72vh", border: "1px solid var(--mp-line-soft)", borderRadius: "4px" }}>
-            <Table celled compact striped style={{ fontSize: ".9em" }}>
-                <Table.Header>
-                    <Table.Row>
-                        <Table.HeaderCell width={1}>#</Table.HeaderCell>
-                        <Table.HeaderCell width={4}>type</Table.HeaderCell>
-                        <Table.HeaderCell width={5}>name</Table.HeaderCell>
-                        <Table.HeaderCell width={5}>preconditions</Table.HeaderCell>
-                        { canEdit && <Table.HeaderCell width={1} textAlign="center">edit</Table.HeaderCell> }
-                    </Table.Row>
-                </Table.Header>
-                <Table.Body>
-                    {
-                        rows.map(({ task, depth, path, rootIndex }:any, key:number) => {
-                            const preconditions = GetPreconditionsSummary(task)
-                            return <Table.Row key={key}>
-                                <Table.Cell style={{ fontFamily: "monospace", color: "var(--mp-muted)" }}>{rootIndex !== undefined ? rootIndex : ""}</Table.Cell>
-                                <Table.Cell style={{ color: "var(--mp-accent-blue)" }}>
-                                    <Icon name={GetIconByLoaderType(task.objectLoaderType)} style={{ color: "var(--mp-muted)" }}/>
-                                    {task.objectLoaderType}
-                                </Table.Cell>
-                                <Table.Cell style={{ paddingLeft: `${12 + depth * 22}px` }}>
-                                    { depth > 0 && <span style={{ color: "var(--mp-muted-2)" }}>↳ </span> }
-                                    <strong>{GetTaskName(task)}</strong>
-                                    { task.children && task.children.length > 0 && <Label size="mini" circular style={{ marginLeft: "6px" }}>{task.children.length}</Label> }
-                                </Table.Cell>
-                                <Table.Cell>
-                                    {
-                                        preconditions.length === 0
-                                        ? <span style={{ color: "var(--mp-muted-2)" }}>—</span>
-                                        : preconditions.map((p:string, k:number) => <div key={k} style={{ fontFamily: "monospace", fontSize: ".85em", color: "var(--mp-ink-3)" }}>{p}</div>)
-                                    }
-                                </Table.Cell>
-                                {
-                                    canEdit && <Table.Cell textAlign="center">
-                                        <Button icon size="mini" basic onClick={() => startEdit(path, task)}><Icon name="pencil"/></Button>
-                                    </Table.Cell>
-                                }
-                            </Table.Row>
-                        })
-                    }
-                </Table.Body>
-            </Table>
+    const draftKeys = editing ? Object.keys(editing.draft) : []
+
+    return <div>
+        <StatusStrip
+            className="ecp-plan-toolbar"
+            right={
+                <SearchInput
+                    value={filterValue}
+                    placeholder="filter plan..."
+                    onValueChange={setFilterValue}/>
+            }>
+            {
+                Object.keys(countsByType).map((type:string, key:number) =>
+                    <StatusChip key={key} label={type} count={countsByType[type]}/>)
+            }
+        </StatusStrip>
+
+        <div className="ecp-plan-scroll">
+            <DataTable
+                columns={columns}
+                rows={rows}
+                rowKey={(row:any) => row.path.join(".")}
+                dense
+                emptyMessage="No task matches this filter."/>
         </div>
 
         {
             editing &&
-            <Modal open={true} onClose={() => setEditing(undefined)}>
-                <Modal.Header>
-                    <Icon name="pencil"/> Editar task — {GetTaskName(editing.task)} <span style={{ color: "var(--mp-muted-2)", fontSize: ".8em" }}>[{editing.task.objectLoaderType}]</span>
-                </Modal.Header>
-                <Modal.Content scrolling>
-                    <Message warning size="small" icon>
-                        <Icon name="warning sign"/>
-                        <Message.Content>
-                            <Message.Header>Alteração do plano de execução</Message.Header>
-                            Edita o <code>execution-params.json</code> deste environment. Afeta a <strong>próxima execução</strong> (não a instância já em execução) e pode quebrar o ambiente.
-                        </Message.Content>
-                    </Message>
-                    <Table celled compact>
-                        <Table.Header>
-                            <Table.Row><Table.HeaderCell width={6}>parameter</Table.HeaderCell><Table.HeaderCell>value</Table.HeaderCell></Table.Row>
-                        </Table.Header>
-                        <Table.Body>
-                            {
-                                Object.keys(editing.draft).map((paramKey:string, key:number) =>
-                                    <Table.Row key={key}>
-                                        <Table.Cell><strong>{paramKey}</strong></Table.Cell>
-                                        <Table.Cell>
-                                            {
-                                                IsScalar(editing.task.staticParameters[paramKey])
-                                                ? <Input fluid size="small" value={editing.draft[paramKey] === undefined ? "" : String(editing.draft[paramKey])}
-                                                    onChange={(e, { value }) => setDraftValue(paramKey, value, editing.task.staticParameters[paramKey])}/>
-                                                : <code style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(editing.draft[paramKey], null, 2)}</code>
-                                            }
-                                        </Table.Cell>
-                                    </Table.Row>)
-                            }
-                        </Table.Body>
-                    </Table>
-                </Modal.Content>
-                <Modal.Actions>
-                    <Button onClick={() => setEditing(undefined)} disabled={isSaving}>cancelar</Button>
-                    <Button color="orange" loading={isSaving} onClick={handleConfirmSave}><Icon name="save"/> salvar no plano</Button>
-                </Modal.Actions>
-            </Modal>
+            <Dialog
+                open={true}
+                size="lg"
+                icon="pencil"
+                title={`Edit task — ${GetTaskName(editing.task)}`}
+                subtitle={editing.task.objectLoaderType}
+                onClose={() => setEditing(undefined)}
+                actions={<>
+                    <Button onClick={() => setEditing(undefined)} disabled={isSaving}>cancel</Button>
+                    <Button variant="primary" icon="save" loading={isSaving} onClick={handleConfirmSave}>save to plan</Button>
+                </>}>
+                <Banner tone="warning" title="Execution plan change" className="ecp-plan-warn">
+                    Edits <code>execution-params.json</code> of this environment. It affects the <strong>next
+                    execution</strong> (not the instance already running) and may break the environment.
+                </Banner>
+                <DataTable
+                    columns={[
+                        {
+                            key: "parameter",
+                            header: "parameter",
+                            width: "38%",
+                            render: ({ paramKey }:any) => <strong>{paramKey}</strong>
+                        },
+                        {
+                            key: "value",
+                            header: "value",
+                            render: ({ paramKey }:any) =>
+                                IsScalar(editing.task.staticParameters[paramKey])
+                                ? <TextInput
+                                    value={editing.draft[paramKey] === undefined ? "" : String(editing.draft[paramKey])}
+                                    onChange={(event:any) => setDraftValue(paramKey, event.target.value, editing.task.staticParameters[paramKey])}/>
+                                : <pre className="ecp-plan-json">{JSON.stringify(editing.draft[paramKey], null, 2)}</pre>
+                        }
+                    ]}
+                    rows={draftKeys.map((paramKey:string) => ({ paramKey }))}
+                    rowKey={(row:any) => row.paramKey}
+                    dense
+                    emptyMessage="This task has no static parameter."/>
+            </Dialog>
         }
     </div>
 }

@@ -1,10 +1,15 @@
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
-import { Button, Checkbox, Icon, Label } from "semantic-ui-react"
+
+import {
+    Button,
+    CheckboxInput,
+    CopyableMonoText,
+    StatusChip,
+    Toolbar
+} from "@i-components"
 
 import GetAPI from "../../Utils/GetAPI"
-import CopyValue from "../../Components/CopyValue"
-import { ShortId } from "../../Utils/Format"
 
 // Remove sequências ANSI (cores/escape) já que é um visualizador de texto puro.
 const StripAnsi = (s:string) => s.replace(/\x1b\[[0-9;]*[A-Za-z]/g, "")
@@ -102,40 +107,37 @@ const LogStreaming = ({ monitoringStateKey, HTTPServerManager, fill = false, onA
     }, [reconnectSignal])
 
     const statusMeta:any = {
-        connecting: { color: "yellow", icon: "spinner",      text: "connecting" },
-        open:       { color: "green",  icon: "circle",       text: "connected" },
-        closed:     { color: "grey",   icon: "circle outline", text: "disconnected" }
+        connecting: { tone: "warning", icon: "circle notch",   text: "connecting" },
+        open:       { tone: "success", icon: "check circle",   text: "connected" },
+        closed:     { tone: "neutral", icon: "circle outline", text: "disconnected" }
     }
     const sm = statusMeta[status]
 
-    return <div style={fill ? { display: "flex", flexDirection: "column", height: "100%" } : undefined}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", flexWrap: "nowrap", flex: "0 0 auto", fontSize: ".9em", minWidth: 0 }}>
-            <Label color={sm.color} size="small" className={status === "open" ? "eco-pulse-color" : undefined} style={{ flex: "0 0 auto" }}><Icon name={sm.icon} loading={status === "connecting"}/> {sm.text}</Label>
-            <span style={{ fontFamily: "var(--mp-font-mono)", fontSize: ".82em", color: "var(--mp-muted)", flex: "0 1 auto", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={monitoringStateKey}>{ShortId(monitoringStateKey, 8, 6)}</span>
-            <CopyValue value={monitoringStateKey}/>
-            <Label basic size="small" style={{ flex: "0 0 auto" }}><Icon name="list"/> {lines.length}</Label>
-            <Checkbox toggle label="auto-scroll" checked={autoScroll} onChange={() => setAutoScroll(!autoScroll)} style={{ flex: "0 0 auto" }}/>
-            <div style={{ marginLeft: "auto", flex: "0 0 auto" }}>
-                {
-                    status === "open"
-                    ? <Button size="mini" basic color="red" icon labelPosition="left" onClick={handleDisconnect}><Icon name="plug"/> disconnect</Button>
-                    : <Button size="mini" basic color="blue" icon labelPosition="left" onClick={connect}><Icon name="redo"/> reconnect</Button>
-                }
-            </div>
-        </div>
-        <div
-            ref={bodyRef}
-            style={{
-                background: "var(--mp-terminal-bg)", color: "var(--mp-terminal-fg)", fontFamily: "var(--mp-font-mono)", fontSize: ".82em",
-                lineHeight: 1.45, padding: "10px 12px", borderRadius: "var(--mp-radius-md)",
-                border: "2px solid var(--mp-line-strong)", borderTop: "3px solid var(--mp-titlebar-runtime)",
-                height: fill ? "auto" : "62vh", flex: fill ? 1 : undefined, minHeight: fill ? 0 : undefined,
-                overflow: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word"
-            }}>
+    return <div className={`ecp-log-stream ${fill ? "is-fill" : ""}`.trim()}>
+        <Toolbar className="ecp-fixed ecp-log-stream__bar">
+            {/* StatusChip não aceita className — a animação (giro/pulso) fica no
+                invólucro, que é meu, e nunca em cima de uma classe .mp-*. */}
+            <span className={`ecp-log-status is-${status}`}>
+                <StatusChip icon={sm.icon} tone={sm.tone} label={sm.text}/>
+            </span>
+            <CopyableMonoText value={monitoringStateKey} maxChars={16}/>
+            <StatusChip icon="list" count={lines.length} label="lines"/>
+            <CheckboxInput
+                label="auto-scroll"
+                checked={autoScroll}
+                onChange={() => setAutoScroll(!autoScroll)}/>
+            <Toolbar.Spacer/>
+            {
+                status === "open"
+                ? <Button size="sm" variant="danger" icon="plug" onClick={handleDisconnect}>disconnect</Button>
+                : <Button size="sm" icon="redo" onClick={connect}>reconnect</Button>
+            }
+        </Toolbar>
+        <div ref={bodyRef} className={`ecp-log-terminal ${fill ? "is-fill" : ""}`.trim()}>
             {
                 lines.length === 0
-                ? <span style={{ color: "var(--mp-terminal-muted)" }}>waiting for process log…</span>
-                : lines.map((line:string, key:number) => <div key={key}>{line || " "}</div>)
+                ? <span className="ecp-log-terminal__waiting">waiting for process log…</span>
+                : lines.map((line:string, key:number) => <div key={key}>{line || " "}</div>)
             }
         </div>
     </div>

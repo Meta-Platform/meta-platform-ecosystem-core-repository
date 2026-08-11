@@ -2,17 +2,18 @@ import * as React from "react"
 import { useState } from "react"
 
 import {
+    Banner,
     Button,
-    Form,
-    Icon,
-    Modal,
-    Message
-} from "semantic-ui-react"
+    Dialog,
+    FormField,
+    SelectInput,
+    TextInput
+} from "@i-components"
 
 const SOURCE_TYPE_OPTIONS = [
-    { key: "LOCAL_FS",       text: "Local filesystem (LOCAL_FS)",   value: "LOCAL_FS" },
-    { key: "GITHUB_RELEASE", text: "GitHub release (GITHUB_RELEASE)", value: "GITHUB_RELEASE" },
-    { key: "GOOGLE_DRIVE",   text: "Google Drive (GOOGLE_DRIVE)",   value: "GOOGLE_DRIVE" }
+    { value: "LOCAL_FS",       label: "Local filesystem (LOCAL_FS)" },
+    { value: "GITHUB_RELEASE", label: "GitHub release (GITHUB_RELEASE)" },
+    { value: "GOOGLE_DRIVE",   label: "Google Drive (GOOGLE_DRIVE)" }
 ]
 
 // Os campos variam conforme o tipo de fonte, espelhando o comando
@@ -43,71 +44,86 @@ const RegisterSourceModal = ({
     const handleRegister = () =>
         onRegister({ repositoryNamespace, sourceType, ...fields })
 
-    return <Modal size="small" open={true} onClose={onCancel}>
-        <Modal.Header><Icon name="feed"/> Register new source</Modal.Header>
-        <Modal.Content>
-            <Form>
-                <Form.Field>
-                    <label>repository namespace</label>
-                    <input
-                        list="namespace-options"
-                        placeholder="e.g. meta-platform-essential-repository"
-                        value={repositoryNamespace}
-                        onChange={({ target: { value } }) => setRepositoryNamespace(value)}/>
-                    <datalist id="namespace-options">
-                        { namespaceOptions.map((ns:string, k:number) => <option key={k} value={ns}/>) }
-                    </datalist>
-                </Form.Field>
+    return <Dialog
+        open={true}
+        size="md"
+        icon="feed"
+        title="Register new source"
+        onClose={onCancel}
+        actions={<>
+            <Button onClick={onCancel} disabled={isRegistering}>cancel</Button>
+            <Button
+                variant="primary"
+                icon="plus"
+                disabled={!isValid()}
+                loading={isRegistering}
+                onClick={handleRegister}>register source</Button>
+        </>}>
+        <form className="ecp-register-source-form" onSubmit={(event) => event.preventDefault()}>
+            <FormField label="repository namespace" htmlFor="ecp-register-source-namespace">
+                <TextInput
+                    id="ecp-register-source-namespace"
+                    list="namespace-options"
+                    placeholder="e.g. meta-platform-essential-repository"
+                    value={repositoryNamespace}
+                    onChange={({ target: { value } }) => setRepositoryNamespace(value)}/>
+                <datalist id="namespace-options">
+                    { namespaceOptions.map((ns:string, k:number) => <option key={k} value={ns}/>) }
+                </datalist>
+            </FormField>
 
-                <Form.Select
-                    label="source type"
+            <FormField label="source type" htmlFor="ecp-register-source-type">
+                <SelectInput
+                    id="ecp-register-source-type"
                     options={SOURCE_TYPE_OPTIONS}
                     value={sourceType}
-                    onChange={(e, { value }:any) => { setSourceType(value); setFields({}) }}/>
+                    onChange={({ target: { value } }:any) => { setSourceType(value); setFields({}) }}/>
+            </FormField>
 
-                {
-                    sourceType === "LOCAL_FS" &&
-                    <Form.Input
-                        label="local path"
+            {
+                sourceType === "LOCAL_FS" &&
+                <FormField label="local path" htmlFor="ecp-register-source-path">
+                    <TextInput
+                        id="ecp-register-source-path"
                         placeholder="/path/to/the/repository"
                         value={fields.localPath || ""}
-                        onChange={(e, { value }) => setField("localPath", value)}/>
-                }
-                {
-                    sourceType === "GITHUB_RELEASE" && <>
-                        <Form.Input
-                            label="repo owner"
+                        onChange={({ target: { value } }) => setField("localPath", value)}/>
+                </FormField>
+            }
+            {
+                sourceType === "GITHUB_RELEASE" && <>
+                    <FormField label="repo owner" htmlFor="ecp-register-source-owner">
+                        <TextInput
+                            id="ecp-register-source-owner"
                             placeholder="GitHub user/owner"
                             value={fields.repoOwner || ""}
-                            onChange={(e, { value }) => setField("repoOwner", value)}/>
-                        <Form.Input
-                            label="repo name"
+                            onChange={({ target: { value } }) => setField("repoOwner", value)}/>
+                    </FormField>
+                    <FormField label="repo name" htmlFor="ecp-register-source-name">
+                        <TextInput
+                            id="ecp-register-source-name"
                             placeholder="GitHub repository name"
                             value={fields.repoName || ""}
-                            onChange={(e, { value }) => setField("repoName", value)}/>
-                    </>
-                }
-                {
-                    sourceType === "GOOGLE_DRIVE" &&
-                    <Form.Input
-                        label="file id"
+                            onChange={({ target: { value } }) => setField("repoName", value)}/>
+                    </FormField>
+                </>
+            }
+            {
+                sourceType === "GOOGLE_DRIVE" &&
+                <FormField label="file id" htmlFor="ecp-register-source-fileid">
+                    <TextInput
+                        id="ecp-register-source-fileid"
                         placeholder="Google Drive .tar.gz file id"
                         value={fields.fileId || ""}
-                        onChange={(e, { value }) => setField("fileId", value)}/>
-                }
-            </Form>
-            <Message info size="small">
-                <Icon name="info circle"/>
-                Registering a source only records it in <code>sources.json</code>. Installation is a separate step.
-            </Message>
-        </Modal.Content>
-        <Modal.Actions>
-            <Button onClick={onCancel} disabled={isRegistering}>cancel</Button>
-            <Button color="blue" disabled={!isValid()} loading={isRegistering} onClick={handleRegister}>
-                <Icon name="plus"/> register source
-            </Button>
-        </Modal.Actions>
-    </Modal>
+                        onChange={({ target: { value } }) => setField("fileId", value)}/>
+                </FormField>
+            }
+        </form>
+
+        <Banner tone="info" icon="info circle" className="ecp-register-source-note">
+            Registering a source only records it in <code>sources.json</code>. Installation is a separate step.
+        </Banner>
+    </Dialog>
 }
 
 export default RegisterSourceModal

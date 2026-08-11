@@ -1,0 +1,385 @@
+/* Ecosystem Control Panel — CSS de produto: pages.
+   Só classes .ecp-*, só sobre tokens --mp-*. Nunca redefinir .mp-*.
+
+   Escopo deste arquivo: a página-raiz (esqueleto + gaveta de notificações), o
+   invólucro de modal do painel e os blocos genéricos (chave/valor, regras,
+   detalhe de task, trilho de estágios do Task Executor).
+
+   Onde um componente do kit não expõe o gancho de que a tela precisa
+   (`Dialog` não aceita `className`, `.mp-offcanvas` não tem z-index), o
+   override aparece SEMPRE aninhado sob uma classe .ecp-* — a classe .mp-*
+   nunca é redefinida no escopo global. */
+
+/* ================================================================== */
+/* Boot da página (antes do primeiro GetEcosystemDataPath)             */
+/* ================================================================== */
+.ecp-boot {
+    display: grid;
+    place-items: center;
+    min-height: 60vh;
+    color: var(--mp-muted);
+}
+
+/* ================================================================== */
+/* Esqueleto (AppShell): coluna da navegação                           */
+/* ================================================================== */
+/* Só a largura da coluna: quem pinta fundo/borda é o SidePanel do navegador
+   (.ecp-navigator, em parts/shell.css). */
+.ecp-sidebar {
+    display: flex;
+    width: var(--mp-shell-sidebar-w);
+    max-width: 40vw;
+    height: 100%;
+    min-height: 0;
+}
+
+/* Sidebar como gaveta em telas estreitas (< 1100px). Reaproveita o chrome
+   .mp-offcanvas do kit, que já ancora abaixo da topbar.
+
+   z-index literal, e não --mp-z-drawer (700), de propósito: o RuntimeDock e as
+   janelas de log deste painel vivem em 1490–1600 (ver parts/shell.css), acima
+   de TODA a escala --mp-z-* do kit. A gaveta de navegação sempre abriu por
+   cima do dock; com o token ela passaria a abrir por baixo. Quando a escala do
+   kit cobrir "dock de runtime", isto vira token. */
+.ecp-nav-drawer {
+    width: min(360px, 88vw);
+    z-index: 1700;
+}
+.ecp-nav-drawer__scrim { z-index: 1690; }
+
+/* ================================================================== */
+/* Gaveta de notificações (ui-style-guide §3)                          */
+/* ================================================================== */
+.ecp-notif-drawer {
+    width: 380px;
+    max-width: 92vw;
+    z-index: var(--mp-z-drawer);
+    overflow: hidden;
+}
+
+/* cabeçalho: paper-2 + borda forte */
+.ecp-notif-drawer__head {
+    flex: 0 0 auto;
+    height: var(--mp-shell-topbar-h);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--mp-space-2);
+    padding: 0 var(--mp-space-3);
+    background: var(--mp-paper-2);
+    border-bottom: var(--mp-border-strong);
+}
+.ecp-notif-drawer__title {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mp-space-2);
+    font-family: var(--mp-font-display);
+    font-weight: 800;
+    font-size: var(--mp-text-md);
+    color: var(--mp-ink);
+}
+
+/* faixa de chips de filtro (all / errors / runtime / system) */
+.ecp-notif-drawer__filters {
+    flex: 0 0 auto;
+    padding: var(--mp-space-2) var(--mp-space-3);
+    background: var(--mp-surface-2);
+    border-bottom: var(--mp-border-thin);
+}
+
+.ecp-notif-drawer__list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    padding: var(--mp-space-3);
+    background: var(--mp-paper);
+}
+
+/* card com faixa lateral de severidade */
+.ecp-notif-card {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--mp-space-2);
+    min-width: 0;
+    padding: var(--mp-space-2) var(--mp-space-3);
+    margin-bottom: var(--mp-space-2);
+    background: var(--mp-surface);
+    border: var(--mp-border-thin);
+    border-left-width: 6px;
+    border-radius: var(--mp-radius-md);
+    box-shadow: var(--mp-shadow-1);
+}
+.ecp-notif-card.is-seen { opacity: .72; }
+
+.ecp-notif-card--neutral { border-left-color: var(--mp-neutral); }
+.ecp-notif-card--info    { border-left-color: var(--mp-accent-blue); }
+.ecp-notif-card--cyan    { border-left-color: var(--mp-accent-cyan); }
+.ecp-notif-card--orange  { border-left-color: var(--mp-accent-orange); }
+.ecp-notif-card--violet  { border-left-color: var(--mp-accent-violet); }
+.ecp-notif-card--success { border-left-color: var(--mp-success); }
+.ecp-notif-card--danger  { border-left-color: var(--mp-danger); }
+
+.ecp-notif-card__icon { flex: 0 0 auto; margin-top: 2px; }
+.ecp-notif-card__body { flex: 1 1 auto; min-width: 0; }
+.ecp-notif-card__titleline {
+    display: flex;
+    align-items: center;
+    gap: var(--mp-space-1);
+    min-width: 0;
+}
+.ecp-notif-card__title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--mp-text-sm);
+    color: var(--mp-ink);
+}
+.ecp-notif-card__count {
+    flex: 0 0 auto;
+    background: var(--mp-surface-muted);
+    color: var(--mp-ink-2);
+}
+.ecp-notif-card__dot {
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--mp-accent-orange);
+}
+/* line-clamp de 3 linhas: o corpo do log não pode empurrar o card */
+.ecp-notif-card__message {
+    margin-top: 5px;
+    color: var(--mp-ink-3);
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    word-break: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.ecp-notif-card__foot {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--mp-space-2);
+    margin-top: var(--mp-space-2);
+    color: var(--mp-muted-2);
+    font-size: var(--mp-text-xs);
+}
+.ecp-notif-card__origin {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ecp-notif-card__date { flex: 0 0 auto; }
+
+/* ================================================================== */
+/* AppModal — realce por variante                                      */
+/* ================================================================== */
+/* O `Dialog` do kit não aceita `className`, então a variante é aplicada por um
+   invólucro .ecp-modal--* (que não desenha caixa nenhuma: o diálogo é fixo). */
+.ecp-modal--edit .mp-dialog__head {
+    background: var(--mp-warning-tint);
+    border-bottom-color: var(--mp-warning);
+}
+.ecp-modal--edit .mp-dialog__icon {
+    border-color: var(--mp-warning);
+    color: var(--mp-warning);
+}
+.ecp-modal--danger .mp-dialog__head {
+    background: var(--mp-danger-tint);
+    border-bottom-color: var(--mp-danger);
+}
+.ecp-modal--danger .mp-dialog__icon {
+    border-color: var(--mp-danger);
+    color: var(--mp-danger);
+}
+/* confirmar de alteração sensível: tom de atenção, não o amarelo primário */
+.ecp-modal__confirm--edit {
+    background: var(--mp-warning-tint);
+    border-color: var(--mp-warning);
+    color: var(--mp-ink);
+}
+
+/* ================================================================== */
+/* KeyValuePanel — apresentação dos valores técnicos                   */
+/* ================================================================== */
+.ecp-kv__empty { color: var(--mp-muted-2); }
+
+.ecp-kv__bool { font-family: var(--mp-font-mono); }
+.ecp-kv__bool--on  { background: var(--mp-success-tint); color: var(--mp-ink-2); }
+.ecp-kv__bool--off { background: var(--mp-surface-muted); color: var(--mp-muted); }
+
+.ecp-kv__number {
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    color: var(--mp-accent-blue);
+}
+/* objeto/array: JSON com scroll CONTIDO, para não esticar o painel */
+.ecp-kv__json {
+    display: block;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 160px;
+    overflow: auto;
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    line-height: 1.4;
+    color: var(--mp-muted);
+}
+.ecp-kv__text {
+    display: flex;
+    align-items: center;
+    gap: var(--mp-space-1);
+    min-width: 0;
+}
+.ecp-kv__text-value {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    color: var(--mp-ink-2);
+    word-break: break-all;
+}
+
+/* ================================================================== */
+/* TaskInformation — detalhe de uma task                               */
+/* ================================================================== */
+.ecp-task-information { padding: var(--mp-space-3) var(--mp-space-4); }
+/* em coluna flex, EntityHeader/Tabs são espremidos a zero e somem */
+.ecp-task-information__header { flex: 0 0 auto; }
+.ecp-task-information__tabs {
+    flex: 0 0 auto;
+    margin-top: var(--mp-space-2);
+}
+.ecp-task-information__body { padding: var(--mp-space-2) var(--mp-space-3); }
+
+/* regras de ativação / vínculo de agente (propriedade acima do valor) */
+.ecp-rule { padding: var(--mp-space-2) 0; }
+.ecp-rule.has-divider { border-bottom: var(--mp-border-thin); }
+.ecp-rule__property {
+    margin-bottom: 2px;
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    font-weight: 600;
+    color: var(--mp-muted);
+    word-break: break-all;
+}
+.ecp-rule__value {
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    color: var(--mp-ink-2);
+    word-break: break-all;
+}
+.ecp-agent-link { margin-bottom: var(--mp-space-2); }
+.ecp-agent-link__name {
+    margin-bottom: var(--mp-space-1);
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-sm);
+    color: var(--mp-ink);
+}
+
+/* ================================================================== */
+/* TaskGroupByLoader — trilho de estágios do pipeline de execução      */
+/* ================================================================== */
+/* A cor de cada estágio é DADO (um token --mp-* escolhido no .tsx) e chega por
+   `style`; aqui ficam só a forma e o espaçamento. */
+.ecp-stage-list { padding: var(--mp-space-1) 2px; }
+
+.ecp-stage { display: flex; gap: var(--mp-space-3); }
+.ecp-stage__rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 34px;
+    flex: 0 0 auto;
+}
+.ecp-stage__marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    flex: 0 0 auto;
+    border: var(--mp-border);
+    border-color: currentColor;
+    border-radius: 50%;
+    background: var(--mp-surface);
+    font-family: var(--mp-font-display);
+    font-weight: 700;
+    font-size: var(--mp-text-sm);
+}
+.ecp-stage__connector {
+    flex: 1 1 auto;
+    width: 2px;
+    min-height: 12px;
+    margin-top: 2px;
+    background: var(--mp-line-soft);
+}
+
+.ecp-stage__card {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-bottom: var(--mp-space-3);
+    background: var(--mp-surface);
+    border: var(--mp-border-thin);
+    border-left-width: 4px;
+    border-radius: var(--mp-radius-md);
+}
+.ecp-stage__card.is-child { margin-left: var(--mp-space-6); }
+
+.ecp-stage__head {
+    display: flex;
+    align-items: center;
+    gap: var(--mp-space-2);
+    padding: var(--mp-space-2) var(--mp-space-3);
+    border-bottom: var(--mp-border-thin);
+}
+.ecp-stage__childmark { color: var(--mp-muted-2); }
+.ecp-stage__label { font-family: var(--mp-font-display); }
+.ecp-stage__type {
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    color: var(--mp-muted-2);
+}
+.ecp-stage__count {
+    margin-left: auto;
+    background: var(--mp-surface-muted);
+    color: var(--mp-ink-2);
+}
+
+.ecp-stage__tasks { padding: var(--mp-space-1) var(--mp-space-2); }
+
+.ecp-stage-task {
+    display: flex;
+    align-items: center;
+    gap: var(--mp-space-2);
+    width: 100%;
+    padding: var(--mp-space-1) var(--mp-space-2);
+    background: transparent;
+    border: none;
+    border-radius: var(--mp-radius-sm);
+    color: var(--mp-ink);
+    font-family: var(--mp-font-ui);
+    font-size: var(--mp-text-sm);
+    text-align: left;
+    cursor: pointer;
+}
+.ecp-stage-task:hover { background: var(--mp-surface-2); }
+.ecp-stage-task.is-selected { background: var(--mp-accent-blue-tint); }
+.ecp-stage-task__id {
+    width: 34px;
+    flex: 0 0 auto;
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    color: var(--mp-muted);
+}
+.ecp-stage-task__name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

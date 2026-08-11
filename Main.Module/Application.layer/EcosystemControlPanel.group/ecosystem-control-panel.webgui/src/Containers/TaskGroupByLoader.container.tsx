@@ -1,7 +1,5 @@
 import * as React from "react"
-import { Label } from "semantic-ui-react"
-
-import StatusBadge from "../Components/StatusBadge"
+import { Badge, StatusBadge } from "@i-components"
 
 // Ordem do pipeline de execução (estágios), conforme o Task Executor:
 // instala deps -> carrega packages -> instancia a app -> (serviços/endpoints
@@ -21,42 +19,34 @@ const GetTaskName = (task:any) => {
 }
 
 const TaskRow = ({ task, taskId, onSelectTask }:any) =>
-    <div
+    <button
+        type="button"
         onClick={() => onSelectTask(task.taskId)}
-        style={{
-            display: "flex", alignItems: "center", gap: "8px", padding: "4px 8px", cursor: "pointer",
-            borderRadius: "4px", background: task.taskId === taskId ? "#e8f0fa" : undefined
-        }}>
-        <span style={{ fontFamily: "monospace", color: "var(--mp-muted)", width: "34px" }}>{task.taskId}</span>
-        <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{GetTaskName(task)}</span>
+        className={`ecp-stage-task ${task.taskId === taskId ? "is-selected" : ""}`.trim()}>
+        <span className="ecp-stage-task__id">{task.taskId}</span>
+        <span className="ecp-stage-task__name">{GetTaskName(task)}</span>
         <StatusBadge status={task.status}/>
-    </div>
+    </button>
 
 const Stage = ({ stage, tasks, index, isLast, taskId, onSelectTask }:any) =>
-    <div style={{ display: "flex", gap: "12px" }}>
+    <div className="ecp-stage">
         { /* coluna do trilho (número + conector vertical) */ }
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "34px" }}>
-            <div style={{
-                width: "28px", height: "28px", borderRadius: "50%", background: stage.color, color: "#fff",
-                display: "flex", alignItems: "center", justifyContent: "center", flex: "0 0 auto", fontWeight: 700, fontSize: ".9em"
-            }}>
-                {index + 1}
-            </div>
-            { !isLast && <div style={{ flex: 1, width: "2px", background: "var(--mp-surface-muted)", minHeight: "12px", marginTop: "2px" }}/> }
+        <div className="ecp-stage__rail">
+            <span className="ecp-stage__marker" style={{ color: stage.color }}>{index + 1}</span>
+            { !isLast && <span className="ecp-stage__connector"/> }
         </div>
 
         { /* card do estágio */ }
-        <div style={{
-            flex: 1, marginBottom: "12px", border: "1px solid var(--mp-line-faint)", borderLeft: `4px solid ${stage.color}`,
-            borderRadius: "8px", background: "var(--mp-surface)", marginLeft: stage.child ? "28px" : 0
-        }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 12px", borderBottom: "1px solid #f0f0f0" }}>
-                { stage.child && <span style={{ color: "var(--mp-muted-2)" }}>↳</span> }
-                <strong style={{ color: stage.color }}>{stage.label}</strong>
-                <span style={{ color: "var(--mp-muted-2)", fontSize: ".82em" }}>{stage.type}</span>
-                <Label circular size="mini" style={{ marginLeft: "auto" }}>{tasks.length}</Label>
+        <div
+            className={`ecp-stage__card ${stage.child ? "is-child" : ""}`.trim()}
+            style={{ borderLeftColor: stage.color }}>
+            <div className="ecp-stage__head">
+                { stage.child && <span className="ecp-stage__childmark">↳</span> }
+                <strong className="ecp-stage__label" style={{ color: stage.color }}>{stage.label}</strong>
+                <span className="ecp-stage__type">{stage.type}</span>
+                <Badge className="ecp-stage__count">{tasks.length}</Badge>
             </div>
-            <div style={{ padding: "6px 8px" }}>
+            <div className="ecp-stage__tasks">
                 {
                     tasks
                         .sort((a:any, b:any) => a.taskId - b.taskId)
@@ -84,7 +74,7 @@ const TaskGroupByLoaderContainer = ({ instanceTaskList = [], taskId, onSelectTas
             .map((t) => ({ type: t, label: t, icon: "question", color: "var(--mp-muted-2)", child: false }))
     ]
 
-    return <div style={{ padding: "6px 2px" }}>
+    return <div className="ecp-stage-list">
         {
             stages.map((stage:any, index:number) =>
                 <Stage

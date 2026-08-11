@@ -1,15 +1,12 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
+
 import {
-	Grid,
-	Segment,
-	List,
-	Icon,
-	Loader,
-	Label,
-	Accordion,
-	Input
-} from "semantic-ui-react"
+	Banner,
+	SearchInput,
+	SkeletonList,
+	TreeRow
+} from "@i-components"
 
 import GetAPI from "../../Utils/GetAPI"
 import LogViewer from "./LogViewer"
@@ -66,28 +63,18 @@ const LogsContainer = ({ serverManagerInformation }:any) => {
 	const _Casa = (texto:string) =>
 		!filtroDaArvore || String(texto).toLowerCase().includes(filtroDaArvore.toLowerCase())
 
-	const _RenderArquivos = (arquivos:any[], prefixo?:string) =>
+	const _RenderArquivos = (arquivos:any[], profundidade:number, prefixo?:string) =>
 		arquivos
 			.filter((arquivo:any) => _Casa(`${prefixo || ""} ${arquivo.name}`))
 			.map((arquivo:any) =>
-				<List.Item
+				<TreeRow
 					key={arquivo.path}
-					active={selecionado?.path === arquivo.path}
-					onClick={() => { setSelecionado(arquivo); setIrmaos(arquivos) }}
-					style={{
-						cursor : "pointer",
-						padding : "4px 8px",
-						background : selecionado?.path === arquivo.path ? "#e8f0fe" : undefined,
-						borderRadius : 4
-					}}>
-					<List.Icon name="file alternate outline" size="small"/>
-					<List.Content>
-						<List.Header style={{ fontSize : 12 }}>{arquivo.name}</List.Header>
-						<List.Description style={{ fontSize : 11, color : "#888" }}>
-							{FormatarTamanho(arquivo.size)}
-						</List.Description>
-					</List.Content>
-				</List.Item>
+					depth={profundidade}
+					icon="file alternate outline"
+					label={arquivo.name}
+					meta={FormatarTamanho(arquivo.size)}
+					selected={selecionado?.path === arquivo.path}
+					onSelect={() => { setSelecionado(arquivo); setIrmaos(arquivos) }}/>
 			)
 
 	const _RenderSecao = (secao:any) => {
@@ -101,71 +88,69 @@ const LogsContainer = ({ serverManagerInformation }:any) => {
 			? (conteudo || []).reduce((total:number, grupo:any) => total + (grupo.files?.length || 0), 0)
 			: (conteudo || []).length
 
-		return <React.Fragment key={secao.chave}>
-			<Accordion.Title
-				active={estaAberta}
-				onClick={() => setAbertas({ ...abertas, [secao.chave] : !estaAberta })}
-				style={{ padding : "8px 4px" }}>
-				<Icon name={estaAberta ? "chevron down" : "chevron right"} size="small"/>
-				<Icon name={secao.icone}/>
-				<strong>{secao.titulo}</strong>
-				<Label circular size="mini" style={{ marginLeft : 6 }}>{quantidade}</Label>
-				<div style={{ fontSize : 11, color : "#999", marginLeft : 26 }}>{secao.ajuda}</div>
-			</Accordion.Title>
+		const _Alternar = () => setAbertas({ ...abertas, [secao.chave] : !estaAberta })
 
-			<Accordion.Content active={estaAberta}>
-				{
-					quantidade === 0
-						? <p style={{ fontSize : 11, color : "#aaa", paddingLeft : 26 }}>nada gravado ainda</p>
-						: <List style={{ paddingLeft : 18 }}>
-							{
-								ehAgrupada
-									? (conteudo || []).map((grupo:any) =>
-										<List.Item key={grupo.name}>
-											<List.Content>
-												<List.Header style={{ fontSize : 12, color : "#444" }}>{grupo.name}</List.Header>
-												<List style={{ paddingLeft : 10 }}>{_RenderArquivos(grupo.files || [], grupo.name)}</List>
-											</List.Content>
-										</List.Item>
-									)
-									: _RenderArquivos(conteudo || [])
-							}
-						</List>
-				}
-			</Accordion.Content>
+		return <React.Fragment key={secao.chave}>
+
+			<TreeRow
+				depth={0}
+				icon={secao.icone}
+				label={secao.titulo}
+				meta={quantidade}
+				hasChildren={true}
+				expanded={estaAberta}
+				onToggle={_Alternar}
+				onSelect={_Alternar}/>
+
+			{
+				estaAberta && <>
+					<div className="ecp-logs-tree__help">{secao.ajuda}</div>
+					{
+						quantidade === 0
+							? <div className="ecp-logs-tree__none">nada gravado ainda</div>
+							: ehAgrupada
+								? (conteudo || []).map((grupo:any) =>
+									<React.Fragment key={grupo.name}>
+										<TreeRow depth={1} icon="folder" label={grupo.name}/>
+										{ _RenderArquivos(grupo.files || [], 2, grupo.name) }
+									</React.Fragment>)
+								: _RenderArquivos(conteudo || [], 1)
+					}
+				</>
+			}
+
 		</React.Fragment>
 	}
 
-	return <Grid stackable>
-		<Grid.Column width={5}>
-			<Segment style={{ maxHeight : "75vh", overflow : "auto" }}>
+	return <div className="ecp-logs">
 
-				<Input
-					fluid
-					size="small"
-					icon="filter"
-					iconPosition="left"
-					placeholder="filtrar arquivos"
+		<aside className="mp-surface ecp-logs-tree">
+
+			<div className="ecp-logs-tree__filter ecp-fixed">
+				<SearchInput
 					value={filtroDaArvore}
-					onChange={(_:any, { value }:any) => setFiltroDaArvore(value)}
-					style={{ marginBottom : 10 }}/>
+					onValueChange={(valor:string) => setFiltroDaArvore(valor)}
+					placeholder="filtrar arquivos"/>
+			</div>
 
-				{ carregando && <Loader active inline="centered" size="small"/> }
-				{ erro && <Label color="red" basic>{erro}</Label> }
+			<div className="ecp-logs-tree__body">
+				{ carregando && <SkeletonList rows={6}/> }
+				{ erro && <Banner tone="danger">{erro}</Banner> }
+				{ !carregando && !erro && SECOES.map(_RenderSecao) }
+			</div>
 
-				{ !carregando && !erro && <Accordion fluid>{SECOES.map(_RenderSecao)}</Accordion> }
-			</Segment>
-		</Grid.Column>
+		</aside>
 
-		<Grid.Column width={11}>
+		<section className="ecp-logs-viewer">
 			<LogViewer
 				serverManagerInformation={serverManagerInformation}
 				filePath={selecionado?.path}
 				fileName={selecionado?.name}
 				siblings={irmaos}
 				onSelectSibling={(arquivo:any) => setSelecionado(arquivo)}/>
-		</Grid.Column>
-	</Grid>
+		</section>
+
+	</div>
 }
 
 export default LogsContainer

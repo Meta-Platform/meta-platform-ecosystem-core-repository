@@ -1,10 +1,20 @@
 import * as React from "react"
 import { useState, useEffect } from "react"
-import { Button, Icon, Label, Loader, Segment } from "semantic-ui-react"
+import {
+    Button,
+    CopyableMonoText,
+    Icon,
+    ListRow,
+    PageMasthead,
+    Panel,
+    Spinner,
+    StatusBadge,
+    StatusChip,
+    Tile,
+    TileRow
+} from "@i-components"
 
 import GetAPI from "../Utils/GetAPI"
-import CopyValue from "./CopyValue"
-import StatusBadge from "./StatusBadge"
 
 // Home = "Operations Overview": estado vivo do ecossistema (tiles de sistema com
 // contadores + saúde), atalhos rápidos, sockets abertos e avisos. Substitui a
@@ -17,38 +27,6 @@ const SocketName = (filePath:string) => {
     if(!filePath) return ""
     return (filePath.split("/").pop() || "").replace(/\.sock$/, "")
 }
-
-// Tile de sistema: ícone em bloco, contador grande, sub-status e navegação.
-const SystemTile = ({ icon, title, count, sub, tone = "info", onClick }:any) => {
-    const toneColor:any = {
-        info:    "var(--mp-accent-blue)",
-        success: "var(--mp-success)",
-        warning: "var(--mp-warning)",
-        neutral: "var(--mp-muted)"
-    }
-    return <button type="button" onClick={onClick} className="mp-tile">
-        <span className="mp-tile__icon" style={{ borderColor: "var(--mp-line-strong)" }}>
-            <Icon name={icon} style={{ margin: 0, color: toneColor[tone] }}/>
-        </span>
-        <span className="mp-tile__body">
-            <span className="mp-tile__count">{count}</span>
-            <span className="mp-tile__title">{title}</span>
-            { sub && <span className="mp-tile__sub" style={{ color: toneColor[tone] }}>{sub}</span> }
-        </span>
-        <Icon name="arrow right" className="mp-tile__arrow"/>
-    </button>
-}
-
-const PanelBox = ({ title, icon, action, children }:any) =>
-    <div className="mp-ov-panel">
-        <div className="mp-ov-panel__head">
-            <span style={{ fontWeight: 800, display: "inline-flex", alignItems: "center", gap: "8px" }}>
-                <Icon name={icon} style={{ margin: 0, color: "var(--mp-ink-3)" }}/> {title}
-            </span>
-            { action }
-        </div>
-        <div className="mp-ov-panel__body">{ children }</div>
-    </div>
 
 const WelcomePanel = ({ onNavigate, ecosystemdataPath, serverManagerInformation }:any) => {
 
@@ -73,7 +51,7 @@ const WelcomePanel = ({ onNavigate, ecosystemdataPath, serverManagerInformation 
 
     useEffect(() => { if(serverManagerInformation) fetchAll(); else setState({ loading: false }) }, [])
 
-    if(state.loading) return <Segment style={{ margin: "15px" }}><Loader active inline="centered" style={{ margin: "40px" }}/></Segment>
+    if(state.loading) return <div className="ecp-home-loading"><Spinner label="loading overview…"/></div>
 
     const overview = state.overview || {}
     const socketKeys = Object.keys(overview)
@@ -98,82 +76,97 @@ const WelcomePanel = ({ onNavigate, ecosystemdataPath, serverManagerInformation 
         { icon: "cogs",     title: "Config",       count: configCount, sub: "default parameters", tone: "neutral", panel: "config files" }
     ]
 
-    return <div style={{ padding: "6px 4px" }}>
-        {/* header strip */}
-        <div className="mp-ov-header">
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap", minWidth: 0 }}>
-                <Icon name="dashboard" size="big" style={{ margin: 0, color: "var(--mp-ink)" }}/>
-                <div style={{ minWidth: 0 }}>
-                    <div className="mp-ov-title">Operations Overview</div>
-                    { ecosystemdataPath &&
-                        <div style={{ marginTop: "4px" }}><CopyValue value={ecosystemdataPath}/> <code className="mp-mono" style={{ background: "transparent", border: "none" }}>{ecosystemdataPath}</code></div> }
-                </div>
-            </div>
-            <Label size="large" color={allHealthy ? "green" : undefined} basic={!allHealthy}
-                style={{ flex: "0 0 auto" }}>
-                <Icon name={allHealthy ? "check circle" : "info circle"}/> { allHealthy ? "operational" : "ecosystem active" }
-            </Label>
-        </div>
+    return <div className="ecp-home">
+
+        <PageMasthead
+            icon="dashboard"
+            title="Operations Overview"
+            subtitle={ ecosystemdataPath ? <CopyableMonoText value={ecosystemdataPath} maxChars={96}/> : undefined }
+            actions={
+                <StatusChip
+                    icon={allHealthy ? "check circle" : "info circle"}
+                    label={allHealthy ? "operational" : "ecosystem active"}
+                    tone={allHealthy ? "success" : "neutral"}/>
+            }/>
 
         {/* system tiles */}
-        <div className="mp-ov-tiles">
-            { tiles.map((t:any, k:number) =>
-                <SystemTile key={k} {...t} onClick={() => onNavigate({ panel: t.panel })}/>) }
-        </div>
+        <TileRow>
+            {
+                tiles.map((t:any, k:number) =>
+                    <Tile
+                        key={k}
+                        icon={t.icon}
+                        count={t.count}
+                        title={t.title}
+                        sub={<span className={`ecp-tile-sub ecp-tile-sub--${t.tone}`}>{t.sub}</span>}
+                        onClick={() => onNavigate({ panel: t.panel })}/>)
+            }
+        </TileRow>
 
         {/* two-column: quick actions + open sockets | warnings */}
         <div className="mp-ov-grid">
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                <PanelBox title="Quick actions" icon="bolt">
-                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                        <Button size="small" primary onClick={() => onNavigate({ panel: "executables" })}><Icon name="terminal"/> executables</Button>
-                        <Button size="small" onClick={() => onNavigate({ panel: "instance supervisor" })}><Icon name="server"/> sockets</Button>
-                        <Button size="small" onClick={() => onNavigate({ panel: "repositories" })}><Icon name="cubes"/> repositories</Button>
-                        <Button size="small" basic onClick={() => onNavigate({ panel: "config files" })}><Icon name="cogs"/> config</Button>
-                    </div>
-                </PanelBox>
+            <div className="ecp-home-column">
 
-                <PanelBox title="Open sockets" icon="plug"
-                    action={<Label circular size="small">{connected.length}</Label>}>
+                <Panel title="Quick actions" icon="bolt">
+                    <div className="ecp-home-actions">
+                        <Button size="sm" variant="primary" icon="terminal" onClick={() => onNavigate({ panel: "executables" })}>executables</Button>
+                        <Button size="sm" icon="server" onClick={() => onNavigate({ panel: "instance supervisor" })}>sockets</Button>
+                        <Button size="sm" icon="cubes" onClick={() => onNavigate({ panel: "repositories" })}>repositories</Button>
+                        <Button size="sm" variant="subtle" icon="cogs" onClick={() => onNavigate({ panel: "config files" })}>config</Button>
+                    </div>
+                </Panel>
+
+                <Panel
+                    title="Open sockets"
+                    icon="plug"
+                    actions={<StatusChip label="connected" count={connected.length} tone={connected.length > 0 ? "success" : "neutral"}/>}>
                     {
                         connected.length === 0
                         ? <div className="mp-ov-empty">no sockets connected right now.</div>
                         : connected.slice(0, 6).map((k:string) =>
-                            <div key={k} className="mp-ov-row" onClick={() => onNavigate({ panel: "instance supervisor", params: { monitoringStateKey: k } })}>
-                                <Icon name="plug" style={{ color: "var(--mp-success)", margin: 0, flex: "0 0 auto" }}/>
-                                <strong style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{SocketName(overview[k].filePath)}</strong>
-                                <StatusBadge status="CONNECTED" size="mini"/>
-                                <Icon name="arrow right" style={{ color: "var(--mp-muted-2)", margin: 0, flex: "0 0 auto" }}/>
-                            </div>)
+                            <ListRow
+                                key={k}
+                                icon="plug"
+                                title={SocketName(overview[k].filePath)}
+                                right={<>
+                                    <StatusBadge status="CONNECTED" size="sm"/>
+                                    <Icon name="arrow right" tone="muted"/>
+                                </>}
+                                onClick={() => onNavigate({ panel: "instance supervisor", params: { monitoringStateKey: k } })}/>)
                     }
-                    { connected.length > 6 && <div className="mp-ov-more" onClick={() => onNavigate({ panel: "instance supervisor" })}>+{connected.length - 6} more…</div> }
-                </PanelBox>
+                    {
+                        connected.length > 6 &&
+                        <div className="mp-ov-more" onClick={() => onNavigate({ panel: "instance supervisor" })}>+{connected.length - 6} more…</div>
+                    }
+                </Panel>
             </div>
 
-            <PanelBox title="Warnings & pending" icon="warning circle">
+            <Panel title="Warnings & pending" icon="warning circle">
                 {
                     unavailable.length === 0 && notInstalled.length === 0
-                    ? <div className="mp-ov-empty"><Icon name="check circle" style={{ color: "var(--mp-success)" }}/> nothing pending — all clear.</div>
+                    ? <div className="mp-ov-empty"><Icon name="check circle" tone="success"/> nothing pending — all clear.</div>
                     : <>
                         {
                             unavailable.length > 0 &&
-                            <div className="mp-ov-row" onClick={() => onNavigate({ panel: "instance supervisor" })}>
-                                <Icon name="warning circle" style={{ color: "var(--mp-warning)", margin: 0, flex: "0 0 auto" }}/>
-                                <span style={{ flex: 1 }}>{unavailable.length} supervisor socket(s) unavailable</span>
-                                <Icon name="arrow right" style={{ color: "var(--mp-muted-2)", margin: 0 }}/>
-                            </div>
+                            <ListRow
+                                icon="warning circle"
+                                className="ecp-home-warning"
+                                title={`${unavailable.length} supervisor socket(s) unavailable`}
+                                right={<Icon name="arrow right" tone="muted"/>}
+                                onClick={() => onNavigate({ panel: "instance supervisor" })}/>
                         }
                         {
                             notInstalled.length > 0 &&
-                            <div className="mp-ov-row" onClick={() => onNavigate({ panel: "executables", params: { executableStatus: "not-installed" } })}>
-                                <Icon name="download" style={{ color: "var(--mp-accent-blue)", margin: 0, flex: "0 0 auto" }}/>
-                                <span style={{ flex: 1 }}>{notInstalled.length} executable(s) not installed</span>
-                                <Icon name="arrow right" style={{ color: "var(--mp-muted-2)", margin: 0 }}/>
-                            </div>
+                            <ListRow
+                                icon="download"
+                                className="ecp-home-info"
+                                title={`${notInstalled.length} executable(s) not installed`}
+                                right={<Icon name="arrow right" tone="muted"/>}
+                                onClick={() => onNavigate({ panel: "executables", params: { executableStatus: "not-installed" } })}/>
                         }
                     </>
                 }
-            </PanelBox>
+            </Panel>
         </div>
     </div>
 }

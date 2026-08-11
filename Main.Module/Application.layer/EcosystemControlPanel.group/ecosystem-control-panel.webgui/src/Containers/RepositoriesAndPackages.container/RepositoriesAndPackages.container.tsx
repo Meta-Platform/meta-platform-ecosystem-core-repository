@@ -2,33 +2,33 @@ import * as React from "react"
 import { useState, useEffect } from "react"
 
 import {
+    Banner,
     Button,
-    Grid,
+    ConfirmDialog,
+    CopyableMonoText,
+    DataTable,
+    Dialog,
+    EmptyState,
+    EntityHeader,
+    FormField,
     Icon,
-    Input,
-    Label,
-    List,
-    Loader,
-    Menu,
-    MenuItem,
-    Modal,
-    Segment,
-    Tab,
-    Popup
-} from "semantic-ui-react"
+    Panel,
+    SearchInput,
+    SkeletonList,
+    StatusChip,
+    Surface,
+    Tabs,
+    TextInput,
+    Toolbar
+} from "@i-components"
 
 import GetAPI from "../../Utils/GetAPI"
 import { toastSuccess, toastError, errorMessage } from "../../Utils/toast"
 
 import RegisterSourceModal from "../RepositorySources.container/RegisterSource.modal"
-import AppModal from "../../Components/AppModal"
 import Breadcrumbs from "../../Components/Breadcrumbs"
-import ListSkeleton from "../../Components/Skeleton"
-import EmptyState from "../../Components/EmptyState"
 import { BuildPackageTree, TreeNode, PackageKey } from "../ApplicationsAndPackages.container/PackageTree"
-import CopyValue from "../../Components/CopyValue"
 import PackageIcon from "../../Components/PackageIcon"
-import EntityHeader from "../../Components/ui/EntityHeader"
 
 // Workspace unificado de Repositories & Packages (Sources + Packages juntos):
 // lista de repositórios à esquerda; à direita, sub-abas Sources e Packages do
@@ -144,29 +144,49 @@ const RepositoriesAndPackagesContainer = ({
         const sources = groupedSources[ns] || []
         const activeSourceType = getActiveSourceType(ns)
         const installed = isInstalled(ns)
-        return <div>
+        return <div className="ecp-repo-sources">
             {
-                sources.length === 0 && <div style={{ color: "var(--mp-muted-2)", padding: "8px 0" }}>no sources registered</div>
+                sources.length === 0 &&
+                <EmptyState icon="feed" message="no sources registered"/>
             }
             {
                 sources.map((source:any, key:number) => {
                     const isActive = installed && source.sourceType === activeSourceType
-                    return <Segment key={key} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px", background: isActive ? "#f4fbf5" : undefined }}>
-                        <Icon name={SOURCE_ICON[source.sourceType] || "database"} color={isActive ? "green" : "grey"} fitted style={{ flex: "0 0 auto", margin: 0, fontSize: "1.15em" }}/>
-                        <span style={{ width: "120px", fontWeight: 500 }}>{source.sourceType}</span>
-                        <span style={{ flex: 1, color: "var(--mp-muted)", fontFamily: "monospace", fontSize: ".82em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={SOURCE_PARAM_SUMMARY(source)}>{SOURCE_PARAM_SUMMARY(source)}</span>
-                        { isActive && <Label color="green" size="mini">active</Label> }
-                        <Button.Group size="mini" basic>
-                            <Popup content="install" trigger={<Button icon loading={isBusy(ns, "install", source.sourceType)} onClick={() => handleInstall(ns, source.sourceType)}><Icon name="download" color="blue"/></Button>}/>
-                            { installed && !isActive && <Popup content="set active" trigger={<Button icon loading={isBusy(ns, "change", source.sourceType)} onClick={() => setConfirmChange({ ns, st: source.sourceType })}><Icon name="exchange"/></Button>}/> }
-                            <Popup content="remove" trigger={<Button icon loading={isBusy(ns, "removeSource", source.sourceType)} onClick={() => setConfirmRemove({ ns, st: source.sourceType })}><Icon name="trash" color="red"/></Button>}/>
-                        </Button.Group>
-                    </Segment>
+                    return <div key={key} className={`ecp-source-row ${isActive ? "is-active" : ""}`.trim()}>
+                        <Icon name={SOURCE_ICON[source.sourceType] || "database"} tone={isActive ? "success" : "muted"}/>
+                        <span className="ecp-source-row__type">{source.sourceType}</span>
+                        <span className="ecp-source-row__summary">
+                            <CopyableMonoText value={SOURCE_PARAM_SUMMARY(source) || ""} maxChars={52}/>
+                        </span>
+                        { isActive && <StatusChip tone="success" label="active"/> }
+                        <span className="ecp-source-row__actions">
+                            <Button
+                                variant="subtle" size="sm" icon="download"
+                                title="install" aria-label="install"
+                                loading={isBusy(ns, "install", source.sourceType)}
+                                onClick={() => handleInstall(ns, source.sourceType)}/>
+                            {
+                                installed && !isActive &&
+                                <Button
+                                    variant="subtle" size="sm" icon="exchange"
+                                    title="set active" aria-label="set active"
+                                    loading={isBusy(ns, "change", source.sourceType)}
+                                    onClick={() => setConfirmChange({ ns, st: source.sourceType })}/>
+                            }
+                            <Button
+                                variant="danger" size="sm" icon="trash"
+                                title="remove" aria-label="remove"
+                                loading={isBusy(ns, "removeSource", source.sourceType)}
+                                onClick={() => setConfirmRemove({ ns, st: source.sourceType })}/>
+                        </span>
+                    </div>
                 })
             }
-            <Button size="mini" basic style={{ marginTop: "8px" }} onClick={() => { setRegisterModalNamespace(ns); setIsRegisterModalOpen(true) }}>
-                <Icon name="plus"/> add source
-            </Button>
+            <div className="ecp-repo-sources__foot">
+                <Button
+                    variant="subtle" size="sm" icon="plus"
+                    onClick={() => { setRegisterModalNamespace(ns); setIsRegisterModalOpen(true) }}>add source</Button>
+            </div>
         </div>
     }
 
@@ -175,37 +195,38 @@ const RepositoriesAndPackagesContainer = ({
             return <EmptyState
                 icon="cube"
                 title="No package selected"
-                description="Select a package in the tree on the left to view its details."/>
+                message="Select a package in the tree on the left to view its details."/>
         const p = selectedPackage
         const location = `${p.moduleName}.${p.layerName}${p.parentGroup ? `.${p.parentGroup}` : ""}`
         const rows = [
-            ["package", `${p.packageName}.${p.ext}`],
-            ["type", p.ext],
-            ["repository", p.namespaceRepo],
-            ["module", p.moduleName],
-            ["layer", p.layerName],
-            ...(p.parentGroup ? [["group", p.parentGroup]] : []),
-            ["location", location]
+            { field: "package",    value: `${p.packageName}.${p.ext}` },
+            { field: "type",       value: p.ext },
+            { field: "repository", value: p.namespaceRepo },
+            { field: "module",     value: p.moduleName },
+            { field: "layer",      value: p.layerName },
+            ...(p.parentGroup ? [ { field: "group", value: p.parentGroup } ] : []),
+            { field: "location",   value: location }
         ]
-        return <Segment>
+        return <Panel className="ecp-package-detail">
             <EntityHeader
+                className="ecp-package-detail__header"
                 iconNode={<PackageIcon packageData={p} serverManagerInformation={serverManagerInformation} size={26}/>}
                 title={p.packageName}
                 typeLabel={p.ext}
                 subtitle={p.namespaceRepo}/>
-            <List divided size="small">
-                {
-                    rows.map(([k, v]:any, idx:number) =>
-                        <List.Item key={idx}>
-                            <List.Content floated="right"><CopyValue value={String(v)}/></List.Content>
-                            <List.Content>
-                                <span style={{ color: "var(--mp-muted-2)" }}>{k}: </span>
-                                <strong style={{ fontFamily: "monospace" }}>{v}</strong>
-                            </List.Content>
-                        </List.Item>)
-                }
-            </List>
-        </Segment>
+            <DataTable
+                dense
+                rowKey={(row:any) => row.field}
+                columns={[
+                    { key: "field", header: "field", width: "30%" },
+                    {
+                        key: "value",
+                        header: "value",
+                        render: (row:any) => <CopyableMonoText value={String(row.value)} maxChars={44}/>
+                    }
+                ]}
+                rows={rows}/>
+        </Panel>
     }
 
     const renderPackagesPanel = (ns:string) => {
@@ -215,10 +236,13 @@ const RepositoriesAndPackagesContainer = ({
         const tree = BuildPackageTree(repoPackages)
         const repoNode = tree[ns]
         const selectedKey = selectedPackage && PackageKey(selectedPackage)
-        return <Grid divided style={{ marginTop: 0 }}>
-            <Grid.Column width={9}>
-                <Input icon="search" size="small" fluid placeholder="filter packages in this repo..." value={packageFilter} onChange={(e, { value }) => setPackageFilter(value)} style={{ marginBottom: "8px" }}/>
-                <div style={{ overflow: "auto", maxHeight: "62vh", fontFamily: "system-ui, sans-serif", fontSize: ".95em" }}>
+        return <div className="ecp-repo-split">
+            <div className="ecp-repo-split__tree">
+                <SearchInput
+                    value={packageFilter}
+                    onValueChange={setPackageFilter}
+                    placeholder="filter packages in this repo..."/>
+                <div className="ecp-repo-split__scroll">
                     {
                         repoNode
                         ? Object.keys(repoNode.__children).sort().map((moduleName:string) =>
@@ -230,54 +254,62 @@ const RepositoriesAndPackagesContainer = ({
                                 selectedKey={selectedKey}
                                 onSelectPackage={setSelectedPackage}
                                 serverManagerInformation={serverManagerInformation}/>)
-                        : <div style={{ color: "var(--mp-muted-2)", padding: "20px" }}>no packages installed in this repository</div>
+                        : <EmptyState icon="cube" message="no packages installed in this repository"/>
                     }
                 </div>
-            </Grid.Column>
-            <Grid.Column width={7}>
+            </div>
+            <div className="ecp-repo-split__detail">
                 { renderPackageDetail() }
-            </Grid.Column>
-        </Grid>
+            </div>
+        </div>
     }
 
-    if(isLoading) return <Segment style={{ margin: "15px" }}><ListSkeleton lines={10}/></Segment>
+    if(isLoading) return <Surface className="ecp-repos-page"><SkeletonList rows={10}/></Surface>
 
-    return <Segment style={{ margin: "10px" }}>
-        <Menu secondary style={{ margin: 0, minHeight: 0 }}>
-            <Menu.Menu position="right">
-                <MenuItem><Button size="small" primary onClick={() => { setRegisterModalNamespace(undefined); setIsRegisterModalOpen(true) }}><Icon name="feed"/> register source</Button></MenuItem>
-                <MenuItem><Button size="small" onClick={() => setIsAddNamespaceOpen(true)}><Icon name="plus"/> add namespace</Button></MenuItem>
-            </Menu.Menu>
-        </Menu>
+    return <div className="ecp-repos-page">
+        <Toolbar className="ecp-repos-page__bar">
+            <Toolbar.Spacer/>
+            <Button variant="primary" size="sm" icon="feed" onClick={() => { setRegisterModalNamespace(undefined); setIsRegisterModalOpen(true) }}>register source</Button>
+            <Button size="sm" icon="plus" onClick={() => setIsAddNamespaceOpen(true)}>add namespace</Button>
+        </Toolbar>
 
         {
             repoSelected
-            ? <div>
+            ? <div className="ecp-repos-page__entity">
                 <Breadcrumbs items={[ "Repositories & Packages", repoSelected, activeTab ]}/>
                 <EntityHeader
+                    className="ecp-repos-page__header"
                     icon="cubes"
                     title={repoSelected}
                     badges={
                         isInstalled(repoSelected)
-                        ? <Label size="tiny" basic color="green">installed</Label>
-                        : <Label size="tiny" basic color="grey">not installed</Label>
+                        ? <StatusChip tone="success" label="installed"/>
+                        : <StatusChip label="not installed"/>
                     }
                     meta={isInstalled(repoSelected) ? [{ label: "source", value: getActiveSourceType(repoSelected) }] : []}
                     actions={
                         isInstalled(repoSelected)
-                        ? <Button size="small" basic loading={isBusy(repoSelected, "update")} onClick={() => handleUpdate(repoSelected)}><Icon name="refresh"/> update repository</Button>
+                        ? <Button size="sm" icon="refresh" loading={isBusy(repoSelected, "update")} onClick={() => handleUpdate(repoSelected)}>update repository</Button>
                         : undefined
                     }/>
-                <Tab
-                    menu={{ secondary: true, pointing: true }}
-                    activeIndex={activeTab === "sources" ? 1 : 0}
-                    onTabChange={(e:any, { activeIndex }:any) => onChangeTab && onChangeTab(activeIndex === 1 ? "sources" : "packages")}
-                    panes={[
-                        { menuItem: { key: "packages", content: <span><Icon name="cube"/> Packages</span> }, render: () => <Tab.Pane>{renderPackagesPanel(repoSelected)}</Tab.Pane> },
-                        { menuItem: { key: "sources",  content: <span><Icon name="feed"/> Sources</span> },  render: () => <Tab.Pane>{renderSourcesPanel(repoSelected)}</Tab.Pane> }
-                    ]}/>
+                { /* o Tabs do kit é só a barra: o conteúdo da aba vem abaixo */ }
+                <Tabs
+                    className="ecp-repos-page__tabs"
+                    tabs={[
+                        { key: "packages", label: "Packages", icon: "cube" },
+                        { key: "sources",  label: "Sources",  icon: "feed" }
+                    ]}
+                    activeKey={activeTab === "sources" ? "sources" : "packages"}
+                    onChange={(key:string) => onChangeTab && onChangeTab(key)}/>
+                <div className="ecp-repos-page__pane">
+                    {
+                        activeTab === "sources"
+                        ? renderSourcesPanel(repoSelected)
+                        : renderPackagesPanel(repoSelected)
+                    }
+                </div>
             </div>
-            : <div style={{ color: "var(--mp-muted-2)", padding: "20px" }}>select a repository in the tree on the left</div>
+            : <EmptyState icon="cubes" message="select a repository in the tree on the left"/>
         }
 
         {
@@ -287,49 +319,57 @@ const RepositoriesAndPackagesContainer = ({
         }
         {
             confirmRemove &&
-            <AppModal
-                variant="danger"
+            <ConfirmDialog
                 open={true}
-                header="Remove source"
-                confirmText="remove"
-                confirmIcon="trash"
+                danger
+                title="Remove source"
+                confirmLabel="remove"
+                cancelLabel="cancel"
                 onCancel={() => setConfirmRemove(undefined)}
-                onConfirm={handleConfirmRemove}>
-                Remove <strong>{confirmRemove.st}</strong> from <strong>{confirmRemove.ns}</strong>? Changes <code>sources.json</code>.
-            </AppModal>
+                onConfirm={handleConfirmRemove}
+                message={<>Remove <strong>{confirmRemove.st}</strong> from <strong>{confirmRemove.ns}</strong>? Changes <code>sources.json</code>.</>}/>
         }
         {
             confirmChange &&
-            <AppModal
-                variant="edit"
+            <ConfirmDialog
                 open={true}
-                header="Change repository source"
-                confirmText="change source"
-                confirmIcon="exchange"
+                title="Change repository source"
+                confirmLabel="change source"
+                cancelLabel="cancel"
                 onCancel={() => setConfirmChange(undefined)}
-                onConfirm={handleConfirmChange}>
-                Make <strong>{confirmChange.st}</strong> the active source of <strong>{confirmChange.ns}</strong>?
-                <p style={{ color: "var(--mp-warning)", marginTop: "8px" }}>
-                    <Icon name="warning sign"/> This reinstalls/realigns the repository from the new source and may impact what is running.
-                </p>
-            </AppModal>
+                onConfirm={handleConfirmChange}
+                message={<>
+                    Make <strong>{confirmChange.st}</strong> the active source of <strong>{confirmChange.ns}</strong>?
+                    <Banner tone="warning" className="ecp-confirm-note">
+                        This reinstalls/realigns the repository from the new source and may impact what is running.
+                    </Banner>
+                </>}/>
         }
         {
             isAddNamespaceOpen &&
-            <AppModal
-                variant="info"
+            <Dialog
                 open={true}
-                header="New repository namespace"
-                confirmText="create"
-                confirmIcon="plus"
-                confirmDisabled={!newNamespace}
-                onCancel={() => setIsAddNamespaceOpen(false)}
-                onConfirm={handleCreateNamespace}>
-                <Input fluid autoFocus placeholder="e.g. my-repository" value={newNamespace || ""} onChange={(e, { value }) => setNewNamespace(value)}/>
-                <div style={{ color: "var(--mp-muted)", fontSize: ".85em", marginTop: "6px" }}>Use lowercase letters, numbers and hyphens. E.g. <code>ecosystem-core</code></div>
-            </AppModal>
+                size="sm"
+                icon="plus"
+                title="New repository namespace"
+                onClose={() => setIsAddNamespaceOpen(false)}
+                actions={<>
+                    <Button onClick={() => setIsAddNamespaceOpen(false)}>cancel</Button>
+                    <Button variant="primary" icon="plus" disabled={!newNamespace} onClick={handleCreateNamespace}>create</Button>
+                </>}>
+                <FormField
+                    htmlFor="ecp-new-namespace"
+                    hint="Use lowercase letters, numbers and hyphens. E.g. ecosystem-core">
+                    <TextInput
+                        id="ecp-new-namespace"
+                        autoFocus
+                        placeholder="e.g. my-repository"
+                        value={newNamespace || ""}
+                        onChange={({ target: { value } }:any) => setNewNamespace(value)}/>
+                </FormField>
+            </Dialog>
         }
-    </Segment>
+    </div>
 }
 
 export default RepositoriesAndPackagesContainer

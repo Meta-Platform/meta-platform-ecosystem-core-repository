@@ -1,0 +1,215 @@
+/* Ecosystem Control Panel — CSS de produto: environments.
+   Só classes .ecp-*, só sobre tokens --mp-*. Nunca redefinir .mp-*. */
+
+/* ================================================================== */
+/* Environments — coleção (lista)                                      */
+/* ================================================================== */
+/* Coluna de altura fixa: cabeçalho e faixa de status não podem encolher,
+   quem rola é o corpo. Sem o flex:0 0 auto o masthead some. */
+.ecp-env-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mp-space-3);
+    height: calc(100vh - 110px);
+    min-height: 0;
+    padding: var(--mp-space-4);
+}
+.ecp-env-page > .mp-masthead,
+.ecp-env-page > .mp-status-strip { flex: 0 0 auto; }
+
+.ecp-env-page__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+}
+
+/* Busca da faixa de status: largura previsível, não estica a faixa. */
+.ecp-env-search { width: 260px; }
+
+/* Nome do grupo (identidade do pacote) na tabela de ambientes. */
+.ecp-env-group-name {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mp-space-2);
+    min-width: 0;
+}
+.ecp-env-group-name strong { color: var(--mp-ink); }
+
+/* Instância (hash) recuada sob a identidade do pacote. */
+.ecp-env-instance-name {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mp-space-2);
+    padding-left: var(--mp-space-6);
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    color: var(--mp-ink-3);
+}
+
+.ecp-env-open {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mp-space-1);
+    color: var(--mp-accent-blue);
+    font-size: var(--mp-text-xs);
+    font-weight: 700;
+}
+
+/* ================================================================== */
+/* Environments — detalhe (EntityHeader + Tabs + painel)               */
+/* ================================================================== */
+.ecp-env-detail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mp-space-3);
+    padding: var(--mp-space-4);
+}
+/* Breadcrumb, cabeçalho e barra de abas nunca encolhem nesta coluna. */
+.ecp-env-detail > * { flex: 0 0 auto; }
+
+.ecp-env-tabpanel { padding-top: var(--mp-space-4); }
+
+/* ================================================================== */
+/* Plano de execução (aba "execution plan")                            */
+/* ================================================================== */
+/* A faixa em si é .mp-status-strip (kit); aqui só o respiro até a tabela. */
+.ecp-plan-toolbar { margin-bottom: var(--mp-space-3); }
+.ecp-plan-scroll {
+    max-height: 72vh;
+    overflow: auto;
+}
+/* Nome da task: a hierarquia do plano é dada pelo recuo (inline, por nível). */
+.ecp-plan-task { display: inline-flex; align-items: baseline; gap: var(--mp-space-2); }
+.ecp-plan-task__arrow { color: var(--mp-muted-2); }
+.ecp-plan-rule {
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    color: var(--mp-ink-3);
+}
+.ecp-plan-none { color: var(--mp-muted-2); }
+.ecp-plan-warn { margin-bottom: var(--mp-space-4); }
+.ecp-plan-json {
+    margin: 0;
+    white-space: pre-wrap;
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    color: var(--mp-ink-3);
+}
+
+/* ================================================================== */
+/* Canvas dos diagramas (React Flow)                                   */
+/* ================================================================== */
+/* Substitui o antigo DivFlowContainerStyled (CSS-in-JS): mesma
+   moldura (altura fixa, borda, cantos, fundo recuado), agora em tokens. */
+.ecp-flow-canvas {
+    width: 100%;
+    overflow: hidden;
+    border: var(--mp-border-thin);
+    border-radius: var(--mp-radius-md);
+    background: var(--mp-paper-2);
+}
+.ecp-flow-canvas--plan     { height: 720px; }
+.ecp-flow-canvas--metadata { height: 750px; }
+
+/* ================================================================== */
+/* Applications & Packages                                             */
+/* ================================================================== */
+.ecp-apps-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mp-space-3);
+    padding: var(--mp-space-4);
+}
+.ecp-apps-page > .mp-masthead,
+.ecp-apps-page > .mp-tabs { flex: 0 0 auto; }
+
+/* Grade de cartões de aplicação/pacote (substitui o CardGroup do Semantic
+   e o GridContainer de CSS-in-JS). */
+.ecp-apps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--mp-space-3);
+}
+
+/* Título de grupo por repositório (namespace). */
+.ecp-apps-group-head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--mp-space-2);
+    margin: var(--mp-space-5) 0 var(--mp-space-2);
+    padding-bottom: var(--mp-space-1);
+    border-bottom: var(--mp-border-thin);
+}
+.ecp-apps-group-head:first-child { margin-top: 0; }
+/* Primeiro grupo de cada painel também começa colado à barra de abas. */
+.ecp-apps-tabpanel > div:first-child > .ecp-apps-group-head { margin-top: var(--mp-space-4); }
+.ecp-apps-group-head__count {
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    color: var(--mp-muted);
+}
+
+/* ================================================================== */
+/* Árvore de pacotes (master-detail: repositórios | árvore)            */
+/* ================================================================== */
+/* `position: relative` porque o LoadingOverlay do kit é absolute/inset:0. */
+.ecp-pkgtree {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(200px, 300px) minmax(0, 1fr);
+    gap: var(--mp-space-4);
+    min-height: 120px;
+    padding: var(--mp-space-4);
+}
+.ecp-pkgtree__side {
+    min-width: 0;
+    padding-right: var(--mp-space-3);
+    border-right: var(--mp-border-thin);
+}
+.ecp-pkgtree__main { min-width: 0; }
+.ecp-pkgtree__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--mp-space-2);
+    margin-bottom: var(--mp-space-2);
+}
+.ecp-pkgtree__search { width: 240px; }
+.ecp-pkgtree__scroll {
+    max-height: 72vh;
+    overflow: auto;
+}
+.ecp-pkgtree__empty {
+    padding: var(--mp-space-5);
+    color: var(--mp-muted);
+}
+
+/* Folha da árvore: o ícone é IMAGEM (icon.svg do pacote), então a linha é
+   montada aqui — TreeRow do kit só desenha ícone por nome. */
+.ecp-pkg-leaf {
+    display: flex;
+    align-items: center;
+    gap: var(--mp-space-2);
+    width: 100%;
+    padding: 3px var(--mp-space-2);
+    border: none;
+    background: none;
+    border-radius: var(--mp-radius-sm);
+    font-family: var(--mp-font-ui);
+    font-size: var(--mp-text-sm);
+    color: var(--mp-ink);
+    text-align: left;
+}
+.ecp-pkg-leaf.is-clickable { cursor: pointer; }
+.ecp-pkg-leaf.is-clickable:hover { background: var(--mp-surface-2); }
+.ecp-pkg-leaf.is-selected {
+    background: var(--mp-accent-blue-tint);
+    box-shadow: inset 3px 0 0 var(--mp-accent-blue);
+    font-weight: 700;
+}
+.ecp-pkg-leaf__name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

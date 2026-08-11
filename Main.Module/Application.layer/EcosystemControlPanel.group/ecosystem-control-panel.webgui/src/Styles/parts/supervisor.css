@@ -1,0 +1,365 @@
+/* Ecosystem Control Panel — CSS de produto: supervisor.
+   Só classes .ecp-*, só sobre tokens --mp-*. Nunca redefinir .mp-*. */
+
+/* ================================================================== */
+/* Helper de coluna flex                                               */
+/* ================================================================== */
+/* Numa coluna flex de altura fixa (as telas de monitor), Tabs/EntityHeader/
+   Toolbar/Banner são espremidos a zero e SOMEM. Esta é a trava. */
+.ecp-fixed { flex: 0 0 auto; }
+
+/* Corta o excesso preservando a linha (o .mp-table não trunca sozinho). */
+.ecp-truncate {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Indicador de stream ao vivo: pulsa para dar sensação de tempo real. */
+@keyframes ecp-live-pulse {
+    0%   { opacity: 1;   transform: scale(1); }
+    50%  { opacity: .35; transform: scale(.82); }
+    100% { opacity: 1;   transform: scale(1); }
+}
+.ecp-live-pulse {
+    animation: ecp-live-pulse 1.1s ease-in-out infinite;
+    transform-origin: center;
+}
+
+/* ================================================================== */
+/* Supervisor — coleção de sockets (OverviewSocketPanel)               */
+/* ================================================================== */
+.ecp-socket-overview { padding: var(--mp-space-3); }
+
+/* Larguras de coluna só valem com layout fixo; sem isso o path estoura. */
+.ecp-socket-table { table-layout: fixed; }
+
+.ecp-socket-table__group td {
+    background: var(--mp-surface-2);
+    color: var(--mp-muted);
+    font-family: var(--mp-font-display);
+    font-weight: 700;
+    font-size: var(--mp-text-xs);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+/* Socket sem conexão: presente na lista, mas em segundo plano. */
+.ecp-socket-row.is-dim { opacity: .78; }
+
+.ecp-socket-cell__name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+.ecp-socket-cell__name strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ecp-socket-cell__hint {
+    font-size: var(--mp-text-xs);
+    color: var(--mp-muted-2);
+}
+
+.ecp-socket-cell__unavailable {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--mp-text-xs);
+    color: var(--mp-danger);
+}
+
+.ecp-socket-cell__app {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: var(--mp-text-xs);
+    color: var(--mp-ink-3);
+}
+.ecp-socket-cell__key { color: var(--mp-muted-2); }
+
+.ecp-socket-cell__app-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+    font-size: var(--mp-text-xs);
+}
+
+.ecp-socket-cell__actions {
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* ================================================================== */
+/* Supervisor — detalhe do socket (InstanceSupervisor.container)        */
+/* ================================================================== */
+.ecp-socket-detail {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 110px);
+    margin: var(--mp-space-4);
+}
+
+.ecp-socket-detail__taskbar { margin-bottom: var(--mp-space-2); }
+
+/* O .mp-search nasce com width:100%; aqui ele é um filtro, não um campo. */
+.ecp-socket-detail__filter {
+    width: 260px;
+    flex: 0 0 auto;
+}
+
+/* Quem cresce e quem rola é o corpo — nunca o cabeçalho ou a barra. */
+.ecp-socket-detail__body {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+.ecp-socket-detail__empty { flex: 1 1 auto; }
+
+.ecp-danger-note { color: var(--mp-danger); }
+
+/* ================================================================== */
+/* Supervisor — monitor de tasks (TaskProcessMonitor)                  */
+/* ================================================================== */
+.ecp-task-table-wrap {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+}
+.ecp-task-table { table-layout: fixed; }
+
+/* O .mp-table já prende o cabeçalho (position: sticky); aqui só se garante que
+   ele fique ACIMA das linhas quando a lista rola. */
+.ecp-task-table thead th { z-index: 1; }
+
+/* O cabeçalho ordena: é botão, mas tem de parecer cabeçalho. */
+.ecp-task-table__sort {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    color: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    cursor: pointer;
+}
+.ecp-task-table__sort:hover { color: var(--mp-ink); }
+
+.ecp-task-name {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    overflow: hidden;
+}
+.ecp-task-name strong {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+.ecp-task-name__detail {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--mp-muted-2);
+}
+
+.ecp-task-table__ptid { color: var(--mp-muted); }
+.ecp-task-table__type {
+    color: var(--mp-accent-blue);
+    font-family: var(--mp-font-mono);
+}
+
+/* ================================================================== */
+/* Supervisor — cartão de destaque de task (TaskInfo.card)             */
+/* ================================================================== */
+.ecp-taskinfo-card { min-width: 240px; }
+.ecp-taskinfo-card__tid {
+    color: var(--mp-muted-2);
+    font-weight: 400;
+}
+
+/* ================================================================== */
+/* Log stream do processo (LogStreaming)                               */
+/* ================================================================== */
+.ecp-log-stream.is-fill {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+.ecp-log-stream__bar {
+    padding: var(--mp-space-1) var(--mp-space-2);
+    margin-bottom: var(--mp-space-2);
+}
+
+/* O StatusChip não aceita className: a animação fica no invólucro. */
+@keyframes ecp-spin { to { transform: rotate(360deg); } }
+@keyframes ecp-color-pulse {
+    0%   { opacity: 1; }
+    50%  { opacity: .5; }
+    100% { opacity: 1; }
+}
+.ecp-log-status { display: inline-flex; }
+.ecp-log-status.is-connecting svg {
+    animation: ecp-spin 1s linear infinite;
+    transform-origin: center;
+}
+.ecp-log-status.is-open { animation: ecp-color-pulse 1.1s ease-in-out infinite; }
+
+.ecp-log-terminal {
+    height: 62vh;
+    padding: var(--mp-space-3);
+    overflow: auto;
+    background: var(--mp-terminal-bg);
+    color: var(--mp-terminal-fg);
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    line-height: 1.45;
+    border: var(--mp-border-strong);
+    border-top: 3px solid var(--mp-titlebar-runtime);
+    border-radius: var(--mp-radius-md);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+/* Dentro do dock/janela o terminal preenche a altura disponível. */
+.ecp-log-terminal.is-fill {
+    height: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+.ecp-log-terminal__waiting { color: var(--mp-terminal-muted); }
+
+/* ================================================================== */
+/* Logs em disco — árvore (Logs.container)                             */
+/* ================================================================== */
+.ecp-logs {
+    display: grid;
+    grid-template-columns: minmax(240px, 340px) 1fr;
+    gap: var(--mp-space-4);
+    align-items: start;
+    padding: var(--mp-space-3);
+}
+@media (max-width: 900px) {
+    .ecp-logs { grid-template-columns: 1fr; }
+}
+
+.ecp-logs-tree {
+    display: flex;
+    flex-direction: column;
+    max-height: 75vh;
+    border-radius: var(--mp-radius-md);
+    overflow: hidden;
+}
+.ecp-logs-tree__filter {
+    padding: var(--mp-space-3);
+    border-bottom: var(--mp-border-thin);
+}
+.ecp-logs-tree__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    padding: var(--mp-space-2);
+}
+/* Alinhado com o rótulo da TreeRow de seção (twisty + ícone). */
+.ecp-logs-tree__help,
+.ecp-logs-tree__none {
+    padding-left: 34px;
+    font-size: var(--mp-text-xs);
+    color: var(--mp-muted-2);
+}
+.ecp-logs-tree__help { margin-bottom: var(--mp-space-1); }
+
+.ecp-logs-viewer { min-width: 0; }
+
+/* ================================================================== */
+/* Logs em disco — leitor de arquivo (LogViewer)                       */
+/* ================================================================== */
+.ecp-log-viewer {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.ecp-log-viewer__file {
+    width: 190px;
+    flex: 0 0 auto;
+}
+.ecp-log-viewer__filename {
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-sm);
+}
+.ecp-log-viewer__levels {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+.ecp-log-viewer__source {
+    width: 150px;
+    flex: 0 0 auto;
+}
+.ecp-log-viewer__search {
+    width: 210px;
+    flex: 0 0 auto;
+}
+.ecp-log-viewer__loading {
+    flex: 0 0 auto;
+    padding: var(--mp-space-2) 0;
+}
+
+/* O corpo é superfície de terminal: os níveis usam os tokens --mp-terminal-*. */
+.ecp-log-viewer__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 60vh;
+    margin-top: var(--mp-space-2);
+    padding: var(--mp-space-3);
+    overflow: auto;
+    background: var(--mp-terminal-bg);
+    color: var(--mp-terminal-fg);
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    border: var(--mp-border-strong);
+    border-radius: var(--mp-radius-md);
+}
+.ecp-log-viewer__empty { color: var(--mp-terminal-muted); }
+
+.ecp-log-line {
+    padding: 2px 0;
+    border-bottom: 1px solid var(--mp-terminal-bg-2);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.ecp-log-line__ts     { color: var(--mp-terminal-muted); }
+.ecp-log-line__source { color: var(--mp-accent-cyan); }
+.ecp-log-line__level  { font-weight: 700; }
+.ecp-log-line__level--trace   { color: var(--mp-terminal-muted); }
+.ecp-log-line__level--debug   { color: var(--mp-accent-violet); }
+.ecp-log-line__level--info    { color: var(--mp-terminal-blue); }
+.ecp-log-line__level--message { color: var(--mp-terminal-green); }
+.ecp-log-line__level--warn    { color: var(--mp-terminal-orange); }
+.ecp-log-line__level--error   { color: var(--mp-terminal-red); }
+.ecp-log-line__level--fatal   { color: var(--mp-terminal-red); }
+.ecp-log-line__data {
+    padding-left: var(--mp-space-6);
+    color: var(--mp-terminal-orange);
+}
+.ecp-log-line__message { color: var(--mp-terminal-muted); }
+.ecp-log-line__raw {
+    display: inline-block;
+    margin-right: 6px;
+    padding: 0 6px;
+    border: 1px solid var(--mp-terminal-muted);
+    border-radius: var(--mp-radius-sm);
+    color: var(--mp-terminal-muted);
+    font-size: var(--mp-text-xs);
+}

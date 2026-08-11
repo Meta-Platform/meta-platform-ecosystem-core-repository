@@ -3,14 +3,13 @@ import { useState, useEffect } from "react"
 
 import {
     Button,
-    Icon,
-    Loader,
-    Menu,
-    MenuMenu,
-    MenuItem,
-    Modal,
-    Segment
-} from "semantic-ui-react"
+    ConfirmDialog,
+    PageMasthead,
+    SkeletonList,
+    StatusChip,
+    StatusStrip,
+    Surface
+} from "@i-components"
 
 import GetAPI from "../../Utils/GetAPI"
 
@@ -136,26 +135,29 @@ const RepositorySourcesContainer = ({ serverManagerInformation }:any) => {
     const isInstalled = (repositoryNamespace) =>
         activeSourceList.some((a) => a.repositoryNamespace === repositoryNamespace)
 
-    return <>
-        <Menu style={{ margin: "1em" }}>
-            <MenuMenu position="right">
-                <MenuItem>
-                    <Button icon primary onClick={() => openRegisterModal(undefined)}>
-                        <Icon name="feed"/> register source
-                    </Button>
-                </MenuItem>
-                <MenuItem>
-                    <Button icon onClick={() => setNewRepoMode(true)} disabled={newRepoMode}>
-                        <Icon name="plus"/> add namespace
-                    </Button>
-                </MenuItem>
-            </MenuMenu>
-        </Menu>
+    const namespaceNames = Object.keys(groupedSources)
+    const installedCount = namespaceNames.filter((ns) => isInstalled(ns)).length
 
-        <Segment style={{ margin: "1em" }}>
+    return <div className="ecp-sources-page">
+        <PageMasthead
+            icon="feed"
+            title="Repository Sources"
+            subtitle="registered sources per repository namespace"
+            actions={<>
+                <Button variant="primary" icon="feed" onClick={() => openRegisterModal(undefined)}>register source</Button>
+                <Button icon="plus" onClick={() => setNewRepoMode(true)} disabled={newRepoMode}>add namespace</Button>
+            </>}>
+            <StatusStrip>
+                <StatusChip icon="cubes" count={namespaceNames.length} label="namespaces"/>
+                <StatusChip icon="check circle" tone="success" count={installedCount} label="installed"/>
+                <StatusChip icon="feed" count={sourceList.length} label="sources"/>
+            </StatusStrip>
+        </PageMasthead>
+
+        <Surface className="ecp-sources-page__body">
             {
                 newRepoMode &&
-                <div style={{ marginBottom: "12px", maxWidth: "440px" }}>
+                <div className="ecp-sources-page__new-repo">
                     <NewRepositorySourceCard
                         onCancel={() => setNewRepoMode(false)}
                         onCreateRepositoryNamespace={handleCreateNamespace}/>
@@ -163,8 +165,8 @@ const RepositorySourcesContainer = ({ serverManagerInformation }:any) => {
             }
             {
                 isLoading
-                ? <Loader active style={{ margin: "50px" }}/>
-                : <div style={{ overflow: "auto", maxHeight: "72vh" }}>
+                ? <SkeletonList rows={6}/>
+                : <div className="ecp-sources-page__scroll">
                     <SourcesListTable
                         groupedSources={groupedSources}
                         getActiveSourceType={getActiveSourceType}
@@ -177,7 +179,7 @@ const RepositorySourcesContainer = ({ serverManagerInformation }:any) => {
                         onRegisterSourceForNamespace={openRegisterModal}/>
                 </div>
             }
-        </Segment>
+        </Surface>
 
         {
             isRegisterModalOpen &&
@@ -191,19 +193,20 @@ const RepositorySourcesContainer = ({ serverManagerInformation }:any) => {
 
         {
             confirmRemove &&
-            <Modal size="mini" open={true} onClose={() => setConfirmRemove(undefined)}>
-                <Modal.Header><Icon name="trash" color="red"/> Remover fonte</Modal.Header>
-                <Modal.Content>
-                    Remover a fonte <strong>{confirmRemove.sourceType}</strong> do namespace
-                    <strong> {confirmRemove.repositoryNamespace}</strong>? Isso altera o <code>sources.json</code>.
-                </Modal.Content>
-                <Modal.Actions>
-                    <Button onClick={() => setConfirmRemove(undefined)}>cancelar</Button>
-                    <Button color="red" onClick={handleConfirmRemoveSource}>remover</Button>
-                </Modal.Actions>
-            </Modal>
+            <ConfirmDialog
+                open={true}
+                danger
+                title="Remove source"
+                confirmLabel="remove"
+                cancelLabel="cancel"
+                onCancel={() => setConfirmRemove(undefined)}
+                onConfirm={handleConfirmRemoveSource}
+                message={<>
+                    Remove the <strong>{confirmRemove.sourceType}</strong> source from
+                    <strong> {confirmRemove.repositoryNamespace}</strong>? This changes <code>sources.json</code>.
+                </>}/>
         }
-    </>
+    </div>
 }
 
 export default RepositorySourcesContainer

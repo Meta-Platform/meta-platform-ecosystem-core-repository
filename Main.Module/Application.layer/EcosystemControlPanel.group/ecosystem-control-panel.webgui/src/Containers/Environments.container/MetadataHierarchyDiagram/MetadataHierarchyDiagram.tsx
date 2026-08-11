@@ -7,7 +7,6 @@ import ReactFlow, {
 	Background,
 	Controls,
 } from "reactflow"
-import styled from "styled-components"
 import "reactflow/dist/style.css"
 
 import ConvertDependencyToFlowElements from "./ConvertDependencyToFlowElements"
@@ -17,14 +16,8 @@ import DiagramLegend from "../_shared/DiagramLegend"
 import useNeighborHighlight from "../_shared/useNeighborHighlight"
 import { CollectKinds } from "../_shared/DiagramTheme"
 
-const DivFlowContainerStyled = styled.div`
-  width: 100%;
-  height: 750px;
-  overflow: hidden;
-  border: 1px solid #e3e6ea;
-  border-radius: 8px;
-  background: #fafbfc;
-`
+// A moldura do canvas vive em Styles/parts/environments.css (.ecp-flow-canvas):
+// mesma altura/borda/fundo do antigo styled-component, agora em tokens --mp-*.
 
 const nodeTypes = { pkg: PackageFlowNode }
 const defaultEdgeOptions = { type: "smoothstep" }
@@ -52,7 +45,7 @@ const MetadataHierarchyDiagram = ({ metadataHierarchy }:any) => {
 	)
 
 	return (
-		<DivFlowContainerStyled className="react-flow-container">
+		<div className="ecp-flow-canvas ecp-flow-canvas--metadata react-flow-container">
 			<ReactFlow
 				nodes={nodes}
 				edges={edges}
@@ -74,7 +67,7 @@ const MetadataHierarchyDiagram = ({ metadataHierarchy }:any) => {
 				/>
 				<Background color="#e2e8f0" gap={18} />
 			</ReactFlow>
-		</DivFlowContainerStyled>
+		</div>
 	)
 }
 

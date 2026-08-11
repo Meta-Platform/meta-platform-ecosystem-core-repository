@@ -2,14 +2,19 @@ import * as React from "react"
 import { useState } from "react"
 
 import {
+    EmptyState,
     Icon,
-    Label,
-    Table
-} from "semantic-ui-react"
+    StatusBadge,
+    GetSeverityRank,
+    GetStatusTone
+} from "@i-components"
 
-import StatusBadge, { GetStatusColor, GetSeverityRank } from "../../Components/StatusBadge"
-
-const GetColorByStatus = GetStatusColor
+// O tom "done" do registro de status não existe na escala de tons do Icon —
+// nesse caso o ponto fica em cinza (muted), que é o que "done" significa aqui.
+const GetDotTone = (status:string) => {
+    const tone = GetStatusTone(status)
+    return tone === "done" ? "muted" : tone
+}
 
 // Ordem do ciclo de vida (transitórios → estáveis → finais).
 const STATUS_ORDER = [
@@ -51,31 +56,30 @@ const GetTaskDetail = (task:any) => {
 }
 
 const COLUMNS = [
-    { key: "taskId",           label: "TID",    width: 1 },
-    { key: "pTaskId",          label: "PTID",   width: 1 },
-    { key: "name",             label: "name",   width: 5 },
-    { key: "objectLoaderType", label: "type",   width: 6 },
-    { key: "status",           label: "status", width: 3 }
+    { key: "taskId",           label: "TID",    width: "8%"  },
+    { key: "pTaskId",          label: "PTID",   width: "8%"  },
+    { key: "name",             label: "name",   width: "32%" },
+    { key: "objectLoaderType", label: "type",   width: "34%" },
+    { key: "status",           label: "status", width: "18%" }
 ]
 
 const TaskNameCell = ({ task }:any) => {
     const detail = GetTaskDetail(task)
     const name = GetTaskName(task)
-    return <Table.Cell style={{ paddingLeft: "12px", maxWidth: 0 }} title={`${name}${detail ? "  ·  " + detail : ""}`}>
-        <div style={{ display: "flex", alignItems: "center", gap: "4px", overflow: "hidden" }}>
-            <Icon name={GetIconByLoaderType(task.objectLoaderType)} style={{ color: "var(--mp-muted)", flex: "0 0 auto" }}/>
-            <strong style={{ whiteSpace: "nowrap", flex: "0 0 auto" }}>{name}</strong>
-            { detail && <span style={{ color: "var(--mp-muted-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{detail}</span> }
-            { task.hasChildTasks && <Label size="mini" circular style={{ flex: "0 0 auto" }}>parent</Label> }
-        </div>
-    </Table.Cell>
+    return <td title={`${name}${detail ? "  ·  " + detail : ""}`}>
+        <span className="ecp-task-name">
+            <Icon name={GetIconByLoaderType(task.objectLoaderType)} tone="muted"/>
+            <strong>{name}</strong>
+            { detail && <span className="ecp-task-name__detail">{detail}</span> }
+            { task.hasChildTasks && <span className="mp-type-chip">parent</span> }
+        </span>
+    </td>
 }
 
 const StatusCell = ({ task }:any) =>
-    <Table.Cell style={{ fontFamily: "var(--mp-font-mono)" }}>
-        <Icon name="circle" size="small" color={GetColorByStatus(task.status)}/>
-        {task.taskId}
-    </Table.Cell>
+    <td className="is-mono">
+        <Icon name="circle" size="small" tone={GetDotTone(task.status)}/> {task.taskId}
+    </td>
 
 // Visão única: LISTA (flat), ordenável por coluna. O filtro é controlado pelo
 // container (fica na barra de abas do socket detail, não numa linha própria).
@@ -113,19 +117,18 @@ const TaskProcessMonitor = ({
     }
 
     const renderRow = (task:any, index:number) =>
-        <Table.Row
+        <tr
             key={index}
-            active={task.taskId === taskId}
-            onClick={() => onSelectTask(task.taskId)}
-            style={{ cursor: "pointer" }}>
+            className={`is-clickable ${task.taskId === taskId ? "is-selected" : ""}`.trim()}
+            onClick={() => onSelectTask(task.taskId)}>
             <StatusCell task={task}/>
-            <Table.Cell style={{ fontFamily: "var(--mp-font-mono)", color: "var(--mp-muted)" }}>{task.pTaskId ?? "—"}</Table.Cell>
+            <td className="is-mono ecp-task-table__ptid">{task.pTaskId ?? "—"}</td>
             <TaskNameCell task={task}/>
-            <Table.Cell style={{ color: "var(--mp-accent-blue)", overflow: "hidden" }} title={task.objectLoaderType}>
-                <span style={{ display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontFamily: "var(--mp-font-mono)", fontSize: ".92em" }}>{task.objectLoaderType}</span>
-            </Table.Cell>
-            <Table.Cell><StatusBadge status={task.status}/></Table.Cell>
-        </Table.Row>
+            <td className="ecp-task-table__type" title={task.objectLoaderType}>
+                <span className="ecp-truncate">{task.objectLoaderType}</span>
+            </td>
+            <td><StatusBadge status={task.status}/></td>
+        </tr>
 
     const sorted = [...instanceTaskList.filter(matchesFilter)].sort((a:any, b:any) => {
         const va = _GetSortableValue(a, sortColumn)
@@ -136,35 +139,44 @@ const TaskProcessMonitor = ({
     })
     const rows = sorted.map((task:any, index:number) => renderRow(task, index))
 
-    return <div style={{ overflow: "auto", flex: "1 1 auto", minHeight: 0, border: "var(--mp-border-thin)", borderRadius: "var(--mp-radius-md)" }}>
-        <Table sortable compact selectable unstackable style={{ fontSize: ".9em", tableLayout: "fixed", width: "100%", border: "none" }}>
-            <Table.Header>
-                <Table.Row>
+    // Ledger table à mão: DataTable do kit não ordena por coluna nem fixa o
+    // cabeçalho na rolagem, que é o que este monitor precisa.
+    return <div className="mp-table-wrap ecp-task-table-wrap">
+        <table className="mp-table is-dense ecp-task-table">
+            <thead>
+                <tr>
                     {
                         COLUMNS.map((column) =>
-                            <Table.HeaderCell
+                            <th
                                 key={column.key}
-                                width={column.width as any}
-                                sorted={sortColumn === column.key ? sortDirection : undefined}
-                                onClick={() => handleSort(column.key)}
-                                style={{ position: "sticky", top: 0, zIndex: 1 }}>
-                                {column.label}
-                            </Table.HeaderCell>)
+                                style={{ width: column.width }}
+                                aria-sort={sortColumn === column.key ? sortDirection : undefined}>
+                                <button
+                                    type="button"
+                                    className="ecp-task-table__sort"
+                                    onClick={() => handleSort(column.key)}>
+                                    {column.label}
+                                    {
+                                        sortColumn === column.key &&
+                                        <Icon name={sortDirection === "ascending" ? "caret up" : "caret down"}/>
+                                    }
+                                </button>
+                            </th>)
                     }
-                </Table.Row>
-            </Table.Header>
-            <Table.Body>
+                </tr>
+            </thead>
+            <tbody>
                 { rows }
                 {
                     rows.length === 0 &&
-                    <Table.Row>
-                        <Table.Cell colSpan={COLUMNS.length} textAlign="center" style={{ color: "var(--mp-muted)" }}>
-                            no tasks match the filter
-                        </Table.Cell>
-                    </Table.Row>
+                    <tr>
+                        <td colSpan={COLUMNS.length}>
+                            <EmptyState icon="tasks" message="no tasks match the filter"/>
+                        </td>
+                    </tr>
                 }
-            </Table.Body>
-        </Table>
+            </tbody>
+        </table>
     </div>
 }
 

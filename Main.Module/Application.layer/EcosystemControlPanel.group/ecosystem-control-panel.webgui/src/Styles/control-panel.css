@@ -1,0 +1,49 @@
+/*
+ * Ecosystem Control Panel — CSS de PRODUTO.
+ * ------------------------------------------------------------------
+ * Tudo o que é design system (tokens --mp-*, temas, classes .mp-*) vem de
+ * @i-components/styles/index.css. Este arquivo só carrega o que é exclusivo
+ * deste painel, sempre com o prefixo .ecp- e sempre em cima dos tokens.
+ *
+ * REGRAS:
+ *   - nunca redefinir uma classe .mp-* aqui;
+ *   - nunca escrever var(--mp-x, reserva) — token errado tem de aparecer;
+ *   - nenhuma cor/borda/sombra literal: só var(--mp-*).
+ */
+
+@import "./parts/shell.css";
+@import "./parts/pages.css";
+@import "./parts/repositories.css";
+@import "./parts/supervisor.css";
+@import "./parts/environments.css";
+@import "./parts/config-executables.css";
+
+/* ================================================================== */
+/* Breadcrumb de contexto (Components/Breadcrumbs.tsx)                 */
+/* ================================================================== */
+.ecp-breadcrumbs {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mp-space-1);
+    min-width: 0;
+    font-family: var(--mp-font-ui);
+    font-size: var(--mp-text-xs);
+    color: var(--mp-muted);
+}
+.ecp-breadcrumbs__sep { color: var(--mp-muted-2); }
+.ecp-breadcrumbs__item {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ecp-breadcrumbs__item.is-active { color: var(--mp-ink-2); font-weight: 700; }
+
+/* ================================================================== */
+/* Dado técnico curto em monoespaçada, fora de CopyableMonoText        */
+/* ================================================================== */
+.ecp-mono {
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    color: var(--mp-ink-3);
+    word-break: break-all;
+}

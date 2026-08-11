@@ -1,15 +1,23 @@
 import * as React from "react"
 import { useState, useEffect } from "react"
 
-import { Button, Checkbox, Icon, Image, Input, Label, Loader, Segment } from "semantic-ui-react"
+import {
+    Button,
+    CheckboxInput,
+    EmptyState,
+    Icon,
+    ObjectCard,
+    PageMasthead,
+    SearchInput,
+    SkeletonCards,
+    Spinner,
+    StatusChip,
+    StatusStrip
+} from "@i-components"
 
 import GetAPI from "../../Utils/GetAPI"
 import GetExecutableIconURL from "../../Utils/GetExecutableIconURL"
-import ListSkeleton from "../../Components/Skeleton"
 import ExecutableInformation from "./ExecutableInformation"
-import PageMasthead from "../../Components/ui/PageMasthead"
-import StatusStrip, { StatusChip } from "../../Components/ui/StatusStrip"
-import ObjectCard from "../../Components/ui/ObjectCard"
 
 // Executável de baixo nível interno do ecossistema — não deve aparecer no painel.
 const IGNORED_EXECUTABLES = ["execute-application", "execute-command-line-application", "execute-desktop-application"]
@@ -32,14 +40,14 @@ const PackageName = (packageRepoPath:string) => {
 }
 
 // Tipo visual do executável para colorir o card: cli | app | desktop.
+// A cor de acento e a do chip saíram do JS e viraram classes de produto
+// (.ecp-exec-card--<kind> / .ecp-kind--<kind>), pintadas só com tokens --mp-*.
 const GetExecutableKind = (e:any) => {
     const p = (e.packageRepoPath || "").toLowerCase()
     if(e.type === "cli" || p.endsWith(".cli")) return "cli"
     if(p.endsWith(".desktopapp")) return "desktop"
     return "app"
 }
-const KIND_ACCENT:any      = { cli: "var(--mp-accent-cyan)", app: "var(--mp-accent-blue)", desktop: "var(--mp-accent-violet)" }
-const KIND_LABEL_COLOR:any = { cli: "teal", app: "blue", desktop: "violet" }
 
 const ExecutableIcon = ({ executable, serverManagerInformation }:any) => {
     const iconURL = executable.hasPackageIcon
@@ -47,9 +55,9 @@ const ExecutableIcon = ({ executable, serverManagerInformation }:any) => {
         : undefined
 
     if(iconURL)
-        return <Image src={iconURL} title="icone do pacote" style={{ width: "22px", height: "22px", objectFit: "contain", flex: "0 0 auto", margin: 0 }}/>
+        return <img className="ecp-exec-cardicon" src={iconURL} alt="" title="icone do pacote"/>
 
-    return <Icon name={TYPE_ICON[executable.type] || "file"} style={{ color: "var(--mp-muted)" }} title={executable.type}/>
+    return <Icon name={TYPE_ICON[executable.type] || "file"} tone="muted" title={executable.type}/>
 }
 
 const ExecutablesContainer = ({
@@ -100,16 +108,19 @@ const ExecutablesContainer = ({
 
     // ---- DETALHE ----
     if(selectedExecutableName)
-        return <Segment style={{ margin: "15px" }}>
-            <Button size="small" basic icon labelPosition="left" onClick={onClearExecutable} style={{ marginBottom: "8px" }}>
-                <Icon name="arrow left"/> executables
-            </Button>
+        return <div className="ecp-exec-page ecp-exec-page--detail">
+            <Button
+                className="ecp-exec-back"
+                variant="subtle"
+                size="sm"
+                icon="arrow left"
+                onClick={onClearExecutable}>executables</Button>
             {
                 isLoading
-                ? <Loader active style={{ margin: "50px" }}/>
+                ? <div className="ecp-exec-loading"><Spinner label="loading executable" size="lg"/></div>
                 : <ExecutableInformation executableInformation={executableInformation} serverManagerInformation={serverManagerInformation} onInstall={handleInstall}/>
             }
-        </Segment>
+        </div>
 
     // ---- GRADE DE CARDS (agrupada por repositório) ----
     const visible = executableList.filter((e:any) =>
@@ -140,15 +151,18 @@ const ExecutablesContainer = ({
         selectedExecutableStatus === "installed" ? "installed" : selectedExecutableStatus === "not-installed" ? "not installed" : undefined
     ].filter(Boolean)
 
-    return <Segment style={{ margin: "10px", height: "calc(100vh - 110px)", display: "flex", flexDirection: "column" }}>
+    return <div className="ecp-exec-page">
         <PageMasthead
             icon="terminal"
             title="Executables"
             subtitle="Install, filter and inspect the applications, daemons and CLIs declared by the repositories.">
             <StatusStrip right={<>
-                <Checkbox toggle label="show -dbg" checked={showDebug} onChange={() => setShowDebug(!showDebug)}/>
-                <Input icon="search" size="small" placeholder="filter..." value={filterValue}
-                    onChange={(e, { value }) => setFilterValue(value)}/>
+                <CheckboxInput label="show -dbg" checked={showDebug} onChange={() => setShowDebug(!showDebug)}/>
+                <SearchInput
+                    className="ecp-exec-search"
+                    placeholder="filter..."
+                    value={filterValue}
+                    onValueChange={(value:string) => setFilterValue(value)}/>
             </>}>
                 <StatusChip icon="terminal" count={totalCount} label="executables"/>
                 <StatusChip icon="check circle" tone="success" count={installedCount} label="installed"/>
@@ -157,35 +171,39 @@ const ExecutablesContainer = ({
             </StatusStrip>
         </PageMasthead>
 
-        <div style={{ flex: "1 1 auto", minHeight: 0, overflow: "auto" }}>
+        <div className="ecp-exec-scroll">
         {
             isListLoading
-            ? <ListSkeleton variant="cards" lines={8}/>
+            ? <SkeletonCards cards={8}/>
             : repoGroups.map((group:any) => {
                 const items = group.items.sort((a:any, b:any) => {
                     if(a.isInstalled !== b.isInstalled) return a.isInstalled ? -1 : 1
                     return a.executableName.localeCompare(b.executableName)
                 })
-                return <div key={group.repo} style={{ marginBottom: "16px" }}>
-                    <div style={{ color: "var(--mp-muted)", fontSize: ".8em", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".03em", marginBottom: "6px" }} title={group.repositoryPath}>
-                        <Icon name="cubes"/> {group.repo} <Label circular size="mini">{items.length}</Label>
+                return <div key={group.repo} className="ecp-exec-group">
+                    <div className="ecp-exec-group__head" title={group.repositoryPath}>
+                        <Icon name="cubes"/>
+                        <span>{group.repo}</span>
+                        <span className="ecp-count">{items.length}</span>
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "12px" }}>
+                    <div className="ecp-exec-grid">
                         {
                             items.map((executable:any, key:number) => {
                                 const kind = GetExecutableKind(executable)
                                 return <ObjectCard
                                     key={key}
+                                    className={`ecp-exec-card ecp-exec-card--${kind}`}
                                     iconNode={<ExecutableIcon executable={executable} serverManagerInformation={serverManagerInformation}/>}
                                     title={executable.executableName}
                                     meta={PackageName(executable.packageRepoPath)}
                                     dim={!executable.isInstalled}
-                                    accent={KIND_ACCENT[kind]}
                                     selected={selectedExecutableName === executable.executableName}
-                                    status={<Label size="mini" basic color={executable.isInstalled ? "green" : "grey"}>{executable.isInstalled ? "installed" : "not installed"}</Label>}
+                                    status={<span className={`ecp-flag ${executable.isInstalled ? "ecp-flag--ok" : ""}`.trim()}>
+                                        {executable.isInstalled ? "installed" : "not installed"}
+                                    </span>}
                                     chips={<>
-                                        <Label size="mini" basic color={KIND_LABEL_COLOR[kind]}>{kind}</Label>
-                                        { executable.isDebug && <Label size="mini" color="grey">dbg</Label> }
+                                        <span className={`ecp-kind ecp-kind--${kind}`}>{kind}</span>
+                                        { executable.isDebug && <span className="mp-type-chip">dbg</span> }
                                     </>}
                                     onClick={() => onSelectExecutable(executable.executableName)}/>
                             })
@@ -194,9 +212,9 @@ const ExecutablesContainer = ({
                 </div>
             })
         }
-        { !isListLoading && visible.length === 0 && <div style={{ color: "var(--mp-muted)", padding: "16px" }}>no executables match the filter</div> }
+        { !isListLoading && visible.length === 0 && <EmptyState icon="filter" message="no executables match the filter"/> }
         </div>
-    </Segment>
+    </div>
 }
 
 export default ExecutablesContainer

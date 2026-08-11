@@ -1,0 +1,460 @@
+/* Ecosystem Control Panel — CSS de produto: shell.
+   Só classes .ecp-*, só sobre tokens --mp-*. Nunca redefinir .mp-*.
+
+   Cobre as três peças de shell descritas em docs/ui-style-guide.md §3:
+     TopBar      → MainMenu.tsx          (.ecp-topbar*)
+     SidebarNav  → EcosystemNavigator.tsx (.ecp-nav*)
+     RuntimeDock → LogDock.tsx           (.ecp-logdock*, .ecp-logwin*)
+   e mais a Home (WelcomePanel.tsx, .ecp-home*) e o card de aplicação
+   (ItemApplication.tsx, .ecp-application-card). */
+
+/* ================================================================== */
+/* TopBar (MainMenu)                                                   */
+/* ================================================================== */
+.ecp-topbar__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mp-space-2);
+    min-width: 0;
+}
+
+.ecp-topbar__logo {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mp-space-2);
+    padding: var(--mp-space-1) var(--mp-space-2);
+    background: transparent;
+    border: none;
+    border-radius: var(--mp-radius-sm);
+    color: var(--mp-ink);
+    font-family: var(--mp-font-display);
+    font-size: var(--mp-text-md);
+    font-weight: 800;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.ecp-topbar__logo:disabled { cursor: default; }
+.ecp-topbar__logo:not(:disabled):hover { background: var(--mp-surface-2); }
+
+/* breadcrumb da seção ativa (vem do painel aberto) */
+.ecp-topbar__section {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mp-space-1);
+    flex: 0 0 auto;
+    color: var(--mp-ink-2);
+    font-family: var(--mp-font-ui);
+    font-size: var(--mp-text-sm);
+    white-space: nowrap;
+}
+
+/* chip do workspace: ocupa o espaço livre e trunca o caminho */
+.ecp-topbar__path {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mp-space-2);
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: min(64vw, 980px);
+}
+.ecp-topbar__path-value {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: transparent;
+}
+
+/* sino de notificações com contador sobreposto */
+.ecp-topbar__bell { position: relative; display: inline-flex; }
+.ecp-topbar__badge {
+    position: absolute;
+    top: -2px;
+    right: -4px;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--mp-accent-orange);
+    color: var(--mp-paper);
+    border: 1px solid var(--mp-line-strong);
+    border-radius: 999px;
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    font-weight: 800;
+    pointer-events: none;
+}
+
+/* conteúdo do Popover de preferências: as linhas usam .mp-menu__item do kit,
+   sem a moldura do .mp-menu (o painel do Popover já tem a caixa). */
+.ecp-topbar__menu {
+    display: grid;
+    gap: 1px;
+    min-width: 210px;
+}
+.ecp-topbar__menu-heading {
+    display: flex;
+    align-items: center;
+    gap: var(--mp-space-2);
+    padding: var(--mp-space-2) var(--mp-space-2) var(--mp-space-1);
+    color: var(--mp-muted);
+    font-family: var(--mp-font-ui);
+    font-size: var(--mp-text-xs);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+@media (max-width: 1099px) {
+    .ecp-topbar__path { max-width: calc(100vw - 260px); }
+}
+@media (max-width: 640px) {
+    .ecp-topbar__section { display: none; }
+    .ecp-topbar__path { display: none; }
+}
+
+/* ================================================================== */
+/* SidebarNav (EcosystemNavigator)                                     */
+/* ================================================================== */
+/* O SidePanel do kit tem largura fixa (--mp-shell-drawer-w); aqui ele é um
+   navegador encaixado na coluna do shell, então acompanha o container. */
+.ecp-navigator {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+}
+
+/* a busca fica fixa no topo enquanto a árvore rola */
+.ecp-nav-search {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding-bottom: var(--mp-space-2);
+    background: var(--mp-surface);
+}
+
+.ecp-nav-loading {
+    display: flex;
+    justify-content: center;
+    padding: var(--mp-space-5);
+}
+
+.ecp-nav-tree { display: block; }
+.ecp-nav-children { display: block; }
+.ecp-nav-block { margin-bottom: var(--mp-space-1); }
+
+/* rótulo da subpasta de sockets de supervisão */
+.ecp-nav-group {
+    padding: var(--mp-space-1) var(--mp-space-2);
+    color: var(--mp-muted);
+    font-family: var(--mp-font-ui);
+    font-size: var(--mp-text-xs);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ecp-nav-note {
+    padding: var(--mp-space-2);
+    color: var(--mp-muted);
+    font-family: var(--mp-font-ui);
+    font-size: var(--mp-text-xs);
+}
+
+/* folha da árvore com ícone próprio (status do socket, ícone do pacote):
+   o TreeRow do kit só desenha ícone por NOME, então o ícone entra no rótulo. */
+.ecp-nav-leaf {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mp-space-1);
+    min-width: 0;
+    max-width: 100%;
+}
+.ecp-nav-leaf__name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ecp-nav-leaf__img {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    object-fit: contain;
+}
+
+/* marcador installed/not-installed do executável (sobre .mp-type-chip) */
+.ecp-nav-chip--in  { border-color: var(--mp-success); color: var(--mp-success); }
+.ecp-nav-chip--out { border-color: var(--mp-line-soft); color: var(--mp-muted); }
+
+.ecp-nav-debug-toggle { margin-top: var(--mp-space-2); }
+
+/* ================================================================== */
+/* RuntimeDock (LogDock) — janelas de log                              */
+/* ================================================================== */
+.ecp-logwin {
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    background: var(--mp-surface);
+}
+
+.ecp-logwin--offcanvas {
+    top: var(--mp-shell-topbar-h);
+    right: 0;
+    max-width: 96vw;
+    z-index: 1500;
+    border: var(--mp-border-strong);
+    border-right: none;
+    border-radius: var(--mp-radius-md) 0 0 var(--mp-radius-md);
+    box-shadow: var(--mp-shadow-soft);
+}
+
+.ecp-logwin--float {
+    overflow: hidden;
+    border: var(--mp-border-strong);
+    border-radius: var(--mp-radius-window);
+    box-shadow: var(--mp-shadow-soft);
+}
+
+/* borda esquerda arrastável do offcanvas (hover em CSS, não em JS) */
+.ecp-logwin__resize-x {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 9px;
+    z-index: 5;
+    cursor: ew-resize;
+    border-left: 3px solid var(--mp-line-soft);
+}
+.ecp-logwin__resize-x:hover { border-left-color: var(--mp-accent-blue); }
+
+.ecp-logwin__handle { position: absolute; z-index: 4; }
+
+.ecp-logwin__titlebar {
+    display: flex;
+    align-items: center;
+    gap: var(--mp-space-2);
+    flex: 0 0 auto;
+    padding: 7px 11px;
+    background: var(--mp-titlebar-runtime);
+    color: var(--mp-terminal-fg);
+    border-bottom: 1px solid var(--mp-line-strong);
+    font-family: var(--mp-font-ui);
+    font-size: var(--mp-text-sm);
+    cursor: default;
+}
+.ecp-logwin__titlebar--offcanvas { border-radius: var(--mp-radius-md) 0 0 0; }
+.ecp-logwin__titlebar--float     { border-radius: var(--mp-radius-window) var(--mp-radius-window) 0 0; }
+.ecp-logwin__titlebar.is-draggable { cursor: move; }
+
+.ecp-logwin__name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ecp-logwin__ctrls {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mp-space-3);
+    flex: 0 0 auto;
+}
+.ecp-logwin__ctrl {
+    display: inline-flex;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: var(--mp-terminal-fg);
+    cursor: pointer;
+}
+.ecp-logwin__ctrl.is-quiet { color: var(--mp-terminal-muted); }
+.ecp-logwin__ctrl:hover { color: var(--mp-paper); }
+
+.ecp-logwin__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    padding: var(--mp-space-2) var(--mp-space-3);
+}
+
+/* a confirmação de fechamento tem de vir na frente das janelas flutuantes,
+   que usam z-index próprio (1500+), acima da camada --mp-z-modal do kit. */
+.ecp-logdock__confirm-layer { position: relative; z-index: 1600; }
+
+/* ================================================================== */
+/* RuntimeDock (LogDock) — taskbar inferior                            */
+/* ================================================================== */
+.ecp-logdock {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1490;
+    display: flex;
+    align-items: center;
+    gap: var(--mp-space-3);
+    padding: 0 var(--mp-space-3);
+    background: var(--mp-terminal-bg-2);
+    border-top: 4px solid var(--mp-neutral);
+    box-shadow: var(--mp-shadow-soft);
+}
+.ecp-logdock--success { border-top-color: var(--mp-success); }
+.ecp-logdock--warning { border-top-color: var(--mp-warning); }
+.ecp-logdock--danger  { border-top-color: var(--mp-danger); }
+
+.ecp-logdock__label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mp-space-1);
+    flex: 0 0 auto;
+    font-family: var(--mp-font-ui);
+    font-size: var(--mp-text-xs);
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--mp-neutral);
+}
+.ecp-logdock--success .ecp-logdock__label { color: var(--mp-success); }
+.ecp-logdock--warning .ecp-logdock__label { color: var(--mp-warning); }
+.ecp-logdock--danger  .ecp-logdock__label { color: var(--mp-danger); }
+
+.ecp-logdock__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--mp-neutral);
+    color: var(--mp-terminal-bg);
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    font-weight: 800;
+}
+.ecp-logdock--success .ecp-logdock__count { background: var(--mp-success); }
+.ecp-logdock--warning .ecp-logdock__count { background: var(--mp-warning); }
+.ecp-logdock--danger  .ecp-logdock__count { background: var(--mp-danger); }
+
+.ecp-logdock__tabs {
+    display: flex;
+    align-items: center;
+    gap: var(--mp-space-2);
+    min-width: 0;
+    overflow-x: auto;
+}
+
+.ecp-logdock__tab {
+    display: flex;
+    align-items: center;
+    gap: var(--mp-space-1);
+    flex: 0 0 auto;
+    padding: var(--mp-space-1) var(--mp-space-2);
+    border: 1px solid var(--mp-terminal-muted);
+    border-radius: var(--mp-radius-sm);
+    background: var(--mp-terminal-bg);
+    color: var(--mp-terminal-muted);
+    font-family: var(--mp-font-ui);
+    font-size: var(--mp-text-sm);
+    cursor: pointer;
+}
+.ecp-logdock__tab.is-active {
+    background: var(--mp-accent-blue);
+    border-color: var(--mp-terminal-blue);
+    color: var(--mp-terminal-fg);
+    font-weight: 600;
+}
+.ecp-logdock__tab-name {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ecp-logdock__tab-btn {
+    display: inline-flex;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+}
+.ecp-logdock__tab-btn.is-quiet { opacity: .7; }
+.ecp-logdock__tab-btn:hover { opacity: 1; }
+
+.ecp-logdock__unread {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 17px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--mp-danger);
+    color: var(--mp-terminal-fg);
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    font-weight: 800;
+}
+
+/* indicador de stream "ao vivo": pulsa para dar sensação de tempo real */
+@keyframes ecp-log-pulse {
+    0%   { opacity: 1;   transform: scale(1); }
+    50%  { opacity: .35; transform: scale(.82); }
+    100% { opacity: 1;   transform: scale(1); }
+}
+.ecp-log-live {
+    animation: ecp-log-pulse 1.1s ease-in-out infinite;
+    transform-origin: center;
+}
+@media (prefers-reduced-motion: reduce) {
+    .ecp-log-live { animation: none; }
+}
+
+/* ================================================================== */
+/* Home / Operations Overview (WelcomePanel)                           */
+/* ================================================================== */
+.ecp-home { padding: var(--mp-space-1); }
+
+.ecp-home-loading {
+    display: flex;
+    justify-content: center;
+    padding: var(--mp-space-10);
+}
+
+.ecp-home-column {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mp-space-4);
+}
+
+.ecp-home-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--mp-space-2);
+}
+
+/* tom do sub-rótulo do tile: o Tile do kit não tem prop de tom, então o texto
+   entra como nó e traz a própria cor. */
+.ecp-tile-sub--success { color: var(--mp-success); }
+.ecp-tile-sub--warning { color: var(--mp-warning); }
+.ecp-tile-sub--info    { color: var(--mp-accent-blue); }
+.ecp-tile-sub--neutral { color: var(--mp-muted); }
+
+/* o ListRow do kit não tem tom para o ícone; aqui o tom é do aviso, não da
+   linha, e a regra é local (nunca sai deste painel). */
+.ecp-home-warning .mp-row__icon { color: var(--mp-warning); }
+.ecp-home-info .mp-row__icon    { color: var(--mp-accent-blue); }
+
+/* ================================================================== */
+/* Card de aplicação (ItemApplication)                                 */
+/* ================================================================== */
+.ecp-application-card { width: 300px; }

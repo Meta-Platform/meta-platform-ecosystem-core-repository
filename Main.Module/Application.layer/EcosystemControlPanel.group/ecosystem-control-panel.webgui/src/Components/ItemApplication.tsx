@@ -1,11 +1,6 @@
 import * as React from "react"
 
-import {
-    Card,
-	CardContent,
-	CardHeader,
-	CardMeta
-} from "semantic-ui-react"
+import { ObjectCard } from "@i-components"
 
 import PackageIcon from "./PackageIcon"
 
@@ -24,15 +19,17 @@ const ItemApplication = ({
         return chunks[chunks.length-1]
     }
 
-    return <Card style={{"width":"300px"}}>
-                <CardContent>
-                    <CardHeader style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-                        <PackageIcon packageData={applicationData.packageData} serverManagerInformation={serverManagerInformation} size={22} fallbackIcon="terminal"/>
-                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{executable}</span>
-                    </CardHeader>
-                    <CardMeta>{getPackageNamespaceBase()}</CardMeta>
-                </CardContent>
-            </Card>
+    return <ObjectCard
+                className="ecp-application-card"
+                iconNode={
+                    <PackageIcon
+                        packageData={applicationData.packageData}
+                        serverManagerInformation={serverManagerInformation}
+                        size={22}
+                        fallbackIcon="terminal"/>
+                }
+                title={executable}
+                meta={getPackageNamespaceBase()}/>
 }
 
 export default ItemApplication

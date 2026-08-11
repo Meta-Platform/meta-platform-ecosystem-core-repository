@@ -1,7 +1,7 @@
 import * as React from "react"
 import {useState, useEffect} from "react"
 
-import { Button, Modal, Form } from "semantic-ui-react"
+import { Button, Dialog, FormField, TextInput } from "@i-components"
 
 
 type ModalProps = {
@@ -28,39 +28,35 @@ const EcosystemDataPathModal = ({ ecosystemdataPath, open, onClose, onChangePath
         await onChangePath(pathValue.trim())
     }
 
-    return <Modal
+    return <Dialog
                 open={open}
-                closeIcon
-                size="tiny"
-                onClose={() => onClose()}>
-                <Modal.Header>ecosystem data path</Modal.Header>
-                <Modal.Content>
-                    <Form>
-                        <Form.Field>
-                            <label>path</label>
-                            <input
-                                placeholder="path"
-                                value={pathValue}
-                                onChange={(event) => setPathValue(event.target.value)}/>
-                        </Form.Field>
-                    </Form>
-                </Modal.Content>
-                <Modal.Actions>
+                size="sm"
+                icon="folder open"
+                title="ecosystem data path"
+                onClose={() => onClose()}
+                actions={<>
                     <Button
                         disabled={isSaving}
                         onClick={() => setPathValue(ecosystemdataPath)}>
                         Reset
                     </Button>
                     <Button
-                        content="change path"
-                        labelPosition="right"
-                        icon="folder open"
+                        variant="primary"
+                        trailingIcon="folder open"
                         loading={isSaving}
                         disabled={isSaving || !hasChanged}
-                        onClick={handleChange}
-                        color="orange"/>
-                </Modal.Actions>
-            </Modal>
+                        onClick={handleChange}>
+                        change path
+                    </Button>
+                </>}>
+                <FormField label="path" htmlFor="ecosystemdata-path">
+                    <TextInput
+                        id="ecosystemdata-path"
+                        placeholder="path"
+                        value={pathValue}
+                        onChange={(event:any) => setPathValue(event.target.value)}/>
+                </FormField>
+            </Dialog>
 }
 
 

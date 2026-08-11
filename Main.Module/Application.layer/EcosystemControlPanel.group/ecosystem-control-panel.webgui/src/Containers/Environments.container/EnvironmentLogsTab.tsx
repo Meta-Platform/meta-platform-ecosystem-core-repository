@@ -1,6 +1,6 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { Loader, Label, Segment } from "semantic-ui-react"
+import { Banner, EmptyState, Spinner } from "@i-components"
 
 import GetAPI from "../../Utils/GetAPI"
 import LogViewer from "../Logs.container/LogViewer"
@@ -38,7 +38,7 @@ const EnvironmentLogsTab = ({ serverManagerInformation, environmentName }:any) =
                 /* O mais recente é o que interessa ao abrir. */
                 setEscolhido(lista.length ? lista[lista.length - 1] : null)
             } catch(e:any) {
-                if(!cancelado) setErro(e?.message || "não foi possível listar o log deste ambiente")
+                if(!cancelado) setErro(e?.message || "could not list the logs of this environment")
             } finally {
                 if(!cancelado) setCarregando(false)
             }
@@ -50,13 +50,14 @@ const EnvironmentLogsTab = ({ serverManagerInformation, environmentName }:any) =
 
     }, [ environmentName ])
 
-    if(carregando) return <Loader active inline="centered"/>
-    if(erro) return <Label color="red" basic>{erro}</Label>
+    if(carregando) return <Spinner label="loading environment logs"/>
+    if(erro) return <Banner tone="danger" title="logs unavailable">{erro}</Banner>
 
     if(arquivos.length === 0)
-        return <Segment basic textAlign="center" style={{ color : "#777" }}>
-                    Este ambiente ainda não gravou log.
-                </Segment>
+        return <EmptyState
+                    icon="file alternate outline"
+                    title="No logs yet"
+                    message="This environment has not written any log file."/>
 
     /* A troca de dia fica no próprio viewer, junto dos demais controles. */
     return <LogViewer
