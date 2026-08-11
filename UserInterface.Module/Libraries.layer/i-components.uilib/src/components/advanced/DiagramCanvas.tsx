@@ -5,6 +5,7 @@ import ReactFlow, {
     Panel as FlowPanel, Position, ReactFlowProvider,
     useEdgesState, useNodesInitialized, useNodesState, useReactFlow
 } from "reactflow"
+import type { NodeTypes } from "reactflow"
 import dagre from "dagre"
 
 import Icon from "../Icon"
@@ -145,7 +146,14 @@ const DiagramFlowNode = React.memo(({ data }: any) => {
     </div>
 })
 
-const nodeTypes = { mp: DiagramFlowNode }
+// A asserção existe por causa de uma incompatibilidade entre versões dos tipos
+// do React, e não do reactflow: sob `@types/react@19` o retorno de um
+// `MemoExoticComponent` é `ReactNode`, que passou a incluir `bigint`, enquanto
+// `NodeTypes` do reactflow 11 espera `ReactElement | null`. Sem isto o kit
+// compila com os tipos 18 e QUEBRA em qualquer ambiente onde algum pacote
+// arraste os tipos 19 por transitividade — foi o que aconteceu no ambiente do
+// server-manager, via o `*` de `@types/react-redux`.
+const nodeTypes = { mp: DiagramFlowNode } as NodeTypes
 
 /* ------------------------------------------------------------------ */
 /* Layout (dagre)                                                     */

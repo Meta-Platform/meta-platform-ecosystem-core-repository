@@ -1,6 +1,11 @@
 {
     "compilerOptions": {
         "esModuleInterop":true,
+        // Igual ao que o builder injeta no ts-loader. Sem isto, um .d.ts de
+        // terceiro incompatível (reactflow 11 usa o namespace JSX global que o
+        // React 19 removeu) faz `tsc --noEmit` gritar sobre arquivo que o build
+        // real nem olha.
+        "skipLibCheck": true,
         "sourceMap": true,
         "noImplicitAny": true,
         "module": "esnext",

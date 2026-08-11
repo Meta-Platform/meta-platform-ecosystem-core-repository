@@ -51,7 +51,9 @@ const SCRIPT = [
 
 const TerminalPreview = ({ fontSize = 13, readOnly = true }:any) => {
 
-    const handleRef = useRef<TerminalHandle>()
+    // `useRef<T>()` sem argumento não compila sob @types/react@19 (o overload
+    // de uma referência mutável passou a exigir o valor inicial explícito).
+    const handleRef = useRef<TerminalHandle | undefined>(undefined)
     const [ run, setRun ] = useState(0)
 
     useEffect(() => {
@@ -214,7 +216,7 @@ export const advancedRuntimeStories:ComponentStory[] = [
             "import { Terminal } from \"@i-components\"",
             "import type { TerminalHandle } from \"@i-components\"",
             "",
-            "const handle = useRef<TerminalHandle>()",
+            "const handle = useRef<TerminalHandle | undefined>(undefined)",
             "",
             "<Terminal",
             "    height={420}",
