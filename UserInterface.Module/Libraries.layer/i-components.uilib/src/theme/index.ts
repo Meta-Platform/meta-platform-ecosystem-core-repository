@@ -2,6 +2,10 @@
 // aplicado via atributo data-theme no <html> (ver styles/themes.css).
 // "light" (base off-white) = sem atributo.
 
+// Os mesmos tokens, lidos como valores JavaScript — para quem pinta em canvas
+// ou por prop (reactflow, d3, xterm) e não enxerga CSS.
+export * from "./palette"
+
 export type ThemeName = "light" | "dark" | "gray" | "blue" | "cyberpunk"
 
 export const THEMES: { key: ThemeName, label: string, icon: string }[] = [

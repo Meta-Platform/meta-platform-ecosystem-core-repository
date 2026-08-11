@@ -3,7 +3,8 @@ import Icon from "./Icon"
 
 // Botões do design system (§7). Encapsulam a semântica de ação da plataforma
 // em cima de <button> nativo + tokens --mp-*: o visual retro-brutalist (borda
-// dura + sombra deslocada) não sai do CSS do Semantic, sai daqui.
+// dura + sombra deslocada) é regra própria do kit, não sobreposição de folha
+// de terceiro.
 //
 // variantes:
 //   primary   ação principal da tela (amarelo de acento)

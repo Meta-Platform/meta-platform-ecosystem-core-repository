@@ -3,8 +3,8 @@ import Icon from "./Icon"
 
 // Controles de entrada do design system (§7.4). Todos compartilham a mesma
 // altura, borda e foco (outline de acento), e todos aceitam o par
-// rótulo/mensagem de erro por `FormField` — os aplicativos não montam mais
-// <Form.Field> do Semantic caso a caso.
+// rótulo/mensagem de erro por `FormField` — nenhum aplicativo remonta o
+// invólucro de campo caso a caso.
 
 type FieldProps = {
     label?: string

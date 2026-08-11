@@ -1,0 +1,293 @@
+/* Estilos dos componentes pesados de runtime: Terminal, TimeSeriesChart e
+ * LogViewer. Arquivo separado do resto para que a fronteira seja visível: aqui
+ * entram as poucas regras que um componente de terceiro obriga a escrever
+ * (a folha do xterm, por exemplo). Nada de cor literal — só tokens --mp-*. */
+
+/* A folha do xterm é responsabilidade do KIT, não do aplicativo: quem consome
+ * `Terminal` não deve precisar saber que existe um xterm por baixo. Ela só traz
+ * geometria (camadas, cursor, seleção); a COR vem toda da opção `theme` que o
+ * componente monta a partir dos tokens --mp-terminal-*. */
+@import "@xterm/xterm/css/xterm.css";
+
+/* ================================================================== */
+/* Terminal                                                           */
+/* ================================================================== */
+
+.mp-terminal {
+    display: flex;
+    min-height: 120px;
+    padding: var(--mp-space-2);
+    overflow: hidden;
+    color: var(--mp-terminal-fg);
+    background: var(--mp-terminal-bg);
+    border: var(--mp-border);
+    box-shadow: var(--mp-shadow-1);
+}
+
+.mp-terminal__screen {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 100%;
+}
+
+.mp-terminal .xterm { height: 100%; }
+
+/* O viewport do xterm pinta o próprio fundo; deixá-lo transparente faz a
+ * moldura do kit aparecer inteira, inclusive o respiro da borda. */
+.mp-terminal .xterm-viewport {
+    background: transparent !important;
+    scrollbar-width: thin;
+    scrollbar-color: var(--mp-terminal-muted) transparent;
+}
+
+.mp-terminal .xterm-viewport::-webkit-scrollbar { width: 10px; }
+.mp-terminal .xterm-viewport::-webkit-scrollbar-thumb {
+    background: var(--mp-terminal-muted);
+    border: 2px solid var(--mp-terminal-bg);
+}
+
+/* Terminal de leitura não recebe teclado: um cursor piscando prometeria uma
+ * interação que não existe. */
+.mp-terminal.is-readonly .xterm-cursor-layer,
+.mp-terminal.is-readonly .xterm-cursor { display: none; }
+
+/* ================================================================== */
+/* TimeSeriesChart                                                    */
+/* ================================================================== */
+
+.mp-chart {
+    width: 100%;
+    font-family: var(--mp-font-mono);
+}
+
+.mp-chart__plot { position: relative; }
+
+.mp-chart__grid {
+    stroke-width: 1;
+    stroke-dasharray: 2 4;
+}
+
+/* A faixa de alerta é fundo, não conteúdo: fica atrás da série e nunca
+ * compete com ela. */
+.mp-chart__band { opacity: .12; }
+
+.mp-chart__area  { opacity: .14; }
+
+.mp-chart__line {
+    fill: none;
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+.mp-chart__line.is-dashed { stroke-dasharray: 5 3; }
+
+.mp-chart__cursor {
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+}
+
+.mp-chart__marker { stroke-width: 1.5; }
+
+.mp-chart__empty { font-size: var(--mp-text-xs); }
+
+.mp-chart__axis text { font-size: 10px; }
+
+.mp-chart__tip {
+    position: absolute;
+    top: 4px;
+    min-width: 140px;
+    padding: 6px 8px;
+    pointer-events: none;
+    font-size: var(--mp-text-xs);
+    color: var(--mp-ink);
+    background: var(--mp-surface);
+    border: var(--mp-border);
+    box-shadow: var(--mp-shadow-1);
+}
+
+.mp-chart__tip-time {
+    margin-bottom: 4px;
+    color: var(--mp-muted);
+}
+
+.mp-chart__tip-row {
+    display: flex;
+    align-items: center;
+    gap: var(--mp-space-2);
+}
+
+.mp-chart__tip-label {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--mp-muted);
+}
+
+.mp-chart__tip-value { font-weight: 700; }
+
+.mp-chart__swatch {
+    flex: 0 0 auto;
+    width: 10px;
+    height: 10px;
+    border: 1px solid var(--mp-line);
+}
+
+.mp-chart__swatch.is-band { opacity: .5; }
+
+.mp-chart__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--mp-space-3);
+    margin-top: var(--mp-space-2);
+    font-size: var(--mp-text-xs);
+    color: var(--mp-muted);
+}
+
+.mp-chart__legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mp-space-1);
+}
+
+/* ================================================================== */
+/* LogViewer                                                          */
+/* ================================================================== */
+
+.mp-log {
+    display: flex;
+    flex-direction: column;
+    min-height: 120px;
+    overflow: hidden;
+    background: var(--mp-surface);
+    border: var(--mp-border);
+    box-shadow: var(--mp-shadow-1);
+}
+
+.mp-log__bar {
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    border-bottom: var(--mp-border);
+}
+
+.mp-log__levels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--mp-space-1);
+}
+
+.mp-log__meta {
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    color: var(--mp-muted);
+    white-space: nowrap;
+}
+
+/* O corpo é superfície de TERMINAL: o log é saída de processo, e lê-lo sobre
+ * papel claro com cor de terminal seria contraste errado nos dois sentidos. */
+.mp-log__body {
+    position: relative;
+    flex: 1 1 auto;
+    overflow: auto;
+    color: var(--mp-terminal-fg);
+    background: var(--mp-terminal-bg);
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-sm);
+    line-height: 18px;
+}
+
+.mp-log__body:focus-visible { outline: 2px solid var(--mp-accent-blue); outline-offset: -2px; }
+
+.mp-log__scroller { position: relative; width: 100%; }
+
+.mp-log__window {
+    position: absolute;
+    top: 0;
+    left: 0;
+    min-width: 100%;
+    will-change: transform;
+}
+
+/* `width: max-content` + `min-width: 100%`: a linha cresce com o conteúdo (é o
+ * corpo que rola na horizontal) mas a faixa de foco/realce continua ocupando a
+ * largura inteira mesmo nas linhas curtas. */
+.mp-log__line {
+    display: flex;
+    gap: var(--mp-space-2);
+    box-sizing: border-box;
+    align-items: baseline;
+    width: max-content;
+    min-width: 100%;
+    padding: 0 var(--mp-space-3);
+    white-space: pre;
+    border-left: 2px solid transparent;
+}
+
+.mp-log__line:hover { background: var(--mp-terminal-bg-2); }
+
+.mp-log.is-wrap .mp-log__line {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.mp-log__gutter {
+    flex: 0 0 auto;
+    min-width: 4ch;
+    text-align: right;
+    color: var(--mp-terminal-muted);
+    opacity: .6;
+    user-select: none;
+}
+
+.mp-log__ts     { flex: 0 0 auto; color: var(--mp-terminal-muted); }
+.mp-log__source { flex: 0 0 auto; color: var(--mp-terminal-blue); }
+
+.mp-log__level {
+    flex: 0 0 auto;
+    min-width: 7ch;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--mp-terminal-muted);
+}
+
+/* Sem encolher: com `min-width: 0` o texto cabia num item menor que ele e a
+ * sobra pintava POR CIMA do `data` da mesma linha. Quem rola é o corpo. */
+.mp-log__text { flex: 0 0 auto; }
+
+.mp-log.is-wrap .mp-log__text { flex: 1 1 auto; min-width: 0; }
+.mp-log.is-wrap .mp-log__line { width: auto; }
+
+.mp-log__data {
+    color: var(--mp-terminal-muted);
+    opacity: .8;
+}
+
+.mp-log__text .is-bold      { font-weight: 700; }
+.mp-log__text .is-dim       { opacity: .65; }
+.mp-log__text .is-underline { text-decoration: underline; }
+
+/* Nível: acento semântico na guia da esquerda e no rótulo. Não é só cor — o
+ * nome do nível continua escrito, porque cor sozinha não é informação. */
+.mp-log__line--fatal,
+.mp-log__line--error { border-left-color: var(--mp-danger); }
+.mp-log__line--fatal .mp-log__level,
+.mp-log__line--error .mp-log__level { color: var(--mp-danger); }
+
+.mp-log__line--warn  { border-left-color: var(--mp-warning); }
+.mp-log__line--warn .mp-log__level { color: var(--mp-warning); }
+
+.mp-log__line--info  { border-left-color: var(--mp-info); }
+.mp-log__line--info .mp-log__level { color: var(--mp-info); }
+
+.mp-log__line--message { border-left-color: var(--mp-success); }
+.mp-log__line--message .mp-log__level { color: var(--mp-success); }
+
+.mp-log__line--debug .mp-log__level,
+.mp-log__line--trace .mp-log__level { color: var(--mp-terminal-muted); }
+
+.mp-log__empty {
+    padding: var(--mp-space-4);
+    color: var(--mp-terminal-muted);
+    font-size: var(--mp-text-xs);
+}

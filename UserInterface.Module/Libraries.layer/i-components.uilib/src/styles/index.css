@@ -1,16 +1,23 @@
-/* A folha base do Semantic é responsabilidade do kit, não do aplicativo: quem
- * consome a biblioteca não deve precisar saber que ela existe. Ela vem PRIMEIRO
- * porque theme-retro-brutalist.css sobrescreve o Semantic — inverter a ordem
- * devolve o visual de origem. Sai de vez na F5, quando o kit deixa de usar
- * Semantic. */
-@import "semantic-ui-css/semantic.css";
-
+/* Matriz completa do design system. Um aplicativo importa SÓ este arquivo.
+ *
+ * O kit não depende mais de folha de terceiro: até o APPUI-117 a primeira
+ * linha daqui era `@import "semantic-ui-css/semantic.css"`, e as duas folhas
+ * seguintes existiam para sobrepô-la. A normalização que ela dava está em
+ * base.css; a pintura, em theme-retro-brutalist.css. Ambas escritas sobre os
+ * tokens --mp-*.
+ *
+ * A ordem importa: token → base → pintura de elemento → classes .mp-*. */
 @import "./tokens.css";
-@import "./CorporateTheme.css";
+@import "./base.css";
 @import "./theme-retro-brutalist.css";
 @import "./components.css";
 @import "./controls.css";
 @import "./themes.css";
+
+/* Componentes pesados (xterm, d3, reactflow, markdown, editor de código). Vêm
+ * depois dos temas porque sobrescrevem folhas de terceiro. */
+@import "./advanced-runtime.css";
+@import "./advanced-authoring.css";
 
 /* Primitivas estruturais (Surface/Stack/Badge). Os controles do kit vivem em
  * controls.css; .mp-button, em especial, é definido lá com as suas variantes

@@ -258,8 +258,18 @@
 .mp-tile__body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.15; }
 .mp-tile__count { font-family: var(--mp-font-display); font-weight: 800; font-size: var(--mp-text-2xl); color: var(--mp-ink); }
 .mp-tile__title { font-weight: 700; font-size: var(--mp-text-sm); color: var(--mp-ink-2); }
-.mp-tile__sub { font-size: var(--mp-text-xs); font-weight: 700; margin-top: 2px; }
-.mp-tile__arrow { color: var(--mp-muted-2) !important; margin: 0 !important; flex: 0 0 auto; }
+/* linha de apoio do tile: é a ÚNICA cor do bloco, então o tom carrega
+ * significado (subiu/caiu/quebrou), nunca decoração. */
+.mp-tile__sub { font-size: var(--mp-text-xs); font-weight: 700; margin-top: 2px; color: var(--mp-muted); }
+.mp-tile__sub--muted   { color: var(--mp-muted); }
+.mp-tile__sub--neutral { color: var(--mp-ink-3); }
+.mp-tile__sub--success { color: var(--mp-success); }
+.mp-tile__sub--warning { color: var(--mp-warning); }
+.mp-tile__sub--danger  { color: var(--mp-danger); }
+.mp-tile__sub--info    { color: var(--mp-accent-blue); }
+/* o !important daqui existia para vencer a margem lateral que a folha de
+ * terceiro punha em todo ícone; ela não existe mais. */
+.mp-tile__arrow { color: var(--mp-muted-2); margin: 0; flex: 0 0 auto; }
 
 /* colunas do overview */
 .mp-ov-grid {
@@ -387,10 +397,10 @@
 .mp-status-chip--warning.is-active { background: var(--mp-warning-tint); }
 .mp-status-chip--danger.is-active  { background: var(--mp-danger-tint); }
 .mp-status-chip--info.is-active     { background: var(--mp-accent-blue-tint); }
-.mp-status-chip--success .icon { color: var(--mp-success); }
-.mp-status-chip--warning .icon { color: var(--mp-warning); }
-.mp-status-chip--danger .icon  { color: var(--mp-danger); }
-.mp-status-chip--info .icon     { color: var(--mp-accent-blue); }
+.mp-status-chip--success .mp-icon { color: var(--mp-success); }
+.mp-status-chip--warning .mp-icon { color: var(--mp-warning); }
+.mp-status-chip--danger .mp-icon  { color: var(--mp-danger); }
+.mp-status-chip--info .mp-icon    { color: var(--mp-accent-blue); }
 
 /* ================================================================== */
 /* ObjectCard (§9.3)                                                  */

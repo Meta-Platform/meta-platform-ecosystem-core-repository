@@ -88,6 +88,26 @@ No caso desktop, a seção `gui-host` repassa o mesmo mapa:
 build real usa o alias que `CreateWebpackConfig` gera; o `paths` do pacote é
 sobrescrito pelas `compilerOptions` injetadas no ts-loader.
 
+⚠️ **Dívida conhecida nesse terceiro ponto.** O `paths` é um caminho relativo
+escrito à mão (`../../../../../ecosystem-core-repository/...`), e a contagem de
+níveis não depende só da posição do pacote na hierarquia: ela depende também do
+`baseUrl`. Hoje os 11 consumidores escrevem os mesmos cinco níveis, mas por dois
+motivos diferentes — os `.webgui` estão dentro de um `.group` e usam
+`baseUrl: "."`; a `instance-manager.uilib` está direto na camada, um nível
+acima, e usa `baseUrl: "src"`, que devolve o nível. Duas variáveis se cancelando
+é coincidência, não desenho: mover um pacote de lugar quebra o `paths` de um
+jeito que o build não denuncia.
+
+Pior: o caminho pressupõe que os repositórios estão lado a lado no disco. Isso é
+verdade no checkout de desenvolvimento e **não é garantido** na topologia
+instalada, onde cada repositório é registrado por caminho próprio.
+
+Não quebra o build (o webpack usa o alias gerado, não o `paths`), mas quebra o
+editor e o `tsc --noEmit` avulso de quem clonar diferente. A correção é gerar
+um `tsconfig.paths.json` a partir do `packageList` resolvido — a mesma fonte que
+`ResolveDependencyPath` já usa —, e o `tsconfig` do pacote passar a estendê-lo.
+Registrado como APPUI-196; não foi executado neste projeto.
+
 A resolução de namespace é **plana**: `ResolveDependencyPath` casa nome + sufixo
 contra a união de todos os pacotes de todos os repositórios instalados. O caminho
 físico (repositório, módulo, camada, grupo) é derivado, não declarado — mudar uma

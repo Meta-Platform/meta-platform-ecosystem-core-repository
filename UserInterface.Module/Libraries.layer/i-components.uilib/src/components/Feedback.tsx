@@ -1,8 +1,9 @@
 import * as React from "react"
 import Icon from "./Icon"
 
-// Estados de carregamento, vazio e mensagens (§10.8, §11.2). Substitui os
-// pares Loader+Dimmer e os <Message> do Semantic espalhados pelos WebGui.
+// Estados de carregamento, vazio e mensagens (§10.8, §11.2). Ocupa o lugar
+// dos pares girador+véu e das caixas de mensagem que cada WebGui montava por
+// conta própria.
 
 export type Tone = "info" | "success" | "warning" | "danger" | "neutral"
 
@@ -44,8 +45,8 @@ export const ProgressBar = ({ percentage = 0, tone = "info", label, className = 
         </span>
     </div>
 
-// Mensagem em bloco (o <Message> do Semantic). Para faixas de sistema/estado
-// read-only continue usando SystemBanner, que é mais alto e tem ação.
+// Mensagem em bloco. Para faixas de sistema/estado read-only continue usando
+// SystemBanner, que é mais alto e tem ação.
 export const Banner = ({ tone = "info", icon, title, children, actions, className = "" }: any) =>
     <div className={`mp-banner mp-banner--${tone} ${className}`.trim()} role={tone === "danger" ? "alert" : undefined}>
         <Icon name={icon || TONE_ICON[tone]} className="mp-banner__icon"/>

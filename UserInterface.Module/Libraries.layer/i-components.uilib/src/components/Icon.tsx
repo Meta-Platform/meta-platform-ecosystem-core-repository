@@ -20,7 +20,7 @@ import { SYMBOLS, ResolveSymbolName } from "./icons/symbols"
 // custou uma investigação nesta plataforma.
 //
 // props:
-//   name    nome do ícone (o conjunto herdado do Semantic continua valendo)
+//   name    nome do ícone (os nomes do conjunto herdado continuam valendo)
 //   tone    neutral | muted | success | warning | danger | info | inherit
 //   size    mini | tiny | small | large | big | huge | massive
 //   spaced  true mantém a margem lateral original (casos de texto corrido)

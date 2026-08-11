@@ -28,9 +28,10 @@
 /* ================================================================== */
 /* O desenho é SVG do próprio kit (grade 24×24, traço em currentColor).
  * A CAIXA repete a métrica clássica de 1.18em × 1em de propósito: assim a
- * troca do ícone de terceiro pelo do kit não mexe no alinhamento de nenhuma
- * tela já pronta. O seletor `i.mp-icon` ganha da folha de origem por ordem
- * de import (controls.css entra depois), não por !important. */
+ * troca do ícone de terceiro pelo do kit não mexeu no alinhamento de nenhuma
+ * tela já pronta — e continua não mexendo. O seletor `i.mp-icon` ficou da
+ * época em que era preciso vencer o `i.icon` da folha de terceiro; hoje ele
+ * só serve de reserva de especificidade contra CSS de aplicativo. */
 i.mp-icon,
 .mp-icon {
     display: inline-flex;
@@ -55,6 +56,10 @@ i.mp-icon,
 .mp-icon--massive { font-size: 8em; }
 
 .mp-icon--spaced   { margin-right: .25rem; }
+/* `fitted` era regra da folha de terceiro (margem zero). O componente já
+ * escreve margin:0 em linha, mas quem passa `fitted` junto de `spaced` conta
+ * com esta classe para cancelar a margem. */
+.mp-icon--fitted   { margin: 0; }
 .mp-icon--link     { cursor: pointer; opacity: .8; }
 .mp-icon--link:hover { opacity: 1; }
 .mp-icon--disabled { opacity: .45; pointer-events: none; }
@@ -300,6 +305,10 @@ i.mp-icon,
 .mp-banner--success { border-left-color: var(--mp-success);     background: var(--mp-success-tint); }
 .mp-banner--warning { border-left-color: var(--mp-warning);     background: var(--mp-warning-tint); }
 .mp-banner--danger  { border-left-color: var(--mp-danger);      background: var(--mp-danger-tint); }
+/* `neutral` é tom válido do componente e não tinha regra: caía no branco da
+ * caixa base, sem faixa. */
+.mp-banner--neutral { border-left-color: var(--mp-line);        background: var(--mp-surface-2); }
+.mp-banner--neutral .mp-banner__icon { color: var(--mp-muted); }
 .mp-banner--info .mp-banner__icon    { color: var(--mp-accent-blue); }
 .mp-banner--success .mp-banner__icon { color: var(--mp-success); }
 .mp-banner--warning .mp-banner__icon { color: var(--mp-warning); }
@@ -598,6 +607,55 @@ i.mp-icon,
     font-family: var(--mp-font-mono); font-size: var(--mp-text-xs);
 }
 
+/* painel da aba: o conteúdo respira abaixo da barra, e não pode ser espremido
+ * a zero quando a tela é uma coluna flex de altura fixa. */
+.mp-tabpanel { padding-top: var(--mp-space-4); min-height: 0; }
+.mp-tabpanel[hidden] { display: none; }
+
+/* ================================================================== */
+/* Accordion — grupos colapsáveis (editor de configuração, inspetor)  */
+/* ================================================================== */
+.mp-accordion {
+    border: var(--mp-border-thin);
+    border-radius: var(--mp-radius-md);
+    background: var(--mp-surface);
+    overflow: hidden;
+}
+.mp-accordion__item + .mp-accordion__item { border-top: 1px solid var(--mp-line-faint); }
+.mp-accordion__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 9px var(--mp-space-3);
+    background: transparent;
+    border: none;
+    color: var(--mp-ink);
+    font-family: var(--mp-font-ui);
+    font-size: var(--mp-text-sm);
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+}
+.mp-accordion__head:hover:not(:disabled) { background: var(--mp-surface-2); }
+.mp-accordion__head:focus-visible { outline: 3px solid var(--mp-accent-blue); outline-offset: -3px; }
+.mp-accordion__head:disabled { opacity: .5; cursor: not-allowed; }
+.mp-accordion__item.is-open > .mp-accordion__head {
+    background: var(--mp-paper-2);
+    border-bottom: 1px solid var(--mp-line-faint);
+}
+.mp-accordion__twisty { color: var(--mp-muted); flex: 0 0 auto; }
+.mp-accordion__icon   { color: var(--mp-muted); flex: 0 0 auto; }
+.mp-accordion__title  { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mp-accordion__meta {
+    flex: 0 0 auto;
+    font-family: var(--mp-font-mono);
+    font-size: var(--mp-text-xs);
+    font-weight: 600;
+    color: var(--mp-muted-2);
+}
+.mp-accordion__body { padding: var(--mp-space-3); }
+
 .mp-code {
     margin: 0;
     padding: var(--mp-space-3);
@@ -610,6 +668,8 @@ i.mp-icon,
     line-height: 1.55;
     overflow-x: auto;
 }
+/* o <code> interno é só semântica: quem pinta a caixa é o .mp-code */
+.mp-code > code { background: none; border: none; padding: 0; color: inherit; font: inherit; }
 
 /* chips auxiliares */
 .mp-type-chip {

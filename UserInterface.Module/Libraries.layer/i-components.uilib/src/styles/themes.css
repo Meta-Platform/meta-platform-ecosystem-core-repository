@@ -2,8 +2,8 @@
  * iComponents — Meta System Retro-Brutalist UI — Variantes de tema
  * ------------------------------------------------------------------
  * Cada variante redefine APENAS os tokens --mp-* sob :root[data-theme="X"].
- * Como todos os componentes (e a ponte --eco-*) leem os tokens via var(),
- * trocar data-theme troca o tema inteiro — sem tocar em componente.
+ * Como todo componente lê os tokens via var(), trocar data-theme troca o
+ * tema inteiro — sem tocar em componente.
  *
  * Aplicar via: document.documentElement.setAttribute("data-theme", "dark")
  * (sem atributo / "light" = tema base off-white de tokens.css).
@@ -195,28 +195,17 @@
 /* ================================================================== */
 /* Ajustes globais para temas ESCUROS (dark, cyberpunk)               */
 /* ------------------------------------------------------------------ */
-/* Inputs/formulários usam #fffdf4 fixo no tema base — sob dark eles   */
-/* precisam de fundo escuro para o texto claro ser legível.           */
+/* Campos, código inline e superfícies já acompanham o tema sozinhos:  */
+/* leem --mp-surface* / --mp-ink*, que os blocos acima redefinem. O    */
+/* que NÃO acompanha é o véu das sobreposições, escrito em rgba de     */
+/* tinta: sobre papel ele fecha a tela, sobre carvão ele some. Por     */
+/* isso — e só por isso — há regra de componente aqui.                 */
 /* ================================================================== */
-:root[data-theme="dark"] .ui.input > input,
-:root[data-theme="dark"] .ui.selection.dropdown,
-:root[data-theme="cyberpunk"] .ui.input > input,
-:root[data-theme="cyberpunk"] .ui.selection.dropdown {
-    background: var(--mp-surface-2) !important;
-    color: var(--mp-ink) !important;
+:root[data-theme="dark"] .mp-dialog__scrim,
+:root[data-theme="cyberpunk"] .mp-dialog__scrim {
+    background: rgba(0, 0, 0, 0.62);
 }
-:root[data-theme="dark"] .ui.input > input::placeholder,
-:root[data-theme="cyberpunk"] .ui.input > input::placeholder {
-    color: var(--mp-muted-2) !important;
-}
-/* código inline em dark: fundo escuro */
-:root[data-theme="dark"] code,
-:root[data-theme="cyberpunk"] code {
-    background: var(--mp-surface-2);
-    color: var(--mp-ink-2);
-}
-/* dimmer de modais mais escuro em temas dark */
-:root[data-theme="dark"] .ui.dimmer,
-:root[data-theme="cyberpunk"] .ui.dimmer {
-    background: rgba(0, 0, 0, 0.62) !important;
+:root[data-theme="dark"] .mp-offcanvas__scrim,
+:root[data-theme="cyberpunk"] .mp-offcanvas__scrim {
+    background: rgba(0, 0, 0, 0.5);
 }

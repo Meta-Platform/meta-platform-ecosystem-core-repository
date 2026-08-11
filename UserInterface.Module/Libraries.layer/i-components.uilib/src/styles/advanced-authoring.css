@@ -1,0 +1,562 @@
+/* Estilos dos componentes pesados de autoria: DiagramCanvas, MarkdownView,
+ * MarkdownEditor e CodeEditor. Ver o cabeçalho de advanced-runtime.css. */
+
+/* A folha do reactflow é responsabilidade do kit: quem
+ * consome DiagramCanvas não deve precisar saber que existe um reactflow por
+ * baixo. Ela vem PRIMEIRO para que as regras abaixo a sobrescrevam — o visual
+ * de origem (cartão branco, sombra difusa, controles cinza-claro) não pode
+ * vazar para dentro da plataforma. */
+@import "reactflow/dist/style.css";
+
+/* ================================================================== */
+/* DiagramCanvas                                                      */
+/* ================================================================== */
+
+.mp-diagram {
+    position: relative;
+    width: 100%;
+    min-height: 240px;
+    background: var(--mp-paper);
+    border: var(--mp-border);
+    box-shadow: var(--mp-shadow-2);
+    overflow: hidden;
+}
+
+.mp-diagram--empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--mp-space-2);
+    color: var(--mp-muted);
+    min-height: 200px;
+}
+
+.mp-diagram__empty-title {
+    font: 700 var(--mp-text-md)/var(--mp-line-md) var(--mp-font-display);
+    color: var(--mp-ink);
+}
+
+.mp-diagram__empty-message {
+    font-size: var(--mp-text-sm);
+    max-width: 44ch;
+    text-align: center;
+}
+
+/* --- o nó ------------------------------------------------------- */
+/* Superfície plana + borda de acento do TIPO + tinta. A cor vem em style
+ * inline porque depende do tipo do nó (ver theme/palette.ts). */
+
+.mp-diagram__node {
+    box-sizing: border-box;
+    padding: var(--mp-space-2) var(--mp-space-3);
+    background: var(--mp-surface);
+    color: var(--mp-ink);
+    border: 2px solid var(--mp-line);
+    border-radius: var(--mp-radius-sm);
+    box-shadow: var(--mp-shadow-1);
+    font-family: var(--mp-font-ui);
+    transition: opacity .12s linear, box-shadow .12s linear;
+}
+
+.mp-diagram__node.is-clickable { cursor: pointer; }
+.mp-diagram__node.is-dimmed    { opacity: .22; }
+.mp-diagram__node.is-highlighted { box-shadow: var(--mp-shadow-2); }
+
+.mp-diagram__node-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    min-height: 16px;
+}
+
+.mp-diagram__node-kind {
+    display: inline-block;
+    padding: 0 5px;
+    border: 1px solid var(--mp-line-soft);
+    border-radius: 2px;
+    font: 700 10px/15px var(--mp-font-mono);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.mp-diagram__node-label {
+    font: 700 var(--mp-text-sm)/var(--mp-line-sm) var(--mp-font-display);
+    word-break: break-word;
+}
+
+.mp-diagram__node-sub {
+    margin-top: 2px;
+    color: var(--mp-muted);
+    font: 400 10px/14px var(--mp-font-mono);
+    word-break: break-all;
+}
+
+/* --- barra e legenda -------------------------------------------- */
+
+.mp-diagram__tools { display: flex; gap: 4px; }
+
+.mp-diagram__tool,
+.mp-md-editor__tool,
+.mp-md-editor__mode {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    background: var(--mp-surface);
+    color: var(--mp-ink);
+    border: 1px solid var(--mp-line);
+    border-radius: var(--mp-radius-sm);
+    box-shadow: var(--mp-shadow-1);
+    font: 700 var(--mp-text-xs)/1.4 var(--mp-font-ui);
+    cursor: pointer;
+}
+
+.mp-diagram__tool:hover,
+.mp-md-editor__tool:hover:not(:disabled),
+.mp-md-editor__mode:hover { background: var(--mp-surface-2); }
+
+.mp-diagram__tool:active,
+.mp-md-editor__tool:active { box-shadow: none; transform: translate(1px, 1px); }
+
+.mp-diagram__legend {
+    min-width: 132px;
+    max-width: 220px;
+    padding: 8px 10px;
+    background: var(--mp-surface);
+    color: var(--mp-ink-3);
+    border: var(--mp-border);
+    box-shadow: var(--mp-shadow-1);
+    font: 400 var(--mp-text-xs)/1.5 var(--mp-font-ui);
+}
+
+.mp-diagram__legend-title {
+    margin-bottom: 5px;
+    color: var(--mp-muted);
+    font: 700 10px/1.4 var(--mp-font-mono);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.mp-diagram__legend-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 3px;
+}
+
+.mp-diagram__legend-swatch {
+    flex: 0 0 auto;
+    width: 12px;
+    height: 12px;
+    background: var(--mp-surface);
+    border: 2px solid var(--mp-line);
+}
+
+.mp-diagram__legend-line {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 0;
+    border-top: 2px solid var(--mp-line-soft);
+}
+
+.mp-diagram__legend-group {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--mp-line-faint);
+}
+
+/* --- reajuste do reactflow -------------------------------------- */
+
+.mp-diagram .react-flow__node { font-family: var(--mp-font-ui); }
+.mp-diagram .react-flow__handle { border: none; }
+
+.mp-diagram .react-flow__controls {
+    box-shadow: var(--mp-shadow-1);
+    border: 1px solid var(--mp-line);
+}
+
+.mp-diagram .react-flow__controls-button {
+    background: var(--mp-surface);
+    border-bottom: 1px solid var(--mp-line-faint);
+    fill: var(--mp-ink);
+}
+
+.mp-diagram .react-flow__controls-button:hover { background: var(--mp-surface-2); }
+.mp-diagram .react-flow__minimap { box-shadow: var(--mp-shadow-1); }
+.mp-diagram .react-flow__attribution { display: none; }
+
+/* ================================================================== */
+/* MarkdownView                                                       */
+/* ================================================================== */
+
+.mp-markdown {
+    color: var(--mp-ink);
+    font: 400 var(--mp-text-sm)/1.62 var(--mp-font-ui);
+    overflow-wrap: anywhere;
+}
+
+.mp-markdown__empty { color: var(--mp-muted); font-size: var(--mp-text-sm); }
+
+.mp-markdown > :first-child { margin-top: 0; }
+.mp-markdown > :last-child  { margin-bottom: 0; }
+
+.mp-markdown h1,
+.mp-markdown h2,
+.mp-markdown h3,
+.mp-markdown h4,
+.mp-markdown h5,
+.mp-markdown h6 {
+    margin: var(--mp-space-4) 0 var(--mp-space-2);
+    font-family: var(--mp-font-display);
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--mp-ink);
+}
+
+.mp-markdown h1 { font-size: var(--mp-text-xl); border-bottom: var(--mp-border); padding-bottom: 4px; }
+.mp-markdown h2 { font-size: var(--mp-text-lg); border-bottom: 1px solid var(--mp-line-faint); padding-bottom: 3px; }
+.mp-markdown h3 { font-size: var(--mp-text-md); }
+.mp-markdown h4,
+.mp-markdown h5,
+.mp-markdown h6 { font-size: var(--mp-text-sm); text-transform: uppercase; letter-spacing: .04em; color: var(--mp-ink-3); }
+
+.mp-markdown p  { margin: 0 0 var(--mp-space-3); }
+.mp-markdown ul,
+.mp-markdown ol { margin: 0 0 var(--mp-space-3); padding-left: var(--mp-space-5); }
+.mp-markdown li { margin-bottom: 3px; }
+.mp-markdown li > input[type="checkbox"] { margin-right: 6px; }
+
+.mp-markdown a { color: var(--mp-accent-blue); text-decoration: underline; }
+.mp-markdown a:hover { color: var(--mp-accent-orange); }
+
+.mp-markdown strong { font-weight: 800; }
+.mp-markdown hr {
+    margin: var(--mp-space-4) 0;
+    border: none;
+    border-top: 2px solid var(--mp-line-faint);
+}
+
+.mp-markdown blockquote {
+    margin: 0 0 var(--mp-space-3);
+    padding: var(--mp-space-2) var(--mp-space-3);
+    background: var(--mp-surface-2);
+    border-left: 3px solid var(--mp-accent-yellow);
+    color: var(--mp-ink-3);
+}
+
+.mp-markdown code {
+    padding: 1px 5px;
+    background: var(--mp-surface-2);
+    border: 1px solid var(--mp-line-faint);
+    border-radius: 2px;
+    font: 400 var(--mp-text-xs)/1.5 var(--mp-font-mono);
+}
+
+.mp-markdown pre {
+    margin: 0 0 var(--mp-space-3);
+    padding: var(--mp-space-3);
+    background: var(--mp-terminal-bg);
+    border: var(--mp-border);
+    box-shadow: var(--mp-shadow-1);
+    overflow: auto;
+}
+
+.mp-markdown pre code {
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--mp-terminal-fg);
+    font-size: var(--mp-text-xs);
+}
+
+.mp-markdown table {
+    width: 100%;
+    margin: 0 0 var(--mp-space-3);
+    border-collapse: collapse;
+    border: var(--mp-border);
+    font-size: var(--mp-text-xs);
+}
+
+.mp-markdown th,
+.mp-markdown td {
+    padding: 5px 8px;
+    border: 1px solid var(--mp-line-faint);
+    text-align: left;
+    vertical-align: top;
+}
+
+.mp-markdown th {
+    background: var(--mp-surface-2);
+    font-family: var(--mp-font-mono);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.mp-markdown img {
+    max-width: 100%;
+    border: var(--mp-border);
+    box-shadow: var(--mp-shadow-1);
+}
+
+/* ================================================================== */
+/* MarkdownEditor                                                     */
+/* ================================================================== */
+
+.mp-md-editor {
+    display: flex;
+    flex-direction: column;
+    min-height: 180px;
+    background: var(--mp-surface);
+    border: var(--mp-border);
+    box-shadow: var(--mp-shadow-2);
+    overflow: hidden;
+}
+
+.mp-md-editor__bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--mp-space-2);
+    padding: 6px 8px;
+    background: var(--mp-surface-2);
+    border-bottom: var(--mp-border);
+}
+
+.mp-md-editor__tools { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; }
+
+.mp-md-editor__tool {
+    justify-content: center;
+    min-width: 26px;
+    padding: 3px 6px;
+}
+
+.mp-md-editor__tool:disabled { opacity: .45; cursor: not-allowed; }
+
+.mp-md-editor__divider {
+    width: 1px;
+    height: 18px;
+    margin: 0 3px;
+    background: var(--mp-line-soft);
+}
+
+.mp-md-editor__modes { display: flex; gap: 3px; margin-left: auto; }
+
+.mp-md-editor__mode.is-active {
+    background: var(--mp-ink);
+    color: var(--mp-surface);
+    border-color: var(--mp-line-strong);
+}
+
+.mp-md-editor__actions { display: flex; gap: 6px; }
+
+.mp-md-editor__label {
+    padding: 4px 10px;
+    color: var(--mp-muted);
+    font: 700 var(--mp-text-xs)/1.5 var(--mp-font-mono);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    border-bottom: 1px solid var(--mp-line-faint);
+}
+
+.mp-md-editor__error {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: var(--mp-danger-tint);
+    color: var(--mp-danger);
+    border-bottom: 1px solid var(--mp-line-faint);
+    font: 700 var(--mp-text-xs)/1.5 var(--mp-font-ui);
+}
+
+.mp-md-editor__body {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.mp-md-editor__text {
+    flex: 1 1 50%;
+    min-width: 0;
+    padding: var(--mp-space-3);
+    background: var(--mp-surface);
+    color: var(--mp-ink);
+    border: none;
+    outline: none;
+    resize: none;
+    font: 400 var(--mp-text-sm)/1.6 var(--mp-font-mono);
+    tab-size: 4;
+}
+
+.mp-md-editor__text::placeholder { color: var(--mp-muted-2); }
+
+.mp-md-editor__preview {
+    flex: 1 1 50%;
+    min-width: 0;
+    padding: var(--mp-space-3);
+    background: var(--mp-paper);
+    overflow: auto;
+}
+
+.mp-md-editor--split .mp-md-editor__preview { border-left: var(--mp-border); }
+
+/* ================================================================== */
+/* CodeEditor                                                         */
+/* ================================================================== */
+
+/* As duas superfícies do editor. Nenhuma cor literal: "paper" acompanha a
+ * página, "terminal" usa a família --mp-terminal-*, e as duas mudam junto com
+ * o tema. As mesmas medidas estão em CodeEditor.tsx (LINE_H/PAD_Y): gutter,
+ * banda da linha ativa e minimapa são posicionados em JS. */
+
+.mp-code-editor {
+    --mp-code-line-h: 20px;
+    --mp-code-pad-y: 12px;
+
+    position: relative;
+    display: flex;
+    min-height: 120px;
+    overflow: hidden;
+    background: var(--mp-code-bg);
+    border: var(--mp-border);
+    box-shadow: var(--mp-shadow-2);
+}
+
+.mp-code-editor--paper {
+    --mp-code-bg:      var(--mp-surface);
+    --mp-code-gutter:  var(--mp-surface-2);
+    --mp-code-band:    var(--mp-surface-muted);
+    --mp-code-fg:      var(--mp-ink);
+    --mp-code-muted:   var(--mp-muted);
+    --mp-code-rule:    var(--mp-line-faint);
+    --mp-code-caret:   var(--mp-accent-blue);
+    --mp-code-select:  var(--mp-accent-blue);
+    --mp-code-comment: var(--mp-muted);
+    --mp-code-string:  var(--mp-accent-orange);
+    --mp-code-number:  var(--mp-success);
+    --mp-code-keyword: var(--mp-accent-blue);
+    --mp-code-literal: var(--mp-accent-violet);
+}
+
+.mp-code-editor--terminal {
+    --mp-code-bg:      var(--mp-terminal-bg);
+    --mp-code-gutter:  var(--mp-terminal-bg-2);
+    --mp-code-band:    var(--mp-terminal-bg-2);
+    --mp-code-fg:      var(--mp-terminal-fg);
+    --mp-code-muted:   var(--mp-terminal-muted);
+    --mp-code-rule:    var(--mp-terminal-bg-2);
+    --mp-code-caret:   var(--mp-terminal-green);
+    --mp-code-select:  var(--mp-terminal-blue);
+    --mp-code-comment: var(--mp-terminal-muted);
+    --mp-code-string:  var(--mp-terminal-orange);
+    --mp-code-number:  var(--mp-terminal-green);
+    --mp-code-keyword: var(--mp-terminal-blue);
+    --mp-code-literal: var(--mp-terminal-red);
+}
+
+.mp-code-editor__gutter,
+.mp-code-editor__pre,
+.mp-code-editor__text {
+    margin: 0;
+    padding: var(--mp-code-pad-y) 0 var(--mp-code-pad-y) 14px;
+    font-family: var(--mp-font-mono);
+    font-size: 13px;
+    line-height: var(--mp-code-line-h);
+    letter-spacing: normal;
+    tab-size: 4;
+    white-space: pre;
+    word-wrap: normal;
+    box-sizing: border-box;
+}
+
+.mp-code-editor__gutter {
+    flex: 0 0 auto;
+    width: 48px;
+    padding-left: 6px;
+    overflow: hidden;
+    background: var(--mp-code-gutter);
+    border-right: 1px solid var(--mp-code-rule);
+    user-select: none;
+}
+
+.mp-code-editor__line {
+    height: var(--mp-code-line-h);
+    padding-right: 8px;
+    text-align: right;
+    color: var(--mp-code-muted);
+}
+
+.mp-code-editor__line.is-active { color: var(--mp-code-fg); font-weight: 700; }
+
+.mp-code-editor__area { position: relative; flex: 1 1 auto; min-width: 0; overflow: hidden; }
+
+.mp-code-editor__band {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: var(--mp-code-line-h);
+    background: var(--mp-code-band);
+    pointer-events: none;
+}
+
+.mp-code-editor__pre {
+    position: absolute;
+    inset: 0;
+    overflow: auto;
+    color: var(--mp-code-fg);
+    pointer-events: none;
+}
+
+.mp-code-editor__text {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background: transparent;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    caret-color: var(--mp-code-caret);
+    border: none;
+    outline: none;
+    resize: none;
+}
+
+/* O textarea fica SOBRE o <pre> colorido: a seleção precisa ser translúcida,
+ * senão o retângulo dela apaga o código que está por baixo. */
+.mp-code-editor__text::selection { background: var(--mp-code-band); }
+.mp-code-editor__text::selection { background: color-mix(in srgb, var(--mp-code-select) 30%, transparent); }
+
+.mp-code-editor__tok--comment { color: var(--mp-code-comment); font-style: italic; }
+.mp-code-editor__tok--string  { color: var(--mp-code-string); }
+.mp-code-editor__tok--number  { color: var(--mp-code-number); }
+.mp-code-editor__tok--keyword { color: var(--mp-code-keyword); font-weight: 700; }
+.mp-code-editor__tok--literal { color: var(--mp-code-literal); }
+
+.mp-code-editor__minimap {
+    position: relative;
+    flex: 0 0 auto;
+    width: 62px;
+    cursor: pointer;
+    background: var(--mp-code-gutter);
+    border-left: 1px solid var(--mp-code-rule);
+}
+
+.mp-code-editor__minimap canvas { display: block; width: 100%; height: 100%; }
+
+.mp-code-editor__viewport {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    background: var(--mp-code-band);
+    opacity: .55;
+    border-top: 1px solid var(--mp-code-rule);
+    border-bottom: 1px solid var(--mp-code-rule);
+    pointer-events: none;
+}

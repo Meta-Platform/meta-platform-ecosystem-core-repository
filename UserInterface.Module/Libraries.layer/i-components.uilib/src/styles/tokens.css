@@ -5,8 +5,8 @@
  * sombras e z-index de TODOS os painéis da Meta Platform.
  *
  * Regra: componentes NÃO devem ter cor hardcoded. Sempre referenciar
- * um token --mp-* (ou uma variável de compatibilidade --eco-*, que é
- * reapontada para estes tokens em theme-retro-brutalist.css).
+ * um token --mp-*. (A ponte de compatibilidade --eco-*, herdada do
+ * painel de origem, saiu no APPUI-117: ninguém mais a lia.)
  *
  * Este arquivo contém APENAS declarações de tokens em :root — nenhum
  * seletor de componente. Assim pode ser reaproveitado por outros

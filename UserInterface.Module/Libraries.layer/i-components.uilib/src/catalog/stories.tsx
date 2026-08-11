@@ -10,13 +10,16 @@ import {
 } from "../components/Feedback"
 import { Dialog, ConfirmDialog, Drawer, Tooltip, Menu, ContextMenu, Popover } from "../components/Overlays"
 import {
-    Panel, ListRow, DataTable, TreeRow, ObjectCard, Tile, TileRow, KeyValueList, Tabs, CodeBlock
+    Panel, ListRow, DataTable, TreeRow, ObjectCard, Tile, TileRow, KeyValueList,
+    Tabs, TabPanel, Accordion, CodeBlock
 } from "../components/DataDisplay"
 import { PageMasthead, EntityHeader, StatusStrip, StatusChip, SystemBanner } from "../components/Headers"
 import StatusBadge from "../components/StatusBadge"
 import CopyableMonoText from "../components/CopyableMonoText"
 import { THEMES } from "../theme"
 import type { ComponentStory, StoryCollection } from "./types"
+import { advancedRuntimeStories } from "./stories.advanced-runtime"
+import { advancedAuthoringStories } from "./stories.advanced-authoring"
 
 // Histórias do kit comum. Regra que mantém o catálogo completo: cada
 // componente exportado por @i-components tem EXATAMENTE uma história aqui —
@@ -298,14 +301,73 @@ const SearchPreview = ({ placeholder = "Buscar componente…" }: any) => {
 
 const TabsPreview = () => {
     const [ active, setActive ] = useState("componentes")
-    return <Tabs
-        activeKey={active}
-        onChange={setActive}
-        tabs={[
-            { key: "componentes", label: "Componentes", icon: "cubes", count: 46 },
-            { key: "tokens", label: "Fundamentos", icon: "paint brush" },
-            { key: "apps", label: "Aplicativos", icon: "th", count: 10 },
-            { key: "obsoleto", label: "Descontinuado", disabled: true }
+    return <>
+        <Tabs
+            activeKey={active}
+            onChange={setActive}
+            tabs={[
+                { key: "componentes", label: "Componentes", icon: "cubes", count: 46 },
+                { key: "tokens", label: "Fundamentos", icon: "paint brush" },
+                { key: "apps", label: "Aplicativos", icon: "th", count: 10 },
+                { key: "obsoleto", label: "Descontinuado", disabled: true }
+            ]}/>
+        <TabPanel tabKey="componentes" activeKey={active}>
+            <KeyValueList items={[
+                { label: "Aba ativa", value: "componentes" },
+                { label: "Regra", value: "Tabs é a barra; TabPanel é o conteúdo." }
+            ]}/>
+        </TabPanel>
+        <TabPanel tabKey="tokens" activeKey={active}>
+            <Banner tone="info" title="Fundamentos">
+                Tokens, escala tipográfica e temas — o painel só monta quando a aba está ativa.
+            </Banner>
+        </TabPanel>
+        <TabPanel tabKey="apps" activeKey={active}>
+            <ListRow icon="th" title="10 aplicativos consomem o kit" meta="@i-components"/>
+        </TabPanel>
+    </>
+}
+
+const AccordionPreview = () => {
+    const [ open, setOpen ] = useState<string[]>([ "servidor" ])
+    return <Accordion
+        openKeys={open}
+        onToggle={(key, isOpen) => setOpen(isOpen ? [ ...open, key ] : open.filter((item) => item !== key))}
+        items={[
+            {
+                key: "servidor",
+                title: "Servidor",
+                icon: "server",
+                meta: "3 chaves",
+                content: <Stack>
+                    <FormField label="serverName" hint="Nome da instância no boot.json">
+                        <TextInput defaultValue="UICatalogDesktopInstance"/>
+                    </FormField>
+                    <FormField label="port">
+                        <TextInput defaultValue="8099"/>
+                    </FormField>
+                    <CheckboxInput label="autoStart" defaultChecked/>
+                </Stack>
+            },
+            {
+                key: "interface",
+                title: "Interface",
+                icon: "paint brush",
+                meta: "2 chaves",
+                content: <KeyValueList
+                    columns={2}
+                    items={[
+                        { label: "guiHost", value: "electron", mono: true },
+                        { label: "componentLibraries", value: "@/i-components.uilib", mono: true }
+                    ]}/>
+            },
+            {
+                key: "avancado",
+                title: "Avançado",
+                icon: "cogs",
+                meta: "somente leitura",
+                disabled: true
+            }
         ]}/>
 }
 
@@ -769,7 +831,7 @@ export const commonStories: StoryCollection = {
             id: "feedback.overlay",
             title: "LoadingOverlay",
             group: "Feedback",
-            description: "Cobre uma região enquanto ela carrega, com progresso determinístico opcional. Substitui Dimmer+Loader.",
+            description: "Cobre uma região enquanto ela carrega, com progresso determinístico opcional. O par véu+girador que cada tela montava à mão.",
             component: LoadingOverlayPreview,
             props: { percentage: 64 },
             controls: { percentage: { label: "Progresso", type: "number", min: 0, max: 100 } },
@@ -794,7 +856,7 @@ export const commonStories: StoryCollection = {
             id: "feedback.banner",
             title: "Banner",
             group: "Feedback",
-            description: "Mensagem em bloco nos quatro tons. Substitui <Message> do Semantic.",
+            description: "Mensagem em bloco nos quatro tons. É a caixa de mensagem oficial da plataforma — nenhuma tela desenha a sua.",
             component: ({ tone = "info", title = "Instância encerrada sem motivo registrado" }: any) =>
                 <Stack>
                     <Banner tone={tone} title={title}>
@@ -966,13 +1028,20 @@ export const commonStories: StoryCollection = {
             description: "Linha de lista com ícone, título, metadado mono e área direita.",
             component: ListRowPreview,
             exportName: "ListRow",
-            usage: "<ListRow icon=\"database\" title={repo.name} meta={repo.path} onClick={Select}/>"
+            usage: "<ListRow icon=\"database\" title={repo.name} meta={repo.path} onClick={Select}/>",
+            propsDoc: [
+                { name: "icon", type: "string", description: "Nome de símbolo do kit." },
+                { name: "iconNode", type: "ReactNode", description: "Nó pronto no slot do ícone (imagem do pacote, marca do repositório). Sobrepõe icon." },
+                { name: "meta", type: "ReactNode", description: "Segunda linha, em monoespaçada." },
+                { name: "right", type: "ReactNode", description: "Área direita (status, contador, seta)." },
+                { name: "onClick", type: "() => void", description: "Presente = a linha vira <button> e ganha estado de clique." }
+            ]
         }),
         Story({
             id: "data.table",
             title: "DataTable",
             group: "Dados",
-            description: "Tabela dirigida por dados: colunas com render, alinhamento, mono e modo denso. Substitui <Table> do Semantic.",
+            description: "Tabela dirigida por dados: colunas com render, alinhamento, mono e modo denso. O cabeçalho gruda no topo do container rolável.",
             component: TablePreview,
             props: { dense: false },
             controls: { dense: { label: "Denso", type: "boolean" } },
@@ -995,6 +1064,8 @@ export const commonStories: StoryCollection = {
             exportName: "TreeRow",
             usage: "<TreeRow\n    label={node.name}\n    icon=\"file code\"\n    depth={depth}\n    hasChildren={node.children.length > 0}\n    expanded={isOpen}\n    dirty={node.isDirty}\n    onToggle={Toggle}\n    onSelect={Select}/>",
             propsDoc: [
+                { name: "icon", type: "string", description: "Nome de símbolo do kit." },
+                { name: "iconNode", type: "ReactNode", description: "Nó pronto no slot do ícone (ícone próprio do pacote, bandeira de status). Sobrepõe icon." },
                 { name: "depth", type: "number", default: "0", description: "Nível de recuo (14px por nível)." },
                 { name: "dirty", type: "boolean", default: "false", description: "Pinta o rótulo de vermelho (não commitado)." },
                 { name: "hasChildren", type: "boolean", default: "false", description: "Mostra o twisty e aria-expanded." }
@@ -1037,7 +1108,14 @@ export const commonStories: StoryCollection = {
                     <Tile icon="warning sign" count={1} title="Falhas" sub="ver detalhes" subTone="danger" onClick={() => {}}/>
                 </TileRow>,
             exportName: "Tile",
-            usage: "<TileRow>\n    <Tile icon=\"server\" count={active} title=\"Instâncias ativas\" onClick={GoToMonitor}/>\n</TileRow>"
+            usage: "<TileRow>\n    <Tile icon=\"server\" count={active} title=\"Instâncias ativas\" onClick={GoToMonitor}/>\n</TileRow>",
+            propsDoc: [
+                { name: "count", type: "ReactNode", required: true, description: "O número — é o que se lê primeiro." },
+                { name: "title", type: "ReactNode", required: true, description: "O que o número conta." },
+                { name: "sub", type: "ReactNode", description: "Linha de apoio (variação, atalho)." },
+                { name: "subTone", type: "string", default: "\"muted\"", description: "muted | neutral | success | warning | danger | info. É a única cor do tile: use tom de estado só quando o tom significar algo." },
+                { name: "onClick", type: "() => void", description: "Presente = o tile vira <button> e ganha a seta à direita." }
+            ]
         }),
         Story({
             id: "data.keyvalue",
@@ -1061,12 +1139,37 @@ export const commonStories: StoryCollection = {
         }),
         Story({
             id: "data.tabs",
-            title: "Tabs",
+            title: "Tabs e TabPanel",
             group: "Dados",
-            description: "Abas de navegação dentro de uma tela, com contador e item desabilitado.",
+            description: "Abas de navegação dentro de uma tela, com contador e item desabilitado. Tabs é SÓ a barra; o conteúdo de cada aba vai em TabPanel — separados porque metade das telas põe algo entre os dois (toolbar, faixa de status).",
             component: TabsPreview,
             exportName: "Tabs",
-            usage: "<Tabs activeKey={tab} onChange={setTab} tabs={[{ key: \"overview\", label: \"Visão\", icon: \"eye\" }]}/>"
+            usage: "<Tabs activeKey={tab} onChange={setTab} tabs={[{ key: \"overview\", label: \"Visão\", icon: \"eye\" }]}/>\n\n<TabPanel tabKey=\"overview\" activeKey={tab}>\n    {overview}\n</TabPanel>",
+            propsDoc: [
+                { name: "tabs", type: "TabItem[]", required: true, description: "[{ key, label, icon, count, disabled }]." },
+                { name: "activeKey", type: "string", required: true },
+                { name: "onChange", type: "(key: string) => void" },
+                { name: "TabPanel.tabKey", type: "string", required: true, description: "Chave da aba a que este painel pertence." },
+                { name: "TabPanel.keepMounted", type: "boolean", default: "false", description: "Mantém a árvore montada e escondida — para painel que perde estado caro ao remontar (terminal ligado, canvas com layout)." }
+            ],
+            notes: "Em coluna flex de altura fixa, a barra é espremida a zero e some: dê flex: 0 0 auto a ela."
+        }),
+        Story({
+            id: "data.accordion",
+            title: "Accordion",
+            group: "Dados",
+            description: "Grupos colapsáveis — a outra metade do padrão \"editor de configuração\" do guia (masthead + faixa de sistema + grupos colapsáveis + valores mono). Serve também a inspetores e formulários longos.",
+            component: AccordionPreview,
+            exportName: "Accordion",
+            usage: "<Accordion\n    defaultOpenKeys={[\"servidor\"]}\n    items={[\n        { key: \"servidor\", title: \"Servidor\", icon: \"server\", meta: \"3 chaves\", content: fields }\n    ]}/>",
+            propsDoc: [
+                { name: "items", type: "AccordionItem[]", required: true, description: "[{ key, title, icon, meta, disabled, content }]." },
+                { name: "openKeys", type: "string[]", description: "Presente = a tela controla a abertura (com onToggle). Ausente = o componente controla." },
+                { name: "defaultOpenKeys", type: "string[]", default: "[]", description: "Abertos no primeiro render (modo não controlado)." },
+                { name: "onToggle", type: "(key, open) => void" },
+                { name: "multiple", type: "boolean", default: "true", description: "false fecha os demais ao abrir um (modo não controlado)." }
+            ],
+            notes: "O corpo da seção fechada não é montado: grupo caro (editor, tabela grande) não custa nada enquanto está fechado."
         }),
         Story({
             id: "data.code",
@@ -1210,6 +1313,13 @@ export const commonStories: StoryCollection = {
                 { name: "sidebar", type: "ReactNode", description: "NavRail ou SidePanel." },
                 { name: "dock", type: "ReactNode", description: "Faixa inferior (my-desktop)." }
             ]
-        })
+        }),
+
+        /* --- Componentes pesados --- */
+        // Ficam em arquivos próprios porque cada um carrega dependência de
+        // terceiro; a coleção é uma só, e o catálogo continua sendo o índice
+        // completo do kit.
+        ...advancedRuntimeStories,
+        ...advancedAuthoringStories
     ]
 }

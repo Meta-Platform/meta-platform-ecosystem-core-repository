@@ -3,8 +3,9 @@ import Icon from "./Icon"
 import { EmptyState } from "./Feedback"
 
 // Exibição de dados (§9, §11.2): painel, tabela, lista, árvore, cartão de
-// objeto, tile de contagem e lista chave/valor. São os padrões que os WebGui
-// reimplementavam com <Table>/<List>/<Segment> do Semantic + CSS local.
+// objeto, tile de contagem, lista chave/valor, abas e grupos colapsáveis.
+// São os padrões que cada WebGui reimplementava com tabela/lista/segmento de
+// biblioteca de terceiro mais um CSS local por aplicativo.
 
 // Painel com cabeçalho e corpo — a moldura de qualquer seção de conteúdo.
 export const Panel = ({ title, icon, actions, footer, children, className = "" }: any) =>
@@ -22,7 +23,10 @@ export const Panel = ({ title, icon, actions, footer, children, className = "" }
     </section>
 
 // Linha de lista clicável (usa .mp-ov-row do CSS comum).
-export const ListRow = ({ icon, title, meta, right, selected, onClick, className = "" }: any) => {
+// `iconNode` cobre o caso em que o ícone não é um nome do kit e sim um nó
+// pronto (imagem do pacote, marca do repositório, avatar). Sem ele, três
+// migrações independentes tiveram de trocar ListRow por marcação à mão.
+export const ListRow = ({ icon, iconNode, title, meta, right, selected, onClick, className = "" }: any) => {
     const clickable = typeof onClick === "function"
     return React.createElement(
         clickable ? "button" : "div",
@@ -37,7 +41,7 @@ export const ListRow = ({ icon, title, meta, right, selected, onClick, className
             ].filter(Boolean).join(" ")
         },
         <>
-            { icon && <span className="mp-row__icon"><Icon name={icon}/></span> }
+            { (iconNode || icon) && <span className="mp-row__icon">{ iconNode || <Icon name={icon}/> }</span> }
             <span className="mp-row__body">
                 <span className="mp-row__title">{title}</span>
                 { meta && <span className="mp-row__meta">{meta}</span> }
@@ -117,9 +121,12 @@ export const DataTable = ({
 }
 
 // Linha de árvore (explorador de pacotes, estrutura de repositório, boot).
+// `iconNode` tem a mesma razão de ser que em ListRow: nó pronto no lugar do
+// nome de símbolo (ícone próprio do pacote, bandeira de status desenhada).
 export const TreeRow = ({
     label,
     icon,
+    iconNode,
     depth = 0,
     expanded,
     hasChildren = false,
@@ -150,7 +157,9 @@ export const TreeRow = ({
             </button>
             : <span className="mp-tree-row__twisty is-empty"/> }
         <button type="button" className="mp-tree-row__main" onClick={onSelect}>
-            { icon && <Icon name={icon} className="mp-tree-row__icon"/> }
+            { iconNode
+                ? <span className="mp-tree-row__icon">{iconNode}</span>
+                : icon && <Icon name={icon} className="mp-tree-row__icon"/> }
             <span className="mp-tree-row__label">{label}</span>
             { meta && <span className="mp-tree-row__meta">{meta}</span> }
         </button>
@@ -199,6 +208,9 @@ export const ObjectCard = ({
 }
 
 // Tile de contagem (faixa de indicadores do topo das telas de operação).
+// `subTone` pinta a linha de apoio: muted (padrão) | success | warning |
+// danger | info | neutral. Ela é a única cor do tile, então usar tom de
+// estado aqui é dizer "este número mudou para melhor/pior".
 export const Tile = ({ icon, count, title, sub, subTone = "muted", onClick, className = "" }: any) => {
     const clickable = typeof onClick === "function"
     return React.createElement(
@@ -237,6 +249,9 @@ export const KeyValueList = ({ items = [], columns = 1, className = "" }: any) =
 
 // Abas de navegação dentro de uma tela.
 // tabs: [{ key, label, icon, count, disabled }]
+// ATENÇÃO: `Tabs` é só a BARRA. O conteúdo de cada aba vai em `TabPanel`,
+// logo abaixo — separados de propósito, porque metade das telas põe algo
+// entre a barra e o painel (toolbar, faixa de status).
 export const Tabs = ({ tabs = [], activeKey, onChange, className = "" }: any) =>
     <div className={`mp-tabs ${className}`.trim()} role="tablist">
         { tabs.map((tab: any) =>
@@ -253,6 +268,95 @@ export const Tabs = ({ tabs = [], activeKey, onChange, className = "" }: any) =>
                 { tab.count !== undefined && <span className="mp-tabs__count">{tab.count}</span> }
             </button>) }
     </div>
+
+// Painel de uma aba. Só desenha quando `tabKey === activeKey`; fora disso
+// devolve null, então o conteúdo pesado da aba inativa nem monta.
+// `keepMounted` mantém a árvore montada e apenas escondida — para painéis que
+// perdem estado caro ao remontar (terminal ligado, canvas com layout).
+export const TabPanel = ({ tabKey, activeKey, keepMounted = false, children, className = "" }: any) => {
+    const active = tabKey === activeKey
+    if(!active && !keepMounted) return null
+    return <div
+        role="tabpanel"
+        id={`mp-tabpanel-${tabKey}`}
+        aria-hidden={active ? undefined : "true"}
+        hidden={!active}
+        className={`mp-tabpanel ${className}`.trim()}>
+        {children}
+    </div>
+}
+
+// Grupos colapsáveis — a outra metade do padrão "editor de configuração"
+// (§4 do guia: masthead + banner de sistema + grupos colapsáveis + valores
+// mono). Também serve a inspetores e a formulários longos.
+//
+// items: [{ key, title, icon, meta, disabled, content }]
+// Sem `openKeys` o componente controla a abertura sozinho (`defaultOpenKeys`);
+// com `openKeys` + `onToggle`, quem controla é a tela.
+export type AccordionItem = {
+    key: string
+    title: React.ReactNode
+    icon?: string
+    meta?: React.ReactNode
+    disabled?: boolean
+    content?: React.ReactNode
+}
+
+export const Accordion = ({
+    items = [],
+    openKeys,
+    defaultOpenKeys = [],
+    onToggle,
+    multiple = true,
+    className = ""
+}: {
+    items?: AccordionItem[]
+    openKeys?: string[]
+    defaultOpenKeys?: string[]
+    onToggle?: (key: string, open: boolean) => void
+    multiple?: boolean
+    className?: string
+}) => {
+
+    const [ internal, setInternal ] = React.useState<string[]>(defaultOpenKeys)
+    const controlled = Array.isArray(openKeys)
+    const open = controlled ? (openKeys as string[]) : internal
+
+    const Toggle = (key: string) => {
+        const isOpen = open.indexOf(key) >= 0
+        if(!controlled) {
+            setInternal(isOpen
+                ? open.filter((item) => item !== key)
+                : multiple ? [ ...open, key ] : [ key ])
+        }
+        onToggle && onToggle(key, !isOpen)
+    }
+
+    return <div className={`mp-accordion ${className}`.trim()}>
+        { items.map((item) => {
+            const isOpen = open.indexOf(item.key) >= 0
+            return <section className={`mp-accordion__item ${isOpen ? "is-open" : ""}`.trim()} key={item.key}>
+                <button
+                    type="button"
+                    className="mp-accordion__head"
+                    disabled={item.disabled}
+                    aria-expanded={isOpen}
+                    aria-controls={`mp-accordion-body-${item.key}`}
+                    onClick={() => Toggle(item.key)}>
+                    <Icon name={isOpen ? "caret down" : "caret right"} className="mp-accordion__twisty"/>
+                    { item.icon && <Icon name={item.icon} className="mp-accordion__icon"/> }
+                    <span className="mp-accordion__title">{item.title}</span>
+                    { item.meta !== undefined && item.meta !== null &&
+                        <span className="mp-accordion__meta">{item.meta}</span> }
+                </button>
+                { isOpen &&
+                    <div className="mp-accordion__body" id={`mp-accordion-body-${item.key}`}>
+                        {item.content}
+                    </div> }
+            </section>
+        }) }
+    </div>
+}
 
 // Bloco de código/saída técnica em monoespaçada (logs curtos, JSON, comando).
 export const CodeBlock = ({ children, language, className = "" }: any) =>
