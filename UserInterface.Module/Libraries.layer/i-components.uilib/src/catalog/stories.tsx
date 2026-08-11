@@ -16,6 +16,7 @@ import {
 import { PageMasthead, EntityHeader, StatusStrip, StatusChip, SystemBanner } from "../components/Headers"
 import StatusBadge from "../components/StatusBadge"
 import CopyableMonoText from "../components/CopyableMonoText"
+import ThemePicker from "../components/ThemePicker"
 import { THEMES } from "../theme"
 import type { ComponentStory, StoryCollection } from "./types"
 import { advancedRuntimeStories } from "./stories.advanced-runtime"
@@ -244,11 +245,13 @@ const MenuPreview = () =>
 
 const ContextMenuPreview = () => {
     const [ point, setPoint ] = useState<{ x: number, y: number }>()
+    const [ sort, setSort ] = useState("name")
     return <>
         <Surface
             style={{ padding: 24, textAlign: "center", cursor: "context-menu" }}
             onContextMenu={(event: any) => { event.preventDefault(); setPoint({ x: event.clientX, y: event.clientY }) }}>
-            Clique com o botão direito nesta área
+            Clique com o botão direito nesta área — inclusive junto da borda da
+            janela, para ver o menu se recortar para dentro da tela.
         </Surface>
         { point && <ContextMenu
             x={point.x}
@@ -256,10 +259,64 @@ const ContextMenuPreview = () => {
             onClose={() => setPoint(undefined)}
             items={[
                 { key: "reload", label: "Recarregar ícones", icon: "refresh" },
-                { key: "theme", label: "Tema", icon: "paint brush" }
+                { key: "new", label: "Novo", icon: "plus", children: [
+                    { key: "new-folder", label: "Pasta", icon: "folder" },
+                    { key: "new-shortcut", label: "Atalho", icon: "external" }
+                ] },
+                { key: "sort", label: "Organizar por", icon: "sort down", children: [
+                    { key: "name", label: "Nome", icon: "sort alphabet down", checked: sort === "name", onSelect: () => setSort("name") },
+                    { key: "date", label: "Data", icon: "clock", checked: sort === "date", onSelect: () => setSort("date") }
+                ] },
+                { key: "sep", separator: true },
+                { key: "theme", label: "Tema", icon: "paint brush" },
+                { key: "stop", label: "Encerrar instância", icon: "stop", danger: true }
             ]}/> }
     </>
 }
+
+const ThemePickerPreview = () =>
+    <Stack>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 28, flexWrap: "wrap" }}>
+            <div>
+                <div className="mp-kv__label" style={{ marginBottom: 6 }}>popover</div>
+                {/* align="left" só na demonstração: na barra de topo o painel
+                    abre para a esquerda (align="right", o padrão), mas aqui o
+                    gatilho está na borda esquerda do preview. */}
+                <ThemePicker align="left"/>
+            </div>
+            <div>
+                <div className="mp-kv__label" style={{ marginBottom: 6 }}>cycle</div>
+                <ThemePicker variant="cycle"/>
+            </div>
+            <div>
+                <div className="mp-kv__label" style={{ marginBottom: 6 }}>list</div>
+                <Surface style={{ padding: 8 }}><ThemePicker variant="list"/></Surface>
+            </div>
+        </div>
+    </Stack>
+
+// A camada de transporte não tem forma — o que o catálogo mostra dela é o
+// contrato: quem chama quem, e o que muda entre navegador e GUI-host.
+const TRANSPORT_PIECES = [
+    { name: "GetRequest", role: "Chama UM endpoint HTTP descrito pelo api.json (path/query/body, DELETE com corpo em { data })." },
+    { name: "GetRequestByServer", role: "Resolve TODOS os endpoints de um webservice, indexados pelo summary. Opções: ipc, ipcMode, wsQueryParams, normalizePath." },
+    { name: "GetRequestByIPC", role: "Mesma superfície por window.metaGui.invoke, via Proxy — sem enumerar métodos." },
+    { name: "IPCWebSocket", role: "A API de WebSocket do browser sobre o canal de streaming IPC do GUI-host." },
+    { name: "GetAPI", role: "Atalho para o webservice do próprio aplicativo (process.env.SERVER_APP_NAME)." },
+    { name: "FetchWebServersRunning", role: "Lista de webservices em execução no boot; sintetiza a lista no Electron (empty | manifest | none)." }
+]
+
+const TransportPreview = () =>
+    <Stack>
+        <KeyValueList items={TRANSPORT_PIECES.map(({ name, role }) => ({ label: name, value: role }))}/>
+        <CodeBlock language="ts">{
+`const api = GetAPI({ apiName: "Instances", serverManagerInformation })
+const { data } = await api.ListInstances({})
+
+// GUI-host do Electron, sem manifesto de serviços:
+const api = GetAPI({ apiName: "Instances", serverManagerInformation }, { ipcMode: "proxy" })`
+        }</CodeBlock>
+    </Stack>
 
 const PopoverPreview = () => {
     const [ open, setOpen ] = useState(false)
@@ -989,10 +1046,39 @@ export const commonStories: StoryCollection = {
             id: "overlay.contextmenu",
             title: "ContextMenu",
             group: "Sobreposições",
-            description: "Menu ancorado em coordenadas de tela (botão direito) — o padrão do my-desktop.",
+            description: "Menu ancorado em coordenadas de tela (botão direito) — o padrão do my-desktop. Recorta a posição para nascer inteiro dentro da janela, abre submenu em linha, marca o item ativo e fecha no Escape, no clique fora e ao rolar a página.",
             component: ContextMenuPreview,
             exportName: "ContextMenu",
-            usage: "{ point && <ContextMenu x={point.x} y={point.y} items={items} onClose={Close}/> }"
+            usage: "{ point && <ContextMenu\n    x={point.x}\n    y={point.y}\n    onClose={Close}\n    items={[\n        { key: \"open\", label: \"Abrir\", icon: \"external\", onSelect: Open },\n        { key: \"sort\", label: \"Organizar por\", icon: \"sort down\", children: [\n            { key: \"name\", label: \"Nome\", checked: sort === \"name\", onSelect: SortByName }\n        ] },\n        { key: \"sep\", separator: true },\n        { key: \"stop\", label: \"Encerrar\", icon: \"stop\", danger: true, onSelect: Stop }\n    ]}/> }",
+            propsDoc: [
+                { name: "x", type: "number", required: true, description: "Coordenada de tela (event.clientX)." },
+                { name: "y", type: "number", required: true, description: "Coordenada de tela (event.clientY)." },
+                { name: "items", type: "MenuItem[]", required: true, description: "[{ key, label, icon, danger, disabled, separator, checked, children, onSelect }]. `divider` e `onClick` são apelidos aceitos de `separator` e `onSelect`." },
+                { name: "onClose", type: "() => void", description: "Escape, clique no scrim, rolagem e seleção de item." },
+                { name: "margin", type: "number", default: "8", description: "Folga mínima entre o menu e a borda da janela." },
+                { name: "closeOnScroll", type: "boolean", default: "true", description: "Rolar a página fecha o menu — ele ficaria ancorado no vazio." }
+            ],
+            notes: "Um item com `children` vira submenu expansível em linha (um nível). `checked` troca o ícone do item pela marca de seleção."
+        }),
+        Story({
+            id: "overlay.themepicker",
+            title: "ThemePicker",
+            group: "Sobreposições",
+            description: "Seletor dos cinco temas da plataforma. A lógica (THEMES/ApplyTheme/GetSavedTheme) sempre foi do kit; o widget estava reescrito em seis aplicativos.",
+            component: ThemePickerPreview,
+            exportName: "ThemePicker",
+            usage: "// barra de topo\n<Topbar brand=\"Datasource Manager\" right={<ThemePicker/>}/>\n\n// embutido num painel de preferências maior\n<ThemePicker variant=\"list\" heading={null}/>\n\n// controlado (o MPM guarda a escolha também no servidor)\n<ThemePicker value={theme} onChange={SaveTheme}/>\n\n// como DADO, para o menu de contexto da área de trabalho\n{ label: \"Tema\", icon: \"paint brush\", children: BuildThemeMenuItems({ value: theme, onChange: SetTheme }) }",
+            propsDoc: [
+                { name: "variant", type: "\"popover\" | \"list\" | \"cycle\"", default: "\"popover\"", description: "Pincel que abre a lista, lista solta para embutir, ou botão único que avança para o próximo tema." },
+                { name: "value", type: "ThemeName", description: "Controlado. Sem ele, o componente guarda a escolha sozinho (GetSavedTheme no início)." },
+                { name: "onChange", type: "(theme: ThemeName) => void", description: "Chamado depois de aplicar; é onde se persiste a escolha fora do localStorage." },
+                { name: "apply", type: "boolean", default: "true", description: "Aplica o tema no <html>. Desligue só para pré-visualizar." },
+                { name: "heading", type: "ReactNode", default: "\"Tema\"", description: "Cabeçalho da lista; `null` remove." },
+                { name: "icon", type: "string", default: "\"paint brush\"", description: "Ícone do gatilho." },
+                { name: "align", type: "\"left\" | \"right\"", default: "\"right\"", description: "Lado em que o popover abre." },
+                { name: "open", type: "boolean", description: "Popover controlado por fora (com onOpenChange)." }
+            ],
+            notes: "BuildThemeMenuItems({ value, onChange }) devolve os mesmos temas como MenuItem[] — para quem precisa deles como dado, e não como componente."
         }),
         Story({
             id: "overlay.popover",
@@ -1313,6 +1399,25 @@ export const commonStories: StoryCollection = {
                 { name: "sidebar", type: "ReactNode", description: "NavRail ou SidePanel." },
                 { name: "dock", type: "ReactNode", description: "Faixa inferior (my-desktop)." }
             ]
+        }),
+
+        Story({
+            id: "net.transport",
+            title: "Transporte (GetAPI e companhia)",
+            group: "Transporte",
+            description: "A camada por onde todo WebGui fala com o webservice que o serve: HTTP/WebSocket no navegador, IPC dentro do GUI-host do Electron. Não desenha nada — estava copiada 11 vezes em src/Utils/, e o mesmo IPCWebSocket vivia em três áreas diferentes.",
+            component: TransportPreview,
+            exportName: "GetAPI",
+            usage: "import { GetAPI, FetchWebServersRunning } from \"@i-components\"\n\nconst servers = await FetchWebServersRunning({ ipcServices: \"manifest\" })\nconst api = GetAPI({ apiName: \"Instances\", serverManagerInformation })\nconst { data } = await api.ListInstances({})",
+            propsDoc: [
+                { name: "GetAPI(target, options?)", type: "{ apiName, serverManagerInformation }", description: "options: serverName, ipc, ipcMode (\"endpoints\" | \"proxy\"), wsQueryParams, normalizePath, cleanErrors." },
+                { name: "GetRequestByServer(info, options?)", type: "(serverName, apiName) => api", description: "Resolve os endpoints do api.json; no GUI-host troca HTTP por invoke e WS por IPCWebSocket." },
+                { name: "GetRequestByIPC(apiName, options?)", type: "Proxy", description: "cleanErrors (padrão true) tira o prefixo \"Error invoking remote method\" da mensagem." },
+                { name: "FetchWebServersRunning(options?)", type: "Promise<any[]>", description: "ipcServices: \"empty\" (só passa o portão de render) | \"manifest\" (lê metaGui.getManifest) | \"none\" (só navegador)." },
+                { name: "IPCWebSocket(service, method, data)", type: "class", description: "onopen/onmessage/onclose/onerror/send/close/readyState — a mesma superfície do WebSocket." }
+            ],
+            tags: [ "transporte", "ipc" ],
+            notes: "As 11 cópias de GetRequest.util.ts existiam em duas variantes byte-idênticas a menos do apelido do import de query-string (queryString vs qs) — nenhuma diferença de comportamento."
         }),
 
         /* --- Componentes pesados --- */

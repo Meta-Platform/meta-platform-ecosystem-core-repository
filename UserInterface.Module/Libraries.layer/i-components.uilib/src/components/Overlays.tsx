@@ -1,5 +1,5 @@
 import * as React from "react"
-import { useEffect } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import Icon from "./Icon"
 import { Button } from "./Controls"
 
@@ -109,43 +109,166 @@ export const Tooltip = ({ content, position = "top", children, className = "" }:
 
 // Menu de contexto/ações. `items` é DADO: [{ key, label, icon, danger,
 // disabled, separator, onSelect }] — o mesmo formato que o my-desktop já usa.
+//
+// Os apelidos `divider`/`onClick` existem porque as implementações locais que
+// foram absorvidas (my-desktop e package-developer) nomeavam assim; as duas
+// grafias valem, e nenhuma some.
 export type MenuItem = {
-    key: string
+    key?: string
     label?: string
     icon?: string
     danger?: boolean
     disabled?: boolean
     separator?: boolean
+    // apelido de `separator`
+    divider?: boolean
+    // marca de seleção; substitui o ícone do item quando ligada
+    checked?: boolean
+    // submenu expansível em linha (um nível)
+    children?: MenuItem[]
     onSelect?: () => void
+    // apelido de `onSelect`
+    onClick?: () => void
+}
+
+const IsSeparator = (item: MenuItem) => Boolean(item.separator || item.divider)
+const ItemKey = (item: MenuItem, index: number) => item.key || String(index)
+const Select = (item: MenuItem) => { (item.onSelect || item.onClick) && (item.onSelect || item.onClick)!() }
+
+// Lista de itens compartilhada pelo Menu e pelo ContextMenu. Guarda qual
+// submenu está aberto e avisa quem a hospeda (`onLayoutChange`), porque abrir
+// um submenu muda a altura da caixa — e o ContextMenu precisa remedir para não
+// escorregar para fora da tela.
+const MenuItems = ({ items, onClose, onLayoutChange }:
+    { items: MenuItem[], onClose?: () => void, onLayoutChange?: () => void }) => {
+
+    const [ openKey, setOpenKey ] = useState<string>()
+
+    useEffect(() => { onLayoutChange && onLayoutChange() }, [ openKey ])
+
+    const Leaf = (item: MenuItem, key: string, isChild: boolean) =>
+        <button
+            type="button"
+            role="menuitem"
+            key={key}
+            disabled={item.disabled}
+            className={[
+                "mp-menu__item",
+                isChild ? "mp-menu__item--child" : "",
+                item.danger ? "is-danger" : "",
+                item.checked ? "is-checked" : ""
+            ].filter(Boolean).join(" ")}
+            onClick={() => { Select(item); onClose && onClose() }}>
+            { item.checked
+                ? <Icon name="check" tone="success"/>
+                : item.icon
+                    ? <Icon name={item.icon}/>
+                    : <span className="mp-menu__icon-gap" aria-hidden="true"/> }
+            <span className="mp-menu__label">{item.label}</span>
+        </button>
+
+    return <>
+        {
+            items.map((item, index) => {
+                const key = ItemKey(item, index)
+
+                if(IsSeparator(item))
+                    return <span className="mp-menu__sep" key={key} aria-hidden="true"/>
+
+                if(item.children && item.children.length > 0){
+                    const isOpen = openKey === key
+                    return <React.Fragment key={key}>
+                        <button
+                            type="button"
+                            role="menuitem"
+                            aria-expanded={isOpen}
+                            disabled={item.disabled}
+                            className={`mp-menu__item ${isOpen ? "is-open" : ""}`.trim()}
+                            onClick={() => setOpenKey(isOpen ? undefined : key)}>
+                            { item.icon
+                                ? <Icon name={item.icon}/>
+                                : <span className="mp-menu__icon-gap" aria-hidden="true"/> }
+                            <span className="mp-menu__label">{item.label}</span>
+                            <Icon name={isOpen ? "angle down" : "angle right"} tone="muted"/>
+                        </button>
+                        {
+                            isOpen && item.children.map((child, childIndex) =>
+                                IsSeparator(child)
+                                    ? <span className="mp-menu__sep" key={ItemKey(child, childIndex)} aria-hidden="true"/>
+                                    : Leaf(child, ItemKey(child, childIndex), true))
+                        }
+                    </React.Fragment>
+                }
+
+                return Leaf(item, key, false)
+            })
+        }
+    </>
 }
 
 export const Menu = ({ items = [], onClose, className = "" }:
     { items?: MenuItem[], onClose?: () => void, className?: string }) => {
     useEscape(onClose)
     return <div className={`mp-menu ${className}`.trim()} role="menu">
-        { items.map((item) => item.separator
-            ? <span className="mp-menu__sep" key={item.key} aria-hidden="true"/>
-            : <button
-                type="button"
-                role="menuitem"
-                key={item.key}
-                disabled={item.disabled}
-                className={`mp-menu__item ${item.danger ? "is-danger" : ""}`.trim()}
-                onClick={() => { item.onSelect && item.onSelect(); onClose && onClose() }}>
-                { item.icon && <Icon name={item.icon}/> }
-                <span className="mp-menu__label">{item.label}</span>
-            </button>) }
+        <MenuItems items={items} onClose={onClose}/>
     </div>
 }
 
+export type ContextMenuProps = {
+    x: number
+    y: number
+    items?: MenuItem[]
+    onClose?: () => void
+    // distância mínima da borda da tela ao recortar a posição
+    margin?: number
+    // rolar a página fecha o menu (ele ficaria ancorado no vazio)
+    closeOnScroll?: boolean
+    className?: string
+}
+
 // Menu ancorado em coordenadas de tela (clique com o botão direito).
-export const ContextMenu = ({ x, y, items = [], onClose }: any) =>
-    <>
+//
+// Recorta a posição para a caixa nascer INTEIRA dentro da viewport: sem isso um
+// clique perto da borda direita ou de baixo abre um menu com metade fora da
+// tela. A medida é feita depois de pintar (useLayoutEffect) e refeita quando um
+// submenu abre e muda a altura.
+export const ContextMenu = ({
+    x, y, items = [], onClose, margin = 8, closeOnScroll = true, className = ""
+}: ContextMenuProps) => {
+
+    const ref = useRef<HTMLDivElement>(null)
+    const [ position, setPosition ] = useState({ x, y })
+
+    useEscape(onClose)
+
+    const Clamp = useCallback(() => {
+        const element = ref.current
+        if(!element) return
+        const rect = element.getBoundingClientRect()
+        setPosition({
+            x: Math.max(margin, Math.min(x, window.innerWidth  - rect.width  - margin)),
+            y: Math.max(margin, Math.min(y, window.innerHeight - rect.height - margin))
+        })
+    }, [ x, y, margin ])
+
+    useLayoutEffect(() => { Clamp() }, [ Clamp ])
+
+    useEffect(() => {
+        if(!closeOnScroll || !onClose) return
+        const handle = () => onClose()
+        window.addEventListener("scroll", handle, true)
+        return () => window.removeEventListener("scroll", handle, true)
+    }, [ closeOnScroll, onClose ])
+
+    return <>
         <div className="mp-menu__scrim" onClick={onClose} onContextMenu={(event) => { event.preventDefault(); onClose && onClose() }}/>
-        <div className="mp-menu-anchor" style={{ left: x, top: y }}>
-            <Menu items={items} onClose={onClose}/>
+        <div ref={ref} className="mp-menu-anchor" style={{ left: position.x, top: position.y }}>
+            <div className={`mp-menu ${className}`.trim()} role="menu">
+                <MenuItems items={items} onClose={onClose} onLayoutChange={Clamp}/>
+            </div>
         </div>
     </>
+}
 
 // Popover ancorado no fluxo (dropdown de ações, seletor de tema, etc.).
 export const Popover = ({ open = true, align = "right", trigger, onClose, children, className = "" }: any) => {
