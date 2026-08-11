@@ -1,21 +1,10 @@
 import * as React from "react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
-import {
-	Banner,
-	Button,
-	EmptyState,
-	Icon,
-	IconButton,
-	SearchInput,
-	SelectInput,
-	Spinner,
-	StatusChip,
-	TextInput,
-	Toolbar
-} from "@i-components"
+import { Banner, Button, EmptyState, Icon, IconButton, SearchInput, SelectInput, Spinner, StatusChip, TextInput, Toolbar } from "@i-components"
+import { LogViewer as LogBody } from "@i-components/components/advanced/runtime"
 
-import GetAPI from "../../Utils/GetAPI"
+import { GetAPI, ServerAppName } from "@i-components/net"
 
 /*
  * A tela de leitura de um arquivo de log.
@@ -23,12 +12,19 @@ import GetAPI from "../../Utils/GetAPI"
  * O arquivo é JSONL e pode ter dezenas de MB: nunca é carregado inteiro. A API
  * devolve uma FATIA e um `offset`, e é esse offset que torna o acompanhamento
  * incremental — o follow pede só o que foi escrito depois.
+ *
+ * O CORPO é o `LogViewer` do kit (aqui como `LogBody`), que virtualiza as
+ * linhas, interpreta ANSI e dá o acento por nível. A BARRA continua sendo desta
+ * tela, com a barra do kit desligada: os filtros daqui (nível, origem, texto)
+ * são resolvidos no SERVIDOR, sobre o arquivo inteiro — o filtro do kit é
+ * local, sobre a fatia já carregada, e trocá-los perderia justamente o que faz
+ * este visor servir para um arquivo de dezenas de MB.
  */
 
 const NIVEIS = ["trace", "debug", "info", "message", "warn", "error", "fatal"]
 
-/* Tom do chip de cada nível (a COR do texto do nível está no CSS, sobre os
-   tokens --mp-terminal-*: o corpo do log é uma superfície de terminal). */
+/* Tom do chip de cada nível na barra de filtro. O acento do nível DENTRO do
+   log é do kit (guia colorida à esquerda da linha + rótulo). */
 const TOM_POR_NIVEL:any = {
 	trace   : "neutral",
 	debug   : "neutral",
@@ -49,7 +45,6 @@ const LogViewer = ({ serverManagerInformation, filePath, fileName, siblings, onS
 	const [ busca, setBusca ] = useState<string>("")
 	const [ erro, setErro ] = useState<string>("")
 
-	const fimDaListaRef = useRef<any>(null)
 	const websocketRef  = useRef<any>(null)
 
 	const _GetLogsAPI = () => GetAPI({ apiName : "Logs", serverManagerInformation })
@@ -87,7 +82,7 @@ const LogViewer = ({ serverManagerInformation, filePath, fileName, siblings, onS
 
 		const { protocol, host } = window.location
 		const esquema = protocol === "https:" ? "wss:" : "ws:"
-		const url = `${esquema}//${host}/${process.env.SERVER_APP_NAME}/logs/stream/${encodeURIComponent(filePath)}`
+		const url = `${esquema}//${host}/${ServerAppName()}/logs/stream/${encodeURIComponent(filePath)}`
 
 		let websocket:any
 
@@ -112,11 +107,17 @@ const LogViewer = ({ serverManagerInformation, filePath, fileName, siblings, onS
 
 	}, [ acompanhando, filePath ])
 
-	/* Com o follow ligado, a tela segue o fim. */
-	useEffect(() => {
-		if(acompanhando && fimDaListaRef.current)
-			fimDaListaRef.current.scrollIntoView({ behavior : "smooth" })
-	}, [ registros, acompanhando ])
+	/* O registro do JSONL já vem no shape que o visor do kit espera; só a linha
+	   sem estrutura (stdout de processo) precisa dizer que é crua. */
+	const entradas = useMemo(() => registros.map((registro:any, indice:number) => ({
+		id      : indice,
+		ts      : registro.raw ? undefined : registro.ts,
+		level   : registro.raw ? undefined : registro.level,
+		source  : registro.raw ? undefined : registro.source,
+		message : registro.message,
+		data    : registro.data,
+		raw     : registro.raw
+	})), [ registros ])
 
 	/* Liga/desliga um nível: o backend entende a lista como conjunto exato. */
 	const _AlternarNivel = (nivel:string) =>
@@ -198,46 +199,20 @@ const LogViewer = ({ serverManagerInformation, filePath, fileName, siblings, onS
 		{ carregando && <div className="ecp-log-viewer__loading"><Spinner label="lendo o log…"/></div> }
 		{ erro && <Banner tone="danger" className="ecp-fixed">{erro}</Banner> }
 
-		<div className="ecp-log-viewer__body">
-
-			{
-				!carregando && registros.length === 0 &&
-				<p className="ecp-log-viewer__empty">Nenhuma linha para o filtro atual.</p>
-			}
-
-			{
-				registros.map((registro:any, indice:number) =>
-					<div key={indice} className="ecp-log-line">
-						{
-							registro.raw
-								? <>
-									<span className="ecp-log-line__raw" title="linha sem estrutura: veio do stdout de um processo">raw</span>
-									<span className="ecp-log-line__message">{registro.message}</span>
-								</>
-								: <>
-									<span className="ecp-log-line__ts">{registro.ts}</span>
-									{" "}
-									<span className={`ecp-log-line__level ecp-log-line__level--${registro.level || "trace"}`}>
-										{String(registro.level || "").padEnd(7)}
-									</span>
-									{" "}
-									<span className="ecp-log-line__source">[{registro.source}]</span>
-									{" "}
-									<span>{registro.message}</span>
-									{
-										registro.data &&
-										<div className="ecp-log-line__data">
-											{JSON.stringify(registro.data)}
-										</div>
-									}
-								</>
-						}
-					</div>
-				)
-			}
-
-			<div ref={fimDaListaRef}/>
-		</div>
+		{/* `showToolbar={false}`: a barra desta tela está acima, porque filtra no
+		    servidor. O follow também é daqui — quem decide se a tela persegue o
+		    fim é o botão "acompanhar", não a rolagem. */}
+		{/* A chave remonta o corpo ao ligar/desligar o acompanhamento: é assim
+		    que o `defaultFollow` do kit passa a valer — e ligar "acompanhar"
+		    tem justamente o sentido de saltar para o fim e ficar lá. */}
+		<LogBody
+			key={acompanhando ? "seguindo" : "parado"}
+			className="ecp-log-viewer__body"
+			height="100%"
+			entries={entradas}
+			showToolbar={false}
+			defaultFollow={acompanhando}
+			emptyLabel={carregando ? "lendo o log…" : "Nenhuma linha para o filtro atual."}/>
 	</div>
 }
 

@@ -1,6 +1,5 @@
 import * as React              from "react"
 import { useEffect, useState } from "react"
-import AnsiToHtml              from "ansi-to-html"
 import { connect }             from "react-redux"
 import {
 	AppShell,
@@ -12,14 +11,22 @@ import {
 	StatusChip,
 	StatusStrip
 } from "@i-components"
+// O corpo da notificação vem com sequências ANSI (a saída do processo). O kit
+// as interpreta com `ParseAnsi`, devolvendo pedaços já mapeados nos tokens
+// --mp-terminal-*. Antes isto era `ansi-to-html`, que emitia hexadecimal fixo
+// ('#000'/'#fff') dentro de um dangerouslySetInnerHTML: a cor não seguia o tema
+// e o texto do processo virava marcação.
+import { ParseAnsi } from "@i-components/components/advanced/runtime"
 
-
-const ansiConverter = new AnsiToHtml({
-	fg: '#000',
-	bg: '#fff',
-	newline: true,
-	escapeXML: true
-  })
+const AnsiText = ({ text }:{ text:string }) => <>
+	{
+		ParseAnsi(text || "").map((segment:any, index:number) => <span
+			key={index}
+			style={{ color: segment.color, background: segment.background, fontWeight: segment.bold ? 700 : undefined }}>
+			{segment.text}
+		</span>)
+	}
+</>
 
 import { bindActionCreators } from "redux"
 import qs                     from "query-string"
@@ -30,7 +37,7 @@ import {
 
 import EcosystemNavigator from "../Components/EcosystemNavigator"
 
-import GetAPI from "../Utils/GetAPI"
+import { GetAPI } from "@i-components/net"
 import BrowserLog from "../Utils/BrowserLog"
 
 import EnvironmentsContainer            from "../Containers/Environments.container"
@@ -235,8 +242,6 @@ const NotificationPanel = ({ onClose, notificationStateList }) => {
 			{
 				grouped.map((g:any, key:number) => {
 					const view = g.view
-					const messageHtml = ansiConverter.toHtml(view.body)
-
 					return <article
 						key={key}
 						className={`ecp-notif-card ecp-notif-card--${view.stripe} ${g.wasSeen ? "is-seen" : ""}`.trim()}>
@@ -247,10 +252,9 @@ const NotificationPanel = ({ onClose, notificationStateList }) => {
 								{ g.count > 1 && <Badge className="ecp-notif-card__count">×{g.count}</Badge> }
 								{ !g.wasSeen && <span className="ecp-notif-card__dot" aria-label="unread"/> }
 							</div>
-							<div
-								className="ecp-notif-card__message"
-								title={view.body}
-								dangerouslySetInnerHTML={{ __html: messageHtml }}/>
+							<div className="ecp-notif-card__message" title={view.body}>
+								<AnsiText text={view.body}/>
+							</div>
 							<div className="ecp-notif-card__foot">
 								<span className="ecp-notif-card__origin">{view.origin || "system"}</span>
 								<span className="ecp-notif-card__date">{view.date}</span>

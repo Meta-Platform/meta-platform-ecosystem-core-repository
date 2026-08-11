@@ -316,50 +316,12 @@
     padding: var(--mp-space-2) 0;
 }
 
-/* O corpo é superfície de terminal: os níveis usam os tokens --mp-terminal-*. */
+/* O corpo é o `LogViewer` do kit (.mp-log), com a barra dele desligada: linha,
+   nível, origem, ANSI e virtualização vêm de lá. Daqui sobrou só a altura, que
+   é decisão desta tela — o visor precisa caber junto da árvore de arquivos. */
 .ecp-log-viewer__body {
     flex: 1 1 auto;
     min-height: 0;
     max-height: 60vh;
     margin-top: var(--mp-space-2);
-    padding: var(--mp-space-3);
-    overflow: auto;
-    background: var(--mp-terminal-bg);
-    color: var(--mp-terminal-fg);
-    font-family: var(--mp-font-mono);
-    font-size: var(--mp-text-xs);
-    border: var(--mp-border-strong);
-    border-radius: var(--mp-radius-md);
-}
-.ecp-log-viewer__empty { color: var(--mp-terminal-muted); }
-
-.ecp-log-line {
-    padding: 2px 0;
-    border-bottom: 1px solid var(--mp-terminal-bg-2);
-    white-space: pre-wrap;
-    word-break: break-word;
-}
-.ecp-log-line__ts     { color: var(--mp-terminal-muted); }
-.ecp-log-line__source { color: var(--mp-accent-cyan); }
-.ecp-log-line__level  { font-weight: 700; }
-.ecp-log-line__level--trace   { color: var(--mp-terminal-muted); }
-.ecp-log-line__level--debug   { color: var(--mp-accent-violet); }
-.ecp-log-line__level--info    { color: var(--mp-terminal-blue); }
-.ecp-log-line__level--message { color: var(--mp-terminal-green); }
-.ecp-log-line__level--warn    { color: var(--mp-terminal-orange); }
-.ecp-log-line__level--error   { color: var(--mp-terminal-red); }
-.ecp-log-line__level--fatal   { color: var(--mp-terminal-red); }
-.ecp-log-line__data {
-    padding-left: var(--mp-space-6);
-    color: var(--mp-terminal-orange);
-}
-.ecp-log-line__message { color: var(--mp-terminal-muted); }
-.ecp-log-line__raw {
-    display: inline-block;
-    margin-right: 6px;
-    padding: 0 6px;
-    border: 1px solid var(--mp-terminal-muted);
-    border-radius: var(--mp-radius-sm);
-    color: var(--mp-terminal-muted);
-    font-size: var(--mp-text-xs);
 }

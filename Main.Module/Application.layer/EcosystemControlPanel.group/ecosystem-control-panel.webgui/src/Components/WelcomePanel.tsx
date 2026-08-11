@@ -14,7 +14,7 @@ import {
     TileRow
 } from "@i-components"
 
-import GetAPI from "../Utils/GetAPI"
+import { GetAPI } from "@i-components/net"
 
 // Home = "Operations Overview": estado vivo do ecossistema (tiles de sistema com
 // contadores + saúde), atalhos rápidos, sockets abertos e avisos. Substitui a

@@ -5,7 +5,7 @@ import { bindActionCreators }       from "redux"
 
 import { Tabs } from "@i-components"
 
-import GetRequestByServer   from "../Utils/GetRequestByServer"
+import { GetRequestByServer, ServerAppName }   from "@i-components/net"
 
 import WebServiceDetails    from "../Components/WebServiceDetails.component"
 import ServerList           from "../List/Server.list"
@@ -28,7 +28,7 @@ const HTTPServersContainer = ({
 
 	const [tabNameSelected, setTabNameSelected] = useState<string>()
 
-	useEffect(() => setRequest(GetRequestByServer(HTTPServerManager)(process.env.SERVER_APP_NAME, "HTTPServers")), [])
+	useEffect(() => setRequest(GetRequestByServer(HTTPServerManager, { ipc: false })(ServerAppName(), "HTTPServers")), [])
 
 	useEffect(() => updateStatus(), [webServersRequest])
 
@@ -43,7 +43,7 @@ const HTTPServersContainer = ({
 
 	const updateStatus = () => {
 		if(webServersRequest){
-			GetRequestByServer(HTTPServerManager)(process.env.SERVER_APP_NAME, "HTTPServers")
+			GetRequestByServer(HTTPServerManager, { ipc: false })(ServerAppName(), "HTTPServers")
 			.Status()
 			.then(({data}:any) => setStatus(data))
 		}

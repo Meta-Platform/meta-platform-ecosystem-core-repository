@@ -96,20 +96,9 @@
     color: var(--mp-ink-3);
 }
 
-/* ================================================================== */
-/* Canvas dos diagramas (React Flow)                                   */
-/* ================================================================== */
-/* Substitui o antigo DivFlowContainerStyled (CSS-in-JS): mesma
-   moldura (altura fixa, borda, cantos, fundo recuado), agora em tokens. */
-.ecp-flow-canvas {
-    width: 100%;
-    overflow: hidden;
-    border: var(--mp-border-thin);
-    border-radius: var(--mp-radius-md);
-    background: var(--mp-paper-2);
-}
-.ecp-flow-canvas--plan     { height: 720px; }
-.ecp-flow-canvas--metadata { height: 750px; }
+/* A moldura dos diagramas saiu daqui: o `DiagramCanvas` do kit (.mp-diagram)
+   já traz papel recuado, borda e sombra, e a altura de cada aba passou a ser
+   prop do componente (ver ExecutionPlanDiagram / MetadataHierarchyDiagram). */
 
 /* ================================================================== */
 /* Applications & Packages                                             */

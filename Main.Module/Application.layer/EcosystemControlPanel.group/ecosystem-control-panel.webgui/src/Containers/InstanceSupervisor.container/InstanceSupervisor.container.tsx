@@ -21,7 +21,7 @@ import {
 	useNavigate
   } from "react-router-dom"
 
-import GetAPI from "../../Utils/GetAPI"
+import { GetAPI } from "@i-components/net"
 import AppModal from "../../Components/AppModal"
 import { ShortId } from "../../Utils/Format"
 import Tasks from "./Tasks"

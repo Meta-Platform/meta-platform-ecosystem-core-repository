@@ -11,7 +11,7 @@ import {
     GetStatusTone
 } from "@i-components"
 
-import GetAPI       from "../Utils/GetAPI"
+import { GetAPI }       from "@i-components/net"
 import useWebSocket from "../Hooks/useWebSocket"
 import { subscribeLogWindows } from "../Utils/logWindows"
 import GetExecutableIconURL from "../Utils/GetExecutableIconURL"

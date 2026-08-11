@@ -5,11 +5,8 @@ import {
     Icon,
     IconButton,
     Popover,
-    THEMES,
-    ApplyTheme,
-    GetSavedTheme
+    ThemePicker
 } from "@i-components"
-import type { ThemeName } from "@i-components"
 
 // TopBar do shell (§3 do guia): marca à esquerda, breadcrumb da seção ativa e
 // chip do workspace no centro, notificações e preferências à direita.
@@ -26,10 +23,7 @@ const MainMenu = ({
     onToggleSidebar
 }) => {
 
-    const [ theme, setTheme ] = useState<ThemeName>(GetSavedTheme())
     const [ isPreferencesOpen, setIsPreferencesOpen ] = useState(false)
-
-    const selectTheme = (t:ThemeName) => { setTheme(t); ApplyTheme(t); setIsPreferencesOpen(false) }
 
     return <Topbar
         className="ecp-topbar"
@@ -86,21 +80,13 @@ const MainMenu = ({
 
                     <span className="mp-menu__sep"/>
 
-                    <span className="ecp-topbar__menu-heading">
-                        <Icon name="paint brush"/> Theme
-                    </span>
-                    {
-                        THEMES.map((t) =>
-                            <button
-                                key={t.key}
-                                type="button"
-                                className="mp-menu__item"
-                                onClick={() => selectTheme(t.key)}>
-                                <Icon name={t.icon}/>
-                                <span className="mp-menu__label">{t.label}</span>
-                                { theme === t.key && <Icon name="check" tone="success"/> }
-                            </button>)
-                    }
+                    {/* A lista de temas é a variante "list" do ThemePicker do
+                        kit: feita exatamente para embutir num painel maior, que
+                        é o caso deste menu de preferências. */}
+                    <ThemePicker
+                        variant="list"
+                        heading="Theme"
+                        onChange={() => setIsPreferencesOpen(false)}/>
                 </span>
             </Popover>
         </>}>

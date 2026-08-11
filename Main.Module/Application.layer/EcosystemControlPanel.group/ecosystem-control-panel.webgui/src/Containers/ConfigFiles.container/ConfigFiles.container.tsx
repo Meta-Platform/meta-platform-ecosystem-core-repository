@@ -15,7 +15,7 @@ import {
     TextInput
 } from "@i-components"
 
-import GetAPI from "../../Utils/GetAPI"
+import { GetAPI } from "@i-components/net"
 import CopyValue from "../../Components/CopyValue"
 import { toastSuccess, toastError, errorMessage } from "../../Utils/toast"
 

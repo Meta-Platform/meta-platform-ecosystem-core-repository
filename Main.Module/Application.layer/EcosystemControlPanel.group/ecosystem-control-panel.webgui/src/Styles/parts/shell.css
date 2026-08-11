@@ -95,18 +95,8 @@
     gap: 1px;
     min-width: 210px;
 }
-.ecp-topbar__menu-heading {
-    display: flex;
-    align-items: center;
-    gap: var(--mp-space-2);
-    padding: var(--mp-space-2) var(--mp-space-2) var(--mp-space-1);
-    color: var(--mp-muted);
-    font-family: var(--mp-font-ui);
-    font-size: var(--mp-text-xs);
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-}
+/* O cabeçalho "Theme" e a lista de temas são o `ThemePicker variant="list"` do
+   kit (.mp-theme-picker), que já traz esta forma. */
 
 @media (max-width: 1099px) {
     .ecp-topbar__path { max-width: calc(100vw - 260px); }

@@ -1,4 +1,4 @@
-import GetAPI from "./GetAPI"
+import { GetAPI } from "@i-components/net"
 
 /*
  * O `Log` do NAVEGADOR.

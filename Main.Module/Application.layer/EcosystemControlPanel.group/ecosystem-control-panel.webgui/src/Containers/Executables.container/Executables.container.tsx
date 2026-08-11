@@ -15,7 +15,7 @@ import {
     StatusStrip
 } from "@i-components"
 
-import GetAPI from "../../Utils/GetAPI"
+import { GetAPI } from "@i-components/net"
 import GetExecutableIconURL from "../../Utils/GetExecutableIconURL"
 import ExecutableInformation from "./ExecutableInformation"
 

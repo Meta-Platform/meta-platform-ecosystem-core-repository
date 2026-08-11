@@ -1,19 +1,13 @@
 import * as React             from "react"
 import {useEffect}            from "react"
 import { LoadingOverlay }     from "@i-components"
+import { FetchWebServersRunning } from "@i-components/net"
 //@ts-ignore
 import { Routes, BrowserRouter, HashRouter, Route }  from "react-router-dom"
 import { connect }            from "react-redux"
 import { bindActionCreators } from "redux"
-import axios                  from "axios"
 
 import HTTPServerManagerActionsCreator from "../Actions/HTTPServerManager.actionsCreator"
-
-const fetchHTTPServersRunning = async () => {
-    // @ts-ignore
-    const {data} = await axios.get(process.env.HTTP_SERVER_MANAGER_ENDPOINT)
-    return data
-}
 
 type AppContainerProps  = {
 	routesConfig: any
@@ -53,7 +47,9 @@ const AppContainer = ({
 }:AppContainerProps) => {
 
 	useEffect(()=>{
-        fetchHTTPServersRunning()
+        // "none": este aplicativo só existe no navegador — não há caminho IPC,
+        // e a lista vem sempre do Server Manager por HTTP.
+        FetchWebServersRunning({ ipcServices: "none" })
         .then(webServersRunning => SetHTTPServersRunning(webServersRunning))
     }, [])
 	

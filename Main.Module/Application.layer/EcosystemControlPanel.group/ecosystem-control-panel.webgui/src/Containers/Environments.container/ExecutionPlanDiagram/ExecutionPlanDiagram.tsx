@@ -1,78 +1,34 @@
-import React, { useCallback, useEffect, useMemo } from "react"
-import ReactFlow, {
-	addEdge,
-	ConnectionLineType,
-	useNodesState,
-	useEdgesState,
-	Background,
-	Controls,
-} from "reactflow"
-import "reactflow/dist/style.css"
+import * as React from "react"
+import { useMemo } from "react"
+
+import { DiagramCanvas } from "@i-components/components/advanced/authoring"
 
 import ConvertExecutionPlanToFlow from "./ConvertExecutionPlanToFlow"
-import GetLayoutedElements from "../_shared/GetLayoutedElements"
-import PackageFlowNode from "../_shared/PackageFlowNode"
-import DiagramLegend from "../_shared/DiagramLegend"
-import useNeighborHighlight from "../_shared/useNeighborHighlight"
-import { CollectKinds } from "../_shared/DiagramTheme"
 
-// A moldura do canvas vive em Styles/parts/environments.css (.ecp-flow-canvas):
-// mesma altura/borda/fundo do antigo styled-component, agora em tokens --mp-*.
-
-const nodeTypes = { pkg: PackageFlowNode }
-const defaultEdgeOptions = { type: "smoothstep" }
-
+// Plano de execução do ambiente, desenhado pelo `DiagramCanvas` do kit.
+//
+// Ver a nota do conversor ao lado sobre a divisão de trabalho: aqui não há mais
+// tema, nó customizado, legenda nem layout — tudo isso é do kit, e a pintura
+// segue os tokens do tema.
+//
+// A moldura (papel recuado, borda, sombra) é do próprio `.mp-diagram` do kit —
+// a antiga `.ecp-flow-canvas` só repetia isso. Da folha do painel sobrou a
+// ALTURA, que é decisão desta tela e por isso vem por prop.
 const ExecutionPlanDiagram = ({ executionParams }:any) => {
-	const [nodes, setNodes, onNodesChange] = useNodesState([])
-	const [edges, setEdges, onEdgesChange] = useEdgesState([])
 
-	useEffect(() => {
-		if (executionParams) {
-			const { nodes: initialNodes, edges: initialEdges } = ConvertExecutionPlanToFlow(executionParams)
-			// dagre apenas posiciona; os conversores donam o estilo das arestas.
-			const { nodes: layoutedNodes } = GetLayoutedElements(initialNodes, initialEdges, "TB")
-			setNodes(layoutedNodes)
-			setEdges(initialEdges)
-		}
-	}, [executionParams])
+    const { nodes, edges } = useMemo(
+        () => executionParams
+            ? ConvertExecutionPlanToFlow(executionParams)
+            : { nodes: [], edges: [] },
+        [executionParams])
 
-	const { onNodeMouseEnter, onNodeMouseLeave } = useNeighborHighlight(edges, setNodes, setEdges)
-
-	const kinds = useMemo(() => CollectKinds(nodes), [nodes])
-
-	const onConnect = useCallback(
-		(params:any) => setEdges((eds:any) => addEdge({ ...params, type: "smoothstep" }, eds)),
-		[setEdges]
-	)
-
-	return (
-		<div className="ecp-flow-canvas ecp-flow-canvas--plan react-flow-container">
-			<ReactFlow
-				nodes={nodes}
-				edges={edges}
-				nodeTypes={nodeTypes}
-				defaultEdgeOptions={defaultEdgeOptions}
-				onNodesChange={onNodesChange}
-				onEdgesChange={onEdgesChange}
-				onConnect={onConnect}
-				onNodeMouseEnter={onNodeMouseEnter}
-				onNodeMouseLeave={onNodeMouseLeave}
-				connectionLineType={ConnectionLineType.SmoothStep}
-				minZoom={0.2}
-				fitView
-				fitViewOptions={{ padding: 0.2 }}>
-				<Controls position="top-left" />
-				<DiagramLegend
-					kinds={kinds}
-					relations={[
-						{ label: "contém (child)", dashed: false, color: "#94a3b8" },
-						{ label: "depende de", dashed: true, color: "#7c3aed" },
-					]}
-				/>
-				<Background color="#e2e8f0" gap={18} />
-			</ReactFlow>
-		</div>
-	)
+    return <DiagramCanvas
+        height={720}
+        nodes={nodes}
+        edges={edges}
+        relationLabels={{ child: "contém (child)", dependency: "depende de" }}
+        emptyTitle="Sem plano para desenhar"
+        emptyMessage="Este ambiente ainda não tem tarefas no plano de execução."/>
 }
 
 export default ExecutionPlanDiagram

@@ -9,7 +9,7 @@ import {
     Toolbar
 } from "@i-components"
 
-import GetAPI from "../../Utils/GetAPI"
+import { GetAPI } from "@i-components/net"
 
 // Remove sequências ANSI (cores/escape) já que é um visualizador de texto puro.
 const StripAnsi = (s:string) => s.replace(/\x1b\[[0-9;]*[A-Za-z]/g, "")

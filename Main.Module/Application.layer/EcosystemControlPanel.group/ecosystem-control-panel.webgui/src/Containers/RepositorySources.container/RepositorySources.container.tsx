@@ -11,7 +11,7 @@ import {
     Surface
 } from "@i-components"
 
-import GetAPI from "../../Utils/GetAPI"
+import { GetAPI } from "@i-components/net"
 
 import SourcesListTable        from "./SourcesList.table"
 import RegisterSourceModal     from "./RegisterSource.modal"

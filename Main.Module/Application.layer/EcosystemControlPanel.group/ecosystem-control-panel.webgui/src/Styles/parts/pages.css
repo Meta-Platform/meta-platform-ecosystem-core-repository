@@ -150,6 +150,9 @@
 /* line-clamp de 3 linhas: o corpo do log não pode empurrar o card */
 .ecp-notif-card__message {
     margin-top: 5px;
+    /* A quebra de linha vem do TEXTO do processo (antes o conversor de ANSI a
+       transformava em <br>); agora ela é preservada aqui. */
+    white-space: pre-wrap;
     color: var(--mp-ink-3);
     font-family: var(--mp-font-mono);
     font-size: var(--mp-text-xs);

@@ -5,7 +5,7 @@ import { bindActionCreators }  from "redux"
 
 import { PageMasthead, Tabs } from "@i-components"
 
-import GetAPI from "../../Utils/GetAPI"
+import { GetAPI } from "@i-components/net"
 
 import QueryParamsActionsCreator from "../../Actions/QueryParams.actionsCreator"
 

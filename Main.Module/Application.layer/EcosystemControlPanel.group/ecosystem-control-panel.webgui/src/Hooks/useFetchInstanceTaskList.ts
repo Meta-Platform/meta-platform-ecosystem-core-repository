@@ -1,6 +1,6 @@
 import {useEffect, useState}  from "react"
 
-import GetRequestByServer from "../Utils/GetRequestByServer"
+import { GetRequestByServer, ServerAppName } from "@i-components/net"
 
 const useFetchInstanceTaskList = ({
     monitoringStateKeySelected,
@@ -21,7 +21,7 @@ const useFetchInstanceTaskList = ({
     const _GetWebservice = GetRequestByServer(HTTPServerManager)
 	
 	const fetchInstanceTasks = () =>
-		_GetWebservice(process.env.SERVER_APP_NAME, "InstancesSupervisor")
+		_GetWebservice(ServerAppName(), "InstancesSupervisor")
 			.ListInstanceTasks({ monitoringStateKey:monitoringStateKeySelected})
 			.then(({data}:any) => setInstanceTaskListCurrent(data))
     

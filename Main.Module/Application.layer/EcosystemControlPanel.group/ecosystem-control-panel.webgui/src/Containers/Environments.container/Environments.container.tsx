@@ -21,7 +21,7 @@ import {
 } from "@i-components"
 
 import QueryParamsActionsCreator from "../../Actions/QueryParams.actionsCreator"
-import GetAPI from "../../Utils/GetAPI"
+import { GetAPI } from "@i-components/net"
 import Breadcrumbs from "../../Components/Breadcrumbs"
 import { ShortId } from "../../Utils/Format"
 import { toastSuccess, toastError, errorMessage } from "../../Utils/toast"

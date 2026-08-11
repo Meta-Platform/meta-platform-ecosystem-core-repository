@@ -1,13 +1,26 @@
-import { GetTheme, GetKindLabel, MakeEdge } from "../_shared/DiagramTheme"
+import type { DiagramNodeInput, DiagramEdgeInput } from "@i-components/components/advanced/authoring"
 
-// Rótulo curto do papel de execução (objectLoaderType) mostrado no chip do nó.
+// Converte o plano de execução do ambiente na forma NEUTRA que o
+// `DiagramCanvas` do kit recebe. É o que resta de domínio: o desenho (nó,
+// aresta, layout, legenda, realce de vizinhança) é do kit, e a COR de cada tipo
+// sai de `useDiagramPalette()` em vez da tabela de hexadecimais que morava em
+// `_shared/DiagramTheme.ts`.
+//
+// Duas informações diferentes convivem em cada nó, e é de propósito:
+//   - o TIPO DO PACOTE (sufixo do namespace) dá a cor e a entrada na legenda —
+//     o mesmo eixo da aba de hierarquia, para o mesmo pacote ter a mesma cor
+//     nas duas;
+//   - o PAPEL DE EXECUÇÃO (objectLoaderType) vai na segunda linha do cartão,
+//     porque é o que diferencia duas tasks do mesmo pacote.
+
+// Rótulo curto do papel de execução (objectLoaderType).
 const LOADER_LABEL: Record<string, string> = {
     "install-nodejs-package-dependencies": "install deps",
     "nodejs-package"                     : "package",
     "application-instance"               : "app instance",
     "service-instance"                   : "service instance",
     "endpoint-instance"                  : "endpoint",
-    "command-application"                : "command",
+    "command-application"                : "command"
 }
 
 const GetTaskName = (task: any) => {
@@ -16,7 +29,7 @@ const GetTaskName = (task: any) => {
 }
 
 // Percorre o plano (incluindo children) atribuindo ids estáveis e montando:
-//  - nós (1 por task) no formato do nó customizado "pkg"
+//  - nós (1 por task)
 //  - índices por tag e por namespace (para resolver dependências de ativação)
 //  - arestas pai->filho (children)
 const _Walk = (tasks: any[], parentId: string | null, ctx: any) => {
@@ -27,15 +40,10 @@ const _Walk = (tasks: any[], parentId: string | null, ctx: any) => {
 
         ctx.nodes.push({
             id,
-            type: "pkg",
-            position: { x: 0, y: 0 },
-            data: {
-                name,
-                typeLabel: LOADER_LABEL[task.objectLoaderType] || task.objectLoaderType,
-                kindLabel: GetKindLabel(name),
-                theme: GetTheme(name),
-            },
-        })
+            label     : name,
+            namespace : name,
+            sublabel  : LOADER_LABEL[task.objectLoaderType] || task.objectLoaderType
+        } as DiagramNodeInput)
 
         if (sp.tag)       ctx.byTag[sp.tag] = id
         if (sp.namespace) ctx.byNamespace[sp.namespace] = id
@@ -62,7 +70,7 @@ const _CollectDependencyEdges = (ctx: any) => {
         const key = `${sourceId}->${targetId}`
         if (seen.has(key)) return
         seen.add(key)
-        edges.push({ source: sourceId, target: targetId, kind: "dep" })
+        edges.push({ source: sourceId, target: targetId, kind: "dependency" })
     }
 
     const handleClauses = (rules: any, targetId: string) => {
@@ -88,20 +96,24 @@ const _CollectDependencyEdges = (ctx: any) => {
 const ConvertExecutionPlanToFlow = (executionParams: any[]) => {
     const ctx = {
         counter: 0,
-        nodes: [] as any[],
+        nodes: [] as DiagramNodeInput[],
         parentEdges: [] as any[],
         byTag: {} as any,
         byNamespace: {} as any,
-        taskRefs: [] as any[],
+        taskRefs: [] as any[]
     }
 
     _Walk(executionParams || [], null, ctx)
 
     const dependencyEdges = _CollectDependencyEdges(ctx)
 
-    const edges = [...ctx.parentEdges, ...dependencyEdges].map((e: any, index: number) =>
-        MakeEdge(`e${index}-${e.source}-${e.target}`, e.source, e.target, e.kind)
-    )
+    const edges: DiagramEdgeInput[] = [...ctx.parentEdges, ...dependencyEdges]
+        .map((edge: any, index: number) => ({
+            id     : `e${index}-${edge.source}-${edge.target}`,
+            source : edge.source,
+            target : edge.target,
+            kind   : edge.kind
+        }))
 
     return { nodes: ctx.nodes, edges }
 }
