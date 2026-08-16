@@ -9,31 +9,31 @@
     - a poda em que um tipo falha e leva os outros junto
     - "não está no registry" confundido com "registry fora do ar"
 */
-const test = require("node:test")
-const assert = require("node:assert/strict")
+const test = require("node:test") as typeof import("node:test")
+const assert = require("node:assert/strict") as typeof import("node:assert/strict")
 
 const ContainerManager = require("../src/Managers/Container.manager")
 
-const CriarAdaptador = (config = {}) => {
-    const registrado = { seguidos: [] }
+const CriarAdaptador = (config: any = {}) => {
+    const registrado: any = { seguidos: [] }
 
-    const SeguirProgresso = (stream, aoTerminar, aCadaEvento) => {
+    const SeguirProgresso = (stream: any, aoTerminar: any, aCadaEvento: any) => {
         registrado.seguidos.push(stream)
-        ;(config.eventos || []).forEach((e) => aCadaEvento && aCadaEvento(e))
+        ;(config.eventos || []).forEach((e: any) => aCadaEvento && aCadaEvento(e))
         setImmediate(() => aoTerminar(config.erroDoProgresso || null, config.saida || []))
     }
 
     const cliente = {
-        getEvents: (_, cb) => cb && cb(null, { on: () => {}, destroy: () => {} }),
+        getEvents: (_: any, cb: any) => cb && cb(null, { on: () => {}, destroy: () => {} }),
         modem: { followProgress: SeguirProgresso, demuxStream: () => {} },
-        pull: (ref, opcoes, cb) => {
+        pull: (ref: any, opcoes: any, cb: any) => {
             registrado.pull = { ref, opcoes }
             if (config.erroDoPull) return cb(config.erroDoPull)
             cb(null, { on: () => {} })
         },
-        loadImage: (stream, opcoes, cb) => cb(null, { on: () => {} }),
-        searchImages: async (o) => { registrado.search = o; return config.busca || [] },
-        checkAuth: async (o) => {
+        loadImage: (stream: any, opcoes: any, cb: any) => cb(null, { on: () => {} }),
+        searchImages: async (o: any) => { registrado.search = o; return config.busca || [] },
+        checkAuth: async (o: any) => {
             registrado.auth = o
             if (config.erroDeLogin) throw config.erroDeLogin
             return { Status: "Login Succeeded" }
@@ -50,10 +50,10 @@ const CriarAdaptador = (config = {}) => {
         pruneNetworks: async () => ({ NetworksDeleted: ["n1"] }),
         pruneVolumes: async () => ({ VolumesDeleted: ["v1"], SpaceReclaimed: 50 }),
         pruneBuilder: async () => ({ CachesDeleted: ["b1"], SpaceReclaimed: 25 }),
-        getImage: (nome) => ({
+        getImage: (nome: string) => ({
             inspect: async () => {
                 if (config.imagemAusente) {
-                    const e = new Error("no such image"); e.statusCode = 404; throw e
+                    const e: any = new Error("no such image"); e.statusCode = 404; throw e
                 }
                 return config.inspecaoDaImagem || { Id: "sha256:local", RepoTags: [nome] }
             },
@@ -62,8 +62,8 @@ const CriarAdaptador = (config = {}) => {
                 return config.distribuicao || { Descriptor: { digest: "sha256:remoto" } }
             },
             history: async () => [{ Id: "c1", Created: 1, CreatedBy: "RUN apk add", Size: 10, Tags: [] }],
-            tag: async (o) => { registrado.tag = o },
-            push: (o, cb) => { registrado.push = o; cb(null, { on: () => {} }) }
+            tag: async (o: any) => { registrado.tag = o },
+            push: (o: any, cb: any) => { registrado.push = o; cb(null, { on: () => {} }) }
         }),
         getContainer: () => ({ inspect: async () => ({ State: { Running: false } }) })
     }
@@ -96,8 +96,8 @@ test("o progresso por camada chega a quem pediu", async () => {
         ]
     })
 
-    const vistos = []
-    await adaptador.PullImage({ reference: "x", onProgress: (p) => vistos.push(p) })
+    const vistos: any[] = []
+    await adaptador.PullImage({ reference: "x", onProgress: (p: any) => vistos.push(p) })
 
     assert.deepEqual(vistos, [
         { id: "abc", status: "Downloading", current: 5, total: 10 },
@@ -114,17 +114,17 @@ test("erro de CAMADA vem como evento e é convertido em falha", async () => {
 
     await assert.rejects(
         () => adaptador.PullImage({ reference: "x" }),
-        (erro) => erro.code === "IMAGE_PULL_FAILED" && erro.message.includes("rate limit")
+        (erro: any) => erro.code === "IMAGE_PULL_FAILED" && erro.message.includes("rate limit")
     )
 })
 
 test("erro do modem (404 de tag inexistente) também carrega código", async () => {
-    const e404 = new Error("manifest unknown"); e404.statusCode = 404
+    const e404: any = new Error("manifest unknown"); e404.statusCode = 404
     const { adaptador } = CriarAdaptador({ erroDoPull: e404 })
 
     await assert.rejects(
         () => adaptador.PullImage({ reference: "x:nao-existe" }),
-        (erro) => erro.code === "IMAGE_PULL_FAILED"
+        (erro: any) => erro.code === "IMAGE_PULL_FAILED"
     )
 })
 
@@ -133,7 +133,7 @@ test("referência vazia é recusada antes de tocar no runtime", async () => {
 
     await assert.rejects(
         () => adaptador.PullImage({ reference: "  " }),
-        (erro) => erro.code === "INVALID_IMAGE_REFERENCE" && erro.statusCode === 400
+        (erro: any) => erro.code === "INVALID_IMAGE_REFERENCE" && erro.statusCode === 400
     )
     assert.equal(registrado.pull, undefined)
 })
@@ -152,7 +152,7 @@ test("etiquetar sem repositório é recusado", async () => {
     const { adaptador } = CriarAdaptador()
     await assert.rejects(
         () => adaptador.TagImage({ imageIdOrName: "x" }),
-        (erro) => erro.code === "INVALID_IMAGE_REPO"
+        (erro: any) => erro.code === "INVALID_IMAGE_REPO"
     )
 })
 
@@ -169,7 +169,7 @@ test("busca devolve forma enxuta, com oficial e estrelas", async () => {
 test("credencial errada é RESPOSTA, não exceção", async () => {
     // A tela precisa mostrar "não autenticado" sem tratar erro linha a linha —
     // mesma escolha do TestConnection para runtime fora do ar.
-    const erro = new Error("unauthorized"); erro.statusCode = 401
+    const erro: any = new Error("unauthorized"); erro.statusCode = 401
     const { adaptador } = CriarAdaptador({ erroDeLogin: erro })
 
     const r = await adaptador.RegistryLogin({ username: "u", password: "errada" })
@@ -217,8 +217,8 @@ test("imagem sem RepoDigests responde NULL, não 'está atualizada'", async () =
 test("'não está no registry' e 'registry fora do ar' são motivos DIFERENTES", async () => {
     // A primeira é normal para imagem local; a segunda é problema de rede ou
     // credencial e merece aviso. Só o código HTTP separa as duas.
-    const naoExiste = new Error("not found"); naoExiste.statusCode = 404
-    const foraDoAr = new Error("timeout"); foraDoAr.statusCode = 500
+    const naoExiste: any = new Error("not found"); naoExiste.statusCode = 404
+    const foraDoAr: any = new Error("timeout"); foraDoAr.statusCode = 500
 
     const a1 = CriarAdaptador({
         inspecaoDaImagem: { RepoDigests: ["x@sha256:a"] }, erroDeDistribuicao: naoExiste
@@ -304,7 +304,7 @@ test("tipo desconhecido é recusado antes de apagar qualquer coisa", async () =>
 
     await assert.rejects(
         () => adaptador.PruneSystem({ types: ["containers", "banco-de-dados"] }),
-        (erro) => erro.code === "INVALID_PRUNE_TYPE" && erro.message.includes("banco-de-dados")
+        (erro: any) => erro.code === "INVALID_PRUNE_TYPE" && erro.message.includes("banco-de-dados")
     )
 })
 
@@ -313,8 +313,8 @@ test("tipo desconhecido é recusado antes de apagar qualquer coisa", async () =>
 test("o evento cru vira uma forma só, com o cru preservado", async () => {
     const { adaptador } = CriarAdaptador()
 
-    const recebidos = []
-    const assinatura = adaptador.StreamRuntimeEvents({ onData: (e) => recebidos.push(e) })
+    const recebidos: any[] = []
+    const assinatura = adaptador.StreamRuntimeEvents({ onData: (e: any) => recebidos.push(e) })
 
     // Empurra um evento pelo caminho de sempre.
     adaptador.RegisterDockerEventListener(() => {})

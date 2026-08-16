@@ -7,16 +7,16 @@
     VirtualDeskRepo chama `CreateNewContainer` com o vocabulário antigo, e o
     provisionamento da nuvem depende de ele continuar produzindo o mesmo JSON.
 */
-const test = require("node:test")
-const assert = require("node:assert/strict")
+const test = require("node:test") as typeof import("node:test")
+const assert = require("node:assert/strict") as typeof import("node:assert/strict")
 
 const ContainerManager = require("../src/Managers/Container.manager")
 
 const CriarManagerDuplo = () => {
-    const chamadas = []
+    const chamadas: any[] = []
 
     const clienteFalso = {
-        createContainer: async (options) => {
+        createContainer: async (options: any) => {
             chamadas.push(options)
             return { inspect: async () => ({ Id: "fake", Options: options }) }
         },
@@ -132,7 +132,7 @@ test("montagem irreconhecível falha a criação em vez de sumir", async () => {
             imageName: "alpine:latest",
             mounts: [{ type: "nfs", source: "servidor:/export", target: "/data" }]
         }),
-        (erro) => erro.code === "INVALID_MOUNT"
+        (erro: any) => erro.code === "INVALID_MOUNT"
     )
 
     assert.equal(chamadas.length, 0, "nada foi enviado ao runtime")

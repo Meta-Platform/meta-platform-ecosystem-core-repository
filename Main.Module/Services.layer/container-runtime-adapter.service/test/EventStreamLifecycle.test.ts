@@ -7,14 +7,14 @@
     e uma conexão remota morta virava erro repetido no log de quem estava
     trabalhando noutra conexão.
 */
-const test = require("node:test")
-const assert = require("node:assert/strict")
-const { EventEmitter } = require("node:events")
+const test = require("node:test") as typeof import("node:test")
+const assert = require("node:assert/strict") as typeof import("node:assert/strict")
+const { EventEmitter } = require("node:events") as typeof import("node:events")
 
 const ContainerManager = require("../src/Managers/Container.manager")
 
-const CriarStreamFalso = () => {
-    const stream = new EventEmitter()
+const CriarStreamFalso = (): any => {
+    const stream: any = new EventEmitter()
     stream.destruido = false
     stream.destroy = () => { stream.destruido = true }
     return stream
@@ -24,11 +24,11 @@ const CriarStreamFalso = () => {
     `respostas` é a fila de respostas do getEvents: um erro ou um stream por
     chamada, na ordem em que forem pedidas.
 */
-const CriarManagerDuplo = ({ respostas = [] } = {}) => {
-    const chamadasDeGetEvents = []
+const CriarManagerDuplo = ({ respostas = [] }: any = {}) => {
+    const chamadasDeGetEvents: any[] = []
 
     const clienteFalso = {
-        getEvents: (options, callback) => {
+        getEvents: (options: any, callback: any) => {
             chamadasDeGetEvents.push(options)
             const resposta = respostas.shift() || { stream: CriarStreamFalso() }
             // Assíncrono como o de verdade.
@@ -104,8 +104,8 @@ test("o evento chega a quem assinou", async () => {
     const stream = CriarStreamFalso()
     const { manager } = CriarManagerDuplo({ respostas: [{ stream }] })
 
-    const recebidos = []
-    manager.RegisterDockerEventListener((evento) => recebidos.push(evento))
+    const recebidos: any[] = []
+    manager.RegisterDockerEventListener((evento: any) => recebidos.push(evento))
     await Aguardar()
 
     stream.emit("data", Buffer.from(JSON.stringify({ Type: "container", Action: "start" })))
@@ -117,8 +117,8 @@ test("quem soltou a assinatura não recebe mais evento", async () => {
     const stream = CriarStreamFalso()
     const { manager } = CriarManagerDuplo({ respostas: [{ stream }] })
 
-    const recebidos = []
-    const soltar = manager.RegisterDockerEventListener((evento) => recebidos.push(evento))
+    const recebidos: any[] = []
+    const soltar = manager.RegisterDockerEventListener((evento: any) => recebidos.push(evento))
     await Aguardar()
 
     // Segundo assinante mantém o stream vivo depois que o primeiro sai.
@@ -135,8 +135,8 @@ test("linha inválida no stream não derruba nem polui", async () => {
     const stream = CriarStreamFalso()
     const { manager } = CriarManagerDuplo({ respostas: [{ stream }] })
 
-    const recebidos = []
-    manager.RegisterDockerEventListener((evento) => recebidos.push(evento))
+    const recebidos: any[] = []
+    manager.RegisterDockerEventListener((evento: any) => recebidos.push(evento))
     await Aguardar()
 
     stream.emit("data", Buffer.from("{ isto não é json"))

@@ -1,8 +1,8 @@
-const test = require("node:test")
-const assert = require("node:assert/strict")
-const { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync } = require("node:fs")
-const { join } = require("node:path")
-const { tmpdir } = require("node:os")
+const test = require("node:test") as typeof import("node:test")
+const assert = require("node:assert/strict") as typeof import("node:assert/strict")
+const { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync } = require("node:fs") as typeof import("node:fs")
+const { join } = require("node:path") as typeof import("node:path")
+const { tmpdir } = require("node:os") as typeof import("node:os")
 
 const ContainerRuntimeConnectionManager = require("../src/Managers/ContainerRuntimeConnection.manager")
 
@@ -17,20 +17,20 @@ const MontarGerenciador = ({
     storageDir,
     versionPorEndpoint = {},
     runtimesDescobertos = []
-} = {}) => {
-    const adaptadoresCriados = []
+}: any = {}) => {
+    const adaptadoresCriados: any[] = []
     let contador = 0
 
     const gerenciador = ContainerRuntimeConnectionManager({
         storageDir,
         GenerateId: () => `id-${++contador}`,
         Now: () => "2026-08-03T00:00:00.000Z",
-        CreateAdapter: (clientOptions, conexao) => {
+        CreateAdapter: (clientOptions: any, conexao: any) => {
             const adaptador = { clientOptions, connectionId: conexao.id }
             adaptadoresCriados.push(adaptador)
             return adaptador
         },
-        CreateProbeClient: (clientOptions) => ({
+        CreateProbeClient: (clientOptions: any) => ({
             version: async () => {
                 const chave = clientOptions.socketPath
                     || `${clientOptions.host}:${clientOptions.port}`
@@ -82,7 +82,7 @@ test("Docker e Podman convivem como conexões independentes", (t) => {
 
     const lista = gerenciador.ListConnections()
     assert.equal(lista.length, 2)
-    assert.deepEqual(lista.map((c) => c.runtimeType).sort(), ["docker", "podman"])
+    assert.deepEqual(lista.map((c: any) => c.runtimeType).sort(), ["docker", "podman"])
 })
 
 test("nome repetido é recusado, com ou sem diferença de maiúsculas", (t) => {
@@ -94,7 +94,7 @@ test("nome repetido é recusado, com ou sem diferença de maiúsculas", (t) => {
 
     assert.throws(
         () => gerenciador.CreateConnection({ name: "LOCAL", runtimeType: "docker", endpoint: "tcp://outro:2375" }),
-        (erro) => erro.code === "NAME_ALREADY_USED"
+        (erro: any) => erro.code === "NAME_ALREADY_USED"
     )
 })
 
@@ -106,11 +106,11 @@ test("endpoint inválido e runtime não suportado não entram no cadastro", (t) 
 
     assert.throws(
         () => gerenciador.CreateConnection({ name: "a", runtimeType: "docker", endpoint: "10.0.0.5:2375" }),
-        (erro) => erro.code === "SCHEME_REQUIRED"
+        (erro: any) => erro.code === "SCHEME_REQUIRED"
     )
     assert.throws(
         () => gerenciador.CreateConnection({ name: "b", runtimeType: "containerd", endpoint: "unix:///x.sock" }),
-        (erro) => erro.code === "UNSUPPORTED_RUNTIME_TYPE"
+        (erro: any) => erro.code === "UNSUPPORTED_RUNTIME_TYPE"
     )
     assert.equal(gerenciador.ListConnections().length, 0)
 })
@@ -192,7 +192,7 @@ test("remover a conexão a tira da lista e do cache", (t) => {
     gerenciador.RemoveConnection("id-1")
 
     assert.deepEqual(gerenciador.ListConnections(), [])
-    assert.throws(() => gerenciador.GetAdapter("id-1"), (erro) => erro.code === "CONNECTION_NOT_FOUND")
+    assert.throws(() => gerenciador.GetAdapter("id-1"), (erro: any) => erro.code === "CONNECTION_NOT_FOUND")
 })
 
 test("teste de conexão informa versão e reconhece o Podman pelo que ele responde", async (t) => {
@@ -266,8 +266,8 @@ test("descoberta marca o que já está cadastrado", (t) => {
     gerenciador.CreateConnection({ name: "docker", runtimeType: "docker", endpoint: "unix:///var/run/docker.sock" })
 
     const descobertas = gerenciador.DiscoverConnections()
-    assert.equal(descobertas.find((d) => d.runtimeType === "docker").alreadyRegistered, true)
-    assert.equal(descobertas.find((d) => d.runtimeType === "podman").alreadyRegistered, false)
+    assert.equal(descobertas.find((d: any) => d.runtimeType === "docker").alreadyRegistered, true)
+    assert.equal(descobertas.find((d: any) => d.runtimeType === "podman").alreadyRegistered, false)
 })
 
 test("arquivo de conexões corrompido não é tratado como lista vazia", (t) => {

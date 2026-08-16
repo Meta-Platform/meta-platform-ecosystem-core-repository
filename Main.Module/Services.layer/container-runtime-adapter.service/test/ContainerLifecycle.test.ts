@@ -5,22 +5,22 @@
     método errado do cliente, ou mandar o nome novo na chave errada, produz um
     "sucesso" que não fez nada.
 */
-const test = require("node:test")
-const assert = require("node:assert/strict")
+const test = require("node:test") as typeof import("node:test")
+const assert = require("node:assert/strict") as typeof import("node:assert/strict")
 
 const ContainerManager = require("../src/Managers/Container.manager")
 
 const CriarAdaptador = () => {
-    const chamadas = []
+    const chamadas: any[] = []
 
     const adaptador = ContainerManager({
         socketPath: "/tmp/irrelevante.sock",
         CreateClient: () => ({
             getEvents: () => {},
-            getContainer: (nome) => ({
+            getContainer: (nome: string) => ({
                 pause: async () => chamadas.push(["pause", nome]),
                 unpause: async () => chamadas.push(["unpause", nome]),
-                rename: async (opcoes) => chamadas.push(["rename", nome, opcoes])
+                rename: async (opcoes: any) => chamadas.push(["rename", nome, opcoes])
             })
         })
     })
@@ -75,7 +75,7 @@ test("nome novo ausente ou vazio é recusado como erro de entrada", async () => 
     for (const name of [undefined, "", "   ", 42]) {
         await assert.rejects(
             () => adaptador.RenameContainer({ containerIdOrName: "c", name }),
-            (erro) => erro.code === "INVALID_CONTAINER_NAME" && erro.statusCode === 400
+            (erro: any) => erro.code === "INVALID_CONTAINER_NAME" && erro.statusCode === 400
         )
     }
 

@@ -6,8 +6,8 @@
     afirmava sem que nada garantisse. Quando alguém adicionar uma operação a um
     lado só, aqui é onde vai aparecer, com o nome da operação na mensagem.
 */
-const test = require("node:test")
-const assert = require("node:assert/strict")
+const test = require("node:test") as typeof import("node:test")
+const assert = require("node:assert/strict") as typeof import("node:assert/strict")
 
 const ContainerManager = require("../src/Managers/Container.manager")
 const ContainerRuntimeClientService = require("../src/Services/ContainerRuntimeClient.service")
@@ -26,9 +26,9 @@ const CriarCliente = () => ContainerRuntimeClientService({
 
 test("toda operação do adaptador está declarada no manifesto", () => {
     const adaptador = CriarAdaptador()
-    const declaradas = new Set(RUNTIME_SURFACE.map((entrada) => entrada.name))
+    const declaradas = new Set(RUNTIME_SURFACE.map((entrada: any) => entrada.name))
 
-    const naoDeclaradas = Object.keys(adaptador).filter((nome) => !declaradas.has(nome))
+    const naoDeclaradas = Object.keys(adaptador).filter((nome: string) => !declaradas.has(nome))
 
     assert.deepEqual(
         naoDeclaradas,
@@ -42,8 +42,8 @@ test("toda operação do manifesto existe no adaptador", () => {
     const adaptador = CriarAdaptador()
 
     const faltando = RUNTIME_SURFACE
-        .map((entrada) => entrada.name)
-        .filter((nome) => typeof adaptador[nome] !== "function")
+        .map((entrada: any) => entrada.name)
+        .filter((nome: string) => typeof adaptador[nome] !== "function")
 
     assert.deepEqual(
         faltando,
@@ -55,7 +55,7 @@ test("toda operação do manifesto existe no adaptador", () => {
 test("toda operação marcada como suportada existe no cliente", () => {
     const cliente = CriarCliente()
 
-    const faltando = CLIENT_SUPPORTED.filter((nome) => typeof cliente[nome] !== "function")
+    const faltando = CLIENT_SUPPORTED.filter((nome: string) => typeof cliente[nome] !== "function")
 
     assert.deepEqual(
         faltando,
@@ -66,8 +66,8 @@ test("toda operação marcada como suportada existe no cliente", () => {
 
 test("operação não suportada declara o motivo", () => {
     const semMotivo = RUNTIME_SURFACE
-        .filter((entrada) => !entrada.clientSupported && !entrada.reason)
-        .map((entrada) => entrada.name)
+        .filter((entrada: any) => !entrada.clientSupported && !entrada.reason)
+        .map((entrada: any) => entrada.name)
 
     assert.deepEqual(
         semMotivo,
@@ -79,9 +79,9 @@ test("operação não suportada declara o motivo", () => {
 
 test("o cliente não inventa operação fora do manifesto", () => {
     const cliente = CriarCliente()
-    const declaradas = new Set(RUNTIME_SURFACE.map((entrada) => entrada.name))
+    const declaradas = new Set(RUNTIME_SURFACE.map((entrada: any) => entrada.name))
 
-    const extras = Object.keys(cliente).filter((nome) => !declaradas.has(nome))
+    const extras = Object.keys(cliente).filter((nome: string) => !declaradas.has(nome))
 
     assert.deepEqual(extras, [], `No cliente e fora do manifesto: ${extras.join(", ")}.`)
 })
@@ -97,7 +97,7 @@ test("stream chamado pelo cliente explica por que não dá, em vez de sumir", ()
         assert.equal(typeof cliente[nome], "function", `${nome} deveria existir no cliente`)
         assert.throws(
             () => cliente[nome]({}),
-            (erro) =>
+            (erro: any) =>
                 erro.code === "STREAM_UNSUPPORTED_OVER_SOCKET"
                 && erro.operation === nome
                 && erro.message.includes(motivo),

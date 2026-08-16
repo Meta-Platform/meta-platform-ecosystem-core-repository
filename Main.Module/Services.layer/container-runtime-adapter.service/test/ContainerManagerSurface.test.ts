@@ -26,13 +26,13 @@
     pare e confira quem chama — inclusive o ServiceOrchestrator, que vive em
     outro repositório.
 */
-const test = require("node:test")
-const assert = require("node:assert/strict")
+const test = require("node:test") as typeof import("node:test")
+const assert = require("node:assert/strict") as typeof import("node:assert/strict")
 
 const ContainerManager = require("../src/Managers/Container.manager")
 
 // nome/aridade, em ordem alfabética
-const SUPERFICIE_ESPERADA = [
+const SUPERFICIE_ESPERADA: string[] = [
     "BuildImageFromDockerfileContent/1",
     "BuildImageFromDockerfileString/1",
     "CheckImageUpdate/1",
@@ -127,7 +127,7 @@ test("a superfície pública é exatamente a de antes do fatiamento", () => {
 
     const atual = Object.keys(adaptador)
         .sort()
-        .map((nome) => `${nome}/${adaptador[nome].length}`)
+        .map((nome: string) => `${nome}/${adaptador[nome].length}`)
 
     assert.deepEqual(atual, SUPERFICIE_ESPERADA)
 })
@@ -136,7 +136,7 @@ test("toda operação exposta é função", () => {
     const adaptador = CriarAdaptador()
 
     const naoFuncoes = Object.keys(adaptador)
-        .filter((nome) => typeof adaptador[nome] !== "function")
+        .filter((nome: string) => typeof adaptador[nome] !== "function")
 
     assert.deepEqual(naoFuncoes, [], `Exposto e não é função: ${naoFuncoes.join(", ")}`)
 })
@@ -147,10 +147,10 @@ test("cada módulo de operações contribui, e nenhum sobrescreve o outro", () =
         nome, o último calaria o primeiro sem aviso nenhum. Somar os tamanhos e
         comparar com o total é o jeito barato de provar que não há colisão.
     */
-    const contextoFalso = {
+    const contextoFalso: any = {
         docker: { getEvents: () => {} },
         StreamToBuffer: async () => Buffer.alloc(0),
-        SafeFileName: (v) => String(v),
+        SafeFileName: (v: any) => String(v),
         ephemeral: {
             VOLUME_EXPORT_IMAGE: "alpine:latest",
             EnsureVolumeExportImage: async () => {},
@@ -160,16 +160,16 @@ test("cada módulo de operações contribui, e nenhum sobrescreve o outro", () =
         }
     }
 
-    const modulos = [
+    const modulos: any[] = [
         "../src/Operations/Containers.ops",
         "../src/Operations/Images.ops",
         "../src/Operations/Networks.ops",
         "../src/Operations/Volumes.ops",
         "../src/Operations/Files.ops",
         "../src/Operations/System.ops"
-    ].map((caminho) => require(caminho)(contextoFalso))
+    ].map((caminho: string) => require(caminho)(contextoFalso))
 
-    const somaDasPartes = modulos.reduce((total, modulo) => total + Object.keys(modulo).length, 0)
+    const somaDasPartes = modulos.reduce((total: number, modulo: any) => total + Object.keys(modulo).length, 0)
 
     assert.equal(
         somaDasPartes,

@@ -1,9 +1,9 @@
-const test = require("node:test")
-const assert = require("node:assert/strict")
+const test = require("node:test") as typeof import("node:test")
+const assert = require("node:assert/strict") as typeof import("node:assert/strict")
 
 const DiscoverLocalRuntimes = require("../src/Helpers/DiscoverLocalRuntimes")
 
-const ArquivosExistentes = (lista) => (caminho) => lista.includes(caminho)
+const ArquivosExistentes = (lista: string[]) => (caminho: string): boolean => lista.includes(caminho)
 
 test("encontra o socket do Docker do sistema", () => {
     const sugestoes = DiscoverLocalRuntimes({
@@ -47,7 +47,7 @@ test("Docker e Podman convivem: os dois aparecem", () => {
     })
     assert.equal(sugestoes.length, 2)
     assert.deepEqual(
-        sugestoes.map((s) => s.runtimeType).sort(),
+        sugestoes.map((s: any) => s.runtimeType).sort(),
         ["docker", "podman"]
     )
 })

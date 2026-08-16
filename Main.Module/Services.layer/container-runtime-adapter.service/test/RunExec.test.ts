@@ -6,14 +6,14 @@
     que de fato importa nesta operação — separar stdout de stderr, propagar o
     código de saída e não travar para sempre quando o comando não termina.
 */
-const test = require("node:test")
-const assert = require("node:assert/strict")
-const { PassThrough } = require("node:stream")
+const test = require("node:test") as typeof import("node:test")
+const assert = require("node:assert/strict") as typeof import("node:assert/strict")
+const { PassThrough } = require("node:stream") as typeof import("node:stream")
 
 const ContainerManager = require("../src/Managers/Container.manager")
 
 // Monta um quadro do protocolo do Docker: [tipo][0][0][0][tamanho:4 BE] + payload.
-const Quadro = (tipo, texto) => {
+const Quadro = (tipo: string, texto: string) => {
     const carga = Buffer.from(texto, "utf-8")
     const cabecalho = Buffer.alloc(8)
     cabecalho[0] = tipo === "stderr" ? 2 : 1
@@ -26,24 +26,24 @@ const Quadro = (tipo, texto) => {
     inspect devolve; `nuncaTermina` simula o comando pendurado, que é o caso
     que o timeout existe para resolver.
 */
-const DockerFalso = ({ quadros = [], exitCode = 0, nuncaTermina = false } = {}) => {
-    const registrado = {}
+const DockerFalso = ({ quadros = [], exitCode = 0, nuncaTermina = false }: any = {}) => {
+    const registrado: any = {}
 
     return {
         cliente: {
             getEvents: () => {},
-            getContainer: (nome) => {
+            getContainer: (nome: string) => {
                 registrado.containerIdOrName = nome
                 return {
-                    exec: async (opcoes) => {
+                    exec: async (opcoes: any) => {
                         registrado.exec = opcoes
                         return {
-                            start: async (inicio) => {
+                            start: async (inicio: any) => {
                                 registrado.start = inicio
                                 const fluxo = new PassThrough()
                                 // Escreve depois que quem chamou registrou os ouvintes.
                                 setImmediate(() => {
-                                    quadros.forEach((q) => fluxo.write(q))
+                                    quadros.forEach((q: any) => fluxo.write(q))
                                     if (!nuncaTermina) fluxo.end()
                                 })
                                 return fluxo
@@ -58,7 +58,7 @@ const DockerFalso = ({ quadros = [], exitCode = 0, nuncaTermina = false } = {}) 
     }
 }
 
-const CriarAdaptador = (configuracao) => {
+const CriarAdaptador = (configuracao?: any) => {
     const { cliente, registrado } = DockerFalso(configuracao)
     const adaptador = ContainerManager({
         socketPath: "/tmp/irrelevante.sock",
@@ -161,7 +161,7 @@ test("comando ausente ou vazio é RECUSADO como erro de entrada", async () => {
     for (const cmd of [undefined, [], "ls -la"]) {
         await assert.rejects(
             () => adaptador.RunExec({ containerIdOrName: "c", cmd }),
-            (erro) => erro.code === "INVALID_EXEC_COMMAND" && erro.statusCode === 400
+            (erro: any) => erro.code === "INVALID_EXEC_COMMAND" && erro.statusCode === 400
         )
     }
 })

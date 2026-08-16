@@ -7,42 +7,42 @@
     outro repositório. Chamada sem argumento tem de continuar fazendo o que
     fazia.
 */
-const test = require("node:test")
-const assert = require("node:assert/strict")
+const test = require("node:test") as typeof import("node:test")
+const assert = require("node:assert/strict") as typeof import("node:assert/strict")
 
 const ContainerManager = require("../src/Managers/Container.manager")
 const BuildNetworkOptions = require("../src/Helpers/BuildNetworkOptions")
 const { ParseByteSize, CpusToNanoCpus } = require("../src/Helpers/ParseByteSize")
 
-const CriarAdaptador = ({ falharStart, logs, ...respostas } = {}) => {
-    const registrado = { chamadas: [] }
+const CriarAdaptador = ({ falharStart, logs, ...respostas }: any = {}) => {
+    const registrado: any = { chamadas: [] }
 
     const cliente = {
         getEvents: () => {},
-        listContainers: async (o) => { registrado.listContainers = o; return [] },
-        listImages: async (o) => { registrado.listImages = o; return [] },
-        listNetworks: async (o) => { registrado.listNetworks = o; return [] },
-        listVolumes: async (o) => { registrado.listVolumes = o; return { Volumes: [] } },
-        pruneNetworks: async (o) => { registrado.pruneNetworks = o; return { NetworksDeleted: ["n"] } },
-        pruneVolumes: async (o) => { registrado.pruneVolumes = o; return { VolumesDeleted: ["v"], SpaceReclaimed: 9 } },
-        createNetwork: async (o) => { registrado.createNetwork = o; return { id: "rede" } },
-        createContainer: async (o) => {
+        listContainers: async (o: any) => { registrado.listContainers = o; return [] },
+        listImages: async (o: any) => { registrado.listImages = o; return [] },
+        listNetworks: async (o: any) => { registrado.listNetworks = o; return [] },
+        listVolumes: async (o: any) => { registrado.listVolumes = o; return { Volumes: [] } },
+        pruneNetworks: async (o: any) => { registrado.pruneNetworks = o; return { NetworksDeleted: ["n"] } },
+        pruneVolumes: async (o: any) => { registrado.pruneVolumes = o; return { VolumesDeleted: ["v"], SpaceReclaimed: 9 } },
+        createNetwork: async (o: any) => { registrado.createNetwork = o; return { id: "rede" } },
+        createContainer: async (o: any) => {
             registrado.createContainer = o
             return { id: "novo", inspect: async () => ({ Id: "id-novo", Name: "/novo" }) }
         },
-        getVolume: () => ({ remove: async (o) => registrado.chamadas.push(["volume.remove", o]) }),
+        getVolume: () => ({ remove: async (o: any) => registrado.chamadas.push(["volume.remove", o]) }),
         getImage: () => ({ inspect: async () => ({ Id: "sha256:imagem" }) }),
-        getContainer: (nome) => ({
+        getContainer: (nome: string) => ({
             start: async () => {
                 registrado.chamadas.push(["start", nome])
                 if (falharStart) throw new Error("porta 80 já está em uso")
             },
             inspect: async () => ({ Id: "id-novo", Name: "/novo", State: { Running: true } }),
             logs: async () => Buffer.from(logs ?? "", "utf-8"),
-            update: async (o) => { registrado.update = o; return respostas.update ?? { Warnings: [] } },
-            top: async (o) => { registrado.top = o; return respostas.top ?? { Titles: ["PID", "CMD"], Processes: [["1", "sh"]] } },
+            update: async (o: any) => { registrado.update = o; return respostas.update ?? { Warnings: [] } },
+            top: async (o: any) => { registrado.top = o; return respostas.top ?? { Titles: ["PID", "CMD"], Processes: [["1", "sh"]] } },
             changes: async () => respostas.changes ?? [{ Path: "/etc/hosts", Kind: 0 }, { Path: "/novo", Kind: 1 }, { Path: "/foi", Kind: 2 }],
-            commit: async (o) => { registrado.commit = o; return { Id: "sha256:imagem" } }
+            commit: async (o: any) => { registrado.commit = o; return { Id: "sha256:imagem" } }
         })
     }
 
@@ -103,7 +103,7 @@ test("criar e subir devolve o container já em execução", async () => {
 
     assert.equal(resultado.started, true)
     assert.equal(resultado.containerInfo.Id, "id-novo")
-    assert.deepEqual(registrado.chamadas.filter(([o]) => o === "start"), [["start", "id-novo"]])
+    assert.deepEqual(registrado.chamadas.filter(([o]: any) => o === "start"), [["start", "id-novo"]])
 })
 
 test("falha ao subir NÃO remove o container, e o erro carrega o log", async () => {
@@ -119,7 +119,7 @@ test("falha ao subir NÃO remove o container, e o erro carrega o log", async () 
 
     await assert.rejects(
         () => adaptador.CreateAndStartContainer({ imageName: "nginx", containerName: "web" }),
-        (erro) =>
+        (erro: any) =>
             erro.code === "CONTAINER_START_FAILED"
             && erro.containerId === "id-novo"
             && erro.logs.includes("bind() to 0.0.0.0:80 failed")
@@ -127,7 +127,7 @@ test("falha ao subir NÃO remove o container, e o erro carrega o log", async () 
     )
 
     // Nenhuma remoção foi tentada.
-    assert.equal(registrado.chamadas.some(([o]) => o === "remove"), false)
+    assert.equal(registrado.chamadas.some(([o]: any) => o === "remove"), false)
 })
 
 /* ------------------------------------- CTMG-38 · recursos em execução */
@@ -175,7 +175,7 @@ test("atualização sem nenhum recurso é recusada em vez de virar chamada vazia
 
     await assert.rejects(
         () => adaptador.UpdateContainerResources({ containerIdOrName: "c", resources: {} }),
-        (erro) => erro.code === "NO_RESOURCES_TO_UPDATE" && erro.statusCode === 400
+        (erro: any) => erro.code === "NO_RESOURCES_TO_UPDATE" && erro.statusCode === 400
     )
 })
 
@@ -263,7 +263,7 @@ test("remoção de volume sem nome é recusada antes de tocar no runtime", async
 
     await assert.rejects(
         () => adaptador.RemoveVolume({}),
-        (erro) => erro.code === "INVALID_VOLUME_NAME"
+        (erro: any) => erro.code === "INVALID_VOLUME_NAME"
     )
     assert.deepEqual(registrado.chamadas, [])
 })
@@ -286,7 +286,7 @@ test("gateway FORA da sub-rede é recusado — o daemon aceitaria", () => {
             name: "minha-rede",
             ipam: { config: [{ subnet: "172.20.0.0/16", gateway: "10.0.0.1" }] }
         }),
-        (erro) => erro.code === "INVALID_NETWORK_OPTIONS" && erro.field === "ipam.config[0].gateway"
+        (erro: any) => erro.code === "INVALID_NETWORK_OPTIONS" && erro.field === "ipam.config[0].gateway"
     )
 })
 
@@ -311,23 +311,23 @@ test("faixa de IP fora da sub-rede é recusada", () => {
             name: "r",
             ipam: { config: [{ subnet: "172.20.0.0/24", ipRange: "172.21.0.0/24" }] }
         }),
-        (erro) => erro.field === "ipam.config[0].ipRange"
+        (erro: any) => erro.field === "ipam.config[0].ipRange"
     )
 })
 
 test("CIDR malformado é recusado nomeando o campo", () => {
     assert.throws(
         () => BuildNetworkOptions({ name: "r", ipam: { config: [{ subnet: "172.20.0.0" }] } }),
-        (erro) => erro.field === "ipam.config[0].subnet"
+        (erro: any) => erro.field === "ipam.config[0].subnet"
     )
     assert.throws(
         () => BuildNetworkOptions({ name: "r", ipam: { config: [{ subnet: "999.1.1.0/24" }] } }),
-        (erro) => erro.field === "ipam.config[0].subnet"
+        (erro: any) => erro.field === "ipam.config[0].subnet"
     )
 })
 
 test("rede sem nome é recusada", () => {
-    assert.throws(() => BuildNetworkOptions({}), (erro) => erro.field === "name")
+    assert.throws(() => BuildNetworkOptions({}), (erro: any) => erro.field === "name")
 })
 
 test("a forma antiga do Docker (Name maiúsculo) passa intacta", async () => {
@@ -355,7 +355,7 @@ test("tamanho sem sentido é recusado em vez de virar um número qualquer", () =
     // "512m" tratado como 512 passaria a validação e criaria um container com
     // meio kilobyte de memória, que morre no primeiro instante.
     for (const invalido of ["muito", "12x", "-5", -1]) {
-        assert.throws(() => ParseByteSize(invalido), (erro) => erro.code === "INVALID_BYTE_SIZE")
+        assert.throws(() => ParseByteSize(invalido), (erro: any) => erro.code === "INVALID_BYTE_SIZE")
     }
 })
 
@@ -364,5 +364,5 @@ test("cpus vira nanossegundos por segundo", () => {
     assert.equal(CpusToNanoCpus(0.5), 5e8)
     assert.equal(CpusToNanoCpus("1,5"), 1.5e9)
     assert.equal(CpusToNanoCpus(undefined), undefined)
-    assert.throws(() => CpusToNanoCpus(0), (erro) => erro.code === "INVALID_BYTE_SIZE")
+    assert.throws(() => CpusToNanoCpus(0), (erro: any) => erro.code === "INVALID_BYTE_SIZE")
 })

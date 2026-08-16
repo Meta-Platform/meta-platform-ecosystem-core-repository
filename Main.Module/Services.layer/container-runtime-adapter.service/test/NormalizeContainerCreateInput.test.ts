@@ -1,5 +1,5 @@
-const test = require("node:test")
-const assert = require("node:assert/strict")
+const test = require("node:test") as typeof import("node:test")
+const assert = require("node:assert/strict") as typeof import("node:assert/strict")
 
 const {
     NormalizeMounts,
@@ -64,14 +64,14 @@ test("tmpfs não exige origem e aceita tamanho", () => {
 test("montagem sem destino é RECUSADA, nomeando o campo", () => {
     assert.throws(
         () => NormalizeMounts([{ type: "volume", source: "v" }]),
-        (erro) => erro.code === "INVALID_MOUNT" && erro.field === "mounts[0].target"
+        (erro: any) => erro.code === "INVALID_MOUNT" && erro.field === "mounts[0].target"
     )
 })
 
 test("montagem sem origem é RECUSADA, nomeando o campo", () => {
     assert.throws(
         () => NormalizeMounts([{ type: "volume", target: "/data" }]),
-        (erro) => erro.code === "INVALID_MOUNT" && erro.field === "mounts[0].source"
+        (erro: any) => erro.code === "INVALID_MOUNT" && erro.field === "mounts[0].source"
     )
 })
 
@@ -80,14 +80,14 @@ test("tipo desconhecido é RECUSADO em vez de descartado", () => {
     // parecer bem-sucedida com o dado do usuário jogado fora.
     assert.throws(
         () => NormalizeMounts([{ type: "nfs", source: "x", target: "/data" }]),
-        (erro) => erro.code === "INVALID_MOUNT" && erro.field === "mounts[0].type"
+        (erro: any) => erro.code === "INVALID_MOUNT" && erro.field === "mounts[0].type"
     )
 })
 
 test("bind mount com caminho relativo é recusado", () => {
     assert.throws(
         () => NormalizeMounts([{ type: "bind", source: "dados", target: "/data" }]),
-        (erro) => erro.code === "INVALID_MOUNT" && erro.field === "mounts[0].source"
+        (erro: any) => erro.code === "INVALID_MOUNT" && erro.field === "mounts[0].source"
     )
 })
 
@@ -96,11 +96,11 @@ test("erro de entrada sai como 400, não como falha do runtime", () => {
     // para o que é um campo preenchido errado.
     assert.throws(
         () => NormalizeMounts([{ type: "volume", source: "v" }]),
-        (erro) => erro.statusCode === 400 && erro.httpStatus === 400
+        (erro: any) => erro.statusCode === 400 && erro.httpStatus === 400
     )
     assert.throws(
         () => NormalizePorts([{ hostPort: 8080 }]),
-        (erro) => erro.statusCode === 400
+        (erro: any) => erro.statusCode === 400
     )
 })
 
@@ -151,14 +151,14 @@ test("publicar em um IP específico do host", () => {
 test("porta sem containerPort é recusada nomeando o campo", () => {
     assert.throws(
         () => NormalizePorts([{ hostPort: 8080 }]),
-        (erro) => erro.code === "INVALID_PORT" && erro.field === "ports[0].containerPort"
+        (erro: any) => erro.code === "INVALID_PORT" && erro.field === "ports[0].containerPort"
     )
 })
 
 test("protocolo desconhecido é recusado", () => {
     assert.throws(
         () => NormalizePorts([{ containerPort: 80, protocol: "icmp" }]),
-        (erro) => erro.code === "INVALID_PORT" && erro.field === "ports[0].protocol"
+        (erro: any) => erro.code === "INVALID_PORT" && erro.field === "ports[0].protocol"
     )
 })
 

@@ -1,9 +1,9 @@
-const test = require("node:test")
-const assert = require("node:assert/strict")
+const test = require("node:test") as typeof import("node:test")
+const assert = require("node:assert/strict") as typeof import("node:assert/strict")
 
 const CreateDockerStreamDecoder = require("../src/Helpers/DecodeDockerStream")
 
-const Quadro = (tipo, texto) => {
+const Quadro = (tipo: number, texto: string) => {
     const corpo = Buffer.from(texto, "utf-8")
     const cabecalho = Buffer.alloc(8)
     cabecalho[0] = tipo
@@ -12,8 +12,8 @@ const Quadro = (tipo, texto) => {
 }
 
 const Coletar = () => {
-    const eventos = []
-    const decodificador = CreateDockerStreamDecoder({ onData: (evento) => eventos.push(evento) })
+    const eventos: any[] = []
+    const decodificador = CreateDockerStreamDecoder({ onData: (evento: any) => eventos.push(evento) })
     return { eventos, decodificador }
 }
 
@@ -53,7 +53,7 @@ test("vários quadros no mesmo pedaço saem na ordem", () => {
     const { eventos, decodificador } = Coletar()
     decodificador.Push(Buffer.concat([Quadro(1, "um"), Quadro(1, "dois"), Quadro(1, "tres")]))
 
-    assert.deepEqual(eventos.map((e) => e.data), ["um", "dois", "tres"])
+    assert.deepEqual(eventos.map((e: any) => e.data), ["um", "dois", "tres"])
 })
 
 test("texto cru curto não fica preso esperando um quadro que não vem", () => {
@@ -103,9 +103,9 @@ test("pedaço vazio não emite evento", () => {
     U+FFFD.
 */
 test("acento partido entre dois pedaços é remontado", () => {
-    const recebidos = []
+    const recebidos: string[] = []
     const decodificador = CreateDockerStreamDecoder({
-        onData: ({ data }) => recebidos.push(data)
+        onData: ({ data }: any) => recebidos.push(data)
     })
 
     const texto = Buffer.from("informação\n", "utf-8")
@@ -126,12 +126,12 @@ test("stdout e stderr não completam o caractere um do outro", () => {
         stdout seria completado por um byte do stderr — e as duas saídas
         sairiam corrompidas.
     */
-    const porFluxo = { stdout: "", stderr: "" }
+    const porFluxo: Record<string, string> = { stdout: "", stderr: "" }
     const decodificador = CreateDockerStreamDecoder({
-        onData: ({ stream, data }) => { porFluxo[stream] += data }
+        onData: ({ stream, data }: any) => { porFluxo[stream] += data }
     })
 
-    const Quadro = (tipo, buffer) => {
+    const Quadro = (tipo: string, buffer: Buffer) => {
         const cabecalho = Buffer.alloc(8)
         cabecalho[0] = tipo === "stderr" ? 2 : 1
         cabecalho.writeUInt32BE(buffer.length, 4)

@@ -7,8 +7,8 @@
     funciona, com um sintoma que não aponta para a causa.
 */
 
-const test = require("node:test")
-const assert = require("node:assert")
+const test = require("node:test") as typeof import("node:test")
+const assert = require("node:assert") as typeof import("node:assert")
 
 const BuildNetworkOptions = require("../src/Helpers/BuildNetworkOptions")
 
@@ -17,7 +17,7 @@ test("o mínimo vira o Name do Docker", () => {
 })
 
 test("nome vazio é recusado com o campo nomeado", () => {
-    assert.throws(() => BuildNetworkOptions({ name: "  " }), (erro) => {
+    assert.throws(() => BuildNetworkOptions({ name: "  " }), (erro: any) => {
         assert.strictEqual(erro.code, "INVALID_NETWORK_OPTIONS")
         assert.strictEqual(erro.field, "name")
         return true
@@ -53,7 +53,7 @@ test("gateway fora da sub-rede é recusado — o daemon aceitaria", () => {
             name: "rede",
             ipam: { config: [{ subnet: "172.31.77.0/24", gateway: "10.0.0.1" }] }
         }),
-        (erro) => {
+        (erro: any) => {
             assert.strictEqual(erro.field, "ipam.config[0].gateway")
             assert.match(erro.message, /fora da sub-rede/)
             return true
@@ -66,7 +66,7 @@ test("faixa que não cabe na sub-rede é recusada", () => {
             name: "rede",
             ipam: { config: [{ subnet: "172.31.77.0/24", ipRange: "172.31.78.0/24" }] }
         }),
-        (erro) => {
+        (erro: any) => {
             assert.strictEqual(erro.field, "ipam.config[0].ipRange")
             return true
         })
@@ -80,7 +80,7 @@ test("faixa que não cabe na sub-rede é recusada", () => {
 test("sub-rede escrita na RAIZ é recusada, e a mensagem diz onde ela mora", () => {
     assert.throws(
         () => BuildNetworkOptions({ name: "rede", subnet: "172.31.77.0/24" }),
-        (erro) => {
+        (erro: any) => {
             assert.strictEqual(erro.field, "subnet")
             assert.match(erro.message, /ipam\.config/)
             return true
@@ -90,5 +90,5 @@ test("sub-rede escrita na RAIZ é recusada, e a mensagem diz onde ela mora", () 
 test("gateway na raiz também é recusado", () => {
     assert.throws(
         () => BuildNetworkOptions({ name: "rede", gateway: "172.31.77.1" }),
-        (erro) => erro.field === "gateway")
+        (erro: any) => erro.field === "gateway")
 })

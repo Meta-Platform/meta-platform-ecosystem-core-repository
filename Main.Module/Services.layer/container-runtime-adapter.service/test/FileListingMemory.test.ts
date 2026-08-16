@@ -13,9 +13,9 @@
     o que bufferiza tem teto e rejeita em vez de morrer — sem Docker e sem
     container.
 */
-const test = require("node:test")
-const assert = require("node:assert/strict")
-const { Readable } = require("node:stream")
+const test = require("node:test") as typeof import("node:test")
+const assert = require("node:assert/strict") as typeof import("node:assert/strict")
+const { Readable } = require("node:stream") as typeof import("node:stream")
 
 const StreamToBuffer = require("../src/Helpers/StreamToBuffer")
 const CreateFileOperations = require("../src/Operations/Files.ops")
@@ -30,8 +30,8 @@ const {
     Um tar com várias entradas a partir do construtor de arquivo único: cada
     pedaço perde os dois blocos zerados do fim, que só voltam uma vez, no fecho.
 */
-const MontarTar = (arquivos) => {
-    const corpos = arquivos.map(({ name, content = "" }) => {
+const MontarTar = (arquivos: any[]) => {
+    const corpos = arquivos.map(({ name, content = "" }: any) => {
         const inteiro = BuildTarWithSingleFile({ name, content })
         return inteiro.subarray(0, inteiro.length - BLOCK_SIZE * 2)
     })
@@ -40,7 +40,7 @@ const MontarTar = (arquivos) => {
 
 // Fatias pequenas de propósito: um cabeçalho parte ao meio entre dois chunks, e
 // o leitor precisa aguentar isso.
-const ComoFluxo = (buffer, tamanhoDoPedaco = 100) => Readable.from(
+const ComoFluxo = (buffer: Buffer, tamanhoDoPedaco: number = 100) => Readable.from(
     (function* () {
         for (let inicio = 0; inicio < buffer.length; inicio += tamanhoDoPedaco) {
             yield buffer.subarray(inicio, inicio + tamanhoDoPedaco)
@@ -58,7 +58,7 @@ test("o leitor em fluxo devolve os cabeçalhos mesmo com o tar picado", async ()
     const { entries, truncated } = await ReadTarEntriesFromStream(ComoFluxo(tar, 37))
 
     assert.equal(truncated, false)
-    assert.deepEqual(entries.map((e) => e.name), ["etc/", "etc/hosts", "etc/passwd"])
+    assert.deepEqual(entries.map((e: any) => e.name), ["etc/", "etc/hosts", "etc/passwd"])
     assert.equal(entries[1].size, 20)
     // Listar não carrega conteúdo — é justamente o que tornava a listagem cara.
     assert.equal(entries[1].content, undefined)
@@ -106,7 +106,7 @@ test("listar container parado não passa o tar pela memória", async () => {
     })
 
     assert.equal(resultado.source, "archive")
-    assert.deepEqual(resultado.entries.map((e) => e.name), ["ssl", "hosts"])
+    assert.deepEqual(resultado.entries.map((e: any) => e.name), ["ssl", "hosts"])
     assert.equal(resultado.entries[0].isDirectory, true)
     assert.equal(resultado.entries[1].size, 4096)
 })
@@ -116,7 +116,7 @@ test("listar container parado não passa o tar pela memória", async () => {
     aparecem num tar de filesystem: o `prefix` do USTAR e o cabeçalho estendido
     do PAX, que é o que o Go — e portanto o Docker — emite.
 */
-const ComPrefixoUstar = (prefix, name) => {
+const ComPrefixoUstar = (prefix: string, name: string) => {
     const bloco = BuildTarWithSingleFile({ name, content: "x" })
     bloco.write(prefix, 345, 155, "utf-8")
     // O checksum cobre o cabeçalho inteiro; mexer no prefixo o invalida.
@@ -127,7 +127,7 @@ const ComPrefixoUstar = (prefix, name) => {
     return bloco.subarray(0, bloco.length - BLOCK_SIZE * 2)
 }
 
-const ComCabecalhoPax = (caminho, nomeCurto) => {
+const ComCabecalhoPax = (caminho: string, nomeCurto: string) => {
     const registro = (() => {
         const corpo = `path=${caminho}\n`
         for (let tamanho = corpo.length + 2; ; tamanho += 1) {
@@ -160,7 +160,7 @@ test("caminho longo não vira entrada de primeiro nível", async () => {
 
     const { entries } = await ReadTarEntriesFromStream(ComoFluxo(tar, 64))
 
-    assert.deepEqual(entries.map((e) => e.name), [
+    assert.deepEqual(entries.map((e: any) => e.name), [
         "usr/lib/python3.11/__pycache__/",
         "usr/share/doc/pacote/muito/fundo/LEIAME"
     ])
@@ -177,7 +177,7 @@ test("a leitura por buffer conhece os mesmos caminhos longos", () => {
 
     const { entries } = ReadTarEntries(tar)
 
-    assert.deepEqual(entries.map((e) => e.name), [
+    assert.deepEqual(entries.map((e: any) => e.name), [
         "usr/lib/python3.11/__pycache__/",
         "usr/share/doc/pacote/muito/fundo/LEIAME"
     ])
@@ -188,7 +188,7 @@ test("o teto rejeita com 413 em vez de derrubar o processo", async () => {
 
     await assert.rejects(
         StreamToBuffer(grande, { limiteEmBytes: 1024, descricao: "O arquivo pedido" }),
-        (erro) => {
+        (erro: any) => {
             assert.equal(erro.code, "CONTENT_TOO_LARGE")
             assert.equal(erro.statusCode, 413)
             assert.match(erro.message, /O arquivo pedido/)

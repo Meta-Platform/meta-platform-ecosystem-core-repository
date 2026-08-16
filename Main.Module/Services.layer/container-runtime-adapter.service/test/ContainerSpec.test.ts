@@ -13,8 +13,8 @@
     cpus para NanoCpus. São contas que, erradas, não dão erro — dão um
     container que se comporta de um jeito que ninguém pediu.
 */
-const test = require("node:test")
-const assert = require("node:assert/strict")
+const test = require("node:test") as typeof import("node:test")
+const assert = require("node:assert/strict") as typeof import("node:assert/strict")
 
 const BuildContainerCreateOptions = require("../src/Helpers/BuildContainerCreateOptions")
 const { NormalizeLegacySpec } = require("../src/Helpers/BuildContainerCreateOptions")
@@ -217,7 +217,7 @@ test("a validação devolve TODOS os erros de uma vez, sem lançar", () => {
     })
 
     assert.equal(valid, false)
-    const campos = errors.map((e) => e.field).sort()
+    const campos = errors.map((e: any) => e.field).sort()
     assert.deepEqual(campos, ["image", "name", "resources.memoryBytes", "restart.policy"])
 })
 

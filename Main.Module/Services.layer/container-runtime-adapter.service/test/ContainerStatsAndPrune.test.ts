@@ -11,8 +11,8 @@
     2. Filtro de poda em forma errada não dá erro no Docker: ele é IGNORADO, e
        a poda apaga mais do que foi pedido.
 */
-const test = require("node:test")
-const assert = require("node:assert/strict")
+const test = require("node:test") as typeof import("node:test")
+const assert = require("node:assert/strict") as typeof import("node:assert/strict")
 
 const ContainerManager = require("../src/Managers/Container.manager")
 const NormalizeContainerStats = require("../src/Helpers/NormalizeContainerStats")
@@ -110,23 +110,23 @@ test("amostra vazia não quebra nem inventa valores", () => {
 
 /* ------------------------------------------- foto e stream, a mesma forma */
 
-const CriarAdaptador = ({ statsSnapshot, wait, prune } = {}) => {
-    const registrado = {}
+const CriarAdaptador = ({ statsSnapshot, wait, prune }: any = {}) => {
+    const registrado: any = {}
 
     const adaptador = ContainerManager({
         socketPath: "/tmp/irrelevante.sock",
         CreateClient: () => ({
             getEvents: () => {},
-            pruneContainers: async (opcoes) => {
+            pruneContainers: async (opcoes: any) => {
                 registrado.pruneOptions = opcoes
                 return prune ?? { ContainersDeleted: ["a", "b"], SpaceReclaimed: 1234 }
             },
             getContainer: () => ({
-                stats: async (opcoes) => {
+                stats: async (opcoes: any) => {
                     registrado.statsOptions = opcoes
                     return statsSnapshot ?? AMOSTRA
                 },
-                wait: async (opcoes) => {
+                wait: async (opcoes: any) => {
                     registrado.waitOptions = opcoes
                     return wait ?? { StatusCode: 0 }
                 }
@@ -232,7 +232,7 @@ test("filtro em forma impossível é recusado como erro de entrada", () => {
     for (const invalido of [["label=a"], 42, true]) {
         assert.throws(
             () => BuildPruneOptions(invalido),
-            (erro) => erro.code === "INVALID_FILTERS" && erro.statusCode === 400
+            (erro: any) => erro.code === "INVALID_FILTERS" && erro.statusCode === 400
         )
     }
 })
