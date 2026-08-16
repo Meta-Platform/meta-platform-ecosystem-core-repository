@@ -8,7 +8,10 @@ const InitializeInstanceStore = require("../src/InitializeInstanceStore")
 
 // Esta lib declara sequelize/sqlite3 mas não tem node_modules próprio no repo
 // (as dependências vêm no provisionamento). Para rodar o teste aqui:
-//   NODE_PATH=../workspace-store.lib/node_modules node --test test/
+//   NODE_PATH=../workspace-store.lib/node_modules npm test
+//
+// O `npm test` carrega a resolução de TypeScript antes: a fonte é .ts, e sem
+// ela o `require("../src/InitializeInstanceStore")` acima não acha nada.
 
 const TMP = path.join(process.env.MPM_TEST_DIR || os.tmpdir(), `instance-store-test-${process.pid}`)
 

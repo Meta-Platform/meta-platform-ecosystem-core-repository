@@ -1,5 +1,10 @@
+import type { EntitySpec, FileSpec, Issue } from "./Types"
+
 const fieldSets = require("./schema/field-sets.json")
-const { GetFileSpec, ResolveFileSpecForPath } = require("./GetMetadataSchema")
+const { GetFileSpec, ResolveFileSpecForPath } = require("./GetMetadataSchema") as {
+    GetFileSpec: (file: string) => FileSpec | undefined
+    ResolveFileSpecForPath: (path: unknown) => FileSpec | undefined
+}
 
 /*
     VALIDAÇÃO DE UM ARQUIVO DE METADADOS.
@@ -27,12 +32,12 @@ const { GetFileSpec, ResolveFileSpecForPath } = require("./GetMetadataSchema")
     lá?) fica fora de propósito: ver o cabeçalho de GetMetadataSchema.js.
 */
 
-const REFERENCE_PREFIXES = fieldSets.referencePrefixes || ["@/", "@@/", "@//"]
+const REFERENCE_PREFIXES: string[] = fieldSets.referencePrefixes || ["@/", "@@/", "@//"]
 
-const IsBlank = (value) =>
+const IsBlank = (value: unknown) =>
     value === undefined || value === null || `${value}`.trim() === ""
 
-const HasValidReferencePrefix = (value) =>
+const HasValidReferencePrefix = (value: string) =>
     REFERENCE_PREFIXES.some((prefix) => value.indexOf(prefix) === 0)
 
 /*
@@ -45,18 +50,18 @@ const HasValidReferencePrefix = (value) =>
     Documento que não casa com a forma esperada devolve lista vazia em vez de
     erro: um boot.json sem `windows` não tem problema nenhum de windows.
 */
-const ItemsOfEntity = (entity, data) => {
+const ItemsOfEntity = (entity: EntitySpec, data: any): any[] => {
     if (entity.path === "@root") return [data]
     const raw = entity.path === "" ? data : (data && data[entity.path])
     return Array.isArray(raw) ? raw : []
 }
 
-const ValidateMetadataFile = (file, data) => {
+const ValidateMetadataFile = (file: string, data: any): Issue[] => {
     const spec = GetFileSpec(file) || ResolveFileSpecForPath(file)
     if (!spec) return []
     if (data === undefined || data === null) return []
 
-    const issues = []
+    const issues: Issue[] = []
 
     for (const entity of spec.entities) {
         const items = ItemsOfEntity(entity, data)
@@ -111,9 +116,9 @@ const ValidateMetadataFile = (file, data) => {
     nunca foi lido. Os dois são "warning": nenhum dos dois é certeza de defeito, e
     a segunda metade pode ser param de outro consumidor.
 */
-const ValidateMetadataCrossFile = (metadata) => {
-    const issues = []
-    const Read = (file) => {
+const ValidateMetadataCrossFile = (metadata: any): Issue[] => {
+    const issues: Issue[] = []
+    const Read = (file: string) => {
         const content = metadata && metadata[file]
         if (!content || typeof content !== "object" || content.__error) return undefined
         return content
@@ -141,7 +146,7 @@ const ValidateMetadataCrossFile = (metadata) => {
         !startup && !!(metadata && metadata["metadata/startup-params.json"])
     if (startupIsPresentButUnreadable) return issues
 
-    const declaredNames = []
+    const declaredNames: string[] = []
     for (let index = 0; index < boot.params.length; index++) {
         const name = boot.params[index]
         if (typeof name !== "string" || name.trim() === "") continue
@@ -187,9 +192,9 @@ const ValidateMetadataCrossFile = (metadata) => {
     e ele tem que ser reportado com o nome do arquivo, não derrubar a validação
     do lote inteiro.
 */
-const ValidateMetadataFiles = (files) => {
-    const issues = []
-    const parsed = {}
+const ValidateMetadataFiles = (files: Record<string, unknown>): Issue[] => {
+    const issues: Issue[] = []
+    const parsed: Record<string, any> = {}
     const paths = Object.keys(files || {})
 
     for (const path of paths) {
@@ -198,7 +203,7 @@ const ValidateMetadataFiles = (files) => {
         if (typeof value === "string") {
             try {
                 data = JSON.parse(value)
-            } catch (error) {
+            } catch (error: any) {
                 issues.push({
                     file    : path,
                     entity  : "JSON",
@@ -223,7 +228,7 @@ const ValidateMetadataFiles = (files) => {
         senão o boot.json de um pacote seria comparado com o startup-params.json
         de outro — e o resultado seria um monte de aviso falso.
     */
-    const byPackage = {}
+    const byPackage: Record<string, Record<string, any>> = {}
     for (const path of Object.keys(parsed)) {
         const match = /^(.*?)metadata\/[^/]+\.json$/.exec(path.replace(/\\/g, "/"))
         if (!match) continue

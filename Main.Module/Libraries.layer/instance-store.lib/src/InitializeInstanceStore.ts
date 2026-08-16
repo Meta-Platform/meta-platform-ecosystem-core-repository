@@ -1,12 +1,30 @@
-const os   = require("os")
-const path = require("path")
-const { Sequelize, DataTypes, Op } = require("sequelize")
+import type { ExecutionIdentity } from "../../execution-identity.lib/src/DescribeExecution"
 
-const ConvertPathToAbsolutPath = (_path) =>
+const os   = require("os") as typeof import("os")
+const path = require("path") as typeof import("path")
+const { Sequelize, DataTypes, Op } = require("sequelize") as any
+
+const ConvertPathToAbsolutPath = (_path: string): string =>
     path.join(_path).replace("~", os.homedir())
 
 const RUNNING = "RUNNING"
 const STOPPED = "STOPPED"
+
+/** O que o daemon guarda sobre uma execução que ele colocou no ar. */
+export type Instance = {
+    instanceId: string
+    packagePath: string
+    kind: string
+    pid?: number | null
+    taskId?: number | null
+    executionId?: number | null
+    taskSocketPath?: string | null
+    launchedBy?: string | null
+    status: string
+    startedAt?: Date | null
+    stoppedAt?: Date | null
+    identity?: ExecutionIdentity
+}
 
 // Um processo com pid próprio (desktop/cli) sobrevive ao daemon; um app
 // in-process morre junto com ele. Ver Reconcile.
@@ -23,12 +41,12 @@ const LEGACY_TABLE = "Instances_legacy"
 
 // Checagem padrão de vida do processo: o sinal 0 não envia nada, apenas valida
 // que o pid existe e é sinalizável por este usuário.
-const DefaultIsProcessAlive = (pid) => {
+const DefaultIsProcessAlive = (pid?: number | null): boolean => {
     if(!pid) return false
     try {
         process.kill(pid, 0)
         return true
-    } catch(e) {
+    } catch(e: any) {
         // EPERM = existe, mas é de outro usuário → está vivo.
         return e.code === "EPERM"
     }
@@ -51,7 +69,7 @@ const DefaultIsProcessAlive = (pid) => {
  * `app` e `cli` continuam sendo um-por-packagePath: relançá-los sobrescreve o
  * registro anterior.
  */
-const InitializeInstanceStore = (storage) => {
+const InitializeInstanceStore = (storage: string) => {
 
     if(!storage) throw new Error("InitializeInstanceStore: 'storage' (caminho do .sqlite) é obrigatório.")
 
@@ -87,7 +105,7 @@ const InitializeInstanceStore = (storage) => {
     // existente, e o SQLite não tem "ADD COLUMN IF NOT EXISTS", então cada ALTER
     // roda em try/catch idempotente (ignora "duplicate column" / tabela nova).
     // Mesmo padrão do project-store.lib.
-    const ADDED_COLUMNS = [
+    const ADDED_COLUMNS: [string, string, string][] = [
         ["Instances", "taskSocketPath", "VARCHAR(255)"],
         ["Instances", "identityJson", "TEXT"]
     ]
@@ -117,7 +135,7 @@ const InitializeInstanceStore = (storage) => {
         const queryInterface = sequelize.getQueryInterface()
         const tableName = InstanceModel.getTableName()
 
-        let description
+        let description: Record<string, unknown>
         try {
             description = await queryInterface.describeTable(tableName)
         } catch(e) {
@@ -149,12 +167,12 @@ const InitializeInstanceStore = (storage) => {
         if(hasLegacyRows) await _CopyLegacyRows()
     }
 
-    const _parseIdentity = (raw) => {
+    const _parseIdentity = (raw?: string | null): ExecutionIdentity | undefined => {
         if(!raw) return undefined
         try { return JSON.parse(raw) } catch(e){ return undefined }
     }
 
-    const _serialize = ({ instanceId, packagePath, kind, pid, taskId, executionId, taskSocketPath, launchedBy, status, startedAt, stoppedAt, identityJson }) =>
+    const _serialize = ({ instanceId, packagePath, kind, pid, taskId, executionId, taskSocketPath, launchedBy, status, startedAt, stoppedAt, identityJson }: any): Instance =>
         ({ instanceId, packagePath, kind, pid, taskId, executionId, taskSocketPath, launchedBy, status, startedAt, stoppedAt,
            identity: _parseIdentity(identityJson) })
 
@@ -166,7 +184,16 @@ const InitializeInstanceStore = (storage) => {
      * do mesmo pacote. Os demais são um-por-pacote: se já houver uma instância
      * RUNNING daquele packagePath, ela é sobrescrita.
      */
-    const RegisterLaunch = async ({ instanceId, packagePath, kind, pid, taskId, executionId, taskSocketPath, launchedBy }) => {
+    const RegisterLaunch = async ({ instanceId, packagePath, kind, pid, taskId, executionId, taskSocketPath, launchedBy }: {
+        instanceId: string
+        packagePath: string
+        kind: string
+        pid?: number | null
+        taskId?: number | null
+        executionId?: number | null
+        taskSocketPath?: string | null
+        launchedBy?: string | null
+    }) => {
         if(!instanceId) throw new Error("RegisterLaunch: 'instanceId' é obrigatório.")
 
         const values = {
@@ -206,7 +233,13 @@ const InitializeInstanceStore = (storage) => {
      * Sempre cria linha nova (como desktop): duas sessões de IA podem ter dois
      * MCPs do mesmo pacote no ar ao mesmo tempo.
      */
-    const AttachExternal = async ({ instanceId, packagePath, pid, launchedBy, identity } = {}) => {
+    const AttachExternal = async ({ instanceId, packagePath, pid, launchedBy, identity }: {
+        instanceId?: string
+        packagePath?: string
+        pid?: number | null
+        launchedBy?: string | null
+        identity?: ExecutionIdentity
+    } = {}) => {
         if(!instanceId) throw new Error("AttachExternal: 'instanceId' é obrigatório.")
         if(!packagePath) throw new Error("AttachExternal: 'packagePath' é obrigatório.")
 
@@ -229,7 +262,7 @@ const InitializeInstanceStore = (storage) => {
 
     // Completa o registro depois que o runtime resolveu taskId/executionId (o
     // lançamento in-process só conhece esses ids após executar o ambiente).
-    const AttachRuntimeIds = async ({ instanceId, taskId, executionId }) => {
+    const AttachRuntimeIds = async ({ instanceId, taskId, executionId }: { instanceId: string, taskId?: number, executionId?: number }) => {
         const [count] = await InstanceModel.update(
             {
                 ...(taskId      !== undefined ? { taskId }      : {}),
@@ -239,7 +272,7 @@ const InitializeInstanceStore = (storage) => {
         return count > 0
     }
 
-    const MarkStopped = async ({ instanceId }) => {
+    const MarkStopped = async ({ instanceId }: { instanceId: string }) => {
         const [count] = await InstanceModel.update(
             { status: STOPPED, stoppedAt: new Date() },
             { where: { instanceId, status: RUNNING } })
@@ -248,14 +281,14 @@ const InitializeInstanceStore = (storage) => {
 
     // Encerra o registro de TODAS as instâncias RUNNING de um pacote. Usado no
     // encerramento por packagePath (que não distingue instâncias).
-    const MarkStoppedByPackage = async ({ packagePath }) => {
+    const MarkStoppedByPackage = async ({ packagePath }: { packagePath: string }) => {
         const [count] = await InstanceModel.update(
             { status: STOPPED, stoppedAt: new Date() },
             { where: { packagePath, status: RUNNING } })
         return count > 0
     }
 
-    const Remove = async ({ instanceId }) =>
+    const Remove = async ({ instanceId }: { instanceId: string }) =>
         await InstanceModel.destroy({ where: { instanceId } })
 
     const List = async () =>
@@ -264,10 +297,10 @@ const InitializeInstanceStore = (storage) => {
     const ListRunning = async () =>
         (await InstanceModel.findAll({ where: { status: RUNNING }, order: [["startedAt", "DESC"]] })).map(_serialize)
 
-    const ListRunningByPackage = async ({ packagePath }) =>
+    const ListRunningByPackage = async ({ packagePath }: { packagePath: string }) =>
         (await InstanceModel.findAll({ where: { packagePath, status: RUNNING }, order: [["startedAt", "ASC"]] })).map(_serialize)
 
-    const Get = async ({ instanceId }) => {
+    const Get = async ({ instanceId }: { instanceId: string }) => {
         const instance = await InstanceModel.findOne({ where: { instanceId } })
         return instance ? _serialize(instance) : undefined
     }
@@ -283,11 +316,11 @@ const InitializeInstanceStore = (storage) => {
      *
      * Devolve o que foi readotado e o que foi limpo, para o chamador logar.
      */
-    const Reconcile = async ({ IsProcessAlive = DefaultIsProcessAlive } = {}) => {
+    const Reconcile = async ({ IsProcessAlive = DefaultIsProcessAlive }: { IsProcessAlive?: (pid?: number | null) => boolean } = {}) => {
         const runningList = await ListRunning()
 
-        const adopted = []
-        const cleaned = []
+        const adopted: Instance[] = []
+        const cleaned: Instance[] = []
 
         for (const instance of runningList) {
             // Externo tem processo próprio e pode morrer sem detach (kill -9,

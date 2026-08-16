@@ -1,3 +1,5 @@
+import type { FileSpec } from "./Types"
+
 const fieldSets = require("./schema/field-sets.json")
 
 /*
@@ -28,7 +30,7 @@ const SCHEMA_VERSION = fieldSets.schemaVersion
 // Cópia defensiva: o objeto devolvido vai para dentro de uma resposta HTTP e para
 // dentro de formulários. Um consumidor que o mutasse (ordenar campos, por
 // exemplo) mudaria o contrato para todos os pedidos seguintes do processo.
-const Clone = (value) => JSON.parse(JSON.stringify(value))
+const Clone = <Value>(value: Value): Value => JSON.parse(JSON.stringify(value))
 
 const GetMetadataSchema = () => Clone({
     schemaVersion     : SCHEMA_VERSION,
@@ -38,8 +40,8 @@ const GetMetadataSchema = () => Clone({
     requiredFilesByPackageType : fieldSets.requiredFilesByPackageType
 })
 
-const GetFileSpec = (file) => {
-    const found = (fieldSets.files || []).filter((spec) => spec.file === file)[0]
+const GetFileSpec = (file: string): FileSpec | undefined => {
+    const found = (fieldSets.files || []).filter((spec: FileSpec) => spec.file === file)[0]
     return found ? Clone(found) : undefined
 }
 
@@ -49,7 +51,7 @@ const GetFileSpec = (file) => {
     esquema teria que conhecer caminhos de pacote, e passaria a depender da
     convenção de diretórios para validar o conteúdo de um arquivo.
 */
-const ResolveFileSpecForPath = (path) => {
+const ResolveFileSpecForPath = (path: unknown): FileSpec | undefined => {
     if (typeof path !== "string" || path === "") return undefined
     const normalized = path.replace(/\\/g, "/")
     const match = /(metadata\/[^/]+\.json)$/.exec(normalized)
@@ -57,9 +59,9 @@ const ResolveFileSpecForPath = (path) => {
     return GetFileSpec(match[1])
 }
 
-const IsKnownMetadataFile = (file) => !!GetFileSpec(file)
+const IsKnownMetadataFile = (file: string) => !!GetFileSpec(file)
 
-const GetRequiredFiles = (packageType) => {
+const GetRequiredFiles = (packageType: string): string[] => {
     const table = fieldSets.requiredFilesByPackageType || {}
     return Clone(table[packageType] || table.lib || [])
 }
