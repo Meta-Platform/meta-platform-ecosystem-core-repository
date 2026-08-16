@@ -1,5 +1,9 @@
+import type { ApiCall, MountedAPIs, ServerAPIs } from "../../mount-api.lib/src/Types"
 
-const MountAPIs = require("../../mount-api.lib/src/MountAPIs")
+const MountAPIs = require("../../mount-api.lib/src/MountAPIs") as (options: {
+    serverResourceEndpointPath: string
+    mainApplicationSocketPath: string
+}) => Promise<MountedAPIs | undefined>
 
 // Nome do servidor exposto pelo daemon `executor-manager`
 // (ecosystem-instance-manager.app), definido em metadata/startup-params.json.
@@ -32,6 +36,10 @@ const CreateInstanceManagerClient = ({
     platformApplicationSocketPath,
     httpServerManagerEndpoint = DEFAULT_SERVER_STATUS_ENDPOINT,
     serverName = DEFAULT_SERVER_NAME
+}: {
+    platformApplicationSocketPath: string
+    httpServerManagerEndpoint?: string
+    serverName?: string
 }) => {
 
     if(!platformApplicationSocketPath)
@@ -43,7 +51,7 @@ const CreateInstanceManagerClient = ({
     // mesmo que o daemon reinicie. Em caso de falha, o cache é invalidado
     // para permitir nova tentativa depois (ex.: quando a supervisão religar
     // o daemon).
-    let apisPromise
+    let apisPromise: Promise<Record<string, ServerAPIs | undefined>> | undefined
 
     const _Connect = async () => {
         const APIs = await MountAPIs({
@@ -72,7 +80,7 @@ const CreateInstanceManagerClient = ({
         return apisPromise
     }
 
-    const _FindMethod = async (controllerName, methodName) => {
+    const _FindMethod = async (controllerName: string, methodName: string): Promise<ApiCall | undefined> => {
         const controllers = await _GetAPIs()
         const controller = controllers[controllerName]
         const method = controller && controller[methodName]
@@ -86,7 +94,7 @@ const CreateInstanceManagerClient = ({
     // (o cache só era invalidado em erro de chamada, não em método ausente).
     // Por isso: método ausente invalida o cache e força UMA remontagem — se o
     // daemon já terminou de subir, a segunda tentativa acha o método.
-    const _ResolveMethod = async (controllerName, methodName) => {
+    const _ResolveMethod = async (controllerName: string, methodName: string): Promise<ApiCall> => {
         const method = await _FindMethod(controllerName, methodName)
         if(method)
             return method
@@ -103,7 +111,7 @@ const CreateInstanceManagerClient = ({
 
     // Chamada HTTP (request/response). Em caso de erro invalida o cache das
     // APIs, forçando remontagem na próxima chamada.
-    const _Call = async (controllerName, methodName, args = {}) => {
+    const _Call = async (controllerName: string, methodName: string, args: any = {}) => {
         const method = await _ResolveMethod(controllerName, methodName)
         try {
             return await method(args)
@@ -115,7 +123,7 @@ const CreateInstanceManagerClient = ({
 
     // Abertura de canal WebSocket (streams). Retorna o socket já aberto;
     // o consumidor é responsável por assinar eventos e fechá-lo.
-    const _OpenStream = async (controllerName, methodName, args = {}) => {
+    const _OpenStream = async (controllerName: string, methodName: string, args: any = {}) => {
         const method = await _ResolveMethod(controllerName, methodName)
         return method(args)
     }
@@ -140,22 +148,22 @@ const CreateInstanceManagerClient = ({
         // identifica quem pediu (my-desktop, instance-executor-panel…) e fica
         // registrado junto da instância. Devolve `{ instanceId }` — a identidade
         // desta execução, necessária para encerrá-la depois.
-        RunPackage: ({ packagePath, startupParams, launchedBy } = {}) =>
+        RunPackage: ({ packagePath, startupParams, launchedBy }: { packagePath?: string, startupParams?: any, launchedBy?: string } = {}) =>
             _Call("EcosystemManager", "RunPackage", { packagePath, startupParams, launchedBy }),
 
         // Encerra TODAS as instâncias de um pacote pelo seu caminho.
-        StopPackage: ({ packagePath } = {}) =>
+        StopPackage: ({ packagePath }: { packagePath?: string } = {}) =>
             _Call("EcosystemManager", "StopPackage", { packagePath }),
 
         // Encerra UMA instância pelo seu id (um pacote desktop pode estar aberto
         // várias vezes; é assim que se fecha a janela certa).
-        StopInstance: ({ instanceId } = {}) =>
+        StopInstance: ({ instanceId }: { instanceId?: string } = {}) =>
             _Call("EcosystemManager", "StopInstance", { instanceId }),
 
         // Traz para frente a janela de UMA instância desktop (foco), em vez de
         // abrir outra. Devolve `{ focused }` — false quando a instância não tem
         // janela ou o canal de foco não está disponível.
-        FocusInstance: ({ instanceId } = {}) =>
+        FocusInstance: ({ instanceId }: { instanceId?: string } = {}) =>
             _Call("EcosystemManager", "FocusInstance", { instanceId }),
 
         // Lista os pacotes supervisionados pelo daemon.
@@ -176,15 +184,15 @@ const CreateInstanceManagerClient = ({
 
         // Tarefas internas de UMA instância (o daemon consulta o socket do
         // processo dela — usado para instâncias desktop, que rodam separadas).
-        ListInstanceTasks: ({ instanceId } = {}) =>
+        ListInstanceTasks: ({ instanceId }: { instanceId?: string } = {}) =>
             _Call("EcosystemManager", "ListInstanceTasks", { instanceId }),
 
         // Stream (WS) das tarefas internas de uma instância — push, sem polling.
-        OpenInstanceTaskStream: ({ instanceId } = {}) =>
+        OpenInstanceTaskStream: ({ instanceId }: { instanceId?: string } = {}) =>
             _OpenStream("EcosystemManager", "InstanceTaskStream", { instanceId }),
 
         // Encerra tarefas internas de uma instância desktop.
-        StopInstanceTasks: ({ instanceId, taskIds } = {}) =>
+        StopInstanceTasks: ({ instanceId, taskIds }: { instanceId?: string, taskIds?: string[] } = {}) =>
             _Call("EcosystemManager", "StopInstanceTasks", { instanceId, taskIds }),
 
         // Stream de progresso de lançamento de aplicações (abrindo → build →
@@ -197,12 +205,12 @@ const CreateInstanceManagerClient = ({
         // Log de UMA instância (stdout/stderr do processo, para desktop; as
         // transições de estado da execução, para app in-process). Sem
         // `fromOffset` devolve as últimas linhas; com ele, só o que veio depois.
-        ReadInstanceLog: ({ instanceId, tailLines, fromOffset } = {}) =>
+        ReadInstanceLog: ({ instanceId, tailLines, fromOffset }: { instanceId?: string, tailLines?: number, fromOffset?: number } = {}) =>
             _Call("EcosystemManager", "ReadInstanceLog", { instanceId, tailLines, fromOffset }),
 
         // Acompanhamento ao vivo do log de uma instância (WebSocket): manda o
         // trecho atual e depois cada incremento.
-        OpenInstanceLogStream: ({ instanceId } = {}) =>
+        OpenInstanceLogStream: ({ instanceId }: { instanceId?: string } = {}) =>
             _OpenStream("EcosystemManager", "InstanceLogStream", { instanceId }),
 
         // Inventário dos logs em disco — inclusive de instâncias já encerradas,
@@ -215,7 +223,7 @@ const CreateInstanceManagerClient = ({
             _Call("EcosystemManager", "ListInstanceMetrics"),
 
         // Série histórica de desempenho de UMA instância, para o gráfico.
-        GetInstanceMetrics: ({ instanceId, limit } = {}) =>
+        GetInstanceMetrics: ({ instanceId, limit }: { instanceId?: string, limit?: number } = {}) =>
             _Call("EcosystemManager", "GetInstanceMetrics", { instanceId, limit }),
 
         // Stream (WS) das amostras de desempenho, uma a cada tick do daemon.
@@ -229,15 +237,15 @@ const CreateInstanceManagerClient = ({
             _Call("TaskExecutorMachine", "ListTasks"),
 
         // Detalha uma tarefa pelo id.
-        GetTask: ({ taskId } = {}) =>
+        GetTask: ({ taskId }: { taskId?: string } = {}) =>
             _Call("TaskExecutorMachine", "GetTask", { taskId }),
 
         // Cria tarefas a partir de parâmetros de execução já resolvidos.
-        CreateTasks: ({ executionParams } = {}) =>
+        CreateTasks: ({ executionParams }: { executionParams?: any } = {}) =>
             _Call("TaskExecutorMachine", "CreateTasks", { executionParams }),
 
         // Encerra tarefas pelos seus ids.
-        StopTasks: ({ taskIds } = {}) =>
+        StopTasks: ({ taskIds }: { taskIds?: string[] } = {}) =>
             _Call("TaskExecutorMachine", "StopTasks", { taskIds }),
 
         // Stream de mudança de status das tarefas (WebSocket).
@@ -247,7 +255,7 @@ const CreateInstanceManagerClient = ({
         // ---- EnvironmentRuntime (ambientes em execução) ---------------------
 
         // Executa um ambiente a partir do seu caminho.
-        ExecuteEnvironment: ({ environmentPath } = {}) =>
+        ExecuteEnvironment: ({ environmentPath }: { environmentPath?: string } = {}) =>
             _Call("EnvironmentRuntime", "ExecuteEnvironment", { environmentPath }),
 
         // Lista os ambientes em execução.
@@ -255,24 +263,24 @@ const CreateInstanceManagerClient = ({
             _Call("EnvironmentRuntime", "ListRunningEnvironments"),
 
         // Encerra uma execução pelo seu id.
-        StopExecution: ({ executionId } = {}) =>
+        StopExecution: ({ executionId }: { executionId?: string } = {}) =>
             _Call("EnvironmentRuntime", "StopExecution", { executionId }),
 
         // Stream de mudança de status de uma execução (WebSocket).
-        OpenExecutionStatusStream: ({ executionId } = {}) =>
+        OpenExecutionStatusStream: ({ executionId }: { executionId?: string } = {}) =>
             _OpenStream("EnvironmentRuntime", "ExecutionStatusChange", { executionId }),
 
         // ---- CommandLineRuntime (pacotes CLI com terminal/PTY) --------------
 
         // Inicia um pacote CLI num terminal (PTY) e retorna { terminalId, executableName }.
-        RunCommandLinePackage: ({ packagePath, commandLineArgs, cols, rows } = {}) =>
+        RunCommandLinePackage: ({ packagePath, commandLineArgs, cols, rows }: { packagePath?: string, commandLineArgs?: string[], cols?: number, rows?: number } = {}) =>
             _Call("CommandLineRuntime", "RunPackage", { packagePath, commandLineArgs, cols, rows }),
 
         // Executa um COMANDO CRU (sem pacote/boot.json) num terminal e retorna
         // { terminalId }. A saída e o código de saída vêm pelo TerminalStream —
         // é o caminho para rodar um comando de verificação e ficar com o
         // resultado sem sair do daemon.
-        RunCommand: ({ command, args, cwd, cols, rows, env } = {}) =>
+        RunCommand: ({ command, args, cwd, cols, rows, env }: { command?: string, args?: string[], cwd?: string, cols?: number, rows?: number, env?: Record<string, string> } = {}) =>
             _Call("CommandLineRuntime", "RunCommand", { command, args, cwd, cols, rows, env }),
 
         // Lista as sessões de terminal abertas.
@@ -280,11 +288,11 @@ const CreateInstanceManagerClient = ({
             _Call("CommandLineRuntime", "List"),
 
         // Encerra uma sessão de terminal (mata o processo do CLI).
-        KillTerminal: ({ terminalId } = {}) =>
+        KillTerminal: ({ terminalId }: { terminalId?: string } = {}) =>
             _Call("CommandLineRuntime", "Kill", { terminalId }),
 
         // Abre o canal WebSocket bidirecional de um terminal (I/O + resize).
-        OpenTerminalStream: ({ terminalId } = {}) =>
+        OpenTerminalStream: ({ terminalId }: { terminalId?: string } = {}) =>
             _OpenStream("CommandLineRuntime", "TerminalStream", { terminalId })
     }
 }

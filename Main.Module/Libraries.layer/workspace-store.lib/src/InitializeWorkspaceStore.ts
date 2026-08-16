@@ -1,8 +1,8 @@
-const os   = require("os")
-const path = require("path")
-const { Sequelize, DataTypes } = require("sequelize")
+const os   = require("os") as typeof import("os")
+const path = require("path") as typeof import("path")
+const { Sequelize, DataTypes } = require("sequelize") as any
 
-const ConvertPathToAbsolutPath = (_path) =>
+const ConvertPathToAbsolutPath = (_path: string): string =>
     path.join(_path).replace("~", os.homedir())
 
 /**
@@ -17,7 +17,7 @@ const ConvertPathToAbsolutPath = (_path) =>
  * Caminho do arquivo segue o padrão do virtual-desk
  * (~/virtual-desk-state/local-databases/*.sqlite).
  */
-const InitializeWorkspaceStore = (storage) => {
+const InitializeWorkspaceStore = (storage: string) => {
 
     const sequelize = new Sequelize({
         dialect: "sqlite",
@@ -42,7 +42,7 @@ const InitializeWorkspaceStore = (storage) => {
         await sequelize.sync()
     }
 
-    const _serialize = ({ name, path, lastAccessedAt }) => ({ name, path, lastAccessedAt })
+    const _serialize = ({ name, path, lastAccessedAt }: any) => ({ name, path, lastAccessedAt })
 
     const List = async () =>
         (await WorkspaceModel.findAll({ order: [["name", "ASC"]] })).map(_serialize)
@@ -54,32 +54,32 @@ const InitializeWorkspaceStore = (storage) => {
             limit
         })).map(_serialize)
 
-    const Get = async ({ name }) => {
+    const Get = async ({ name }: { name: string }) => {
         const workspace = await WorkspaceModel.findOne({ where: { name } })
         return workspace ? _serialize(workspace) : undefined
     }
 
-    const Create = async ({ name, path }) => {
+    const Create = async ({ name, path }: { name: string, path: string }) => {
         const [workspace] = await WorkspaceModel.upsert({ name, path, lastAccessedAt: new Date() })
         return _serialize(workspace)
     }
 
     // Marca o repositório como acessado agora (para os recentes).
-    const Touch = async ({ name }) => {
+    const Touch = async ({ name }: { name: string }) => {
         const [count] = await WorkspaceModel.update({ lastAccessedAt: new Date() }, { where: { name } })
         return count > 0
     }
 
-    const Remove = async ({ name }) =>
+    const Remove = async ({ name }: { name: string }) =>
         await WorkspaceModel.destroy({ where: { name } })
 
     // -------- AppState (memória da IDE) --------
-    const GetState = async (key) => {
+    const GetState = async (key: string) => {
         const state = await AppStateModel.findOne({ where: { key } })
         return state ? state.value : undefined
     }
 
-    const SetState = async (key, value) => {
+    const SetState = async (key: string, value: unknown) => {
         await AppStateModel.upsert({ key, value })
         return value
     }

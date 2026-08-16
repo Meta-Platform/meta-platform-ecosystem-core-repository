@@ -1,4 +1,11 @@
-const { spawn } = require("node:child_process")
+const { spawn } = require("node:child_process") as typeof import("node:child_process")
+
+/** O que o supervisor conta a quem o observa, sem decidir nada por ele. */
+type SupervisorEvent =
+    | { type: "starting", command: string, args: string[] }
+    | { type: "error", message: string }
+    | { type: "exited", code: number | null, signal: NodeJS.Signals | null }
+    | { type: "restarting", inMs: number }
 
 // Supervisor de processo com AUTO-RESTART: mantém um processo vivo, reiniciando-o
 // sempre que ele terminar. Usa backoff exponencial entre tentativas, resetando o
@@ -16,16 +23,26 @@ const CreateProcessSupervisor = ({
     stableAfterMs = 10000,
     beforeSpawn = () => {},
     onEvent = () => {}
+}: {
+    command: string
+    args?: string[]
+    env?: NodeJS.ProcessEnv
+    cwd?: string
+    minBackoffMs?: number
+    maxBackoffMs?: number
+    stableAfterMs?: number
+    beforeSpawn?: () => void
+    onEvent?: (event: SupervisorEvent) => void
 }) => {
 
-    let child = null
+    let child: import("node:child_process").ChildProcess | null = null
     let stopped = false
     let backoff = minBackoffMs
-    let restartTimer = null
+    let restartTimer: NodeJS.Timeout | null = null
 
     const _SpawnOnce = () => {
         const startedAt = Date.now()
-        try { beforeSpawn() } catch(e){ onEvent({ type: "error", message: (e && e.message) || String(e) }) }
+        try { beforeSpawn() } catch(e: any){ onEvent({ type: "error", message: (e && e.message) || String(e) }) }
         onEvent({ type: "starting", command, args })
 
         child = spawn(command, args, { cwd, env, stdio: "inherit" })

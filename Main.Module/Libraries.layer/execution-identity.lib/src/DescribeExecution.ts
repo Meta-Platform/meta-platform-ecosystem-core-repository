@@ -1,6 +1,6 @@
-const fs = require("fs")
-const { join, resolve } = require("path")
-const { execFileSync } = require("child_process")
+const fs = require("fs") as typeof import("fs")
+const { join, resolve } = require("path") as typeof import("path")
+const { execFileSync } = require("child_process") as typeof import("child_process")
 
 // "O QUE exatamente está rodando aqui?"
 //
@@ -12,12 +12,36 @@ const { execFileSync } = require("child_process")
 //
 // Tudo aqui é best-effort: nenhuma coleta pode derrubar quem está subindo.
 
+/** De onde o processo saiu. Ver `_describeOrigin`. */
+type ExecutionOrigin = "pkg-binary" | "source" | "release"
+
+type PackageInfo = {
+    name?: string
+    version?: string
+    namespace?: string
+}
+
+export type ExecutionIdentity = {
+    packagePath?: string
+    name?: string
+    namespace?: string
+    version: string | null
+    origin?: ExecutionOrigin
+    executablePath?: string
+    branch?: string
+    commit?: string
+    pid: number
+    node: string
+    startedAt: string
+    [field: string]: unknown
+}
+
 // Versão declarada do pacote. `metadata/package.json` é o metadado da plataforma
 // e costuma trazer só o namespace; a versão de fato vive no package.json npm ao
 // lado — lemos os dois, nessa ordem de preferência.
-const _readPackageInfo = (packagePath) => {
-    const out = { name: undefined, version: undefined, namespace: undefined }
-    const read = (file) => {
+const _readPackageInfo = (packagePath: string): PackageInfo => {
+    const out: PackageInfo = { name: undefined, version: undefined, namespace: undefined }
+    const read = (file: string): any => {
         try { return JSON.parse(fs.readFileSync(file, "utf8")) } catch(e){ return undefined }
     }
     const meta = read(join(packagePath, "metadata", "package.json"))
@@ -38,11 +62,13 @@ const _readPackageInfo = (packagePath) => {
 //  - pkg-binary: empacotado (process.pkg / PKG_EXECPATH), o caso do pkg-exec;
 //  - source: fonte provisionada em EcosystemData/repos (o normal em dev);
 //  - release: fonte fora do EcosystemData (baixada, clonada à mão…).
-const _describeOrigin = (packagePath) => {
+const _describeOrigin = (packagePath?: string): { origin: ExecutionOrigin, executablePath: string } => {
     const execPath = process.env.PKG_EXECPATH && process.env.PKG_EXECPATH !== "PKG_INVOKE_NODEJS"
         ? process.env.PKG_EXECPATH
         : undefined
-    if(execPath || process.pkg)
+    // `process.pkg` só existe dentro de um binário empacotado — o @types/node
+    // não o conhece, e não teria como: quem o cria é o empacotador.
+    if(execPath || (process as any).pkg)
         return { origin: "pkg-binary", executablePath: execPath || process.execPath }
     const inEcosystem = /[/\\]EcosystemData[/\\]repos[/\\]/.test(packagePath || "")
     return {
@@ -53,8 +79,8 @@ const _describeOrigin = (packagePath) => {
 
 // Branch e commit de onde o pacote foi provisionado. Release baixado não tem
 // git — e isso não é erro, é informação (o campo simplesmente não vem).
-const _gitSnapshot = (cwd) => {
-    const run = (args) => {
+const _gitSnapshot = (cwd?: string): { branch?: string, commit?: string } => {
+    const run = (args: string[]): string | undefined => {
         try {
             return execFileSync("git", args, { cwd, stdio: ["ignore", "pipe", "ignore"] }).toString().trim() || undefined
         } catch(e){ return undefined }
@@ -66,14 +92,13 @@ const _gitSnapshot = (cwd) => {
 /**
  * Identidade da execução corrente.
  *
- * @param {string} packagePath  caminho do pacote que está sendo executado
- * @param {object} [extra]      campos adicionais a fundir (ex.: launchedBy)
- * @returns {object} { packagePath, name, namespace, version, origin,
- *                     executablePath, branch, commit, pid, startedAt, node }
+ * `packagePath` é o caminho do pacote que está sendo executado; o resto do
+ * objeto (`extra`) é fundido no resultado — é por onde entra, por exemplo, o
+ * `launchedBy`.
  */
-const DescribeExecution = ({ packagePath, ...extra } = {}) => {
+const DescribeExecution = ({ packagePath, ...extra }: { packagePath?: string, [field: string]: unknown } = {}): ExecutionIdentity => {
     const absolute = packagePath ? resolve(packagePath) : undefined
-    const info = absolute ? _readPackageInfo(absolute) : {}
+    const info: PackageInfo = absolute ? _readPackageInfo(absolute) : {}
     const origin = _describeOrigin(absolute)
     const git = absolute && fs.existsSync(absolute) ? _gitSnapshot(absolute) : {}
     return {
@@ -100,7 +125,7 @@ const DescribeExecution = ({ packagePath, ...extra } = {}) => {
  * Devolve `null` quando não dá para saber (sem versão declarada) — melhor um
  * "não sei" explícito do que um falso "está atualizada".
  */
-const IsOutdated = ({ identity } = {}) => {
+const IsOutdated = ({ identity }: { identity?: ExecutionIdentity } = {}) => {
     if(!identity || !identity.packagePath || !identity.version) return null
     const current = _readPackageInfo(identity.packagePath).version
     if(!current) return null
