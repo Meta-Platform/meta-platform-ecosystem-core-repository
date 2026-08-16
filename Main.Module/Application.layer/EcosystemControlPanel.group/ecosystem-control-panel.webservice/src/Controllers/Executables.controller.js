@@ -246,9 +246,11 @@ const ExecutablesController = (params) => {
         for(const repositoryNamespace of Object.keys(repositoriesData)) {
             const installationPath = repositoriesData[repositoryNamespace] && repositoriesData[repositoryNamespace].installationPath
             if(!installationPath) continue
-            const candidate = path.join(installationPath, "Commons.Module", "Libraries.layer", "ecosystem-install-utilities.lib", "src", "Install", "InstallApplication.js")
+            // Sem extensão: qual dialeto o arquivo tem é assunto da resolução —
+            // este código não pode saber, e fixar ".js" fazia o fallback deixar
+            // de encontrar a lib no dia em que ela virou TypeScript.
+            const candidate = path.join(installationPath, "Commons.Module", "Libraries.layer", "ecosystem-install-utilities.lib", "src", "Install", "InstallApplication")
             try {
-                await access(candidate)
                 return require(candidate)
             } catch(e) {}
         }
