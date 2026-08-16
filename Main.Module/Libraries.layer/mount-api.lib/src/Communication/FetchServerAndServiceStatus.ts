@@ -1,10 +1,15 @@
-const http = require('http')
+import type { ServerServiceStatusReport } from "../Types"
+
+const http = require('http') as typeof import('http')
 
 const FetchServerAndServiceStatus = async ({
     serverResourceEndpointPath,
     mainApplicationSocketPath
-}) => new Promise((resolve, reject) => {
-    
+}: {
+    serverResourceEndpointPath: string
+    mainApplicationSocketPath: string
+}): Promise<ServerServiceStatusReport> => new Promise((resolve, reject) => {
+
     const options = {
         socketPath: mainApplicationSocketPath,
         path: serverResourceEndpointPath,
@@ -20,7 +25,7 @@ const FetchServerAndServiceStatus = async ({
 
         res.on('end', () => {
 
-            if (res.statusCode >= 200 && res.statusCode < 300)
+            if (res.statusCode! >= 200 && res.statusCode! < 300)
                 resolve(JSON.parse(data))
             else
                 reject(new Error(`HTTP status ${res.statusCode}: ${data}`))

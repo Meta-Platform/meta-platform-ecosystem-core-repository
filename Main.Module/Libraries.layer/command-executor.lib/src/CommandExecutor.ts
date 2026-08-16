@@ -1,8 +1,13 @@
-const SmartRequire = require("./SmartRequire")
-const MountAPIs = require("../../mount-api.lib/src/MountAPIs")
+import type { MountedAPIs } from "../../mount-api.lib/src/Types"
+
+const SmartRequire = require("./SmartRequire") as (moduleName: string) => any
+const MountAPIs = require("../../mount-api.lib/src/MountAPIs") as (options: {
+    serverResourceEndpointPath: string
+    mainApplicationSocketPath: string
+}) => Promise<MountedAPIs | undefined>
 const colors = SmartRequire("colors")
 
-const GetColorLogByType = (type) => {
+const GetColorLogByType = (type: string): string => {
     switch(type){
         case "success":
             return "bgGreen"
@@ -21,7 +26,11 @@ const CommandExecutor = async ({
     serverResourceEndpointPath,
     mainApplicationSocketPath,
     CommandFunction
-}) => {
+}: {
+    serverResourceEndpointPath: string
+    mainApplicationSocketPath: string
+    CommandFunction: (context: { APIs: MountedAPIs | undefined }) => any
+}): Promise<any> => {
 
     try{
         const APIs = await MountAPIs({
@@ -30,8 +39,8 @@ const CommandExecutor = async ({
         })
         Log.message("CommandExecutor", "Conectado ao "+mainApplicationSocketPath)
         return await CommandFunction({APIs})
-    } catch(e){
-   
+    } catch(e: any){
+
         if(e.erroredSysCall === "connect"){
             Log.error("CommandExecutor", "Não foi possivel se conectar com Ecosystem Daemon")
         } else throw e
