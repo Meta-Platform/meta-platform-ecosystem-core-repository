@@ -1,8 +1,8 @@
 import type { ExecutableDefinition } from "../Types"
 
-const CreateCommandJSFile = require("./CreateCommandJSFile") as (options: { commandsDirPath: string, namespace: string }) => Promise<void>
+const CreateCommandSourceFile = require("./CreateCommandSourceFile") as (options: { commandsDirPath: string, namespace: string }) => Promise<void>
 
-const CreateAllCommandJSFile = async ({
+const CreateAllCommandSourceFiles = async ({
     executablesDefinition,
     commandsDirPath
 }: {
@@ -13,7 +13,7 @@ const CreateAllCommandJSFile = async ({
             .reduce((acc: Promise<void>[], { commands: commandsDef }) => {
                 const fileCreatedPromises = commandsDef
                     .map(({ namespace }) => {
-                        return CreateCommandJSFile({ commandsDirPath, namespace })
+                        return CreateCommandSourceFile({ commandsDirPath, namespace })
                     })
                 return [...acc, ...fileCreatedPromises ]
             }, [])
@@ -21,4 +21,4 @@ const CreateAllCommandJSFile = async ({
     await Promise.all(fileCreatedPromises)
 }
 
-module.exports = CreateAllCommandJSFile
+module.exports = CreateAllCommandSourceFiles

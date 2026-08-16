@@ -18,7 +18,7 @@ const CreateLibraryPackageCommand = async ({ args, startupParams, params }) => {
         if(packageName === undefined) throw "O packageName é obrigatório"
 
         const CreateLibPackage = packageToolkitLib.require("CreateLibPackage")
-        const AddEmptyJSFunctionToPackageSrc = packageToolkitLib.require("AddEmptyJSFunctionToPackageSrc")
+        const AddEmptyFunctionToPackageSrc = packageToolkitLib.require("AddEmptyFunctionToPackageSrc")
 
 
         const workingDirPath = process.cwd()
@@ -54,7 +54,7 @@ const CreateLibraryPackageCommand = async ({ args, startupParams, params }) => {
                     }
                 }
             ])
-            await AddEmptyJSFunctionToPackageSrc({ packagePath, functionName: newFunctionName})
+            await AddEmptyFunctionToPackageSrc({ packagePath, functionName: newFunctionName})
 
             const { wantAnotherFunction } = await inquirer.prompt([
                 {

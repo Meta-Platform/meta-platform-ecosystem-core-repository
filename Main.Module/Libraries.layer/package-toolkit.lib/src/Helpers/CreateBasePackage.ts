@@ -19,6 +19,7 @@ const GITIGNORE_CONTENT = `
 node_modules
 `
 const CreateMetadataStruct = require("./CreateMetadataStruct") as (options: { namespace: string, packageBasePath: string, PKG_CONF_DIRNAME_METADATA: string }) => Promise<string>
+const CreateTypeScriptConfigFile = require("./CreateTypeScriptConfigFile") as (options: { basePath: string }) => Promise<string | undefined>
 
 const CreateBasePackage = async ({
     basePath,
@@ -47,6 +48,10 @@ const CreateBasePackage = async ({
     await WriteObjectToFile(nodejsPackageJsonFilePath, nodejsPackageJsonContent)
     const gitignoreFilePath = resolve(basePath, GITIGNORE_FILENAME)
     await CreateUtf8TextFile(gitignoreFilePath, GITIGNORE_CONTENT)
+
+    // Pacote novo nasce em TypeScript: sem o tsconfig ele ficaria de fora da
+    // verificação de tipos, que é o que dá sentido a nascer assim.
+    await CreateTypeScriptConfigFile({ basePath })
 
     const metadataDirPath = await CreateMetadataStruct({
         namespace,

@@ -7,7 +7,7 @@ const {
 } = require('node:fs/promises') as typeof import('node:fs/promises')
 
 const CreateServicesMetadataFile = require("./CreateServicesMetadataFile") as (options: any) => Promise<void>
-const CreateAllServicesJSFile = require("./CreateAllServicesJSFile") as (options: any) => Promise<void>
+const CreateAllServiceSourceFiles = require("./CreateAllServiceSourceFiles") as (options: any) => Promise<void>
 
 const CreateServicesStruct = async ({
     srcPath,
@@ -27,7 +27,7 @@ const CreateServicesStruct = async ({
     const servicesDirPath = resolve(srcPath, "Services")
     await mkdir(servicesDirPath, { recursive: true })
 
-    await CreateAllServicesJSFile({
+    await CreateAllServiceSourceFiles({
         servicesDirPath,
         servicesDefinition
     })

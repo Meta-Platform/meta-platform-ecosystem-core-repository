@@ -8,7 +8,7 @@ const {
 
 const CreateCliBootMetadataFile = require("./CreateCliBootMetadataFile") as (options: any) => Promise<void>
 const CreateCommandGroupMetadataFile = require("./CreateCommandGroupMetadataFile") as (options: any) => Promise<void>
-const CreateAllCommandJSFile = require("./CreateAllCommandJSFile") as (options: any) => Promise<void>
+const CreateAllCommandSourceFiles = require("./CreateAllCommandSourceFiles") as (options: any) => Promise<void>
 
 const CreateCommandsStruct = async ({
     srcPath,
@@ -33,7 +33,7 @@ const CreateCommandsStruct = async ({
     const commandsDirPath = resolve(srcPath, "Commands")
     await mkdir(commandsDirPath, { recursive: true })
 
-    await CreateAllCommandJSFile({
+    await CreateAllCommandSourceFiles({
         commandsDirPath,
         executablesDefinition
     })
