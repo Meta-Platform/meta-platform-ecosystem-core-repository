@@ -15,38 +15,27 @@
 // e do SmartRequire, cujo caminho chega no job. Ele nunca instancia o
 // WebInterfaceBuilder — é o que impede um worker de abrir outro worker.
 
-const fs   = require("fs") as typeof import("fs")
-const path = require("path") as typeof import("path")
+const path = require("path")
 
-// Este processo é lançado POR CAMINHO, e não herda a resolução de TypeScript —
-// ela vive no EssentialRepo, e o worker é autônomo de propósito (ver o topo).
-// Então os vizinhos que ele carrega são procurados como o próprio worker é:
-// pelo arquivo que existe, seja .js ou .ts. Fixar a extensão aqui, em qualquer
-// um dos dois dialetos, é o que faria o worker parar de subir no dia da troca.
-const _RequireSibling = (name: string): any => {
-    const base = path.join(__dirname, name)
-    return require([`${base}.js`, `${base}.ts`].find((candidate) => fs.existsSync(candidate)) ?? base)
-}
-
-const BuildProfiles       = _RequireSibling("BuildProfiles")
-const CreateWebpackConfig = _RequireSibling("CreateWebpackConfig")
+const BuildProfiles       = require("./BuildProfiles")
+const CreateWebpackConfig = require("./CreateWebpackConfig")
 
 const MAX_MESSAGES = 200
 
-const _Send = (message: any) => {
+const _Send = (message) => {
     if(process.send) process.send(message)
     else console.log(JSON.stringify(message))
 }
 
-const _Message = (entry: any): string =>
+const _Message = (entry) =>
     typeof entry === "string" ? entry : (entry && (entry.message || String(entry))) || ""
 
-const _Summarize = (stats: any, startedAtMs: number) => {
+const _Summarize = (stats, startedAtMs) => {
     const compilation = (stats && stats.compilation) || {}
     const errors      = compilation.errors   || []
     const warnings    = compilation.warnings || []
     const assets      = compilation.assets   || {}
-    const assetNames: string[]  = Object.keys(assets)
+    const assetNames  = Object.keys(assets)
 
     return {
         ok:           errors.length === 0,
@@ -55,7 +44,7 @@ const _Summarize = (stats: any, startedAtMs: number) => {
         errors:       errors.slice(0, MAX_MESSAGES).map(_Message),
         warnings:     warnings.slice(0, MAX_MESSAGES).map(_Message),
         assetCount:   assetNames.length,
-        outputBytes:  assetNames.reduce((total: number, name: string) => {
+        outputBytes:  assetNames.reduce((total, name) => {
             const asset = assets[name]
             const size  = asset && typeof asset.size === "function" ? asset.size() : 0
             return total + (Number.isFinite(size) ? size : 0)
@@ -69,7 +58,7 @@ const _Summarize = (stats: any, startedAtMs: number) => {
 
 // O logger global é instalado por conta própria: este processo não herda o
 // `globalThis.Log` de ninguém, e os módulos que ele carrega usam `Log` direto.
-const _InstallLogger = (job: any) => {
+const _InstallLogger = (job) => {
     if(globalThis.Log) return
     try {
         const installPath = job.installGlobalLoggerPath || process.env.META_INSTALL_GLOBAL_LOGGER_PATH
@@ -80,10 +69,10 @@ const _InstallLogger = (job: any) => {
     } catch(e) { /* segue sem logger de arquivo */ }
 
     const _noop = () => {}
-    globalThis.Log = { info: _noop, warn: _noop, error: _noop, message: _noop, child: () => globalThis.Log, source: () => globalThis.Log } as any
+    globalThis.Log = { info: _noop, warn: _noop, error: _noop, message: _noop, child: () => globalThis.Log, source: () => globalThis.Log }
 }
 
-const _LoadWebpack = (job: any) => {
+const _LoadWebpack = (job) => {
     const SmartRequire = require(job.smartRequirePath)
     return {
         webpack:           SmartRequire("webpack"),
@@ -91,7 +80,7 @@ const _LoadWebpack = (job: any) => {
     }
 }
 
-const RunJob = async (job: any): Promise<{ exitAfterSend: boolean }> => {
+const RunJob = async (job) => {
     _InstallLogger(job)
 
     const profile = BuildProfiles.ResolveBuildProfile({
@@ -103,7 +92,7 @@ const RunJob = async (job: any): Promise<{ exitAfterSend: boolean }> => {
     const { webpack, HtmlWebpackPlugin } = _LoadWebpack(job)
 
     let lastReported = -1
-    const onProgress = (percentage: number) => {
+    const onProgress = (percentage) => {
         const rounded = Math.round(percentage * 100)
         // Só quando o inteiro muda: o ProgressPlugin dispara centenas de vezes
         // por segundo e cada mensagem é uma serialização no canal.
@@ -123,7 +112,7 @@ const RunJob = async (job: any): Promise<{ exitAfterSend: boolean }> => {
     const compiler = webpack(config)
     const startedAtMs = Date.now()
 
-    const _CloseCompiler = () => new Promise<void>((resolve) => {
+    const _CloseCompiler = () => new Promise((resolve) => {
         try { compiler.close(() => resolve()) } catch(e) { resolve() }
     })
 
@@ -131,7 +120,7 @@ const RunJob = async (job: any): Promise<{ exitAfterSend: boolean }> => {
         // Build de uma vez: compila, responde e o processo acaba. O `close()`
         // aqui é por higiene — o que realmente libera tudo é o exit logo abaixo.
         const summary = await new Promise((resolve, reject) => {
-            compiler.run((error: any, stats: any) => {
+            compiler.run((error, stats) => {
                 if(error) return reject(error instanceof Error ? error : new Error(String(error)))
                 resolve(_Summarize(stats, startedAtMs))
             })
@@ -147,7 +136,7 @@ const RunJob = async (job: any): Promise<{ exitAfterSend: boolean }> => {
     let hasSentFirst = false
     const watching = compiler.watch(
         { ignored: /node_modules/, aggregateTimeout: 300, poll: profile.watchPoll },
-        (error: any, stats: any) => {
+        (error, stats) => {
             if(error){
                 _Send({ type: "error", message: _Message(error), stack: error && error.stack })
                 return
@@ -158,7 +147,7 @@ const RunJob = async (job: any): Promise<{ exitAfterSend: boolean }> => {
         }
     )
 
-    process.on("message", (message: any) => {
+    process.on("message", (message) => {
         if(!message || message.type !== "close") return
         watching.close(() => _CloseCompiler().then(() => process.exit(0)))
     })
@@ -168,7 +157,7 @@ const RunJob = async (job: any): Promise<{ exitAfterSend: boolean }> => {
 
 // Nenhuma saída sem resposta: um worker que morre calado deixa o pai esperando
 // para sempre — o mesmo defeito que este projeto corrigiu no processo principal.
-const _Fail = (error: any) => {
+const _Fail = (error) => {
     _Send({
         type: "error",
         message: (error && (error.message || String(error))) || "falha desconhecida no worker de build",
@@ -180,7 +169,7 @@ const _Fail = (error: any) => {
 process.on("uncaughtException", _Fail)
 process.on("unhandledRejection", _Fail)
 
-const Start = (job: any) => {
+const Start = (job) => {
     RunJob(job)
         .then(({ exitAfterSend }) => {
             // O canal IPC é assíncrono: sair no mesmo tick pode descartar a
@@ -191,17 +180,17 @@ const Start = (job: any) => {
 }
 
 if(process.send){
-    process.once("message", (message: any) => {
+    process.once("message", (message) => {
         if(message && message.type === "build") Start(message.job)
     })
     _Send({ type: "ready" })
 } else {
-    // Modo linha de comando: `node BuildWorkerEntry.ts <caminho-do-job.json>`.
+    // Modo linha de comando: `node BuildWorkerEntry.js <caminho-do-job.json>`.
     // Serve para medir o custo de um build isolado, sem o pai no meio.
     const jobFile = process.argv[2]
     if(!jobFile){
-        console.error("uso: node BuildWorkerEntry.ts <job.json>")
+        console.error("uso: node BuildWorkerEntry.js <job.json>")
         process.exit(2)
     }
-    Start(JSON.parse(fs.readFileSync(path.resolve(jobFile), "utf8")))
+    Start(JSON.parse(require("fs").readFileSync(path.resolve(jobFile), "utf8")))
 }

@@ -1,8 +1,6 @@
-import type { BuildManifest, ComponentLibrary } from "./Types"
-
-const fs = require("fs") as typeof import("fs")
-const crypto = require("crypto") as typeof import("crypto")
-const { join, basename } = require("path") as typeof import("path")
+const fs = require("fs")
+const crypto = require("crypto")
+const { join, basename } = require("path")
 
 // Cache de build de interface web.
 //
@@ -55,8 +53,8 @@ const HASH_MODE = { CONTENT: "content", STAT: "stat" }
 //   - diretório: marca o caminho e recorre.
 // Falhas de leitura são absorvidas (a entrada entra como "ilegível") para nunca
 // derrubar o cálculo.
-const _HashTree = (hash: import("crypto").Hash, rootDir: string, currentDir: string, mode: string = HASH_MODE.CONTENT) => {
-    let entries: import("fs").Dirent[]
+const _HashTree = (hash, rootDir, currentDir, mode = HASH_MODE.CONTENT) => {
+    let entries
     try {
         entries = fs.readdirSync(currentDir, { withFileTypes: true })
     } catch(e) {
@@ -96,14 +94,7 @@ const ComputeWebInterfaceFingerprint = ({
     buildProfile,
     entrypoint,
     htmlTemplate
-}: {
-    context?: string
-    nodeModules?: string
-    componentLibraries?: ComponentLibrary[]
-    buildProfile?: string
-    entrypoint?: string
-    htmlTemplate?: string
-}): string => {
+}) => {
     const hash = crypto.createHash("sha256")
     hash.update("v" + CACHE_VERSION + "\n")
     // A mesma fonte compilada com perfis diferentes produz artefatos
@@ -125,9 +116,9 @@ const ComputeWebInterfaceFingerprint = ({
     return hash.digest("hex")
 }
 
-const _ManifestPath = (output: string) => join(output, MANIFEST_FILE)
+const _ManifestPath = (output) => join(output, MANIFEST_FILE)
 
-const ReadBuildManifest = (output: string): BuildManifest | null => {
+const ReadBuildManifest = (output) => {
     try {
         return JSON.parse(fs.readFileSync(_ManifestPath(output), "utf8"))
     } catch(e) {
@@ -135,13 +126,8 @@ const ReadBuildManifest = (output: string): BuildManifest | null => {
     }
 }
 
-const WriteBuildManifest = (output: string, { fingerprint, serverAppName, profileName, builtAt }: {
-    fingerprint?: string
-    serverAppName?: string
-    profileName?: string
-    builtAt?: string
-} = {}): BuildManifest => {
-    const manifest: BuildManifest = {
+const WriteBuildManifest = (output, { fingerprint, serverAppName, profileName, builtAt } = {}) => {
+    const manifest = {
         cacheVersion:  CACHE_VERSION,
         fingerprint:   fingerprint,
         serverAppName: serverAppName || null,
@@ -159,7 +145,7 @@ const WriteBuildManifest = (output: string, { fingerprint, serverAppName, profil
 // mesma CACHE_VERSION, a assinatura bate E os artefatos essenciais estão no
 // disco. Qualquer dúvida ⇒ false ⇒ rebuild. Errar para o lado de recompilar
 // custa tempo; errar para o outro serve uma interface desatualizada.
-const IsWebInterfaceFresh = ({ output, fingerprint }: { output: string, fingerprint?: string }): boolean => {
+const IsWebInterfaceFresh = ({ output, fingerprint }) => {
     if(!fingerprint) return false
     const manifest = ReadBuildManifest(output)
     if(!manifest) return false
@@ -184,18 +170,14 @@ const PurgeStaleWebInterfaceAssets = ({
     generatedDirPath,
     keepDirNames = [],
     maxAgeDays = 7
-}: {
-    generatedDirPath?: string
-    keepDirNames?: string[]
-    maxAgeDays?: number
-} = {}): string[] => {
-    const removed: string[] = []
+} = {}) => {
+    const removed = []
     if(!generatedDirPath) return removed
 
     const keep = new Set(keepDirNames.map((name) => basename(name)))
     const cutoffMs = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000
 
-    let entries: import("fs").Dirent[]
+    let entries
     try { entries = fs.readdirSync(generatedDirPath, { withFileTypes: true }) }
     catch(e) { return removed }
 

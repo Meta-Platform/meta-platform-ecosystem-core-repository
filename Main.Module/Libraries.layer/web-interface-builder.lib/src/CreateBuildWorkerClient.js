@@ -1,20 +1,7 @@
-import type { BuildProfile } from "./Types"
+const path = require("path")
+const { spawn } = require("child_process")
 
-const fs = require("fs") as typeof import("fs")
-const path = require("path") as typeof import("path")
-const { spawn } = require("child_process") as typeof import("child_process")
-
-// O worker é lançado como PROCESSO, e o caminho de um processo precisa da
-// extensão de verdade — não há resolução de módulo no meio para completá-la.
-// Por isso o arquivo é PROCURADO em vez de escrito com ".js" fixo: assim o
-// lançamento continua correto quando ele troca de dialeto. O Node 22.18+
-// executa .ts direto, por apagamento de tipos.
-const _ResolveWorkerEntry = (): string => {
-    const base = path.join(__dirname, "BuildWorkerEntry")
-    return [`${base}.js`, `${base}.ts`].find((candidate) => fs.existsSync(candidate)) ?? `${base}.ts`
-}
-
-const WORKER_ENTRY = _ResolveWorkerEntry()
+const WORKER_ENTRY = path.join(__dirname, "BuildWorkerEntry.js")
 
 const DEFAULT_TIMEOUT_MS   = 600000  // 10 min: um build grande (3d-viewer) leva minutos
 const READY_TIMEOUT_MS     = 120000  // sem "ready" nem progresso, algo está errado
@@ -26,10 +13,7 @@ const CLOSE_GRACE_MS       = 5000
 // principal viraria conflito de porta no filho), assume que execPath é node — o
 // que é falso sob binário empacotado — e não deixa injetar flags de VM antes do
 // script.
-const ResolveWorkerRuntime = ({ env = process.env, smartRequire }: {
-    env?: NodeJS.ProcessEnv
-    smartRequire?: (moduleName: string) => any
-} = {}): { command: string, env: NodeJS.ProcessEnv, kind: string } | undefined => {
+const ResolveWorkerRuntime = ({ env = process.env, smartRequire } = {}) => {
 
     // 1. Caminho explícito vence tudo: é a válvula de escape quando a detecção
     //    automática erra numa máquina específica.
@@ -42,7 +26,7 @@ const ResolveWorkerRuntime = ({ env = process.env, smartRequire }: {
         return { command: process.execPath, env: { ELECTRON_RUN_AS_NODE: "1" }, kind: "electron" }
 
     // 3. Node puro (o processo `run package` fora do binário empacotado).
-    if(!(process as any).pkg && !(process.versions && (process.versions as any).pkg))
+    if(!process.pkg && !(process.versions && process.versions.pkg))
         return { command: process.execPath, env: {}, kind: "node" }
 
     // 4. Binário empacotado: ele reconhece PKG_INVOKE_NODEJS, mas isso depende
@@ -61,10 +45,10 @@ const ResolveWorkerRuntime = ({ env = process.env, smartRequire }: {
     return undefined
 }
 
-const CreateBuildWorkerClient = ({ smartRequire }: { smartRequire?: (moduleName: string) => any } = {}) => {
+const CreateBuildWorkerClient = ({ smartRequire } = {}) => {
 
-    const _Spawn = ({ runtime, profile, onLog }: { runtime: any, profile?: BuildProfile, onLog?: (level: string, text: string) => void }) => {
-        const args: string[] = []
+    const _Spawn = ({ runtime, profile, onLog }) => {
+        const args = []
         // O teto de heap é do FILHO: ele pode ser generoso porque a memória
         // volta inteira ao sistema quando o processo termina.
         if(profile && profile.maxOldSpaceMb) args.push(`--max-old-space-size=${profile.maxOldSpaceMb}`)
@@ -79,7 +63,7 @@ const CreateBuildWorkerClient = ({ smartRequire }: { smartRequire?: (moduleName:
             detached: false
         })
 
-        const _Pipe = (stream: NodeJS.ReadableStream | null, level: string) => {
+        const _Pipe = (stream, level) => {
             if(!stream) return
             stream.setEncoding("utf8")
             stream.on("data", (chunk) => {
@@ -94,7 +78,7 @@ const CreateBuildWorkerClient = ({ smartRequire }: { smartRequire?: (moduleName:
     }
 
     // Mata o worker sem deixar órfão, mesmo que ele ignore o pedido educado.
-    const _Terminate = (child: import("child_process").ChildProcess) => {
+    const _Terminate = (child) => {
         if(!child || child.killed || child.exitCode !== null) return
         try { child.kill("SIGTERM") } catch(e) { /* já morreu */ }
         const timer = setTimeout(() => {
@@ -103,12 +87,7 @@ const CreateBuildWorkerClient = ({ smartRequire }: { smartRequire?: (moduleName:
         if(timer.unref) timer.unref()
     }
 
-    const _Attach = ({ child, onProgress, onLog, settle }: {
-        child: import("child_process").ChildProcess
-        onProgress?: (percentage: number) => void
-        onLog?: (level: string, text: string) => void
-        settle: (message: any) => void
-    }) => {
+    const _Attach = ({ child, onProgress, onLog, settle }) => {
         // Se o pai morrer, o worker vai junto: um build órfão continuaria
         // consumindo CPU e disco sem ninguém para receber o resultado.
         const killOnExit = () => _Terminate(child)
@@ -116,7 +95,7 @@ const CreateBuildWorkerClient = ({ smartRequire }: { smartRequire?: (moduleName:
 
         const detach = () => process.removeListener("exit", killOnExit)
 
-        child.on("message", (message: any) => {
+        child.on("message", (message) => {
             if(!message) return
             if(message.type === "progress") return onProgress && onProgress(message.percentage)
             settle(message)
@@ -134,13 +113,7 @@ const CreateBuildWorkerClient = ({ smartRequire }: { smartRequire?: (moduleName:
 
     // Build de uma vez. Resolve com o resumo; rejeita em erro, timeout ou saída
     // anormal. Em nenhum caminho fica pendente.
-    const RunBuildInWorker = ({ job, profile, onProgress, onLog, timeoutMs = DEFAULT_TIMEOUT_MS }: {
-        job: any
-        profile?: BuildProfile
-        onProgress?: (percentage: number) => void
-        onLog?: (level: string, text: string) => void
-        timeoutMs?: number
-    }): Promise<any> =>
+    const RunBuildInWorker = ({ job, profile, onProgress, onLog, timeoutMs = DEFAULT_TIMEOUT_MS }) =>
         new Promise((resolve, reject) => {
             const runtime = ResolveWorkerRuntime({ smartRequire })
             if(!runtime) return reject(new Error("nenhum runtime disponível para o worker de build"))
@@ -148,9 +121,9 @@ const CreateBuildWorkerClient = ({ smartRequire }: { smartRequire?: (moduleName:
             const child = _Spawn({ runtime, profile, onLog })
 
             let isSettled = false
-            let timer: NodeJS.Timeout
+            let timer
 
-            const finish = (error: Error | null, value?: any) => {
+            const finish = (error, value) => {
                 if(isSettled) return
                 isSettled = true
                 clearTimeout(timer)
@@ -158,7 +131,7 @@ const CreateBuildWorkerClient = ({ smartRequire }: { smartRequire?: (moduleName:
                 error ? reject(error) : resolve(value)
             }
 
-            const settle = (message: any) => {
+            const settle = (message) => {
                 if(message.type === "done")  return finish(null, message.summary)
                 if(message.type === "error") return finish(new Error(message.message))
                 if(message.type === "ready") return child.send({ type: "build", job })
@@ -179,15 +152,7 @@ const CreateBuildWorkerClient = ({ smartRequire }: { smartRequire?: (moduleName:
 
     // Watch. Resolve no PRIMEIRO build concluído, devolvendo o handle para
     // encerrar — o worker segue vivo, e com ele todo o custo do watcher.
-    const StartWatchWorker = ({ job, profile, onProgress, onRebuild, onLog, onExit, timeoutMs = DEFAULT_TIMEOUT_MS }: {
-        job: any
-        profile?: BuildProfile
-        onProgress?: (percentage: number) => void
-        onRebuild?: (summary: any) => void
-        onLog?: (level: string, text: string) => void
-        onExit?: (code: number | null, signal: string | null) => void
-        timeoutMs?: number
-    }): Promise<any> =>
+    const StartWatchWorker = ({ job, profile, onProgress, onRebuild, onLog, onExit, timeoutMs = DEFAULT_TIMEOUT_MS }) =>
         new Promise((resolve, reject) => {
             const runtime = ResolveWorkerRuntime({ smartRequire })
             if(!runtime) return reject(new Error("nenhum runtime disponível para o worker de build"))
@@ -195,16 +160,16 @@ const CreateBuildWorkerClient = ({ smartRequire }: { smartRequire?: (moduleName:
             const child = _Spawn({ runtime, profile, onLog })
 
             let hasResolved = false
-            let timer: NodeJS.Timeout
+            let timer
 
-            const Close = () => new Promise<void>((done) => {
+            const Close = () => new Promise((done) => {
                 if(child.exitCode !== null) return done()
                 child.once("exit", () => done())
                 try { child.send({ type: "close" }) } catch(e) { /* canal já fechado */ }
                 _Terminate(child)
             })
 
-            const settle = (message: any) => {
+            const settle = (message) => {
                 if(message.type === "ready") return child.send({ type: "build", job })
 
                 if(message.type === "done" && !hasResolved){

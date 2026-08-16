@@ -1,9 +1,7 @@
-import type { BuildProfile, ComponentLibrary } from "./Types"
+const path = require("path")
 
-const path = require("path") as typeof import("path")
-
-const NormalizeComponentLibraries = (componentLibraries: ComponentLibrary[] = []) =>
-    componentLibraries.map((library: any) => {
+const NormalizeComponentLibraries = (componentLibraries = []) =>
+    componentLibraries.map((library) => {
         if (!library || !library.alias || !library.sourcePath)
             throw new Error("Biblioteca de UI inválida: alias e sourcePath são obrigatórios")
         return {
@@ -32,12 +30,7 @@ const CreateWebpackConfig = ({
     HtmlWebpackPlugin,
     params,
     profile
-}: {
-    webpack: any
-    HtmlWebpackPlugin: any
-    params: any
-    profile: BuildProfile
-}): any => {
+}) => {
 
     const {
         context,
@@ -57,7 +50,7 @@ const CreateWebpackConfig = ({
     const libraryNodeModules = libraries
         .map(({ nodeModulesPath }) => nodeModulesPath)
         .filter(Boolean)
-    const aliases = libraries.reduce((result: Record<string, string>, { alias, sourcePath }) => {
+    const aliases = libraries.reduce((result, { alias, sourcePath }) => {
         result[alias] = sourcePath
         return result
     }, {})
@@ -92,13 +85,13 @@ const CreateWebpackConfig = ({
 
     // O alias do webpack resolve o bundle, mas o ts-loader também precisa
     // conhecer a mesma topologia para typecheck de imports externos.
-    const libraryTypeScriptPaths = libraries.reduce((result: Record<string, string[]>, { alias, sourcePath }) => {
+    const libraryTypeScriptPaths = libraries.reduce((result, { alias, sourcePath }) => {
         result[alias] = [sourcePath]
         result[`${alias}/*`] = [`${sourcePath}/*`]
         return result
     }, {})
 
-    const rules: any[] = [
+    const rules = [
         {
             test: /\.tsx?$/,
             use: {
@@ -186,7 +179,7 @@ const CreateWebpackConfig = ({
     // interface esperando a barra, é custo sem destino.
     if(onProgress) plugins.push(new webpack.ProgressPlugin(onProgress))
 
-    const config: any = {
+    const config = {
         mode: profile.mode,
         context,
         entry: path.resolve(context, entrypoint),

@@ -21,8 +21,6 @@
 // ser ligado, nunca desligado. Por isso todo parâmetro daqui é string
 // ("release", "on", "off") — ver ResolveIsolationFlag.
 
-import type { BuildProfile } from "./Types"
-
 const RELEASE     = "release"
 const DEBUG       = "debug"
 const DEBUG_WATCH = "debug-watch"
@@ -31,7 +29,7 @@ const DEFAULT_PROFILE_NAME = RELEASE
 
 const PROFILE_NAMES = [RELEASE, DEBUG, DEBUG_WATCH]
 
-const PROFILES: Record<string, BuildProfile> = {
+const PROFILES = {
 
     // O build que vai ao usuário: nada de mapa de código, tudo minificado, e o
     // typecheck ligado — é a última chance de pegar um erro de tipo antes de o
@@ -98,11 +96,11 @@ const ENV_WATCH_POLL = "META_WEBGUI_BUILD_WATCH_POLL_MS"
 const ENV_ISOLATED  = "META_WEBGUI_BUILD_ISOLATED"
 const ENV_MAX_OLD_SPACE = "META_WEBGUI_BUILD_MAX_OLD_SPACE_MB"
 
-const _Warn = (message: string) => {
+const _Warn = (message) => {
     if(globalThis.Log && globalThis.Log.warn) globalThis.Log.warn("BuildProfiles", message)
 }
 
-const IsKnownProfileName = (name: string) => PROFILE_NAMES.includes(name)
+const IsKnownProfileName = (name) => PROFILE_NAMES.includes(name)
 
 // Traduz o parâmetro legado. Enquanto os 14 `.webgui` do ecossistema não
 // migrarem para `webguiBuildProfile`, `isWatch: true` continua significando
@@ -111,7 +109,7 @@ const IsKnownProfileName = (name: string) => PROFILE_NAMES.includes(name)
 // Note que só o booleano `true` conta: por causa da armadilha descrita no topo,
 // um `isWatch: false` chega aqui como a string "isWatch". Tratar qualquer valor
 // truthy como watch perpetuaria o defeito.
-const MapLegacyIsWatch = (isWatch: unknown) => isWatch === true ? DEBUG_WATCH : undefined
+const MapLegacyIsWatch = (isWatch) => isWatch === true ? DEBUG_WATCH : undefined
 
 // Resolve o perfil efetivo. NUNCA lança: um ecossistema instalado só recebe as
 // chaves novas depois de um `ecosystem update`, e um nome desconhecido não pode
@@ -121,12 +119,7 @@ const ResolveBuildProfile = ({
     isWatch,
     overrides = {},
     env = (typeof process !== "undefined" ? process.env : {}) || {}
-}: {
-    profileName?: string
-    isWatch?: unknown
-    overrides?: Partial<BuildProfile>
-    env?: Record<string, string | undefined>
-} = {}): Readonly<BuildProfile> => {
+} = {}) => {
 
     const envName = env[ENV_PROFILE]
 
@@ -167,10 +160,7 @@ const ResolveBuildProfile = ({
 const ResolveIsolationFlag = ({
     value,
     env = (typeof process !== "undefined" ? process.env : {}) || {}
-}: {
-    value?: unknown
-    env?: Record<string, string | undefined>
-} = {}): boolean => {
+} = {}) => {
     const raw = env[ENV_ISOLATED] !== undefined ? env[ENV_ISOLATED] : value
     if(typeof raw === "string") return raw.toLowerCase() !== "off"
     if(raw === false) return false
@@ -180,7 +170,7 @@ const ResolveIsolationFlag = ({
 // Assinatura do perfil, para entrar no fingerprint do cache: trocar de perfil
 // precisa invalidar o bundle, senão um `release` reaproveitaria o artefato
 // gordo de um `debug` anterior.
-const GetProfileFingerprintKey = (profile: BuildProfile) => [
+const GetProfileFingerprintKey = (profile) => [
     profile.name,
     `dt:${profile.devtool || "none"}`,
     `min:${profile.minimize ? 1 : 0}`,
