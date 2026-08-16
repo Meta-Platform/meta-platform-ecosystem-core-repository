@@ -1,6 +1,8 @@
-const path              = require("path")
-const { promisify }     = require("util")
-const fs                = require("fs")
+import type { BuildProfile } from "./Types"
+
+const path              = require("path") as typeof import("path")
+const { promisify }     = require("util") as typeof import("util")
+const fs                = require("fs") as typeof import("fs")
 const exists            = promisify(fs.exists)
 
 const BuildProfiles           = require("./BuildProfiles")
@@ -8,7 +10,7 @@ const CreateWebpackConfig     = require("./CreateWebpackConfig")
 const CreateBuildWorkerClient = require("./CreateBuildWorkerClient")
 const BuildCache              = require("./BuildCache")
 
-const CheckPackageDirExist = (path) => exists(`${path}`)
+const CheckPackageDirExist = (path: string) => exists(`${path}`)
 
 const NormalizeComponentLibraries = CreateWebpackConfig.NormalizeComponentLibraries
 
@@ -17,7 +19,11 @@ const NormalizeComponentLibraries = CreateWebpackConfig.NormalizeComponentLibrar
 // servido como conteúdo estático.
 const WEBPACK_CACHE_DIR = ".webpack-cache"
 
-const MountCacheDirectory = ({ environmentPath, generatedDirName, serverAppName }) => {
+const MountCacheDirectory = ({ environmentPath, generatedDirName, serverAppName }: {
+    environmentPath?: string
+    generatedDirName?: string
+    serverAppName?: string
+}) => {
     if(!environmentPath || !generatedDirName) return undefined
     return path.join(environmentPath, generatedDirName, WEBPACK_CACHE_DIR, String(serverAppName || "default"))
 }
@@ -25,11 +31,10 @@ const MountCacheDirectory = ({ environmentPath, generatedDirName, serverAppName 
 // Debounce com cancelamento explícito. O `setTimeout` pendente ao fim de um
 // build mantém viva a closure do callback de progresso — e, por tabela, tudo
 // que ela alcança. Sem `Cancel`, cada build deixava um timer órfão.
-const _Debounce = (func, delay) => {
-    let inDebounce
-    const debounced = function() {
+const _Debounce = (func: (...args: any[]) => void, delay: number) => {
+    let inDebounce: NodeJS.Timeout | undefined
+    const debounced = function(this: any, ...args: any[]) {
         const context = this
-        const args = arguments
         clearTimeout(inDebounce)
         inDebounce = setTimeout(() => func.apply(context, args), delay)
     }
@@ -50,14 +55,14 @@ const _Debounce = (func, delay) => {
 // a rodar em processo separado.
 const MAX_MESSAGES = 200
 
-const SummarizeStats = (stats) => {
+const SummarizeStats = (stats: any) => {
     if(!stats) return { ok: false, errorCount: 0, warningCount: 0, errors: [], warnings: [] }
 
     const compilation = stats.compilation
     const errors      = (compilation && compilation.errors)   || []
     const warnings    = (compilation && compilation.warnings) || []
 
-    const _Message = (entry) =>
+    const _Message = (entry: any): string =>
         typeof entry === "string" ? entry : (entry && (entry.message || String(entry))) || ""
 
     const assets = (compilation && compilation.assets) || {}
@@ -70,7 +75,7 @@ const SummarizeStats = (stats) => {
         errors:       errors.slice(0, MAX_MESSAGES).map(_Message),
         warnings:     warnings.slice(0, MAX_MESSAGES).map(_Message),
         assetCount:   assetNames.length,
-        outputBytes:  assetNames.reduce((total, name) => {
+        outputBytes:  assetNames.reduce((total: number, name: string) => {
             const asset = assets[name]
             const size  = asset && typeof asset.size === "function" ? asset.size() : 0
             return total + (Number.isFinite(size) ? size : 0)
@@ -81,13 +86,13 @@ const SummarizeStats = (stats) => {
     }
 }
 
-const FormatErrors = (errors = []) =>
+const FormatErrors = (errors: any[] = []): string =>
     errors.slice(0, 5).join("\n") + (errors.length > 5 ? `\n… e mais ${errors.length - 5} erro(s)` : "")
 
 // Fábrica: recebe SmartRequire (resolve npm no ambiente do ecossistema) e devolve o
 // WebInterfaceBuilder. Assim esta lib (ecosystem-core) não depende por caminho relativo
 // do essential — o registry injeta SmartRequire (ver taskloader-registry.lib).
-const CreateWebInterfaceBuilder = (SmartRequire) => {
+const CreateWebInterfaceBuilder = (SmartRequire: (moduleName: string) => any) => {
 
     // O webpack é carregado SOB DEMANDA, não na montagem da fábrica.
     //
@@ -97,8 +102,8 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
     // grafo de módulos do webpack — dezenas de MB — entrava no heap desses
     // processos mesmo quando nenhuma interface seria compilada. Um `.app` sem
     // webgui pagava o custo de um builder que nunca usaria.
-    let webpackModule
-    let htmlWebpackPluginModule
+    let webpackModule: any
+    let htmlWebpackPluginModule: any
 
     const _LoadWebpack = () => {
         if(!webpackModule){
@@ -111,12 +116,12 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
     // Constrói o compilador para um build concreto. A configuração em si vive
     // em CreateWebpackConfig (função pura, testável sem webpack); aqui só
     // juntamos os módulos carregados sob demanda com os parâmetros e o perfil.
-    const GetCompiler = (params, profile) => {
+    const GetCompiler = (params: any, profile: BuildProfile) => {
         const { webpack, HtmlWebpackPlugin } = _LoadWebpack()
         return webpack(CreateWebpackConfig({ webpack, HtmlWebpackPlugin, params, profile }))
     }
 
-    const WebInterfaceBuilder = async (params) => {
+    const WebInterfaceBuilder = async (params: any): Promise<any> => {
 
         const {
             entrypoint,
@@ -177,8 +182,8 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
             }
         })
 
-        const _WorkerLog = (level, text) =>
-            Log[level] ? Log[level]("webgui-build-worker", text) : Log.info("webgui-build-worker", text)
+        const _WorkerLog = (level: string, text: string) =>
+            (Log as any)[level] ? (Log as any)[level]("webgui-build-worker", text) : Log.info("webgui-build-worker", text)
 
         // Assinatura das entradas do build. Calculada ANTES de compilar, e
         // válida depois — o diretório de saída não participa dela.
@@ -192,7 +197,7 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
                     entrypoint,
                     htmlTemplate
                 })
-            } catch(error){
+            } catch(error: any){
                 // Sem assinatura não há cache — recompila, que é o comportamento
                 // seguro. Um erro aqui nunca pode impedir a interface de subir.
                 Log.warn("WebInterfaceBuilder", `não consegui assinar as entradas de ${serverAppName}: ${error.message}`)
@@ -200,7 +205,7 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
             }
         }
 
-        const _AfterBuild = (fingerprint) => {
+        const _AfterBuild = (fingerprint?: string) => {
             if(fingerprint)
                 BuildCache.WriteBuildManifest(output, { fingerprint, serverAppName, profileName: profile.name })
 
@@ -218,16 +223,16 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
             }
         }
 
-        const handleChangeProgress = _Debounce((_percentage) => {
-            const percentage = parseInt(_percentage * 100)
+        const handleChangeProgress = _Debounce((_percentage: number) => {
+            const percentage = parseInt(String(_percentage * 100))
             onChangeProgress && onChangeProgress(percentage)
         }, 10)
 
         // O compiler nasce sob demanda, junto com o primeiro Run/Watch. Construí-lo
         // aqui faria toda instanciação do builder alocar um compiler — inclusive as
         // que terminam em cache hit e nunca compilam nada.
-        let compiler
-        let watching
+        let compiler: any
+        let watching: any
         let isClosed = false
 
         const _EnsureCompiler = () => {
@@ -250,7 +255,7 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
             return compiler
         }
 
-        const _CloseWatching = () => new Promise((resolve) => {
+        const _CloseWatching = () => new Promise<void>((resolve) => {
             if(!watching) return resolve()
             const current = watching
             watching = undefined
@@ -265,7 +270,7 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
         // onde o webpack 5 guarda o conteúdo de CADA arquivo lido durante o build,
         // incluindo a árvore de node_modules. Sem esta chamada, um build num
         // processo de vida longa nunca devolve essa memória.
-        const _CloseCompiler = () => new Promise((resolve) => {
+        const _CloseCompiler = () => new Promise<void>((resolve) => {
             if(!compiler) return resolve()
             const current = compiler
             compiler = undefined
@@ -343,7 +348,7 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
                     // logava a exceção e não chamava resolve nem reject: a promise
                     // ficava pendente para sempre, a instância parava em STARTING e
                     // a closure segurava o compiler inteiro no heap.
-                    _EnsureCompiler().run((error, stats) => {
+                    _EnsureCompiler().run((error: any, stats: any) => {
                         if(error) return reject(error instanceof Error ? error : new Error(String(error)))
 
                         const result = SummarizeStats(stats)
@@ -379,7 +384,7 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
                     job: _MountJob(),
                     profile,
                     onProgress: onChangeProgress,
-                    onRebuild: (summary) => Log.info("WebInterfaceBuilder", summary.ok
+                    onRebuild: (summary: any) => Log.info("WebInterfaceBuilder", summary.ok
                         ? `A interface ${serverAppName} foi atualizada com sucesso`
                         : `A interface ${serverAppName} tem erros de compilação:\n${FormatErrors(summary.errors)}`),
                     onLog: _WorkerLog
@@ -391,7 +396,7 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
             return _WatchInProcess()
         }
 
-        const _WatchInProcess = () => new Promise((resolve, reject) => {
+        const _WatchInProcess = () => new Promise<any>((resolve, reject) => {
             const watchOptions = {
                 ignored: /node_modules/,
                 aggregateTimeout: 300,
@@ -409,7 +414,7 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
                     // Antes ele era descartado, e o watcher (com polling de 1s sobre
                     // a árvore do pacote) ficava vivo até o processo morrer — mesmo
                     // depois do Stop da task.
-                    watching = _EnsureCompiler().watch(watchOptions, (error, stats) => {
+                    watching = _EnsureCompiler().watch(watchOptions, (error: any, stats: any) => {
                         if(error){
                             Log.error("WebInterfaceBuilder", error)
                             // Erro de infraestrutura no primeiro ciclo é fatal: não há
@@ -439,7 +444,7 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
                         }
                     })
                 })
-                .catch((error) => {
+                .catch((error: any) => {
                     if(hasSettled) return
                     hasSettled = true
                     Close().finally(() => reject(error))
