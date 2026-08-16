@@ -7,17 +7,22 @@
     reescrita "igual" mas não era. Nada disso quebra na hora — quebra quando
     alguém chama, em produção, e recebe `undefined is not a function`.
 
-    A lista abaixo foi extraída do arquivo ANTES do fatiamento e comparada com o
-    resultado: 36 operações, mesmos nomes, mesma aridade. Ela fica aqui como
-    contrato.
+    A lista abaixo nasceu do arquivo ANTES do fatiamento e comparada com o
+    resultado: 36 operações, mesmos nomes, mesma aridade. Desde então ela cresce
+    junto com o adaptador — cada operação nova entra aqui à mão, e é essa mão
+    que é o ponto: a lista vale como contrato porque alguém a escreveu, não
+    porque foi derivada do código que ela deveria vigiar.
 
     RuntimeSurfaceParity cobre outra coisa — manifesto contra implementações.
-    Este cobre a implementação contra o passado dela. Os dois juntos significam:
-    operação nova é declarada no manifesto E aparece aqui, de propósito, por
-    quem a escreveu.
+    Como os dois lados que ele compara são lidos do código, ele acompanha
+    sozinho quem adiciona uma operação nos dois lugares, e por isso NÃO pega
+    nem a operação que sumiu dos dois nem a assinatura que mudou. Este cobre a
+    implementação contra o passado dela, aridade inclusa. Os dois juntos
+    significam: operação nova é declarada no manifesto E aparece aqui, de
+    propósito, por quem a escreveu.
 
     Ao ADICIONAR uma operação (é o esperado no épico CTMG-35): acrescente a
-    linha aqui e a entrada em src/RuntimeSurface.js. Ao REMOVER ou renomear uma:
+    linha aqui e a entrada em src/RuntimeSurface.ts. Ao REMOVER ou renomear uma:
     pare e confira quem chama — inclusive o ServiceOrchestrator, que vive em
     outro repositório.
 */
@@ -53,6 +58,7 @@ const SUPERFICIE_ESPERADA = [
     "GetContainerStatsSnapshot/1",
     "GetDiskUsage/0",
     "GetEventStreamState/0",
+    "GetFileChunkFromVolume/1",
     "GetFileFromVolume/1",
     "GetImageHistory/1",
     "GetNetworkUsage/1",
@@ -64,6 +70,7 @@ const SUPERFICIE_ESPERADA = [
     "InspectImage/1",
     "InspectNetwork/1",
     "InspectVolume/1",
+    "InspectVolumeUpload/1",
     "KillContainer/1",
     "ListAllContainers/0",
     "ListAllImages/0",
@@ -75,6 +82,7 @@ const SUPERFICIE_ESPERADA = [
     "LoadImage/1",
     "MakeContainerDirectory/1",
     "MakeVolumeDirectory/1",
+    "MoveVolumeEntry/1",
     "OpenExecSession/1",
     "PauseContainer/1",
     "PingRuntime/0",
@@ -85,6 +93,7 @@ const SUPERFICIE_ESPERADA = [
     "PruneVolumes/0",
     "PullImage/1",
     "PushImage/1",
+    "PutFileChunkInVolume/1",
     "PutFileInVolume/1",
     "RecreateContainer/1",
     "RegisterDockerEventListener/1",
