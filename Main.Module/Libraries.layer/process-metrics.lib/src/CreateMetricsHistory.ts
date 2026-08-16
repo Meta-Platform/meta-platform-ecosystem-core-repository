@@ -8,14 +8,14 @@
 //
 // A janela coberta é `capacity * intervalo de amostragem`: 300 amostras a cada
 // 2s ≈ 10 minutos.
-const CreateMetricsHistory = ({ capacity = 300 } = {}) => {
+const CreateMetricsHistory = <Sample = any>({ capacity = 300 }: { capacity?: number } = {}) => {
 
     if(!Number.isFinite(capacity) || capacity <= 0)
         throw new Error("CreateMetricsHistory: 'capacity' deve ser um número positivo.")
 
-    const seriesByKey = new Map()
+    const seriesByKey = new Map<unknown, Sample[]>()
 
-    const Push = (key, sample) => {
+    const Push = (key: unknown, sample: Sample) => {
         if(key === undefined || key === null) return
         const series = seriesByKey.get(key) || []
         series.push(sample)
@@ -26,24 +26,24 @@ const CreateMetricsHistory = ({ capacity = 300 } = {}) => {
 
     // Cópia: quem recebe pode serializar/ordenar sem corromper o buffer.
     // `limit` recorta as amostras MAIS RECENTES (o fim da série).
-    const Get = (key, limit) => {
+    const Get = (key: unknown, limit?: number): Sample[] => {
         const series = seriesByKey.get(key) || []
         if(limit === undefined || limit >= series.length) return [...series]
         return series.slice(series.length - limit)
     }
 
-    const GetLast = (key) => {
+    const GetLast = (key: unknown): Sample | undefined => {
         const series = seriesByKey.get(key)
         return series && series.length > 0 ? series[series.length - 1] : undefined
     }
 
     const Keys = () => Array.from(seriesByKey.keys())
 
-    const Forget = (key) => seriesByKey.delete(key)
+    const Forget = (key: unknown) => seriesByKey.delete(key)
 
     // Remove tudo que não está mais na lista viva — é o que impede o histórico
     // de acumular instâncias já encerradas para sempre.
-    const KeepOnly = (keyList) => {
+    const KeepOnly = (keyList?: unknown[]) => {
         const keep = new Set(keyList || [])
         Array.from(seriesByKey.keys())
             .filter((key) => !keep.has(key))

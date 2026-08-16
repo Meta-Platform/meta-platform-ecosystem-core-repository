@@ -1,5 +1,7 @@
-const fs = require("fs")
-const os = require("os")
+import type { ProcStat, ProcessSample, SystemSample } from "./Types"
+
+const fs = require("fs") as typeof import("fs")
+const os = require("os") as typeof import("os")
 
 // Amostragem de uso de CPU/memória/IO a partir do `/proc` do Linux.
 //
@@ -19,7 +21,7 @@ const DEFAULT_CLOCK_TICKS = 100
 
 const PROC_DIR = "/proc"
 
-const _ReadFile = (path) => {
+const _ReadFile = (path: string): string | undefined => {
     try { return fs.readFileSync(path, "utf8") }
     catch(e) { return undefined }
 }
@@ -31,7 +33,7 @@ const _ReadFile = (path) => {
 //
 // Depois desse corte, o primeiro token é o campo 3 (state), então o campo N do
 // `man 5 proc` está em `fields[N - 3]`.
-const _ParseStat = (raw) => {
+const _ParseStat = (raw?: string): ProcStat | undefined => {
     if(!raw) return undefined
     const closingIndex = raw.lastIndexOf(")")
     if(closingIndex < 0) return undefined
@@ -39,7 +41,7 @@ const _ParseStat = (raw) => {
     const pid    = Number(raw.slice(0, raw.indexOf("(")).trim())
     const fields = raw.slice(closingIndex + 2).trim().split(/\s+/)
 
-    const _field = (number) => fields[number - 3]
+    const _field = (number: number) => fields[number - 3]
 
     return {
         pid,
@@ -56,7 +58,7 @@ const _ParseStat = (raw) => {
 
 // VmRSS do /proc/<pid>/status vem em kB. `statm` seria mais barato, mas conta
 // páginas de tamanho variável — o valor em kB é o mesmo que o htop mostra.
-const _ParseStatusRssBytes = (raw) => {
+const _ParseStatusRssBytes = (raw?: string): number | undefined => {
     if(!raw) return undefined
     const match = raw.match(/^VmRSS:\s+(\d+)\s+kB/m)
     return match ? Number(match[1]) * 1024 : undefined
@@ -64,16 +66,16 @@ const _ParseStatusRssBytes = (raw) => {
 
 // /proc/<pid>/io só é legível pelo dono do processo (ou root): para instância de
 // outro usuário volta EACCES, e aí simplesmente não há IO a mostrar.
-const _ParseIo = (raw) => {
+const _ParseIo = (raw?: string): { ioReadBytes?: number, ioWriteBytes?: number } => {
     if(!raw) return {}
-    const _value = (key) => {
+    const _value = (key: string) => {
         const match = raw.match(new RegExp(`^${key}:\\s+(\\d+)`, "m"))
         return match ? Number(match[1]) : undefined
     }
     return { ioReadBytes: _value("read_bytes"), ioWriteBytes: _value("write_bytes") }
 }
 
-const _ReadSystemUptimeSeconds = () => {
+const _ReadSystemUptimeSeconds = (): number | undefined => {
     const raw = _ReadFile(`${PROC_DIR}/uptime`)
     if(!raw) return undefined
     return Number(raw.trim().split(/\s+/)[0])
@@ -86,7 +88,7 @@ const _ReadMemoryInfo = () => {
     const raw = _ReadFile(`${PROC_DIR}/meminfo`)
     if(!raw) return { totalMemBytes: os.totalmem(), availableMemBytes: os.freemem() }
 
-    const _value = (key) => {
+    const _value = (key: string) => {
         const match = raw.match(new RegExp(`^${key}:\\s+(\\d+)\\s+kB`, "m"))
         return match ? Number(match[1]) * 1024 : undefined
     }
@@ -96,7 +98,7 @@ const _ReadMemoryInfo = () => {
     }
 }
 
-const _ReadSystemCpuTimes = () => {
+const _ReadSystemCpuTimes = (): { total: number, idle: number } | undefined => {
     const raw = _ReadFile(`${PROC_DIR}/stat`)
     if(!raw) return undefined
 
@@ -122,14 +124,14 @@ const _ReadSystemCpuTimes = () => {
  * renderer. Medir só o pid registrado mostraria ~0% de CPU e alguns MB, o que é
  * pior do que não mostrar nada. Somar o GRUPO mede a aplicação inteira.
  */
-const CreateProcessSampler = ({ clockTicks = DEFAULT_CLOCK_TICKS } = {}) => {
+const CreateProcessSampler = ({ clockTicks = DEFAULT_CLOCK_TICKS }: { clockTicks?: number } = {}) => {
 
     // chave → { cpuTicks, atMs }. A chave separa os espaços ("p:" processo,
     // "g:" grupo) para que medir os dois não misture as linhas de base.
-    const previousByKey = new Map()
-    let previousSystemCpu
+    const previousByKey = new Map<string, { cpuTicks: number, atMs: number }>()
+    let previousSystemCpu: { total: number, idle: number } | undefined
 
-    const _CpuPercent = (key, cpuTicks, atMs) => {
+    const _CpuPercent = (key: string, cpuTicks: number, atMs: number): number => {
         const previous = previousByKey.get(key)
         previousByKey.set(key, { cpuTicks, atMs })
 
@@ -150,24 +152,24 @@ const CreateProcessSampler = ({ clockTicks = DEFAULT_CLOCK_TICKS } = {}) => {
     // numéricos são os processos; qualquer um pode sumir no meio da leitura
     // (processo terminou), e nesse caso é simplesmente ignorado.
     const _ScanProcesses = () => {
-        let entries
+        let entries: string[]
         try { entries = fs.readdirSync(PROC_DIR) }
         catch(e) { return undefined }
 
         return entries
             .filter((entry) => /^\d+$/.test(entry))
             .map((entry) => _ParseStat(_ReadFile(`${PROC_DIR}/${entry}/stat`)))
-            .filter(Boolean)
+            .filter(Boolean) as ProcStat[]
     }
 
-    const _Uptime = (starttime) => {
+    const _Uptime = (starttime: number): number | undefined => {
         const systemUptime = _ReadSystemUptimeSeconds()
         if(systemUptime === undefined || !Number.isFinite(starttime)) return undefined
         return Math.max(0, Math.round(systemUptime - (starttime / clockTicks)))
     }
 
     // Um processo isolado, pelo seu pid.
-    const SampleProcess = (pid) => {
+    const SampleProcess = (pid?: number): ProcessSample | undefined => {
         if(!pid) return undefined
 
         const stat = _ParseStat(_ReadFile(`${PROC_DIR}/${pid}/stat`))
@@ -194,7 +196,7 @@ const CreateProcessSampler = ({ clockTicks = DEFAULT_CLOCK_TICKS } = {}) => {
     // compartilhada entre eles. É a mesma aproximação que o Gerenciador de
     // Tarefas do Windows faz por árvore, e o erro é para cima — quem consome
     // sabe que é o total do grupo, não memória exclusiva.
-    const SampleProcessGroup = (pgid) => {
+    const SampleProcessGroup = (pgid?: number): ProcessSample | undefined => {
         if(!pgid) return undefined
 
         const processList = _ScanProcesses()
@@ -213,7 +215,7 @@ const CreateProcessSampler = ({ clockTicks = DEFAULT_CLOCK_TICKS } = {}) => {
             return sum + rss
         }, 0)
 
-        const io = groupList.reduce((acc, process) => {
+        const io = groupList.reduce((acc: { ioReadBytes?: number, ioWriteBytes?: number }, process) => {
             const { ioReadBytes, ioWriteBytes } = _ParseIo(_ReadFile(`${PROC_DIR}/${process.pid}/io`))
             return {
                 ioReadBytes:  ioReadBytes  === undefined ? acc.ioReadBytes  : (acc.ioReadBytes  || 0) + ioReadBytes,
@@ -238,11 +240,11 @@ const CreateProcessSampler = ({ clockTicks = DEFAULT_CLOCK_TICKS } = {}) => {
     // Estado da máquina. `cpuPercent` aqui é 0–100 do total de núcleos (a visão
     // de "quanto do computador está ocupado"), diferente do por-processo, que é
     // relativo a UM núcleo e pode passar de 100 num processo multithread.
-    const SampleSystem = () => {
+    const SampleSystem = (): SystemSample => {
         const { totalMemBytes, availableMemBytes } = _ReadMemoryInfo()
         const cpuTimes = _ReadSystemCpuTimes()
 
-        let cpuPercent
+        let cpuPercent: number | undefined
         if(cpuTimes){
             if(previousSystemCpu){
                 const totalDelta = cpuTimes.total - previousSystemCpu.total
@@ -267,7 +269,7 @@ const CreateProcessSampler = ({ clockTicks = DEFAULT_CLOCK_TICKS } = {}) => {
 
     // Descarta a linha de base de algo que morreu. Sem isto, o Map cresceria
     // para sempre num daemon que fica meses no ar.
-    const Forget = (pidOrPgid) => {
+    const Forget = (pidOrPgid: number) => {
         previousByKey.delete(`p:${pidOrPgid}`)
         previousByKey.delete(`g:${pidOrPgid}`)
     }

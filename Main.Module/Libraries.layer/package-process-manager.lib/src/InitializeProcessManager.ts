@@ -1,6 +1,23 @@
-const { spawn } = require("child_process")
-const path = require("path")
-const EventEmitter = require("events")
+const { spawn } = require("child_process") as typeof import("child_process")
+const path = require("path") as typeof import("path")
+const EventEmitter = require("events") as typeof import("events")
+
+/** Uma linha capturada de um processo, com a sua procedência. */
+type LogEntry = {
+    stream: "stdout" | "stderr" | "stdin" | "system"
+    line: string
+    ts: number
+}
+
+type ProcessStatus = "RUNNING" | "STOPPED" | "ERROR"
+
+type ManagedProcess = {
+    child: import("child_process").ChildProcess
+    status: ProcessStatus
+    logs: LogEntry[]
+    pid?: number
+    debug: boolean
+}
 
 /**
  * Gerenciador de processos para rodar/debugar pacotes.
@@ -10,19 +27,20 @@ const EventEmitter = require("events")
  * emite eventos de log ao vivo (para streaming à UI). Mantém estado dos
  * processos em execução (RUNNING/EXITED/ERROR).
  *
- * @param {object} opts
- * @param {string} opts.runCommandPath  caminho do executável `run` (o `run-dbg`
- *                                       é derivado como `${runCommandPath}-dbg`)
- * @param {number} [opts.maxLogLines]   tamanho do buffer de logs por processo
+ * `runCommandPath` é o caminho do executável `run` — o `run-dbg` é derivado
+ * dele — e `maxLogLines` é o tamanho do buffer de logs por processo.
  */
-const InitializeProcessManager = ({ runCommandPath, maxLogLines = 2000 } = {}) => {
+const InitializeProcessManager = ({ runCommandPath, maxLogLines = 2000 }: {
+    runCommandPath?: string
+    maxLogLines?: number
+} = {}) => {
 
     const executablesDir = runCommandPath ? path.dirname(runCommandPath) : undefined
-    const processes = new Map() // id -> { child, status, logs:[], pid, debug }
+    const processes = new Map<string, ManagedProcess>()
     const emitter = new EventEmitter()
     emitter.setMaxListeners(0)
 
-    const _append = (id, stream, line) => {
+    const _append = (id: string, stream: LogEntry["stream"], line: string) => {
         const proc = processes.get(id)
         if(!proc) return
         const entry = { stream, line, ts: Date.now() }
@@ -31,12 +49,12 @@ const InitializeProcessManager = ({ runCommandPath, maxLogLines = 2000 } = {}) =
         emitter.emit(`log:${id}`, entry)
     }
 
-    const _pipe = (id, stream, chunk) =>
+    const _pipe = (id: string, stream: LogEntry["stream"], chunk: Buffer) =>
         chunk.toString().split("\n").filter((l) => l.length > 0)
         .forEach((line) => _append(id, stream, line))
 
     // Roda um pacote. debug=true usa o `run-dbg` (abre o inspector do Node).
-    const StartPackage = ({ id, packagePath, debug = false }) => {
+    const StartPackage = ({ id, packagePath, debug = false }: { id: string, packagePath: string, debug?: boolean }) => {
         const current = processes.get(id)
         if(current && current.status === "RUNNING")
             throw `"${id}" já está em execução (pid ${current.pid})`
@@ -54,12 +72,12 @@ const InitializeProcessManager = ({ runCommandPath, maxLogLines = 2000 } = {}) =
             detached: true
         })
 
-        const proc = { child, status: "RUNNING", logs: [], pid: child.pid, debug }
+        const proc: ManagedProcess = { child, status: "RUNNING", logs: [], pid: child.pid, debug }
         processes.set(id, proc)
 
         _append(id, "system", `iniciando "${id}"${debug ? " (debug)" : ""} — pid ${child.pid}`)
-        child.stdout.on("data", (chunk) => _pipe(id, "stdout", chunk))
-        child.stderr.on("data", (chunk) => _pipe(id, "stderr", chunk))
+        child.stdout!.on("data", (chunk) => _pipe(id, "stdout", chunk))
+        child.stderr!.on("data", (chunk) => _pipe(id, "stderr", chunk))
         child.on("exit", (code, signal) => {
             proc.status = (code === 0 || signal === "SIGTERM") ? "STOPPED" : "ERROR"
             _append(id, "system", `processo encerrado (code=${code}, signal=${signal || "-"})`)
@@ -74,13 +92,13 @@ const InitializeProcessManager = ({ runCommandPath, maxLogLines = 2000 } = {}) =
         return { id, pid: child.pid, status: "RUNNING", debug }
     }
 
-    const StopPackage = (id) => {
+    const StopPackage = (id: string) => {
         const proc = processes.get(id)
         if(!proc) return { id, status: "NOT_FOUND" }
         if(proc.status === "RUNNING"){
             // mata o grupo de processos inteiro (pgid negativo = -pid)
             try {
-                process.kill(-proc.pid, "SIGTERM")
+                process.kill(-proc.pid!, "SIGTERM")
             } catch (e) {
                 try { proc.child.kill("SIGTERM") } catch (_) {}
             }
@@ -91,21 +109,21 @@ const InitializeProcessManager = ({ runCommandPath, maxLogLines = 2000 } = {}) =
     const List = () =>
         [...processes.entries()].map(([id, p]) => ({ id, status: p.status, pid: p.pid, debug: p.debug }))
 
-    const GetStatus = (id) => {
+    const GetStatus = (id: string) => {
         const proc = processes.get(id)
         return proc ? { id, status: proc.status, pid: proc.pid, debug: proc.debug } : { id, status: "NOT_FOUND" }
     }
 
-    const GetLogs = (id) => {
+    const GetLogs = (id: string): LogEntry[] => {
         const proc = processes.get(id)
         return proc ? proc.logs : []
     }
 
     // Envia dados para o stdin do processo (terminal interativo).
-    const WriteToPackage = (id, data) => {
+    const WriteToPackage = (id: string, data: string) => {
         const proc = processes.get(id)
         if(proc && proc.status === "RUNNING" && proc.child.stdin && proc.child.stdin.writable){
-            proc.child.stdin.write(data)
+            proc.child.stdin!.write(data)
             _append(id, "stdin", data.replace(/\n$/, ""))
             return true
         }
@@ -113,8 +131,8 @@ const InitializeProcessManager = ({ runCommandPath, maxLogLines = 2000 } = {}) =
     }
 
     // Assina o stream de logs ao vivo de um processo. Retorna uma função de unsubscribe.
-    const Subscribe = (id, onLog) => {
-        const listener = (entry) => onLog(entry)
+    const Subscribe = (id: string, onLog: (entry: LogEntry) => void) => {
+        const listener = (entry: LogEntry) => onLog(entry)
         emitter.on(`log:${id}`, listener)
         return () => emitter.off(`log:${id}`, listener)
     }
