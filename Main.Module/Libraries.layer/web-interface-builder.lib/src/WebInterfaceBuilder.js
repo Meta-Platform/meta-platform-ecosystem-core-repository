@@ -190,6 +190,13 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
             reportProgress: !!onChangeProgress,
             smartRequirePath: (paths && paths.smartRequire) || process.env.META_SMART_REQUIRE_PATH,
             installGlobalLoggerPath: (paths && paths.installGlobalLogger) || process.env.META_INSTALL_GLOBAL_LOGGER_PATH,
+            // O worker é um processo NOVO: o hook que faz o `require` enxergar
+            // `.ts` não atravessa o spawn. Sem este caminho, tudo que o worker
+            // carrega por caminho e que hoje é TypeScript (a logger.lib, por
+            // exemplo) morre em MODULE_NOT_FOUND dentro de um catch — o build
+            // segue, calado, sem logger.
+            installTypeScriptResolutionPath:
+                (paths && paths.installTypeScriptResolution) || process.env.META_INSTALL_TYPESCRIPT_RESOLUTION_PATH,
             params: {
                 context, entrypoint, output, nodeModulesPath, htmlTemplate,
                 serverAppName, url, componentLibraries, wasmModules,

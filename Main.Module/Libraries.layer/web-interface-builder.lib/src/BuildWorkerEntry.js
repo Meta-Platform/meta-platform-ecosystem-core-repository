@@ -56,6 +56,18 @@ const _Summarize = (stats, startedAtMs) => {
     }
 }
 
+// A resolução de TypeScript também é instalada por conta própria, e ANTES de
+// qualquer require por caminho: o hook vive no processo, e este é um processo
+// novo — nada do pai atravessa o spawn. Sem isto, carregar a logger.lib (que é
+// TypeScript) falha no primeiro vizinho que ela pede sem extensão, e o catch
+// logo abaixo engole a falha: o build seguia sem logger nenhum, em silêncio.
+const _InstallTypeScriptResolution = (job) => {
+    const installPath = job.installTypeScriptResolutionPath || process.env.META_INSTALL_TYPESCRIPT_RESOLUTION_PATH
+    if(!installPath) return
+    try { require(installPath)() }
+    catch(e) { /* essential anterior à module-resolution.lib: segue como antes */ }
+}
+
 // O logger global é instalado por conta própria: este processo não herda o
 // `globalThis.Log` de ninguém, e os módulos que ele carrega usam `Log` direto.
 const _InstallLogger = (job) => {
@@ -81,6 +93,8 @@ const _LoadWebpack = (job) => {
 }
 
 const RunJob = async (job) => {
+    // Ordem obrigatória: a resolução primeiro, porque o logger é TypeScript.
+    _InstallTypeScriptResolution(job)
     _InstallLogger(job)
 
     const profile = BuildProfiles.ResolveBuildProfile({
