@@ -1,6 +1,6 @@
-const CopyArray = (array) => [...array]
+const CopyArray = <Item>(array: Item[]): Item[] => [...array]
 
-const AreArraysEqual = (array1, array2) => {
+const AreArraysEqual = <Item>(array1: Item[], array2: Item[]): boolean => {
 
     if (array1.length !== array2.length) 
         return false

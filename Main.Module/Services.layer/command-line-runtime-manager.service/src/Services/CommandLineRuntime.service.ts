@@ -1,9 +1,9 @@
-const { join } = require("path")
-const { randomUUID } = require("crypto")
-const { mkdirSync, existsSync } = require("fs")
+const { join } = require("path") as typeof import("path")
+const { randomUUID } = require("crypto") as typeof import("crypto")
+const { mkdirSync, existsSync } = require("fs") as typeof import("fs")
 
-const SmartRequire = require("../SmartRequire")
-const CreateTerminalSessionState = require("../Helpers/CreateTerminalSessionState")
+const SmartRequire = require("../SmartRequire") as (moduleName: string) => any
+const CreateTerminalSessionState = require("../Helpers/CreateTerminalSessionState") as () => any
 
 const pty = SmartRequire("node-pty")
 
@@ -17,7 +17,7 @@ const DEFAULT_ROWS = 24
 // `pkg-exec` do CLI dentro de um PTY (node-pty), reproduzindo a mesma invocação
 // que o wrapper `execute-command-line-application` faz, e distribui o I/O do
 // terminal para os consumidores (o painel, via WebSocket).
-const CommandLineRuntimeService = (params) => {
+const CommandLineRuntimeService = (params: any) => {
 
     const {
         jsonFileUtilitiesLib,
@@ -37,10 +37,10 @@ const CommandLineRuntimeService = (params) => {
     const sessions = CreateTerminalSessionState()
 
     // Lê o executableName declarado no boot.json do pacote CLI.
-    const _ResolveExecutableName = async (packagePath) => {
+    const _ResolveExecutableName = async (packagePath: string): Promise<string> => {
         const boot = await ReadJsonFile(join(packagePath, metadataDirName, bootFileName))
         const executables = (boot && boot.executables) || []
-        const executable = executables.find((item) => item && item.executableName)
+        const executable = executables.find((item: any) => item && item.executableName)
 
         if(!executable)
             throw new Error(`O pacote em '${packagePath}' não declara um executableName (não é um pacote CLI executável)`)
@@ -53,7 +53,7 @@ const CommandLineRuntimeService = (params) => {
     // mesmo CLI é executado mais de uma vez. Retorna o diretório (para limpeza)
     // e o caminho do socket. A instância vira supervisionável (aparece no
     // instance-supervisor).
-    const _CreateSupervisorSocket = (executableName) => {
+    const _CreateSupervisorSocket = (executableName: string) => {
         const instanceDir = join(ecosystemDataPath, supervisorSocketsDirName, randomUUID())
         mkdirSync(instanceDir, { recursive: true })
         return {
@@ -64,7 +64,12 @@ const CommandLineRuntimeService = (params) => {
 
     // Monta os argumentos do pkg-exec — equivalente ao que
     // GetCommandLineApplicationExecutionContent gera para o wrapper `run`.
-    const _BuildPkgExecArgs = ({ packagePath, executableName, commandLineArgs, supervisorSocketPath }) => {
+    const _BuildPkgExecArgs = ({ packagePath, executableName, commandLineArgs, supervisorSocketPath }: {
+        packagePath: string
+        executableName: string
+        commandLineArgs?: string
+        supervisorSocketPath?: string
+    }) => {
         const ecosystemDefaultFilePath = join(ecosystemDataPath, configurationsDirName, ecosystemDefaultsFileName)
         const nodejsDependenciesPath   = join(ecosystemDataPath, npmDependenciesDirName)
         const startupJsonFilePath      = join(packagePath, metadataDirName, startupParamsFileName)
@@ -87,7 +92,12 @@ const CommandLineRuntimeService = (params) => {
 
     // Inicia um pacote CLI num terminal novo. Retorna o id da sessão de
     // terminal, que o painel usa para abrir o stream bidirecional.
-    const RunCommandLinePackage = async ({ packagePath, commandLineArgs, cols, rows } = {}) => {
+    const RunCommandLinePackage = async ({ packagePath, commandLineArgs, cols, rows }: {
+        packagePath?: string
+        commandLineArgs?: string
+        cols?: number
+        rows?: number
+    } = {}) => {
 
         if(!packagePath)
             throw new Error("RunCommandLinePackage: 'packagePath' é obrigatório")
@@ -126,7 +136,14 @@ const CommandLineRuntimeService = (params) => {
      * já emite `{type:"exit", exitCode}` no fim, e `ListTerminals` já guarda o
      * código de saída — a colheita do resultado sai de graça.
      */
-    const RunCommand = async ({ command, args, cwd, cols, rows, env } = {}) => {
+    const RunCommand = async ({ command, args, cwd, cols, rows, env }: {
+        command?: string
+        args?: string[]
+        cwd?: string
+        cols?: number
+        rows?: number
+        env?: Record<string, string>
+    } = {}) => {
 
         if(!command)
             throw new Error("RunCommand: 'command' é obrigatório")

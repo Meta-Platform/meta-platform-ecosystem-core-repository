@@ -1,8 +1,8 @@
-const path = require("path")
+const path = require("path") as typeof import("path")
 
 // require resiliente a partir do diretório de dependências externas do
 // ecossistema (mesmo padrão de mount-api.lib / command-executor.lib).
-const SmartRequire = (moduleName) => {
+const SmartRequire = (moduleName: string): any => {
     try {
         const basePath = process.env.EXTERNAL_NODE_MODULES_PATH || "node_modules"
         const modulePath = path.join(basePath, moduleName)

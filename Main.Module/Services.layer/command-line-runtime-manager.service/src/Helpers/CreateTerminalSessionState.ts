@@ -1,4 +1,22 @@
-const { rmSync } = require("fs")
+const { rmSync } = require("fs") as typeof import("fs")
+
+/** Quem escuta uma sessão — na prática, um WebSocket do painel. */
+type SessionListener = {
+    onData?: (data: string) => void
+    onExit?: (exitCode: number | null) => void
+}
+
+type TerminalSession = {
+    terminalId: string
+    ptyProcess: any
+    executableName: string
+    packagePath: string
+    supervisorDir?: string
+    listeners: Set<SessionListener>
+    outputChunks: string[]
+    exited: boolean
+    exitCode: number | null
+}
 
 // Máximo de chunks de saída retidos por sessão para "replay" ao conectar.
 // Cobre a janela entre iniciar o CLI e o painel abrir o stream (os logs
@@ -10,10 +28,10 @@ const MAX_BUFFER_CHUNKS = 2000
 // os "attachers" (tipicamente um WebSocket do painel).
 const CreateTerminalSessionState = () => {
 
-    const sessions = new Map()
+    const sessions = new Map<string, TerminalSession>()
     let counter = 0
 
-    const _GetOrThrow = (terminalId) => {
+    const _GetOrThrow = (terminalId: string): TerminalSession => {
         const session = sessions.get(terminalId)
         if(!session)
             throw new Error(`Sessão de terminal '${terminalId}' não encontrada`)
@@ -23,11 +41,16 @@ const CreateTerminalSessionState = () => {
     // Registra um novo processo PTY e passa a distribuir seus eventos.
     // supervisorDir (opcional): subdiretório do socket de supervisão desta
     // instância, removido quando o processo termina.
-    const Register = ({ ptyProcess, executableName, packagePath, supervisorDir }) => {
+    const Register = ({ ptyProcess, executableName, packagePath, supervisorDir }: {
+        ptyProcess: any
+        executableName: string
+        packagePath: string
+        supervisorDir?: string
+    }): string => {
         counter += 1
         const terminalId = `terminal-${counter}`
 
-        const session = {
+        const session: TerminalSession = {
             terminalId,
             ptyProcess,
             executableName,
@@ -39,7 +62,7 @@ const CreateTerminalSessionState = () => {
             exitCode: null
         }
 
-        ptyProcess.onData((data) => {
+        ptyProcess.onData((data: string) => {
             session.outputChunks.push(data)
             if(session.outputChunks.length > MAX_BUFFER_CHUNKS)
                 session.outputChunks.shift()
@@ -47,7 +70,7 @@ const CreateTerminalSessionState = () => {
                 listener.onData && listener.onData(data))
         })
 
-        ptyProcess.onExit(({ exitCode }) => {
+        ptyProcess.onExit(({ exitCode }: { exitCode: number }) => {
             session.exited = true
             session.exitCode = exitCode
             // remove o subdiretório do socket de supervisão desta instância
@@ -64,13 +87,13 @@ const CreateTerminalSessionState = () => {
 
     // Assina os eventos de uma sessão. Se o processo já terminou, notifica o
     // encerramento imediatamente. Retorna uma função para cancelar a assinatura.
-    const Attach = (terminalId, listener) => {
+    const Attach = (terminalId: string, listener: SessionListener) => {
         const session = _GetOrThrow(terminalId)
 
         // Replay do que já saiu, para o cliente que conecta após o início do CLI.
         // (síncrono — nenhum evento ao vivo se intercala antes do add abaixo)
         if(listener.onData)
-            session.outputChunks.forEach((chunk) => listener.onData(chunk))
+            session.outputChunks.forEach((chunk) => listener.onData!(chunk))
 
         session.listeners.add(listener)
 
@@ -81,21 +104,21 @@ const CreateTerminalSessionState = () => {
     }
 
     // Envia dados (teclas) do painel para o processo do CLI.
-    const Write = (terminalId, data) => {
+    const Write = (terminalId: string, data: string) => {
         const session = _GetOrThrow(terminalId)
         if(!session.exited)
             session.ptyProcess.write(data)
     }
 
     // Redimensiona o terminal (mantém o layout do CLI correto).
-    const Resize = (terminalId, cols, rows) => {
+    const Resize = (terminalId: string, cols: number, rows: number) => {
         const session = _GetOrThrow(terminalId)
         if(!session.exited)
             session.ptyProcess.resize(cols, rows)
     }
 
     // Encerra o processo do CLI.
-    const Kill = (terminalId) => {
+    const Kill = (terminalId: string) => {
         const session = _GetOrThrow(terminalId)
         if(!session.exited)
             session.ptyProcess.kill()

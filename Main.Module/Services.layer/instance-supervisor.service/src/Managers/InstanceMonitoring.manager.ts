@@ -1,12 +1,12 @@
-const EventEmitter = require('node:events')
-const { resolve } = require("path")
-const colors = require("colors")
+const EventEmitter = require('node:events') as typeof import('node:events')
+const { resolve } = require("path") as typeof import("path")
+const colors = require("colors") as any
 
-const AreArraysEqual = require("../Utils/AreArraysEqual")
+const AreArraysEqual = require("../Utils/AreArraysEqual") as (array1: any[], array2: any[]) => boolean
 
-const CreateInstanceSocketHandlerManager = require("../Helpers/CreateInstanceSocketHandlerManager")
+const CreateInstanceSocketHandlerManager = require("../Helpers/CreateInstanceSocketHandlerManager") as (options: { helpers: any }) => any
 
-const InstanceMonitoringManager = (params) => {
+const InstanceMonitoringManager = (params: any) => {
 
     const {
         ecosystemdataHandlerService,
@@ -25,7 +25,7 @@ const InstanceMonitoringManager = (params) => {
     const { NotifyEvent } = notificationHubService
 
     const ecosystemDefaultFilePath = resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaultsFileRelativePath)
-    let supervisorSocketsDirPath = undefined
+    let supervisorSocketsDirPath: string | undefined = undefined
 
     const {
         Overview,
@@ -43,9 +43,9 @@ const InstanceMonitoringManager = (params) => {
 
     const _CreateHandlerSocketDirectoryChange = () => {
         
-        let socketFileNameList = []
+        let socketFileNameList: string[] = []
 
-        const __ChangeList = (newList) => {
+        const __ChangeList = (newList: string[]) => {
             const addedSockets = newList.filter((socketFileName) => !socketFileNameList.includes(socketFileName))
             const removedSockets = socketFileNameList.filter((socketFileName) => !newList.includes(socketFileName))
             socketFileNameList = newList
@@ -76,24 +76,24 @@ const InstanceMonitoringManager = (params) => {
             }))
         }
 
-        const __HandlerSocketDirectoryChange = (newSocketFileNameList) => {
+        const __HandlerSocketDirectoryChange = (newSocketFileNameList: string[]) => {
             if(!AreArraysEqual(newSocketFileNameList, socketFileNameList)){
                 __ChangeList(newSocketFileNameList)
                 newSocketFileNameList
-                .forEach((socketFileName) => TryInitializeSocketMonitoring(_GetSocketFilePath(socketFileName)))
+                .forEach((socketFileName: string) => TryInitializeSocketMonitoring(_GetSocketFilePath(socketFileName)))
             }
         }
         
         return __HandlerSocketDirectoryChange
     }
 
-    const _GetSocketFilePath = (socketFileName) => resolve(supervisorSocketsDirPath, socketFileName)
+    const _GetSocketFilePath = (socketFileName: string) => resolve(supervisorSocketsDirPath!, socketFileName)
 
     const _Start = async () => {
 
         const socketsDirPath = await _ConfigSocketsDirPath()
         const socketFileNames = await ListSocketFilesName(socketsDirPath)
-        socketFileNames.forEach((socketFileName) => InitializeSocketMonitoring(_GetSocketFilePath(socketFileName)))
+        socketFileNames.forEach((socketFileName: string) => InitializeSocketMonitoring(_GetSocketFilePath(socketFileName)))
 
         const __HandlerSocketDirectoryChange = _CreateHandlerSocketDirectoryChange()
 
@@ -114,7 +114,7 @@ const InstanceMonitoringManager = (params) => {
 
     const OverviewChangeListener = AddEventListener
 
-    const _GetConnectionClient = (monitoringStateKey) => {
+    const _GetConnectionClient = (monitoringStateKey: string) => {
         const socketMonitoringState = GetSocketMonitoringState(monitoringStateKey)
         if(!socketMonitoringState) return undefined
         if(socketMonitoringState.GetCommunicationStatus() !== "CONNECTED") return undefined
@@ -122,7 +122,7 @@ const InstanceMonitoringManager = (params) => {
         return communicationClient
     }
 
-    const _GetUnavailableFallback = (fname) => {
+    const _GetUnavailableFallback = (fname: string): any => {
         if(fname === "ListTasks") return []
         if(fname === "GetTask") return undefined
         if(fname === "GetStartupArguments") return {}
@@ -131,7 +131,7 @@ const InstanceMonitoringManager = (params) => {
         return undefined
     }
 
-    const _CallRPC = async (monitoringStateKey, fname, fArgs) => {
+    const _CallRPC = async (monitoringStateKey: string, fname: string, fArgs?: any) => {
         const communicationClient = _GetConnectionClient(monitoringStateKey)
         if(!communicationClient || typeof communicationClient[fname] !== "function") {
             return _GetUnavailableFallback(fname)
@@ -144,16 +144,16 @@ const InstanceMonitoringManager = (params) => {
         }
     }
 
-    const ListInstanceTasks     = async (monitoringStateKey) =>           await _CallRPC(monitoringStateKey, "ListTasks")
-    const GetTaskInformation    = async ({monitoringStateKey, taskId}) => await _CallRPC(monitoringStateKey, "GetTask", taskId)
-    const GetStartupArguments   = async (monitoringStateKey) =>           await _CallRPC(monitoringStateKey, "GetStartupArguments")
-    const GetProcessInformation = async (monitoringStateKey) =>           await _CallRPC(monitoringStateKey, "GetProcessInformation")
-    const KillInstance          = async (monitoringStateKey) =>           await _CallRPC(monitoringStateKey, "KillInstance")
+    const ListInstanceTasks     = async (monitoringStateKey: string) =>           await _CallRPC(monitoringStateKey, "ListTasks")
+    const GetTaskInformation    = async ({monitoringStateKey, taskId}: { monitoringStateKey: string, taskId: string }) => await _CallRPC(monitoringStateKey, "GetTask", taskId)
+    const GetStartupArguments   = async (monitoringStateKey: string) =>           await _CallRPC(monitoringStateKey, "GetStartupArguments")
+    const GetProcessInformation = async (monitoringStateKey: string) =>           await _CallRPC(monitoringStateKey, "GetProcessInformation")
+    const KillInstance          = async (monitoringStateKey: string) =>           await _CallRPC(monitoringStateKey, "KillInstance")
 
     // Retorna o stream de log do processo (package-executor) via socket.
     // O client expõe GetLogStreaming() (RPC LogStreaming do daemon) que emite
     // eventos 'data'/'error'. Quem consome deve cancelar/destruir ao encerrar.
-    const GetLogStreaming = (monitoringStateKey) => {
+    const GetLogStreaming = (monitoringStateKey: string) => {
         const communicationClient = _GetConnectionClient(monitoringStateKey)
         return communicationClient.GetLogStreaming()
     }

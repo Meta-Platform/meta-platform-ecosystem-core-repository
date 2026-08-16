@@ -1,26 +1,26 @@
 
-const crypto = require('crypto')
-const EventEmitter = require('node:events')
+const crypto = require('crypto') as typeof import('crypto')
+const EventEmitter = require('node:events') as typeof import('node:events')
 
 const NEW_EVENT = Symbol()
 
-const CreateMonitoringStateKey = (socketFilePath) => {
+const CreateMonitoringStateKey = (socketFilePath: string): string => {
     const hash = crypto.createHash("sha256")
     hash.update(socketFilePath)
     return hash.digest('hex')
 }
 
-const CreateSocketMonitoringState = require("./CreateSocketMonitoringState")
+const CreateSocketMonitoringState = require("./CreateSocketMonitoringState") as (options: { socketFilePath: string, helpers: any }) => any
 
 const CreateInstanceSocketHandlerManager = ({
     helpers
-}) => {
+}: { helpers: any }) => {
 
-    const allMonitoringState = {}
+    const allMonitoringState: Record<string, any> = {}
 
     const eventEmitter = new EventEmitter()
 
-    const InitializeSocketMonitoring = (socketFilePath) => {
+    const InitializeSocketMonitoring = (socketFilePath: string) => {
 
         const monitoringStateKey = CreateMonitoringStateKey(socketFilePath)
         if(!IsSocketBeingMonitored(monitoringStateKey)){
@@ -32,7 +32,7 @@ const CreateInstanceSocketHandlerManager = ({
         }
     }
 
-    const TryInitializeSocketMonitoring = (socketFilePath) => {
+    const TryInitializeSocketMonitoring = (socketFilePath: string) => {
         try {
             InitializeSocketMonitoring(socketFilePath)
         } catch(e){
@@ -40,14 +40,14 @@ const CreateInstanceSocketHandlerManager = ({
         }
     }
 
-    const _GetMonitoringStateByKey = (monitoringStateKey) => allMonitoringState[monitoringStateKey]
+    const _GetMonitoringStateByKey = (monitoringStateKey: string) => allMonitoringState[monitoringStateKey]
     const _GetMonitoringKeys = () => Object.keys(allMonitoringState)
 
-    const IsSocketBeingMonitored = (monitoringStateKey) => !!_GetMonitoringStateByKey(monitoringStateKey)
+    const IsSocketBeingMonitored = (monitoringStateKey: string) => !!_GetMonitoringStateByKey(monitoringStateKey)
 
     const Overview = () => {
         return _GetMonitoringKeys()
-        .reduce((acc, monitoringStateKey) => {
+        .reduce((acc: Record<string, unknown>, monitoringStateKey: string) => {
 
             const monitoringState = _GetMonitoringStateByKey(monitoringStateKey)
 
@@ -61,7 +61,7 @@ const CreateInstanceSocketHandlerManager = ({
         }, {})
     }
 
-    const AddEventListener = (f) => 
+    const AddEventListener = (f: (...args: any[]) => void) => 
         eventEmitter.on(NEW_EVENT, f)
 
     const GetMonitoringKeysReady = () => 

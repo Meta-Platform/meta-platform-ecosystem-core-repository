@@ -1,4 +1,4 @@
-const EventEmitter = require('node:events')
+const EventEmitter = require('node:events') as typeof import('node:events')
 
 const MonitoringStateTypes = Object.freeze({
     CREATED: "CREATED",
@@ -16,6 +16,9 @@ const RECONNECT_INTERVAL_MS    = 4000
 const CreateSocketMonitoringState = ({
     socketFilePath,
     helpers
+}: {
+    socketFilePath: string
+    helpers: { CreateCommunicationInterface: (socketFilePath: string) => Promise<any> }
 }) => {
 
     const eventEmitter = new EventEmitter()
@@ -24,12 +27,12 @@ const CreateSocketMonitoringState = ({
 
     const CONNECTION_STATUS_CHANGE = Symbol()
 
-    let communicationStatus = MonitoringStateTypes.CREATED
-    let communicationClient = undefined
-    let healthTimer    = undefined
-    let reconnectTimer = undefined
+    let communicationStatus: string = MonitoringStateTypes.CREATED
+    let communicationClient: any = undefined
+    let healthTimer: NodeJS.Timeout | undefined    = undefined
+    let reconnectTimer: NodeJS.Timeout | undefined = undefined
 
-    const _ChangeStatus = (newStatus) => {
+    const _ChangeStatus = (newStatus: string) => {
         if(communicationStatus === newStatus) return
         communicationStatus = newStatus
         eventEmitter.emit(CONNECTION_STATUS_CHANGE, newStatus)
@@ -82,7 +85,7 @@ const CreateSocketMonitoringState = ({
 
     }
 
-    const ConnectionStatusListener = (f) =>
+    const ConnectionStatusListener = (f: (status: string) => void) =>
         eventEmitter.on(CONNECTION_STATUS_CHANGE, f)
 
     _ConnectInstance()
