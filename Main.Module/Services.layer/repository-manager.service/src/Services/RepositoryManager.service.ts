@@ -1,23 +1,25 @@
-const GetPackageIconPathByPackagePath = require("../Commons/GetPackageIconPathByPackagePath")
-const path = require("path")
-const os = require('os')
-const { resolve } = require("path")
+const GetPackageIconPathByPackagePath = require("../Commons/GetPackageIconPathByPackagePath") as (packagePath: string) => Promise<string>
+const path = require("path") as typeof import("path")
+const os = require('os') as typeof import('os')
+const { resolve } = require("path") as typeof import("path")
 
-const ConvertPathToAbsolutPath = (_path) => path
+const ConvertPathToAbsolutPath = (_path: string): string => path
     .join(_path)
     .replace('~', os.homedir())
 
-const FindPackage = (listPackages, params) => 
-    listPackages.find((package) => {
-        return package.namespaceRepo === params.namespaceRepo 
-        && package.moduleName === params.moduleName
-        && package.layerName === params.layerName
-        && package.packageName === params.packageName
-        && package.ext === params.ext
-        && package.parentGroup === params.parentGroup
+// O parâmetro do predicado se chamava `package` — palavra reservada em modo
+// estrito, que é o modo de qualquer módulo TypeScript. Renomeado, mesma busca.
+const FindPackage = (listPackages: any[], params: any) =>
+    listPackages.find((candidate) => {
+        return candidate.namespaceRepo === params.namespaceRepo
+        && candidate.moduleName === params.moduleName
+        && candidate.layerName === params.layerName
+        && candidate.packageName === params.packageName
+        && candidate.ext === params.ext
+        && candidate.parentGroup === params.parentGroup
     })
 
-const MountPackagePath = ({packageInfo, REPOS_CONF_EXT_GROUP_DIR}) => {
+const MountPackagePath = ({packageInfo, REPOS_CONF_EXT_GROUP_DIR}: { packageInfo: any, REPOS_CONF_EXT_GROUP_DIR: string }) => {
     const {
         layerPath,
         parentGroup,
@@ -30,19 +32,19 @@ const MountPackagePath = ({packageInfo, REPOS_CONF_EXT_GROUP_DIR}) => {
     return resolve(layerPath, parentGroupChunkPath, packageChunkPath)
 }
 
-const GetPackageDependencyGraph = (metadataHierarchy) => {
+const GetPackageDependencyGraph = (metadataHierarchy: any) => {
     const { dependencyList, linkedGraph } = metadataHierarchy
-    const { code } = dependencyList.find(({ dependency }) => !!dependency?.metadata?.boot) || {}
+    const { code } = dependencyList.find(({ dependency }: any) => !!dependency?.metadata?.boot) || {}
     if(code){
         const bootNode = linkedGraph[code]
         return {
             [code]: Object.keys(bootNode)
-                .reduce((acc, dependencyCode) => ({ ...acc, [dependencyCode]:{}}), {})
+                .reduce((acc: any, dependencyCode: string) => ({ ...acc, [dependencyCode]:{}}), {})
         }
     }
 }
 
-const RepositoryManagerService = (params) => {
+const RepositoryManagerService = (params: any) => {
 
     const {
         installDataDirPath,
@@ -73,7 +75,7 @@ const RepositoryManagerService = (params) => {
         return packageList
     }
 
-    const GetPackagePath = async(params) => {
+    const GetPackagePath = async(params: any) => {
         const packageList = await ListPackages()
     
         const packageInfo = FindPackage(packageList, params)
@@ -83,7 +85,7 @@ const RepositoryManagerService = (params) => {
         }
     }
 
-    const GetPackageIconPath = async(params) => {
+    const GetPackageIconPath = async(params: any) => {
         const packagePath = await GetPackagePath(params)
     
         if(packagePath){
@@ -91,7 +93,7 @@ const RepositoryManagerService = (params) => {
         }
     }
     
-    const CheckPackageHasIcon = async (params) => {
+    const CheckPackageHasIcon = async (params: any) => {
         try{
             return !!await GetPackageIconPath(params)
         }catch(e){
@@ -99,7 +101,7 @@ const RepositoryManagerService = (params) => {
         }
     }
 
-    const GetMetadataHierarchy = async (params) => {
+    const GetMetadataHierarchy = async (params: any) => {
         const packagePath = await GetPackagePath(params)
         if(packagePath){
             const packageList = await ListPackages()
@@ -115,7 +117,7 @@ const RepositoryManagerService = (params) => {
         }
     }
 
-    const GetPackageDependencyHierarchy = async (params) => {
+    const GetPackageDependencyHierarchy = async (params: any) => {
         try{
             const metadataHierarchy = await GetMetadataHierarchy(params)
             if(metadataHierarchy){
@@ -164,7 +166,7 @@ const RepositoryManagerService = (params) => {
         return layerList
     }
 
-    const _RegisterRepositoryInstallation = async ({ namespace, path }) => {
+    const _RegisterRepositoryInstallation = async ({ namespace, path }: { namespace: string, path: string }) => {
         const RegisterRepositoryInstallation = repositoryUtilitiesLib.require("RegisterRepositoryInstallation")
         await RegisterRepositoryInstallation({
             namespace, 
