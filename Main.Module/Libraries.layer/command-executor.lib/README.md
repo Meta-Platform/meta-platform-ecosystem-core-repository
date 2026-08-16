@@ -15,8 +15,8 @@ nas CLIs `instance-executor.cli` (`executor`) e `repository-explorer.cli`
 
 | Módulo | Responsabilidade |
 |--------|------------------|
-| `CommandExecutor.js` | Executa comandos da CLI. |
-| `SmartRequire.js` | `require` resiliente a partir do diretório de dependências externas. |
+| `CommandExecutor.ts` | Executa comandos da CLI. |
+| `SmartRequire.ts` | `require` resiliente a partir do diretório de dependências externas. |
 
 ## Dependências
 

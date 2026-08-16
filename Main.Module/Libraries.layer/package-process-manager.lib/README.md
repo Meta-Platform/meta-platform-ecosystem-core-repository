@@ -17,12 +17,12 @@ entre o controller de tasks (Start/Stop/List) e o endpoint de logs.
 
 | Módulo | Responsabilidade |
 |---|---|
-| `InitializeProcessManager.js` | Cria o gerenciador de processos de pacote. |
-| `Services/ProcessManager.service.js` | Expõe o gerenciador como serviço do ecossistema. |
+| `InitializeProcessManager.ts` | Cria o gerenciador de processos de pacote. |
+| `Services/ProcessManager.service.ts` | Expõe o gerenciador como serviço do ecossistema. |
 
 ## API
 
-```js
+```ts
 manager.StartPackage({ id, packagePath, debug })   // spawn run|run-dbg
 manager.StopPackage(id)                             // SIGTERM
 manager.List()                                      // [{ id, status, pid, debug }]

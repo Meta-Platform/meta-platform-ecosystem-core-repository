@@ -24,7 +24,7 @@ descoberta dinamicamente a partir dos `.api.json` publicados pelo daemon.
 
 ## Uso
 
-```js
+```ts
 const CreateInstanceManagerClient = instanceManagerClientLib.require("CreateInstanceManagerClient")
 
 const instanceManager = CreateInstanceManagerClient({
@@ -39,7 +39,7 @@ if(await instanceManager.IsAvailable())
 
 | Módulo | Responsabilidade |
 |--------|------------------|
-| `CreateInstanceManagerClient.js` | Fábrica do cliente do daemon; expõe execução de pacotes, tarefas, ambientes e streams. |
+| `CreateInstanceManagerClient.ts` | Fábrica do cliente do daemon; expõe execução de pacotes, tarefas, ambientes e streams. |
 
 ### Superfície do cliente
 

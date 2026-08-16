@@ -44,14 +44,14 @@ esteve aqui.
 
 | Módulo | Responsabilidade |
 |---|---|
-| `CreateBareGitWriter.js` | Fábrica do escritor: recebe `scratchRootPath` e devolve as operações. |
-| `NormalizeChangeSet.js` | Valida e normaliza o change set — puro, sem git, sem disco. Roda **antes** de qualquer `hash-object`. |
-| `RunGit.js` | Runner de `git` sem shell, com `env` explícito e stderr preservado; e a variante que alimenta o git por stdin. |
-| `Errors.js` | Recusas que dependem do estado do git, cada uma com `code` e `statusCode`. |
+| `CreateBareGitWriter.ts` | Fábrica do escritor: recebe `scratchRootPath` e devolve as operações. |
+| `NormalizeChangeSet.ts` | Valida e normaliza o change set — puro, sem git, sem disco. Roda **antes** de qualquer `hash-object`. |
+| `RunGit.ts` | Runner de `git` sem shell, com `env` explícito e stderr preservado; e a variante que alimenta o git por stdin. |
+| `Errors.ts` | Recusas que dependem do estado do git, cada uma com `code` e `statusCode`. |
 
 ## API
 
-```js
+```ts
 const CreateBareGitWriter = bareGitWriterLib.require("CreateBareGitWriter")
 
 const writer = CreateBareGitWriter({ scratchRootPath: "/volume/dados/.git-write-scratch" })
@@ -59,7 +59,7 @@ const writer = CreateBareGitWriter({ scratchRootPath: "/volume/dados/.git-write-
 
 ### `WriteCommit({ gitDirPath, branch, message, changes, expectedHeadOid, author, ... })`
 
-```js
+```ts
 const result = await writer.WriteCommit({
     gitDirPath      : "/volume/dados/git/<id>.git",
     branch          : "main",

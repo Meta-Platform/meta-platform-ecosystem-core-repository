@@ -14,11 +14,14 @@ Biblioteca de **scaffolding de pacotes**: cria a estrutura de novos pacotes
 
 | Módulo / pasta | Responsabilidade |
 |----------------|------------------|
-| `CreateLibPackage.js` | Cria um pacote de biblioteca (`.lib`). |
-| `CreateCliPackage.js` | Cria um pacote de linha de comando (`.cli`). |
-| `CreateServicesPackage.js` | Cria um pacote de serviços (`.service`). |
-| `AddEmptyJSFunctionToPackageSrc.js` | Adiciona um módulo JS vazio ao `src/` do pacote. |
-| `Helpers/`, `Utils/` | Funções auxiliares de geração. |
+| `CreateLibPackage.ts` | Cria um pacote de biblioteca (`.lib`). |
+| `CreateCliPackage.ts` | Cria um pacote de linha de comando (`.cli`). |
+| `CreateServicesPackage.ts` | Cria um pacote de serviços (`.service`). |
+| `AddEmptyFunctionToPackageSrc.ts` | Adiciona um módulo vazio ao `src/` do pacote. |
+| `Helpers/`, `Utils/` | Funções auxiliares de geração — inclusive o `CreateTypeScriptConfigFile.ts`, que escreve o `tsconfig.json` do pacote novo. |
+
+> O scaffolding gera **TypeScript**: os módulos de comando, de serviço e a função
+> vazia nascem em `.ts`, e o pacote já sai com o seu `tsconfig.json`.
 
 ## Dependências
 

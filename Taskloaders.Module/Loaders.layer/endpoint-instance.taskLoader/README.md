@@ -14,9 +14,9 @@ execução de um plano.
 
 | Módulo | Responsabilidade |
 |--------|------------------|
-| `EndpointInstance.taskLoader.js` | Carrega/instancia o `endpoint-instance`. |
-| `StartControllerService.js` | Sobe um endpoint do tipo *controller*. |
-| `StartWebGraphicUserInterfaceService.js` | Resolve o perfil de build, monta o diretório de saída e sobe a interface web. |
+| `EndpointInstance.taskLoader.ts` | Carrega/instancia o `endpoint-instance`. |
+| `StartControllerService.ts` | Sobe um endpoint do tipo *controller*. |
+| `StartWebGraphicUserInterfaceService.ts` | Resolve o perfil de build, monta o diretório de saída e sobe a interface web. |
 
 O construtor de bundles vive no
 [`web-interface-builder.lib`](../../../Main.Module/Libraries.layer/web-interface-builder.lib/README.md)

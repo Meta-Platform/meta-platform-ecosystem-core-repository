@@ -16,7 +16,7 @@ comportamentos que valem por si.
 
 ### 1. Sanitização de payload
 
-`SanitizeContainerRuntimePayload.js` limpa a resposta dos `Inspect*` antes de
+`SanitizeContainerRuntimePayload.ts` limpa a resposta dos `Inspect*` antes de
 ela sair: variáveis de ambiente com cara de segredo e caminhos do host viram
 valores mascarados. Inspecionar um container não pode ser uma forma oblíqua de
 ler a senha que ele recebeu no boot.
@@ -24,14 +24,14 @@ ler a senha que ele recebeu no boot.
 ### 2. Gate de autorização do export
 
 `ExportContainer`, `ExportImage` e `ExportVolume` levam o filesystem inteiro
-embora — são as operações mais sensíveis daqui. `CreateExportAuthorizationGuard.js`
+embora — são as operações mais sensíveis daqui. `CreateExportAuthorizationGuard.ts`
 exige ator autenticado, decisão de autorização positiva e um `reason` informado,
 e opera em **fail closed**: sem PEP vinculado, sem socket do IAM ou com o
 provedor de decisão fora do ar, o export é **negado**, nunca liberado.
 
 ### 3. Auditoria
 
-`CreateAuditRecorder.js` registra as mutações com ator, ação, recurso e motivo —
+`CreateAuditRecorder.ts` registra as mutações com ator, ação, recurso e motivo —
 e nunca com o conteúdo exportado. Sem sink de auditoria configurado, a operação
 acontece e nada é registrado (não há onde escrever); com sink, allow e deny são
 registrados igualmente.

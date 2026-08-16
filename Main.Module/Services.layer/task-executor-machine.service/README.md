@@ -27,9 +27,9 @@ Dependências (`bound-params`) — as libs de runtime do `essential-repository`:
 Este serviço é **o ponto onde os object loaders são registrados**: cada lib de
 loader recebida em `bound-params` é mapeada para um `objectLoaderType` num
 dicionário `taskLoaders` passado ao `TaskExecutor` (ver
-[`StandardTaskExecutorMachine.service.js`](./src/Services/StandardTaskExecutorMachine.service.js)):
+[`StandardTaskExecutorMachine.service.ts`](./src/Services/StandardTaskExecutorMachine.service.ts)):
 
-```javascript
+```ts
 const taskLoaders = {
     'install-nodejs-package-dependencies' : installNodejsPackageDependenciesLib.require("InstallNodejsPackageDependencies.taskLoader"),
     'nodejs-package'                      : nodejsPackageLib.require("NodeJSPackage.taskLoader"),

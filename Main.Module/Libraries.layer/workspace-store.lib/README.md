@@ -20,11 +20,11 @@ Reutilizada por:
 
 | Módulo | Responsabilidade |
 |---|---|
-| `InitializeWorkspaceStore.js` | Cria o store de workspaces (SQLite via Sequelize) e expõe seu CRUD. |
+| `InitializeWorkspaceStore.ts` | Cria o store de workspaces (SQLite via Sequelize) e expõe seu CRUD. |
 
 ## API
 
-```js
+```ts
 const InitializeWorkspaceStore = workspaceStoreLib.require("InitializeWorkspaceStore")
 const store = InitializeWorkspaceStore("~/virtual-desk-state/local-databases/package-developer-workspace-store-service.sqlite")
 

@@ -14,7 +14,7 @@ ecossistema. É injetada como `mountApiLib` na CLI `repository-explorer.cli`
 
 | Módulo / pasta | Responsabilidade |
 |----------------|------------------|
-| `MountAPIs.js` | Monta os clientes/definições de API. |
+| `MountAPIs.ts` | Monta os clientes/definições de API. |
 | `Communication/` | Utilitários de comunicação (transporte). |
 
 ## Dependências

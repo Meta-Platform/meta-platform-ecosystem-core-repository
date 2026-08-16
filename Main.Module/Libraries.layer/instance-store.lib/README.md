@@ -48,7 +48,7 @@ continua sendo readotada pelo `Reconcile()`.
 
 | Módulo | Responsabilidade |
 |---|---|
-| `InitializeInstanceStore.js` | Cria o store: conecta no SQLite, migra o schema e expõe a API de instâncias. |
+| `InitializeInstanceStore.ts` | Cria o store: conecta no SQLite, migra o schema e expõe a API de instâncias. |
 
 ## Reconciliação
 
@@ -58,7 +58,7 @@ os mortos, e **todo** `app` in-process (que morreu com o daemon), viram `STOPPED
 
 ## API
 
-```js
+```ts
 const InitializeInstanceStore = instanceStoreLib.require("InitializeInstanceStore")
 const store = InitializeInstanceStore("~/virtual-desk-state/local-databases/ecosystem-instance-store.sqlite")
 

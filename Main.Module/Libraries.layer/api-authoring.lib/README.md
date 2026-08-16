@@ -17,11 +17,11 @@ Reutilizada por `api-designer.webservice` (e disponível para CLI).
 
 | Módulo | Responsabilidade |
 |---|---|
-| `InitializeApiAuthoring.js` | Cria a instância de autoria de API (leitura e escrita dos `APIs/*.api.json`). |
+| `InitializeApiAuthoring.ts` | Cria a instância de autoria de API (leitura e escrita dos `APIs/*.api.json`). |
 
 ## API
 
-```js
+```ts
 const store = apiAuthoringLib.require("InitializeApiAuthoring")(apisDir)
 await store.ListAPIs()                                  // ["minha-api", ...]
 await store.GetAPI(name)                                // { name, endpoints }

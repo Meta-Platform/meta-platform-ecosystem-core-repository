@@ -19,17 +19,17 @@ status atualizado por eventos — sem polling.
 
 | Módulo | Responsabilidade |
 |---|---|
-| `InitializeGitStatusManager.js` | Cria o gerenciador: observa o repositório e emite mudanças de status. |
-| `GetRepositoryGitStatus.js` | Lê o status git de um repositório. |
-| `GetRepositoryGitLog.js` | Lê o histórico: commits por texto literal, autor e janela de tempo. |
-| `GetCommitDetail.js` | Detalhe de um commit: autor, mensagem e os arquivos, com linhas somadas e removidas. |
-| `RunGit.js` | Runner de `git` compartilhado pelos três leitores (buffer grande + timeout). |
-| `BuildAncestorStatusMap.js` | Propaga o status dos arquivos para os diretórios ancestrais, para pintar a árvore. |
-| `Services/GitStatusManager.service.js` | Expõe o gerenciador como serviço do ecossistema. |
+| `InitializeGitStatusManager.ts` | Cria o gerenciador: observa o repositório e emite mudanças de status. |
+| `GetRepositoryGitStatus.ts` | Lê o status git de um repositório. |
+| `GetRepositoryGitLog.ts` | Lê o histórico: commits por texto literal, autor e janela de tempo. |
+| `GetCommitDetail.ts` | Detalhe de um commit: autor, mensagem e os arquivos, com linhas somadas e removidas. |
+| `RunGit.ts` | Runner de `git` compartilhado pelos três leitores (buffer grande + timeout). |
+| `BuildAncestorStatusMap.ts` | Propaga o status dos arquivos para os diretórios ancestrais, para pintar a árvore. |
+| `Services/GitStatusManager.service.ts` | Expõe o gerenciador como serviço do ecossistema. |
 
 ## API
 
-```js
+```ts
 const GetRepositoryGitStatus   = require("git-status.lib/src/GetRepositoryGitStatus")
 const BuildAncestorStatusMap   = require("git-status.lib/src/BuildAncestorStatusMap")
 const InitializeGitStatusManager = require("git-status.lib/src/InitializeGitStatusManager")
@@ -45,7 +45,7 @@ casa por texto **literal**, não regex: é o que permite procurar a chave de um
 item (`"MPMR-5"`) sem que um prefixo com pontuação vire padrão. Cada commit sai
 como `{hash, shortHash, authorName, authorEmail, authorDate, subject, body}`.
 
-```js
+```ts
 // Todo commit que cita a chave de um item, desde que ele foi reivindicado:
 const commits = await GetRepositoryGitLog({
     repositoryPath: "/caminho/do/repo",
@@ -69,7 +69,7 @@ Propaga cada arquivo sujo para todos os seus diretórios ancestrais até a raiz.
 enquanto houver assinatura ativa (refcount). `GetStatus` sempre devolve o estado
 completo (não deltas):
 
-```js
+```ts
 {
   statusByPath: { [absPath]: { dirty, count, states, files } },
   repositories: { [name]: { path, isRepo, branch, dirty, count } }

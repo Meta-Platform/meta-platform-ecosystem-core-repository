@@ -15,7 +15,7 @@ Preenche uma lacuna do ecossistema (não havia keep-alive/respawn). Usado pelo
 
 ## Uso
 
-```js
+```ts
 const CreateProcessSupervisor = processSupervisorLib.require("CreateProcessSupervisor")
 const supervisor = CreateProcessSupervisor({
     command: "/caminho/para/executor-manager",
@@ -28,6 +28,6 @@ supervisor.Start()   // spawna e re-spawna no exit; SIGINT/SIGTERM encerram limp
 
 | Módulo | Responsabilidade |
 |--------|------------------|
-| `CreateProcessSupervisor.js` | Fábrica do supervisor: `Start`/`Stop`/`IsRunning`. |
+| `CreateProcessSupervisor.ts` | Fábrica do supervisor: `Start`/`Stop`/`IsRunning`. |
 
 > Consulte a [Arquitetura](https://github.com/Meta-Platform/.github/blob/main/docs/ARQUITETURA.md).

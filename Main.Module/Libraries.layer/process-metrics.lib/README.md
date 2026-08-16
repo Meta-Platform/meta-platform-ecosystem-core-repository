@@ -30,8 +30,8 @@ quem consome decide o que exibir. `IsSupported()` responde antes de tentar.
 
 | Módulo | Responsabilidade |
 |---|---|
-| `CreateProcessSampler.js` | Amostra processo, grupo de processos e a máquina. |
-| `CreateMetricsHistory.js` | Buffer circular de amostras por chave, para os gráficos. |
+| `CreateProcessSampler.ts` | Amostra processo, grupo de processos e a máquina. |
+| `CreateMetricsHistory.ts` | Buffer circular de amostras por chave, para os gráficos. |
 
 ## Duas medidas que costumam ser confundidas
 
@@ -65,7 +65,7 @@ interno cresceria indefinidamente num daemon que fica meses no ar.
 
 ## API
 
-```js
+```ts
 const CreateProcessSampler  = processMetricsLib.require("CreateProcessSampler")
 const CreateMetricsHistory  = processMetricsLib.require("CreateMetricsHistory")
 
