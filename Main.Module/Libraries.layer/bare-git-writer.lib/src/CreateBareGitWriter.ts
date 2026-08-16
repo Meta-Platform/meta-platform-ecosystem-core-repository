@@ -1,10 +1,25 @@
-const fs = require("fs")
-const { join } = require("path")
-const { randomUUID } = require("crypto")
+import type {
+    AppliedChange, ChangeLimits, CommitInfo, Identity, NormalizedChange,
+    RawChange, TreeEntry, WriteCommitResult
+} from "./Types"
 
-const RunGit = require("./RunGit")
+const fs = require("fs") as typeof import("fs")
+const { join } = require("path") as typeof import("path")
+const { randomUUID } = require("crypto") as typeof import("crypto")
+
+type GitResult = { stdout: any, stderr: any }
+type GitOptions = { env?: NodeJS.ProcessEnv, timeoutMs?: number, maxBuffer?: number, encoding?: any }
+
+const RunGit = require("./RunGit") as ((args: string[], options?: GitOptions & { gitExecutable?: string }) => Promise<GitResult>) & {
+    TryRunGit: (args: string[], options?: GitOptions & { gitExecutable?: string }) => Promise<GitResult | undefined>
+    RunGitWithInput: (args: string[], input: string, options?: GitOptions & { gitExecutable?: string }) => Promise<{ stdout: string, stderr: string }>
+}
 const { TryRunGit, RunGitWithInput } = RunGit
-const NormalizeChangeSet = require("./NormalizeChangeSet")
+const NormalizeChangeSet = require("./NormalizeChangeSet") as ((changes: RawChange[], limits?: Partial<ChangeLimits>) => NormalizedChange[]) & {
+    NormalizeMessage: (value: unknown, limits: ChangeLimits) => string
+    IntersectsChangedPaths: (changes: NormalizedChange[], changedPaths: string[]) => string[]
+    DEFAULT_LIMITS: ChangeLimits
+}
 const { NormalizeMessage, IntersectsChangedPaths, DEFAULT_LIMITS } = NormalizeChangeSet
 const {
     InvalidChangeError,
@@ -13,7 +28,14 @@ const {
     FileChangedError,
     EmptyCommitError,
     GitRuntimeError
-} = require("./Errors")
+} = require("./Errors") as {
+    InvalidChangeError: new (message: string, code?: string) => Error
+    HeadAssertionRequiredError: new (currentHeadOid?: string) => Error
+    StaleHeadError: new (options: { expectedHeadOid?: string | null, currentHeadOid?: string | null, conflictingPaths?: string[] }) => Error
+    FileChangedError: new (conflicts: unknown) => Error
+    EmptyCommitError: new (headOid?: string) => Error
+    GitRuntimeError: new (message: string, options?: { stderr?: string, cause?: unknown }) => Error & { stderr?: string }
+}
 
 /*
     ESCRITA EM REPOSITÓRIO BARE, POR PLUMBING.
@@ -65,7 +87,7 @@ const NULL_OID = "0000000000000000000000000000000000000000"
 */
 const CAS_FAILURE_PATTERN = /but expected|reference already exists|cannot lock ref|unable to update ref/i
 
-const AssertBranchName = (value) => {
+const AssertBranchName = (value: unknown): string => {
     const branch = typeof value === "string" ? value.trim() : ""
     if (!BRANCH_NAME_PATTERN.test(branch) || branch.endsWith(".lock") || branch.includes("..")) {
         throw new InvalidChangeError("Nome de branch inválido.", "INVALID_BRANCH")
@@ -82,7 +104,7 @@ const AssertBranchName = (value) => {
     return branch
 }
 
-const AssertHeadOid = (value) => {
+const AssertHeadOid = (value: unknown): string | null | undefined => {
     if (value === undefined || value === null) return value
     if (typeof value !== "string" || !HEAD_OID_PATTERN.test(value)) {
         throw new InvalidChangeError("Identificador de commit inválido.", "INVALID_HEAD_OID")
@@ -90,30 +112,34 @@ const AssertHeadOid = (value) => {
     return value.toLowerCase()
 }
 
-const ParseTreeEntries = (stdout) => stdout.split("\0").filter(Boolean).map((line) => {
+const ParseTreeEntries = (stdout: string): TreeEntry[] => stdout.split("\0").filter(Boolean).map((line): TreeEntry => {
     const tabIndex = line.indexOf("\t")
     const [mode, type, oid] = line.slice(0, tabIndex).split(/\s+/)
     return { mode, type, oid, path: line.slice(tabIndex + 1) }
 })
 
-const CreateBareGitWriter = ({ gitExecutable = "git", scratchRootPath, limits = {} } = {}) => {
+const CreateBareGitWriter = ({ gitExecutable = "git", scratchRootPath, limits = {} }: {
+    gitExecutable?: string
+    scratchRootPath?: string
+    limits?: Partial<ChangeLimits>
+} = {}) => {
 
     if (typeof scratchRootPath !== "string" || scratchRootPath.trim() === "") {
         throw new Error("bare-git-writer.lib: informe scratchRootPath.")
     }
     const effectiveLimits = { ...DEFAULT_LIMITS, ...limits }
 
-    const Git = (args, options = {}) => RunGit(args, { gitExecutable, ...options })
-    const TryGit = (args, options = {}) => TryRunGit(args, { gitExecutable, ...options })
-    const GitWithInput = (args, input, options = {}) => RunGitWithInput(args, input, { gitExecutable, ...options })
+    const Git = (args: string[], options: GitOptions = {}) => RunGit(args, { gitExecutable, ...options })
+    const TryGit = (args: string[], options: GitOptions = {}) => TryRunGit(args, { gitExecutable, ...options })
+    const GitWithInput = (args: string[], input: string, options: GitOptions = {}) => RunGitWithInput(args, input, { gitExecutable, ...options })
 
-    const InGitDir = (gitDirPath, args) => ["--git-dir", gitDirPath, ...args]
+    const InGitDir = (gitDirPath: string, args: string[]) => ["--git-dir", gitDirPath, ...args]
 
     /* ------------------------------------------------------------------ *
      *  Leitura de estado (o mínimo que a escrita precisa saber)
      * ------------------------------------------------------------------ */
 
-    const ResolveBranchTip = async ({ gitDirPath, branch }) => {
+    const ResolveBranchTip = async ({ gitDirPath, branch }: { gitDirPath: string, branch: string }): Promise<string | undefined> => {
         const result = await TryGit(InGitDir(gitDirPath, [
             "rev-parse", "--verify", "--quiet", `refs/heads/${AssertBranchName(branch)}`
         ]))
@@ -121,11 +147,11 @@ const CreateBareGitWriter = ({ gitExecutable = "git", scratchRootPath, limits = 
         return oid ? oid.toLowerCase() : undefined
     }
 
-    const ListBranches = async ({ gitDirPath }) => {
+    const ListBranches = async ({ gitDirPath }: { gitDirPath: string }) => {
         const result = await Git(InGitDir(gitDirPath, [
             "for-each-ref", "--format=%(refname:short)%09%(objectname)", "refs/heads"
         ]))
-        return result.stdout.trim().split("\n").filter(Boolean).map((line) => {
+        return result.stdout.trim().split("\n").filter(Boolean).map((line: string) => {
             const [name, oid] = line.split("\t")
             return { name, oid }
         })
@@ -137,7 +163,12 @@ const CreateBareGitWriter = ({ gitExecutable = "git", scratchRootPath, limits = 
         que é exatamente o que `move` e `delete` recursivo precisam, sem
         precisar perguntar antes qual dos dois é.
     */
-    const ListPathEntries = async ({ gitDirPath, treeish, path, recursive = true }) => {
+    const ListPathEntries = async ({ gitDirPath, treeish, path, recursive = true }: {
+        gitDirPath: string
+        treeish?: string
+        path: string
+        recursive?: boolean
+    }): Promise<TreeEntry[]> => {
         if (!treeish) return []
         const args = ["ls-tree", "-z"]
         if (recursive) args.push("-r")
@@ -146,18 +177,18 @@ const CreateBareGitWriter = ({ gitExecutable = "git", scratchRootPath, limits = 
         return result ? ParseTreeEntries(result.stdout) : []
     }
 
-    const ReadEntryAt = async ({ gitDirPath, treeish, path }) => {
+    const ReadEntryAt = async ({ gitDirPath, treeish, path }: { gitDirPath: string, treeish?: string, path: string }) => {
         const entries = await ListPathEntries({ gitDirPath, treeish, path, recursive: false })
         return entries.find((entry) => entry.path === path)
     }
 
-    const DiffPaths = async ({ gitDirPath, fromOid, toOid }) => {
+    const DiffPaths = async ({ gitDirPath, fromOid, toOid }: { gitDirPath: string, fromOid?: string, toOid?: string }): Promise<string[]> => {
         if (!fromOid) {
             const entries = await ListPathEntries({ gitDirPath, treeish: toOid, path: "", recursive: true })
             return entries.map(({ path }) => path)
         }
         const result = await Git(InGitDir(gitDirPath, [
-            "diff-tree", "-r", "-z", "--name-only", "--no-commit-id", fromOid, toOid
+            "diff-tree", "-r", "-z", "--name-only", "--no-commit-id", fromOid, toOid!
         ]))
         return result.stdout.split("\0").filter(Boolean)
     }
@@ -177,7 +208,7 @@ const CreateBareGitWriter = ({ gitExecutable = "git", scratchRootPath, limits = 
         O ref guarda um blob (o JSON do rascunho), não uma árvore: o formato é
         assunto de quem chama, e a lib só precisa de um lugar durável.
     */
-    const AssertDraftRef = (name) => {
+    const AssertDraftRef = (name: unknown): string => {
         const value = typeof name === "string" ? name.trim() : ""
         // Mesma validação de nome de ref, sem permitir escapar do namespace de
         // rascunhos: `..` ou barra inicial levaria a escrita para refs/heads.
@@ -187,9 +218,14 @@ const CreateBareGitWriter = ({ gitExecutable = "git", scratchRootPath, limits = 
         return `refs/workspace-drafts/${value}`
     }
 
-    const WriteDraft = async ({ gitDirPath, name, content, scratchPath }) => {
+    const WriteDraft = async ({ gitDirPath, name, content, scratchPath }: {
+        gitDirPath: string
+        name: string
+        content: string
+        scratchPath?: string
+    }) => {
         const ref = AssertDraftRef(name)
-        const path = scratchPath ?? join(scratchRootPath, randomUUID())
+        const path = scratchPath ?? join(scratchRootPath!, randomUUID())
         await fs.promises.mkdir(path, { recursive: true })
         try {
             const temporaryPath = join(path, "draft")
@@ -206,7 +242,7 @@ const CreateBareGitWriter = ({ gitExecutable = "git", scratchRootPath, limits = 
         }
     }
 
-    const ReadDraft = async ({ gitDirPath, name }) => {
+    const ReadDraft = async ({ gitDirPath, name }: { gitDirPath: string, name: string }) => {
         const ref = AssertDraftRef(name)
         const resolved = await TryGit(InGitDir(gitDirPath, ["rev-parse", "--verify", "--quiet", ref]))
         const oid = resolved?.stdout?.trim()
@@ -216,20 +252,25 @@ const CreateBareGitWriter = ({ gitExecutable = "git", scratchRootPath, limits = 
         return { ref, oid, content: blob.stdout }
     }
 
-    const DeleteDraft = async ({ gitDirPath, name }) => {
+    const DeleteDraft = async ({ gitDirPath, name }: { gitDirPath: string, name: string }) => {
         const ref = AssertDraftRef(name)
         await TryGit(InGitDir(gitDirPath, ["update-ref", "-d", ref]))
         return { ref }
     }
 
-    const CollectGarbage = ({ gitDirPath }) =>
+    const CollectGarbage = ({ gitDirPath }: { gitDirPath: string }) =>
         TryGit(InGitDir(gitDirPath, ["gc", "--auto", "--quiet"]), { timeoutMs: 5 * 60 * 1000 })
 
     /* ------------------------------------------------------------------ *
      *  Montagem do commit
      * ------------------------------------------------------------------ */
 
-    const HashContent = async ({ gitDirPath, scratchPath, content, index }) => {
+    const HashContent = async ({ gitDirPath, scratchPath, content, index }: {
+        gitDirPath: string
+        scratchPath: string
+        content: Buffer
+        index: number
+    }): Promise<string> => {
         const temporaryPath = join(scratchPath, `blob-${index}`)
         await fs.promises.writeFile(temporaryPath, content)
         /*
@@ -251,8 +292,12 @@ const CreateBareGitWriter = ({ gitExecutable = "git", scratchRootPath, limits = 
         criando, este arquivo não deveria existir" —, que é o que impede um
         "novo arquivo" de sobrescrever um homônimo criado no meio.
     */
-    const AssertExpectedContent = async ({ gitDirPath, baseOid, changes }) => {
-        const conflicts = []
+    const AssertExpectedContent = async ({ gitDirPath, baseOid, changes }: {
+        gitDirPath: string
+        baseOid?: string
+        changes: NormalizedChange[]
+    }) => {
+        const conflicts: unknown[] = []
         for (const change of changes) {
             if (change.expectedOid === undefined) continue
             const entry = await ReadEntryAt({ gitDirPath, treeish: baseOid, path: change.path })
@@ -264,16 +309,21 @@ const CreateBareGitWriter = ({ gitExecutable = "git", scratchRootPath, limits = 
         if (conflicts.length > 0) throw new FileChangedError(conflicts)
     }
 
-    const BuildTree = async ({ gitDirPath, scratchPath, baseOid, changes }) => {
+    const BuildTree = async ({ gitDirPath, scratchPath, baseOid, changes }: {
+        gitDirPath: string
+        scratchPath: string
+        baseOid?: string
+        changes: NormalizedChange[]
+    }): Promise<{ treeOid: string, applied: AppliedChange[] }> => {
         const indexPath = join(scratchPath, "index")
         await fs.promises.rm(indexPath, { force: true })
         const env = { ...process.env, GIT_INDEX_FILE: indexPath }
 
         if (baseOid) await Git(InGitDir(gitDirPath, ["read-tree", baseOid]), { env })
 
-        const removals = []
-        const additions = []
-        const applied = []
+        const removals: string[] = []
+        const additions: string[] = []
+        const applied: AppliedChange[] = []
 
         for (const [index, change] of changes.entries()) {
             if (change.op === "put") {
@@ -357,7 +407,15 @@ const CreateBareGitWriter = ({ gitExecutable = "git", scratchRootPath, limits = 
         return { treeOid: treeResult.stdout.trim(), applied }
     }
 
-    const CommitTree = async ({ gitDirPath, scratchPath, treeOid, baseOid, message, author, committer }) => {
+    const CommitTree = async ({ gitDirPath, scratchPath, treeOid, baseOid, message, author, committer }: {
+        gitDirPath: string
+        scratchPath: string
+        treeOid: string
+        baseOid?: string
+        message: string
+        author: Identity
+        committer: Identity
+    }): Promise<string> => {
         const messagePath = join(scratchPath, "message")
         /*
             Mensagem por ARQUIVO, nunca por argumento. Assunto com aspas, acento,
@@ -382,7 +440,12 @@ const CreateBareGitWriter = ({ gitExecutable = "git", scratchRootPath, limits = 
         return result.stdout.trim()
     }
 
-    const PublishRef = async ({ gitDirPath, branch, commitOid, baseOid }) => {
+    const PublishRef = async ({ gitDirPath, branch, commitOid, baseOid }: {
+        gitDirPath: string
+        branch: string
+        commitOid: string
+        baseOid?: string
+    }): Promise<boolean> => {
         try {
             // O terceiro argumento é o compare-and-swap. Vazio afirma "este ref
             // não deve existir ainda", que é o primeiro commit do repositório.
@@ -394,12 +457,12 @@ const CreateBareGitWriter = ({ gitExecutable = "git", scratchRootPath, limits = 
         }
     }
 
-    const ReadCommit = async ({ gitDirPath, commitOid }) => {
+    const ReadCommit = async ({ gitDirPath, commitOid }: { gitDirPath: string, commitOid: string }): Promise<CommitInfo> => {
         const result = await Git(InGitDir(gitDirPath, [
             "log", "-1", "--date=iso-strict", "--format=%H%x1f%h%x1f%an%x1f%ae%x1f%aI%x1f%s", commitOid
         ]))
         const [oid, shortOid, authorName, authorEmail, authoredAt, subject] = result.stdout.trim().split("\x1f")
-        return { oid, shortOid, authorName, authorEmail, authoredAt, subject }
+        return { oid, shortOid, authorName, authorEmail, authoredAt, subject } as CommitInfo
     }
 
     /* ------------------------------------------------------------------ *
@@ -417,7 +480,18 @@ const CreateBareGitWriter = ({ gitExecutable = "git", scratchRootPath, limits = 
         onStale = "retryIfDisjoint",
         allowEmpty = false,
         requireHeadAssertion = true
-    }) => {
+    }: {
+        gitDirPath: string
+        branch?: string
+        message?: unknown
+        changes: RawChange[]
+        expectedHeadOid?: string | null
+        author?: Identity
+        committer?: Identity
+        onStale?: "retryIfDisjoint" | "reject"
+        allowEmpty?: boolean
+        requireHeadAssertion?: boolean
+    }): Promise<WriteCommitResult> => {
 
         const safeBranch = AssertBranchName(branch)
         const safeMessage = NormalizeMessage(message, effectiveLimits)
@@ -435,7 +509,7 @@ const CreateBareGitWriter = ({ gitExecutable = "git", scratchRootPath, limits = 
             antes de montar nada (para não gastar objetos à toa) e depois de uma
             perda de CAS (a corrida real, na janela entre ler e publicar).
         */
-        const Reconcile = async ({ expectedOid, actualOid }) => {
+        const Reconcile = async ({ expectedOid, actualOid }: { expectedOid?: string, actualOid?: string }): Promise<string | undefined> => {
             if (expectedOid === actualOid) return actualOid
 
             const changedPaths = await DiffPaths({ gitDirPath, fromOid: expectedOid, toOid: actualOid })
@@ -453,7 +527,7 @@ const CreateBareGitWriter = ({ gitExecutable = "git", scratchRootPath, limits = 
             return actualOid
         }
 
-        const scratchPath = join(scratchRootPath, randomUUID())
+        const scratchPath = join(scratchRootPath!, randomUUID())
         await fs.promises.mkdir(scratchPath, { recursive: true })
 
         try {
@@ -478,7 +552,7 @@ const CreateBareGitWriter = ({ gitExecutable = "git", scratchRootPath, limits = 
 
                 const commitOid = await CommitTree({
                     gitDirPath, scratchPath, treeOid, baseOid,
-                    message: safeMessage, author, committer: effectiveCommitter
+                    message: safeMessage, author: author!, committer: effectiveCommitter!
                 })
 
                 if (await PublishRef({ gitDirPath, branch: safeBranch, commitOid, baseOid })) {
@@ -513,7 +587,7 @@ const CreateBareGitWriter = ({ gitExecutable = "git", scratchRootPath, limits = 
      *  Branches
      * ------------------------------------------------------------------ */
 
-    const CreateBranch = async ({ gitDirPath, name, fromRef }) => {
+    const CreateBranch = async ({ gitDirPath, name, fromRef }: { gitDirPath: string, name: string, fromRef?: string }) => {
         const branch = AssertBranchName(name)
         const source = fromRef ? AssertBranchName(fromRef) : undefined
         const sourceOid = source
@@ -529,7 +603,7 @@ const CreateBareGitWriter = ({ gitExecutable = "git", scratchRootPath, limits = 
         return { branch, oid: sourceOid }
     }
 
-    const DeleteBranch = async ({ gitDirPath, name, expectedOid }) => {
+    const DeleteBranch = async ({ gitDirPath, name, expectedOid }: { gitDirPath: string, name: string, expectedOid?: string }) => {
         const branch = AssertBranchName(name)
         const expected = AssertHeadOid(expectedOid)
         const tip = await ResolveBranchTip({ gitDirPath, branch })

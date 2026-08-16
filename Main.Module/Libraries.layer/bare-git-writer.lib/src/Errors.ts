@@ -13,7 +13,20 @@
 */
 
 class BareGitWriteError extends Error {
-    constructor(message, { name, code, statusCode, ...rest }) {
+
+    // Declarados porque são atribuídos aqui e LIDOS lá fora — pelo controller
+    // HTTP, que decide o status da resposta a partir deles.
+    code: string
+    statusCode: number
+    httpStatus: number
+    stderr?: string
+
+    constructor(message: string, { name, code, statusCode, ...rest }: {
+        name: string
+        code: string
+        statusCode: number
+        [field: string]: unknown
+    }) {
         super(message)
         this.name = name
         this.code = code
@@ -29,7 +42,7 @@ class BareGitWriteError extends Error {
     git, para que um pedido inválido nunca deixe objeto solto atrás.
 */
 class InvalidChangeError extends BareGitWriteError {
-    constructor(message, code = "INVALID_CHANGE") {
+    constructor(message: string, code = "INVALID_CHANGE") {
         super(message, { name: "InvalidChangeError", code, statusCode: 400 })
     }
 }
@@ -43,7 +56,7 @@ class InvalidChangeError extends BareGitWriteError {
     `requireHeadAssertion: false` e assume.
 */
 class HeadAssertionRequiredError extends BareGitWriteError {
-    constructor(currentHeadOid) {
+    constructor(currentHeadOid?: string) {
         super("Informe sobre qual commit estas mudanças foram feitas.",
             { name: "HeadAssertionRequiredError", code: "HEAD_ASSERTION_REQUIRED", statusCode: 400, currentHeadOid })
     }
@@ -55,7 +68,11 @@ class HeadAssertionRequiredError extends BareGitWriteError {
     recomeçar tudo.
 */
 class StaleHeadError extends BareGitWriteError {
-    constructor({ expectedHeadOid, currentHeadOid, conflictingPaths = [] }) {
+    constructor({ expectedHeadOid, currentHeadOid, conflictingPaths = [] }: {
+        expectedHeadOid?: string
+        currentHeadOid?: string
+        conflictingPaths?: string[]
+    }) {
         super("Este branch avançou desde a última leitura.",
             { name: "StaleHeadError", code: "STALE_HEAD", statusCode: 409, expectedHeadOid, currentHeadOid, conflictingPaths })
     }
@@ -68,7 +85,7 @@ class StaleHeadError extends BareGitWriteError {
     automaticamente, o conteúdo precisa ser reconciliado.
 */
 class FileChangedError extends BareGitWriteError {
-    constructor(conflicts) {
+    constructor(conflicts: unknown) {
         super("O conteúdo de um arquivo mudou desde a última leitura.",
             { name: "FileChangedError", code: "FILE_CHANGED", statusCode: 409, conflicts })
     }
@@ -81,7 +98,7 @@ class FileChangedError extends BareGitWriteError {
     histórico com algo que não aconteceu.
 */
 class EmptyCommitError extends BareGitWriteError {
-    constructor(headOid) {
+    constructor(headOid?: string) {
         super("Nada mudou em relação ao commit atual.",
             { name: "EmptyCommitError", code: "EMPTY_COMMIT", statusCode: 409, headOid })
     }
@@ -92,7 +109,7 @@ class EmptyCommitError extends BareGitWriteError {
     500: é indisponibilidade da instalação, não defeito do pedido.
 */
 class GitRuntimeError extends BareGitWriteError {
-    constructor(message, { stderr, cause } = {}) {
+    constructor(message: string, { stderr, cause }: { stderr?: string, cause?: unknown } = {}) {
         super(message, { name: "GitRuntimeError", code: "GIT_RUNTIME_ERROR", statusCode: 503, stderr })
         this.cause = cause
     }

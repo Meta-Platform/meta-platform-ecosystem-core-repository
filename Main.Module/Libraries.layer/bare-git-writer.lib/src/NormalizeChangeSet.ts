@@ -1,4 +1,6 @@
-const { InvalidChangeError } = require("./Errors")
+import type { ChangeLimits, ChangeScope, NormalizedChange, RawChange } from "./Types"
+
+const { InvalidChangeError } = require("./Errors") as { InvalidChangeError: new (message: string, code?: string) => Error }
 
 /*
     Validação e normalização do change set — pura, sem git, sem disco.
@@ -9,7 +11,7 @@ const { InvalidChangeError } = require("./Errors")
     repositório, e a única forma de garantir isso é não começar.
 */
 
-const DEFAULT_LIMITS = {
+const DEFAULT_LIMITS: ChangeLimits = {
     maxChanges     : 512,
     maxFileBytes   : 4 * 1024 * 1024,
     maxTotalBytes  : 32 * 1024 * 1024,
@@ -31,7 +33,7 @@ const OPERATIONS = new Set(["put", "delete", "move"])
 
 const BASE64_PATTERN = /^[A-Za-z0-9+/]*={0,2}$/
 
-const DecodeBase64 = (value, path) => {
+const DecodeBase64 = (value: string, path: string): Buffer => {
     const compact = value.replace(/\s+/g, "")
     /*
         `Buffer.from(x, "base64")` IGNORA caractere inválido em silêncio: um
@@ -45,7 +47,7 @@ const DecodeBase64 = (value, path) => {
     return Buffer.from(compact, "base64")
 }
 
-const AssertPath = (value, { maxPathBytes }, label = "caminho") => {
+const AssertPath = (value: unknown, { maxPathBytes }: ChangeLimits, label = "caminho"): string => {
     if (typeof value !== "string") throw new InvalidChangeError(`Informe o ${label} do arquivo.`, "INVALID_PATH")
 
     const cleaned = value.trim().replace(/^\/+/, "").replace(/\/+$/, "")
@@ -74,7 +76,7 @@ const AssertPath = (value, { maxPathBytes }, label = "caminho") => {
     return segments.join("/")
 }
 
-const AssertMode = (value, path) => {
+const AssertMode = (value: unknown, path: string): string | undefined => {
     if (value === undefined || value === null) return undefined
     const mode = String(value)
     if (ALLOWED_MODES.has(mode)) return mode
@@ -90,7 +92,7 @@ const AssertMode = (value, path) => {
     throw new InvalidChangeError(`Modo de arquivo inválido em "${path}".`, "UNSUPPORTED_MODE")
 }
 
-const AssertExpectedOid = (value, path) => {
+const AssertExpectedOid = (value: unknown, path: string): string | null | undefined => {
     if (value === undefined) return undefined
     // `null` é afirmação, não ausência: "este arquivo não deve existir ainda".
     // É o que distingue "criar novo" de "sobrescrever".
@@ -101,18 +103,18 @@ const AssertExpectedOid = (value, path) => {
     return value.toLowerCase()
 }
 
-const NormalizeMessage = (value, { maxMessageBytes }) => {
+const NormalizeMessage = (value: unknown, { maxMessageBytes }: ChangeLimits): string => {
     if (typeof value !== "string" || value.trim() === "") {
         throw new InvalidChangeError("Informe a mensagem do commit.", "INVALID_MESSAGE")
     }
-    const message = value.replace(/\r\n/g, "\n").trim()
+    const message = (value as string).replace(/\r\n/g, "\n").trim()
     if (Buffer.byteLength(message) > maxMessageBytes) {
         throw new InvalidChangeError("A mensagem do commit é longa demais.", "INVALID_MESSAGE")
     }
     return message
 }
 
-const NormalizeChangeSet = (changes, limitOverrides = {}) => {
+const NormalizeChangeSet = (changes: RawChange[], limitOverrides: Partial<ChangeLimits> = {}): NormalizedChange[] => {
     const limits = { ...DEFAULT_LIMITS, ...limitOverrides }
 
     if (!Array.isArray(changes) || changes.length === 0) {
@@ -122,7 +124,7 @@ const NormalizeChangeSet = (changes, limitOverrides = {}) => {
         throw new InvalidChangeError(`Um commit aceita no máximo ${limits.maxChanges} mudanças.`, "TOO_MANY_CHANGES")
     }
 
-    const normalized = []
+    const normalized: NormalizedChange[] = []
     /*
         Um caminho só pode aparecer uma vez no change set, contando origem E
         destino de `move`. Duas mudanças no mesmo caminho têm resultado que
@@ -130,8 +132,8 @@ const NormalizeChangeSet = (changes, limitOverrides = {}) => {
         nosso, não contrato de quem chama. Recusar é honesto; escolher uma
         ordem em silêncio é o tipo de coisa que só aparece em produção.
     */
-    const seen = new Map()
-    const Claim = (path, operation) => {
+    const seen = new Map<string, string>()
+    const Claim = (path: string, operation: string) => {
         if (seen.has(path)) {
             throw new InvalidChangeError(`O caminho "${path}" aparece em mais de uma mudança (${seen.get(path)} e ${operation}).`, "DUPLICATE_PATH")
         }
@@ -142,12 +144,12 @@ const NormalizeChangeSet = (changes, limitOverrides = {}) => {
 
     for (const change of changes) {
         const operation = change?.op
-        if (!OPERATIONS.has(operation)) {
+        if (!OPERATIONS.has(operation as string)) {
             throw new InvalidChangeError(`Operação desconhecida: ${JSON.stringify(operation ?? null)}.`, "UNKNOWN_OPERATION")
         }
 
         const path = AssertPath(change.path, limits)
-        Claim(path, operation)
+        Claim(path, operation as string)
 
         if (operation === "put") {
             const hasBase64 = typeof change.contentBase64 === "string"
@@ -155,7 +157,7 @@ const NormalizeChangeSet = (changes, limitOverrides = {}) => {
             if (!hasBase64 && !hasText) {
                 throw new InvalidChangeError(`Informe o conteúdo de "${path}".`, "MISSING_CONTENT")
             }
-            const content = hasBase64 ? DecodeBase64(change.contentBase64, path) : Buffer.from(change.content, "utf8")
+            const content = hasBase64 ? DecodeBase64(change.contentBase64 as string, path) : Buffer.from(change.content as string, "utf8")
             if (content.length > limits.maxFileBytes) {
                 throw new InvalidChangeError(`"${path}" passa do limite de ${limits.maxFileBytes} bytes por arquivo.`, "FILE_TOO_LARGE")
             }
@@ -202,7 +204,7 @@ const NormalizeChangeSet = (changes, limitOverrides = {}) => {
     no contrato. Vale para `delete` recursivo e para as duas pontas de `move`,
     que carregam a subárvore inteira.
 */
-const AssertNoOverlappingScopes = (normalizedChanges) => {
+const AssertNoOverlappingScopes = (normalizedChanges: NormalizedChange[]) => {
     const prefixes = ChangeScopes(normalizedChanges)
         .filter(({ prefix }) => prefix)
         .map(({ path }) => path)
@@ -228,13 +230,13 @@ const AssertNoOverlappingScopes = (normalizedChanges) => {
     Cada mudança devolve um prefixo (`"a/b/"`) ou um caminho exato, e a
     interseção é calculada sobre isso.
 */
-const ChangeScopes = (normalizedChanges) => normalizedChanges.flatMap((change) => {
+const ChangeScopes = (normalizedChanges: NormalizedChange[]): ChangeScope[] => normalizedChanges.flatMap((change): ChangeScope[] => {
     if (change.op === "delete") return [{ path: change.path, prefix: change.recursive }]
     if (change.op === "move") return [{ path: change.path, prefix: true }, { path: change.newPath, prefix: true }]
     return [{ path: change.path, prefix: false }]
 })
 
-const IntersectsChangedPaths = (normalizedChanges, changedPaths) => {
+const IntersectsChangedPaths = (normalizedChanges: NormalizedChange[], changedPaths: string[]): string[] => {
     const scopes = ChangeScopes(normalizedChanges)
     return changedPaths.filter((changedPath) => scopes.some(({ path, prefix }) =>
         changedPath === path || (prefix && changedPath.startsWith(`${path}/`))))

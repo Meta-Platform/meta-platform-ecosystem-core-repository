@@ -1,7 +1,16 @@
-const { execFile, spawn } = require("child_process")
-const { promisify } = require("util")
+const { execFile, spawn } = require("child_process") as typeof import("child_process")
+const { promisify } = require("util") as typeof import("util")
 
-const { GitRuntimeError } = require("./Errors")
+const { GitRuntimeError } = require("./Errors") as { GitRuntimeError: new (message: string, options?: { stderr?: unknown, cause?: unknown }) => Error }
+
+/** Opções comuns aos três runners. */
+type RunOptions = {
+    gitExecutable?: string
+    env?: NodeJS.ProcessEnv
+    encoding?: BufferEncoding | "buffer"
+    timeoutMs?: number
+    maxBuffer?: number
+}
 
 const ExecFile = promisify(execFile)
 
@@ -27,7 +36,7 @@ const DEFAULT_TIMEOUT_MS = 60000
        falham por motivos específicos e acionáveis; engolir o stderr transforma
        todos eles em "o serviço Git não está disponível".
 */
-const RunGit = async (args, { gitExecutable = "git", env, encoding, timeoutMs = DEFAULT_TIMEOUT_MS, maxBuffer = DEFAULT_MAX_BUFFER } = {}) => {
+const RunGit = async (args: string[], { gitExecutable = "git", env, encoding, timeoutMs = DEFAULT_TIMEOUT_MS, maxBuffer = DEFAULT_MAX_BUFFER }: RunOptions = {}): Promise<{ stdout: any, stderr: any }> => {
     try {
         return await ExecFile(gitExecutable, args, {
             env: env ?? process.env,
@@ -35,7 +44,7 @@ const RunGit = async (args, { gitExecutable = "git", env, encoding, timeoutMs = 
             maxBuffer,
             ...(encoding ? { encoding } : {})
         })
-    } catch (error) {
+    } catch (error: any) {
         const stderr = typeof error?.stderr === "string" ? error.stderr.trim() : error?.stderr?.toString?.().trim()
         throw new GitRuntimeError(`Falha ao executar git ${args[0] ?? ""}.`.trim(), { stderr, cause: error })
     }
@@ -46,7 +55,7 @@ const RunGit = async (args, { gitExecutable = "git", env, encoding, timeoutMs = 
     é um blob?". `RunGit` traduziria a resposta legítima "não" em
     indisponibilidade do serviço; esta devolve `undefined`.
 */
-const TryRunGit = async (args, options = {}) => {
+const TryRunGit = async (args: string[], options: RunOptions = {}) => {
     try {
         return await RunGit(args, options)
     } catch {
@@ -67,7 +76,7 @@ const TryRunGit = async (args, options = {}) => {
     `execFile` não sabe escrever em stdin (só a variante síncrona sabe), então
     aqui é `spawn` na mão.
 */
-const RunGitWithInput = (args, input, { gitExecutable = "git", env, timeoutMs = DEFAULT_TIMEOUT_MS } = {}) =>
+const RunGitWithInput = (args: string[], input: string, { gitExecutable = "git", env, timeoutMs = DEFAULT_TIMEOUT_MS }: RunOptions = {}): Promise<{ stdout: string, stderr: string }> =>
     new Promise((resolve, reject) => {
         const child = spawn(gitExecutable, args, { env: env ?? process.env })
 
@@ -75,7 +84,7 @@ const RunGitWithInput = (args, input, { gitExecutable = "git", env, timeoutMs = 
         let stderr = ""
         let settled = false
 
-        const Settle = (Action) => {
+        const Settle = (Action: () => void) => {
             if (settled) return
             settled = true
             clearTimeout(timer)
@@ -87,8 +96,8 @@ const RunGitWithInput = (args, input, { gitExecutable = "git", env, timeoutMs = 
             Settle(() => reject(new GitRuntimeError(`git ${args[0] ?? ""} não respondeu no tempo esperado.`.trim())))
         }, timeoutMs)
 
-        child.stdout.on("data", (chunk) => { stdout += chunk })
-        child.stderr.on("data", (chunk) => { stderr += chunk })
+        child.stdout!.on("data", (chunk) => { stdout += chunk })
+        child.stderr!.on("data", (chunk) => { stderr += chunk })
         child.on("error", (error) => Settle(() => reject(
             new GitRuntimeError("Não foi possível executar o git.", { cause: error }))))
         child.on("close", (code) => Settle(() => code === 0
@@ -98,8 +107,8 @@ const RunGitWithInput = (args, input, { gitExecutable = "git", env, timeoutMs = 
         // O git pode fechar stdin antes de nós terminarmos de escrever (erro na
         // primeira linha, por exemplo). O EPIPE resultante não é a falha — a
         // falha é o código de saída, que chega em `close`.
-        child.stdin.on("error", () => {})
-        child.stdin.end(input)
+        child.stdin!.on("error", () => {})
+        child.stdin!.end(input)
     })
 
 module.exports = RunGit
