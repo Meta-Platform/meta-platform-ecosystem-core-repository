@@ -20,9 +20,11 @@
 
     Uso:  node scripts/test-runtime-payload-sanitization.js
 */
-const SanitizeContainerRuntimePayload = require("../src/Helpers/SanitizeContainerRuntimePayload")
+const RequireSource = require("./RequireSource")
+
+const SanitizeContainerRuntimePayload = RequireSource("Helpers/SanitizeContainerRuntimePayload")
 const { REDACTED } = SanitizeContainerRuntimePayload
-const ContainerOrchestratorController = require("../src/Controllers/ContainerOrchestrator.controller")
+const ContainerOrchestratorController = RequireSource("Controllers/ContainerOrchestrator.controller")
 
 let failures = 0
 const ok = (cond, msg) => {

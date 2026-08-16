@@ -42,9 +42,17 @@ const CarregarManifesto = () => {
     inteiro, e o que interessa aqui é exatamente o texto — quais nomes ele
     encaminha para o serviço.
 */
+// O arquivo é PROCURADO, e não escrito com a extensão fixa: o dialeto da fonte
+// é assunto do repositório, e fixar ".js" fazia esta checagem parar de achar o
+// controller no dia em que ele virou TypeScript — passando a acusar falha por
+// um motivo que não é o que ela verifica.
+const CaminhoDoController = () => {
+    const base = path.join(RAIZ_DO_APP, "src", "Controllers", "ContainerRuntime.controller")
+    return [`${base}.js`, `${base}.ts`].find((candidato) => fs.existsSync(candidato)) || `${base}.js`
+}
+
 const NomesDoController = () => {
-    const conteudo = fs.readFileSync(
-        path.join(RAIZ_DO_APP, "src", "Controllers", "ContainerRuntime.controller.js"), "utf-8")
+    const conteudo = fs.readFileSync(CaminhoDoController(), "utf-8")
 
     const nomes = []
     const padrao = /([A-Za-z0-9_]+)\s*:\s*containerRuntimeAdapterService\.([A-Za-z0-9_]+)/g

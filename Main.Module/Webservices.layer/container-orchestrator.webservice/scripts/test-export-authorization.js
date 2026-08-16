@@ -23,8 +23,10 @@
 const { readFileSync } = require("fs")
 const { join, resolve } = require("path")
 
-const ContainerOrchestratorController = require("../src/Controllers/ContainerOrchestrator.controller")
-const CreateExportAuthorizationGuard = require("../src/Helpers/CreateExportAuthorizationGuard")
+const RequireSource = require("./RequireSource")
+
+const ContainerOrchestratorController = RequireSource("Controllers/ContainerOrchestrator.controller")
+const CreateExportAuthorizationGuard = RequireSource("Helpers/CreateExportAuthorizationGuard")
 const { EXPORT_PERMISSION } = CreateExportAuthorizationGuard
 
 /*

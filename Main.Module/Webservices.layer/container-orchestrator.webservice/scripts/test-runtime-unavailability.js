@@ -17,10 +17,12 @@
 
     Uso:  node scripts/test-runtime-unavailability.js
 */
+const RequireSource = require("./RequireSource")
+
 const {
     TranslateRuntimeUnavailability,
     ContainerRuntimeUnavailableError
-} = require("../src/Controllers/ContainerOrchestrator.controller")
+} = RequireSource("Controllers/ContainerOrchestrator.controller")
 
 let failures = 0
 const ok = (cond, msg) => {

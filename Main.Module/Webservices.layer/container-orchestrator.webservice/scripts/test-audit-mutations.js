@@ -18,7 +18,9 @@
 
     Uso:  node scripts/test-audit-mutations.js
 */
-const ContainerOrchestratorController = require("../src/Controllers/ContainerOrchestrator.controller")
+const RequireSource = require("./RequireSource")
+
+const ContainerOrchestratorController = RequireSource("Controllers/ContainerOrchestrator.controller")
 
 let failures = 0
 const ok = (cond, msg) => {
