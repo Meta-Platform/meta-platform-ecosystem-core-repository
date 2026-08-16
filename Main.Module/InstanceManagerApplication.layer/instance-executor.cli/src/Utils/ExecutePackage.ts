@@ -2,14 +2,14 @@
 const { resolve } = require("path")
 const CommandExecutor = require("../../../../Libraries.layer/command-executor.lib/src/CommandExecutor")
 
-const ExecutePackage = async (startupParams, path) => {
+const ExecutePackage = async (startupParams: any, path: any) => {
 
     const {
         platformApplicationSocketPath,
         httpServerManagerEndpoint
     } = startupParams
 
-    const CommandFunction = async ({ APIs }) => {
+    const CommandFunction = async ({ APIs }: any) => {
         const API = APIs
         ?.PlatformMainApplicationInstance
         ?.EcosystemManager
@@ -21,7 +21,7 @@ const ExecutePackage = async (startupParams, path) => {
                 await API.RunPackage({
                     packagePath:absolutePath
                 })
-            }catch(e){
+            }catch(e: any){
                 Log.error("ExecutePackage", e)
             }
             

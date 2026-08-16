@@ -1,4 +1,4 @@
-const ShowTaskInformationCommand = async ({ args, startupParams, params}) => {
+const ShowTaskInformationCommand = async ({ args, startupParams, params}: any) => {
 
     const { taskId } = args
 
@@ -17,7 +17,7 @@ const ShowTaskInformationCommand = async ({ args, startupParams, params}) => {
     const RenderAgentLinkRulesTaskTable = taskTableRenderLib.require("RenderAgentLinkRulesTaskTable")
     const RenderActivationRulesTaskTable = taskTableRenderLib.require("RenderActivationRulesTaskTable")
 
-    const CommandFunction = async ({ APIs }) => {
+    const CommandFunction = async ({ APIs }: any) => {
         const API = APIs
             .PlatformMainApplicationInstance
             .TaskExecutorMachine
@@ -36,7 +36,7 @@ const ShowTaskInformationCommand = async ({ args, startupParams, params}) => {
             task.activationRules 
                 && await RenderActivationRulesTaskTable(task.activationRules)
 
-        } catch(e){
+        } catch(e: any){
             Log.error("ShowTaskInformation", e)
         }
     }

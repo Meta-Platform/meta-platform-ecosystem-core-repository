@@ -1,5 +1,5 @@
 
-const GetColorLogByStatus = (status) => {
+const GetColorLogByStatus = (status: any) => {
     switch(status){
         case "AWAITING_PRECONDITIONS":
             return "gray"

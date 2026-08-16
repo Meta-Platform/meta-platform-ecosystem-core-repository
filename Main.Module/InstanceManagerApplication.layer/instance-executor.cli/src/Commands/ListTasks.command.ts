@@ -4,7 +4,7 @@ const colors = require("colors")
 
 const GetColorLogByStatus = require("../Utils/GetColorLogByStatus")
 
-const MountTaskTable = async (taskList) => {
+const MountTaskTable = async (taskList: any) => {
 
     const table = new Table({
         head: [
@@ -19,7 +19,7 @@ const MountTaskTable = async (taskList) => {
         colWidths: [5, 6, 14, 12, 30, 30, 30]
     })
 
-    taskList.forEach(task => {
+    taskList.forEach((task: any) => {
         const {
             taskId,
             pTaskId,
@@ -53,7 +53,7 @@ const MountTaskTable = async (taskList) => {
     return table
 }
 
-const ListTasksCommand = async ({ startupParams, params }) => {
+const ListTasksCommand = async ({ startupParams, params }: any) => {
 
     const {
         platformApplicationSocketPath,
@@ -64,7 +64,7 @@ const ListTasksCommand = async ({ startupParams, params }) => {
     
     const CommandExecutor = commandExecutorLib.require("CommandExecutor")
     
-    const CommandFunction = async ({ APIs }) => {
+    const CommandFunction = async ({ APIs }: any) => {
         const API = APIs
             .PlatformMainApplicationInstance
             .TaskExecutorMachine
@@ -73,7 +73,7 @@ const ListTasksCommand = async ({ startupParams, params }) => {
             const taskList = await API.ListTasks()
             const table = await MountTaskTable(taskList)
             Log.message("ListTasks", table.toString())
-        } catch(e){
+        } catch(e: any){
             Log.error("ListTasks", e)
         }
     }

@@ -1,7 +1,7 @@
 
 const { resolve } = require("path")
 
-const MountPackagePath = (REPOS_CONF_EXT_GROUP_DIR, packageInfo) => {
+const MountPackagePath = (REPOS_CONF_EXT_GROUP_DIR: any, packageInfo: any) => {
     const {
         layerPath,
         parentGroup,

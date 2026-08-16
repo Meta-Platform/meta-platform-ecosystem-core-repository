@@ -1,10 +1,10 @@
-const EnvironmentRuntimeController = (params) => {
+const EnvironmentRuntimeController = (params: any) => {
 
     const { 
         environmentRuntimeService
     } = params
 
-    const ExecutionStatusChange = (ws, executionId) => {
+    const ExecutionStatusChange = (ws: any, executionId: any) => {
         const executionData = environmentRuntimeService
             .GetExecutionData(executionId)
 
@@ -14,10 +14,10 @@ const EnvironmentRuntimeController = (params) => {
         }))
 
         environmentRuntimeService
-            .AddExecutionStatusListener(executionId, (status) => {
+            .AddExecutionStatusListener(executionId, (status: any) => {
                 try{
                     ws.send(JSON.stringify({ executionId, status }))
-                }catch(e){
+                }catch(e: any){
                     Log.error("EnvironmentRuntime", e)
                 }
             })

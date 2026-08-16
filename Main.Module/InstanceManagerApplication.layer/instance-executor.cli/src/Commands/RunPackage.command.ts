@@ -2,7 +2,7 @@ const PackageChoiceTerminalView = require("../Utils/PackageChoiceTerminalView")
 const MountPackagePath = require("../Utils/MountPackagePath")
 const ExecutePackage = require("../Utils/ExecutePackage")
 
-const RunPackageCommand = async ({ args, startupParams, params }) => {
+const RunPackageCommand = async ({ args, startupParams, params }: any) => {
 
     const { path } = args
 
@@ -20,14 +20,16 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
         await ExecutePackage(startupParams, path)
     } else {
 
-        const CommandFunction = async ({ APIs }) => {
+        const CommandFunction = async ({ APIs }: any) => {
             const API = APIs
             .PlatformMainApplicationInstance
             .RepositoryManager
             const listPackages = await API.ListPackages()
 
             const packageChoices = listPackages
-            .map(package => {
+            // `package` é palavra reservada em modo estrito, e todo módulo
+            // TypeScript é estrito. Renomeado; a montagem é a mesma.
+            .map((packageInfo: any) => {
                 const { 
                     packageName, 
                     parentGroup,
@@ -35,15 +37,15 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
                     layerName,
                     moduleName,
                     namespaceRepo
-                } = package
+                } = packageInfo
                 return {
                     namespace: `${namespaceRepo}.${moduleName}.${layerName}${parentGroup ? `.${parentGroup}`: ""}.${packageName}.${ext}`,
-                    path: MountPackagePath(REPOS_CONF_EXT_GROUP_DIR, package)
+                    path: MountPackagePath(REPOS_CONF_EXT_GROUP_DIR, packageInfo)
                 }
             })
             
             const namespace = await PackageChoiceTerminalView(packageChoices)
-            const chosenItem = packageChoices.find(item => item.namespace === namespace) 
+            const chosenItem = packageChoices.find((item: any) => item.namespace === namespace) 
             await ExecutePackage(startupParams, chosenItem.path)
         }
 

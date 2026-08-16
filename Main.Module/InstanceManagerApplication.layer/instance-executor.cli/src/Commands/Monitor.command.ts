@@ -1,4 +1,4 @@
-const MonitorCommand = async ({ startupParams, params }) => {
+const MonitorCommand = async ({ startupParams, params }: any) => {
 
     const {
         platformApplicationSocketPath,
@@ -9,7 +9,7 @@ const MonitorCommand = async ({ startupParams, params }) => {
     
     const CommandExecutor = commandExecutorLib.require("CommandExecutor")
 
-    const CommandFunction = async ({ APIs }) => {
+    const CommandFunction = async ({ APIs }: any) => {
         const API = APIs
             .PlatformMainApplicationInstance
             .TaskExecutorMachine
@@ -19,7 +19,7 @@ const MonitorCommand = async ({ startupParams, params }) => {
 
             socket.onopen = () => Log.message("Monitor", "Conectado ao Task Executor Machine!")
 
-            socket.onmessage = function(event) {
+            socket.onmessage = function(event: any) {
                 const {data} = event
                 const message = JSON.parse(data)
                 Log.debug("Monitor", message)
@@ -30,7 +30,7 @@ const MonitorCommand = async ({ startupParams, params }) => {
             }
 
             
-        } catch(e){
+        } catch(e: any){
             Log.error("Monitor", e)
         }
     }

@@ -1,17 +1,17 @@
-const TaskExecutorMachineController = (params) => {
+const TaskExecutorMachineController = (params: any) => {
     
     const { 
         taskExecutorMachineService
     } = params
 
 
-    const TaskStatusChange = (ws) => {
+    const TaskStatusChange = (ws: any) => {
         taskExecutorMachineService
         .GetTaskExecutorEventEmitter()
-        .on("TASK_STATUS_CHANGE", ({ taskId, status, objectLoaderType }) => {
+        .on("TASK_STATUS_CHANGE", ({ taskId, status, objectLoaderType }: any) => {
             try{
                 ws.send(JSON.stringify({ taskId, status, objectLoaderType }))
-            }catch(e){
+            }catch(e: any){
                 Log.error("TaskExecutorMachine", e)
             }
         })
@@ -19,13 +19,13 @@ const TaskExecutorMachineController = (params) => {
     
     const controllerServiceObject = {
         controllerName : "TaskExecutorMachineController",
-        CreateTasks: (executionParams) => {
+        CreateTasks: (executionParams: any) => {
             return taskExecutorMachineService.CreateTasks(executionParams)
         },
         ListTasks: taskExecutorMachineService.ListTasks,
         GetTask: taskExecutorMachineService.GetTask,
         // 1 parâmetro (taskIds) chega como valor direto (contrato do server-manager).
-        StopTasks: (taskIds) => taskExecutorMachineService.StopTasks(taskIds),
+        StopTasks: (taskIds: any) => taskExecutorMachineService.StopTasks(taskIds),
         TaskStatusChange
     }
 

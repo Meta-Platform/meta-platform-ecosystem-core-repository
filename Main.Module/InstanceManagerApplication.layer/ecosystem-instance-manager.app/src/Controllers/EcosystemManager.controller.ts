@@ -1,4 +1,4 @@
-const EcosystemManagerController = (params) => {
+const EcosystemManagerController = (params: any) => {
 
     const {
         ecosystemManagerService: {
@@ -29,14 +29,14 @@ const EcosystemManagerController = (params) => {
 
     // Stream da lista de pacotes supervisionados. Reage a mudanças na lista de
     // instâncias (lançou/encerrou algo → o estado "em execução" de um pacote muda).
-    const PackageList = (ws) => {
+    const PackageList = (ws: any) => {
         const _safeSend = async () => {
-            try { ws.send(JSON.stringify(await ListSupervisedPackages())) } catch(e){}
+            try { ws.send(JSON.stringify(await ListSupervisedPackages())) } catch(e: any){}
         }
         const instancesEmitter = GetInstancesEmitter()
         instancesEmitter.on("INSTANCES_CHANGE", _safeSend)
         ws.on && ws.on("close", () => {
-            try { instancesEmitter.removeListener("INSTANCES_CHANGE", _safeSend) } catch(e){}
+            try { instancesEmitter.removeListener("INSTANCES_CHANGE", _safeSend) } catch(e: any){}
         })
         _safeSend()
     }
@@ -44,9 +44,9 @@ const EcosystemManagerController = (params) => {
     // Stream das instâncias lançadas por este daemon. Reage ao emissor DEDICADO
     // de mudanças de instância (lançou/encerrou) e ao progresso de lançamento
     // (fase transitória "launching", antes do registro assentar).
-    const InstanceList = (ws) => {
+    const InstanceList = (ws: any) => {
         const _safeSend = async () => {
-            try { ws.send(JSON.stringify(await ListInstances())) } catch(e){}
+            try { ws.send(JSON.stringify(await ListInstances())) } catch(e: any){}
         }
 
         const instancesEmitter = GetInstancesEmitter()
@@ -56,27 +56,27 @@ const EcosystemManagerController = (params) => {
         launchEmitter.on("LAUNCH_PROGRESS", _safeSend)
 
         ws.on && ws.on("close", () => {
-            try { instancesEmitter.removeListener("INSTANCES_CHANGE", _safeSend) } catch(e){}
-            try { launchEmitter.removeListener("LAUNCH_PROGRESS", _safeSend) } catch(e){}
+            try { instancesEmitter.removeListener("INSTANCES_CHANGE", _safeSend) } catch(e: any){}
+            try { launchEmitter.removeListener("LAUNCH_PROGRESS", _safeSend) } catch(e: any){}
         })
 
         _safeSend()
     }
 
     // Ingest de progresso de lançamento vindo do app (electron-main) por POST.
-    const LaunchProgress = (data) => ReportLaunchProgress(data)
+    const LaunchProgress = (data: any) => ReportLaunchProgress(data)
 
     // Stream de progresso de lançamento: envia o snapshot atual e, em seguida,
     // cada novo estado. O listener é removido quando o ws fecha.
-    const LaunchProgressStream = (ws) => {
-        const _safeSend = (state) => {
-            try { ws.send(JSON.stringify(state)) } catch(e){}
+    const LaunchProgressStream = (ws: any) => {
+        const _safeSend = (state: any) => {
+            try { ws.send(JSON.stringify(state)) } catch(e: any){}
         }
-        try { GetLaunchProgressSnapshot().forEach(_safeSend) } catch(e){}
-        const onProgress = (state) => _safeSend(state)
+        try { GetLaunchProgressSnapshot().forEach(_safeSend) } catch(e: any){}
+        const onProgress = (state: any) => _safeSend(state)
         GetLaunchProgressEmitter().on("LAUNCH_PROGRESS", onProgress)
         ws.on && ws.on("close", () => {
-            try { GetLaunchProgressEmitter().removeListener("LAUNCH_PROGRESS", onProgress) } catch(e){}
+            try { GetLaunchProgressEmitter().removeListener("LAUNCH_PROGRESS", onProgress) } catch(e: any){}
         })
     }
 

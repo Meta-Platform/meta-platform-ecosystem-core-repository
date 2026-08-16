@@ -1,4 +1,4 @@
-const StopEnvironmentCommand = async ({ args, startupParams, params }) => {
+const StopEnvironmentCommand = async ({ args, startupParams, params }: any) => {
 
     const { executionId } = args
 
@@ -11,7 +11,7 @@ const StopEnvironmentCommand = async ({ args, startupParams, params }) => {
     
     const CommandExecutor = commandExecutorLib.require("CommandExecutor")
 
-    const CommandFunction = async ({ APIs }) => {
+    const CommandFunction = async ({ APIs }: any) => {
         const API = APIs
             .PlatformMainApplicationInstance
             .EnvironmentRuntime
@@ -24,7 +24,7 @@ const StopEnvironmentCommand = async ({ args, startupParams, params }) => {
             socket.onopen = () => 
                 Log.message("StopEnvironment", `Começo do monitoramento de eventos da execution ${executionId}`)
 
-            socket.onmessage = function(event) {
+            socket.onmessage = function(event: any) {
                 const { data } = event
                 const message = JSON.parse(data)
                 Log.debug("StopEnvironment", message)
@@ -35,7 +35,7 @@ const StopEnvironmentCommand = async ({ args, startupParams, params }) => {
 
             socket.onclose = () => 
                 Log.message("StopEnvironment", `Fim do monitoramento de eventos da execution ${executionId}`)
-        } catch(e){
+        } catch(e: any){
             Log.error("StopEnvironment", e)
         }
     }

@@ -1,4 +1,4 @@
-const RepositoryExplorerController = (params) => {
+const RepositoryExplorerController = (params: any) => {
 
     const { repositoryManagerService } = params
     

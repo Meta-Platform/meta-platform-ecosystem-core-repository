@@ -18,7 +18,7 @@ const { DescribeExecution } = require("../../../../Libraries.layer/execution-ide
 //  2. Daemon fora do ar NÃO impede a execução — o attach é observabilidade, não
 //     pré-requisito. Falhou, avisa no stderr e segue.
 //  3. Saiu, sai do monitor: detach no exit e nos sinais.
-const AttachExternalCommand = async ({ args, startupParams }) => {
+const AttachExternalCommand = async ({ args, startupParams }: any) => {
 
     const { packagePath, _: positional = [] } = args
     const {
@@ -28,7 +28,7 @@ const AttachExternalCommand = async ({ args, startupParams }) => {
 
     // O yargs separa o que vem depois de `--` em `args._` (fora os posicionais
     // já consumidos). O primeiro elemento é o executável; o resto, seus args.
-    const rest = positional.map(String).filter((v) => v !== "attach")
+    const rest = positional.map(String).filter((v: any) => v !== "attach")
     const command = rest[0]
     const commandArgs = rest.slice(1)
 
@@ -51,18 +51,18 @@ const AttachExternalCommand = async ({ args, startupParams }) => {
     // filho o herda intacto.
     const _silenceStdout = () => {
         const original = process.stdout.write.bind(process.stdout)
-        process.stdout.write = ((chunk, ...rest) => process.stderr.write(chunk, ...rest))
+        process.stdout.write = ((chunk: any, ...rest: any[]) => (process.stderr.write as any)(chunk, ...rest)) as any
         return () => { process.stdout.write = original }
     }
 
     // 1) Anuncia ao daemon (best-effort).
-    let instanceId
+    let instanceId: any
     const restoreStdout = _silenceStdout()
     try {
         await CommandExecutor({
             serverResourceEndpointPath: httpServerManagerEndpoint,
             mainApplicationSocketPath: platformApplicationSocketPath,
-            CommandFunction: async ({ APIs }) => {
+            CommandFunction: async ({ APIs }: any) => {
                 const API = APIs?.PlatformMainApplicationInstance?.EcosystemManager
                 if(!API) throw new Error("daemon sem a API EcosystemManager")
                 const result = await API.AttachExternalInstance({
@@ -74,7 +74,7 @@ const AttachExternalCommand = async ({ args, startupParams }) => {
                 instanceId = result && result.instanceId
             }
         })
-    } catch(e){
+    } catch(e: any){
         // stderr, nunca stdout: o stdout pertence ao processo hospedado.
         Log.error("AttachExternal", `[attach] não foi possível registrar no daemon (${e && e.message ? e.message : e}); seguindo assim mesmo.`)
     } finally {
@@ -93,27 +93,27 @@ const AttachExternalCommand = async ({ args, startupParams }) => {
             await CommandExecutor({
                 serverResourceEndpointPath: httpServerManagerEndpoint,
                 mainApplicationSocketPath: platformApplicationSocketPath,
-                CommandFunction: async ({ APIs }) => {
+                CommandFunction: async ({ APIs }: any) => {
                     const API = APIs?.PlatformMainApplicationInstance?.EcosystemManager
                     if(API) await API.DetachExternalInstance({ instanceId })
                 }
             })
-        } catch(e){ /* o Reconcile do daemon limpa pelo pid */ }
+        } catch(e: any){ /* o Reconcile do daemon limpa pelo pid */ }
         finally { restore() }
     }
 
     // 3) Sinais chegam ao processo real; o registro sai junto.
     for(const signal of ["SIGINT", "SIGTERM", "SIGHUP"])
-        process.on(signal, () => { try { child.kill(signal) } catch(e){} })
+        process.on(signal, () => { try { child.kill(signal) } catch(e: any){} })
 
-    await new Promise((done) => {
-        child.on("error", async (error) => {
+    await new Promise<void>((done) => {
+        child.on("error", async (error: any) => {
             Log.error("AttachExternal", `[attach] falha ao executar "${command}": ${error.message}`)
             await detach()
             process.exitCode = 127
             done()
         })
-        child.on("exit", async (code, signal) => {
+        child.on("exit", async (code: any, signal: any) => {
             await detach()
             process.exitCode = signal ? 128 : (code || 0)
             done()

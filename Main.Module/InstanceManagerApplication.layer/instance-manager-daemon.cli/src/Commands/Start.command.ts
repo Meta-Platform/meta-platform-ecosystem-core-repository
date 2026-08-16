@@ -3,7 +3,7 @@ const { rmSync } = require("fs")
 
 // Sobe e MANTÉM VIVO o daemon executor-manager (ecosystem-instance-manager.app).
 // Reinicia o daemon automaticamente se ele cair (via @/process-supervisor.lib).
-const StartCommand = async ({ startupParams, params }) => {
+const StartCommand = async ({ startupParams, params }: any) => {
 
     const {
         ecosystemDataPath,
@@ -19,7 +19,7 @@ const StartCommand = async ({ startupParams, params }) => {
     const executablesDirPath = join(ecosystemDataPath, executablesDirName)
     const command = join(executablesDirPath, targetExecutable)
 
-    const _Log = (message) => {
+    const _Log = (message: any) => {
         const stamp = new Date().toISOString()
         Log.message("Start", `[${stamp}] [instance-manager-daemon] ${message}`)
     }
@@ -34,11 +34,11 @@ const StartCommand = async ({ startupParams, params }) => {
         beforeSpawn: () => {
             for(const socketPath of [instanceManagerSocketPath, supervisorSocketPath]){
                 if(socketPath){
-                    try { rmSync(socketPath, { force: true }) } catch(e){}
+                    try { rmSync(socketPath, { force: true }) } catch(e: any){}
                 }
             }
         },
-        onEvent: (event) => {
+        onEvent: (event: any) => {
             switch(event.type){
                 case "starting":    _Log(`iniciando daemon: ${event.command}`); break
                 case "exited":      _Log(`daemon encerrou (code=${event.code}${event.signal ? `, signal=${event.signal}` : ""})`); break

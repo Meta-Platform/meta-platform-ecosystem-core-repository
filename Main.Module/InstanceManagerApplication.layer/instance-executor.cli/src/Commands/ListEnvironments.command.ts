@@ -1,14 +1,14 @@
 const Table = require("cli-table3")
 const { basename } = require("path")
 
-const MountTaskTable = (list) => {
+const MountTaskTable = (list: any) => {
 
     const table = new Table({
         head: ["ID", "Status", "Environment Name"],
         colWidths: [5, 12, 60]
     })
 
-    list.forEach(environmentData => {
+    list.forEach((environmentData: any) => {
         table.push([
             environmentData.executionId,
             environmentData.status,
@@ -19,7 +19,7 @@ const MountTaskTable = (list) => {
     return table
 }
 
-const ListEnvironmentCommand = async ({ startupParams, params }) => {
+const ListEnvironmentCommand = async ({ startupParams, params }: any) => {
 
     const {
         platformApplicationSocketPath,
@@ -30,7 +30,7 @@ const ListEnvironmentCommand = async ({ startupParams, params }) => {
     
     const CommandExecutor = commandExecutorLib.require("CommandExecutor")
     
-    const CommandFunction = async ({ APIs }) => {
+    const CommandFunction = async ({ APIs }: any) => {
         const API = APIs
             .PlatformMainApplicationInstance
             .EnvironmentRuntime
@@ -38,7 +38,7 @@ const ListEnvironmentCommand = async ({ startupParams, params }) => {
             const environmentsInExecution = await API.ListRunningEnvironments()
             const table = MountTaskTable(environmentsInExecution)
             Log.message("ListEnvironments", table.toString())
-        } catch(e){
+        } catch(e: any){
             Log.error("ListEnvironments", e)
         }
     }
