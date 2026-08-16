@@ -91,6 +91,7 @@ const ComputeWebInterfaceFingerprint = ({
     context,
     nodeModules,
     componentLibraries = [],
+    wasmModules = [],
     buildProfile,
     entrypoint,
     htmlTemplate
@@ -112,6 +113,19 @@ const ComputeWebInterfaceFingerprint = ({
         if(library.sourcePath) _HashTree(hash, library.sourcePath, library.sourcePath, HASH_MODE.CONTENT)
         // O node_modules de uma biblioteca também influencia o bundle dela.
         if(library.nodeModulesPath) _HashTree(hash, library.nodeModulesPath, library.nodeModulesPath, HASH_MODE.STAT)
+    }
+    // O binário do `.wasmlib` entra por CONTEÚDO. Ele é um artefato versionado:
+    // recompilar o módulo troca os bytes sem mexer em data nem, necessariamente,
+    // em tamanho — assinar por stat serviria o bundle com o `.wasm` anterior.
+    for(const wasmModule of wasmModules){
+        hash.update(`[wasm:${wasmModule.alias || ""}]\n`)
+        if(wasmModule.binaryPath){
+            try {
+                hash.update(fs.readFileSync(wasmModule.binaryPath))
+            } catch(e) {
+                hash.update("<unreadable>")
+            }
+        }
     }
     return hash.digest("hex")
 }

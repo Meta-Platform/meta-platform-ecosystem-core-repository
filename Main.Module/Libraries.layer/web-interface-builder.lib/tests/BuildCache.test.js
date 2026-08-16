@@ -105,6 +105,29 @@ describe("BuildCache — assinatura das entradas", () => {
 
         assert.notEqual(BuildCache.ComputeWebInterfaceFingerprint({ context, componentLibraries }), before)
     })
+
+    it("o binário do .wasmlib entra por conteúdo, e não por tamanho", () => {
+        const dir = _MakeTree({ "modulo.wasm": "AAAA" })
+        const wasmModules = [{ alias: "@geometry", binaryPath: path.join(dir, "modulo.wasm") }]
+
+        const before = BuildCache.ComputeWebInterfaceFingerprint({ context, wasmModules })
+
+        // Recompilar o módulo troca os bytes mantendo o tamanho; assinar por
+        // stat serviria o bundle com o .wasm anterior dentro.
+        const alvo = path.join(dir, "modulo.wasm")
+        const { atime, mtime } = fs.statSync(alvo)
+        fs.writeFileSync(alvo, "BBBB")
+        fs.utimesSync(alvo, atime, mtime)
+
+        assert.notEqual(BuildCache.ComputeWebInterfaceFingerprint({ context, wasmModules }), before)
+    })
+
+    it("sem .wasmlib, a assinatura é a mesma de antes do recurso", () => {
+        assert.equal(
+            BuildCache.ComputeWebInterfaceFingerprint({ context, wasmModules: [] }),
+            BuildCache.ComputeWebInterfaceFingerprint({ context })
+        )
+    })
 })
 
 describe("BuildCache — quando o bundle serve", () => {

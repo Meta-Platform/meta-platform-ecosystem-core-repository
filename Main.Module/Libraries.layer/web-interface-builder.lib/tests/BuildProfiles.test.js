@@ -315,3 +315,50 @@ describe("CreateWebpackConfig — o perfil chega na configuração", () => {
         assert.deepEqual(JSON.stringify(_Config(RELEASE)), JSON.stringify(_Config(RELEASE)))
     })
 })
+
+describe("CreateWebpackConfig — módulos WebAssembly", () => {
+
+    const ASSET_RULE = /\.(png|jpg|svg|gif|mp4|eot|woff2?|ttf|glb|gltf|wasm)$/
+
+    it("o alias do .wasmlib aponta para o binário, não para uma pasta de fontes", () => {
+        const config = _Config(RELEASE, {
+            wasmModules: [{ alias: "@geometry", binaryPath: "/pkg/dist/geometry.wasm" }]
+        })
+        assert.equal(config.resolve.alias["@geometry"], "/pkg/dist/geometry.wasm")
+    })
+
+    it("o .wasm é emitido como asset, para o pacote instanciar por conta própria", () => {
+        const config = _Config(RELEASE, {
+            wasmModules: [{ alias: "@geometry", binaryPath: "/pkg/dist/geometry.wasm" }]
+        })
+        assert.equal(_Rule(config, ASSET_RULE).type, "asset/resource")
+    })
+
+    it("um .wasmlib não desloca o alias do runtime do framework", () => {
+        const config = _Config(RELEASE, {
+            componentLibraries: [{
+                alias: "@i-components",
+                sourcePath: "/lib/src",
+                framework: "react",
+                frameworkModulesPath: "/lib/node_modules"
+            }],
+            wasmModules: [{ alias: "@geometry", binaryPath: "/pkg/dist/geometry.wasm" }]
+        })
+        assert.ok(config.resolve.alias.react.endsWith("/react"))
+        assert.equal(config.resolve.alias["@i-components"], "/lib/src")
+    })
+
+    it("recusa módulo sem alias ou sem binário", () => {
+        assert.throws(
+            () => _Config(RELEASE, { wasmModules: [{ alias: "@geometry" }] }),
+            /alias e binaryPath são obrigatórios/
+        )
+    })
+
+    it("sem .wasmlib nenhum, a configuração não muda", () => {
+        assert.equal(
+            JSON.stringify(_Config(RELEASE, { wasmModules: [] })),
+            JSON.stringify(_Config(RELEASE))
+        )
+    })
+})

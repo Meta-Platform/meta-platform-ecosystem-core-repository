@@ -19,6 +19,26 @@ const NormalizeComponentLibraries = (componentLibraries = []) =>
         }
     })
 
+// Um `.wasmlib` entra no bundle como ARQUIVO, não como código: o alias aponta
+// para o `.wasm` e a regra de asset o emite, devolvendo a URL. É por isso que
+// não há `sourcePath` aqui — do lado do navegador não existe fonte a compilar,
+// existe um binário a buscar e instanciar:
+//
+//     import wasmUrl from "@wasm-reference"
+//     const { instance } = await WebAssembly.instantiateStreaming(fetch(wasmUrl))
+//
+// O MESMO binário que o task loader instancia no host é o que chega aqui — não
+// há uma build para o servidor e outra para o cliente.
+const NormalizeWasmModules = (wasmModules = []) =>
+    wasmModules.map((wasmModule) => {
+        if (!wasmModule || !wasmModule.alias || !wasmModule.binaryPath)
+            throw new Error("Módulo WebAssembly inválido: alias e binaryPath são obrigatórios")
+        return {
+            alias: wasmModule.alias,
+            binaryPath: path.resolve(wasmModule.binaryPath)
+        }
+    })
+
 // Monta a configuração do webpack a partir dos parâmetros do pacote e do perfil
 // de build. Função PURA: não instancia compilador, não toca no disco. É o que
 // permite testar a configuração sem ter o webpack instalado.
@@ -42,11 +62,16 @@ const CreateWebpackConfig = ({
         url,
         onProgress,
         componentLibraries,
+        wasmModules,
         cacheDirectory,
         buildDate
     } = params
 
     const libraries = NormalizeComponentLibraries(componentLibraries)
+    const wasmAliases = NormalizeWasmModules(wasmModules).reduce((result, { alias, binaryPath }) => {
+        result[alias] = binaryPath
+        return result
+    }, {})
     const libraryNodeModules = libraries
         .map(({ nodeModulesPath }) => nodeModulesPath)
         .filter(Boolean)
@@ -147,7 +172,13 @@ const CreateWebpackConfig = ({
             //   2. com esModule (padrão do file-loader), o css-loader interpolava o
             //      namespace do módulo e o CSS pedia `url([object Module])` → 404.
             // `asset/resource` emite o binário e devolve a URL — resolve os dois.
-            test: /\.(png|jpg|svg|gif|mp4|eot|woff2?|ttf|glb|gltf)$/,
+            // `.wasm` entra aqui, e não no suporte nativo do webpack a
+            // WebAssembly: aquele importa as funções do módulo como se fossem
+            // exports de JavaScript, e com isso o webpack escolhe as importações
+            // e o momento da instanciação. Como asset, quem instancia é o código
+            // do pacote — mesmo import object, mesma memória, mesmas instâncias
+            // descartáveis que existem do lado do host.
+            test: /\.(png|jpg|svg|gif|mp4|eot|woff2?|ttf|glb|gltf|wasm)$/,
             type: "asset/resource"
         }
     ]
@@ -198,7 +229,11 @@ const CreateWebpackConfig = ({
             // Um único runtime React por bundle, vindo da biblioteca que o
             // declarou (ver frameworkAliases acima). Cópias duplicadas em disco
             // são inofensivas; duplicadas no bundle quebram os hooks.
-            alias: { ...frameworkAliases, ...aliases }
+            // Os aliases de `.wasmlib` vêm por último e apontam para um ARQUIVO,
+            // não para um diretório de fontes — daí não participarem do
+            // `libraryTypeScriptPaths` acima. Quem importa em TypeScript declara
+            // o módulo (`declare module "@alias"`), como se faz para qualquer asset.
+            alias: { ...frameworkAliases, ...aliases, ...wasmAliases }
         },
         resolveLoader:{
             modules: moduleSearchPaths
@@ -238,5 +273,6 @@ const CreateWebpackConfig = ({
 }
 
 CreateWebpackConfig.NormalizeComponentLibraries = NormalizeComponentLibraries
+CreateWebpackConfig.NormalizeWasmModules = NormalizeWasmModules
 
 module.exports = CreateWebpackConfig

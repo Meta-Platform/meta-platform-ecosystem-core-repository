@@ -25,6 +25,18 @@ const SerializeComponentLibraries = (componentLibraries: Record<string, any> = {
         }
     })
 
+// Um `.wasmlib` atravessa para o bundle como CAMINHO do binário — e só. Do lado
+// do navegador não há fonte a compilar nem node_modules a resolver: o mesmo
+// artefato que o task loader instanciou no host é servido como asset.
+const SerializeWasmModules = (wasmModules: Record<string, any> = {}) =>
+    Object.keys(wasmModules).map((requestedAlias) => {
+        const handle = wasmModules[requestedAlias]
+        return {
+            alias: requestedAlias || handle.getAlias(),
+            binaryPath: handle.getBinaryPath()
+        }
+    })
+
 // Fábrica: recebe runtimeDeps (ComputeObjectHash + WebInterfaceBuilder injetados pelo
 // registry) e devolve o StartWebGraphicUserInterfaceService — sem require relativo até
 // o essential nem até o WebInterfaceBuilder (que agora vive no ecosystem-core).
@@ -59,7 +71,8 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps: any) => {
             RT_WEBGUI_BUILD_PROFILE,
             // Parâmetro legado dos 14 .webgui existentes; vira "debug-watch".
             isWatch,
-            componentLibraries
+            componentLibraries,
+            wasmModules
         } = loaderParams
 
         const context = nodejsPackageHandler.getSourcePath()
@@ -94,6 +107,7 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps: any) => {
             url : serverEndpointStatus,
             serverAppName : serverName,
             componentLibraries: SerializeComponentLibraries(componentLibraries),
+            wasmModules: SerializeWasmModules(wasmModules),
             buildProfile,
             isWatch,
             environmentPath,
@@ -123,5 +137,6 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps: any) => {
 }
 
 CreateStartWebGraphicUserInterfaceService.SerializeComponentLibraries = SerializeComponentLibraries
+CreateStartWebGraphicUserInterfaceService.SerializeWasmModules = SerializeWasmModules
 
 module.exports = CreateStartWebGraphicUserInterfaceService

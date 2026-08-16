@@ -148,6 +148,7 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
             serverAppName,
             onChangeProgress,
             componentLibraries,
+            wasmModules,
             // Perfil de build. `isWatch` é o parâmetro legado dos 14 .webgui do
             // ecossistema e continua funcionando: mapeia para "debug-watch".
             buildProfile,
@@ -191,7 +192,7 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
             installGlobalLoggerPath: (paths && paths.installGlobalLogger) || process.env.META_INSTALL_GLOBAL_LOGGER_PATH,
             params: {
                 context, entrypoint, output, nodeModulesPath, htmlTemplate,
-                serverAppName, url, componentLibraries,
+                serverAppName, url, componentLibraries, wasmModules,
                 cacheDirectory: MountCacheDirectory({ environmentPath, generatedDirName, serverAppName }),
                 buildDate: profile.stableBuildDate ? "" : new Date().toISOString()
             }
@@ -208,6 +209,7 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
                     context,
                     nodeModules: nodeModulesPath,
                     componentLibraries,
+                    wasmModules,
                     buildProfile: profile.name,
                     entrypoint,
                     htmlTemplate
@@ -262,6 +264,7 @@ const CreateWebInterfaceBuilder = (SmartRequire) => {
                     url,
                     onProgress: onChangeProgress ? handleChangeProgress : undefined,
                     componentLibraries,
+                    wasmModules,
                     cacheDirectory: MountCacheDirectory({ environmentPath, generatedDirName, serverAppName }),
                     // Em release a data é estável para que o bundle seja
                     // reproduzível — pré-requisito de qualquer cache de conteúdo.
