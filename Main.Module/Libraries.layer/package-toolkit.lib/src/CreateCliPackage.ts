@@ -1,10 +1,12 @@
-const { resolve } = require("path")
+import type { ExecutableDefinition } from "./Types"
+
+const { resolve } = require("path") as typeof import("path")
 
 const EXT_TYPE = "cli"
 
-const CreateBasePackage = require("./Helpers/CreateBasePackage")
+const CreateBasePackage = require("./Helpers/CreateBasePackage") as (options: any) => Promise<{ srcPath: string, metadataDirPath: string }>
 
-const CreateCommandsStruct = require("./Helpers/CreateCommandsStruct")
+const CreateCommandsStruct = require("./Helpers/CreateCommandsStruct") as (options: any) => Promise<void>
 
 const CreateCliPackage = async ({
     packageName,
@@ -12,6 +14,12 @@ const CreateCliPackage = async ({
     executablesDefinition,
     author,
     PKG_CONF_DIRNAME_METADATA
+}: {
+    packageName: string
+    workingDirPath: string
+    executablesDefinition: ExecutableDefinition[]
+    author?: string
+    PKG_CONF_DIRNAME_METADATA: string
 }) => {
 
     const namespace = `${packageName}.${EXT_TYPE}`

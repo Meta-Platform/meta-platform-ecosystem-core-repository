@@ -1,15 +1,15 @@
-const { mkdir, access } = require("node:fs/promises")
-const { resolve } = require("path")
+const { mkdir, access } = require("node:fs/promises") as typeof import("node:fs/promises")
+const { resolve } = require("path") as typeof import("path")
 
 // Sufixo de diretório por tipo de container da hierarquia Meta Platform.
-const SUFFIX = {
+const SUFFIX: Record<string, string> = {
     module: ".Module",
     layer : ".layer",
     group : ".group"
 }
 
 // Cria um container da hierarquia (<parentPath>/<name><sufixo>). Recusa existente.
-const CreateContainer = async ({ parentPath, name, kind }) => {
+const CreateContainer = async ({ parentPath, name, kind }: { parentPath: string, name: string, kind: string }) => {
 
     const suffix = SUFFIX[kind]
     if(!suffix) throw `Tipo de container inválido: "${kind}" (use module | layer | group)`

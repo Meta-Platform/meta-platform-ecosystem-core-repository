@@ -1,10 +1,10 @@
-const { resolve } = require("path")
+const { resolve } = require("path") as typeof import("path")
 
 const FILE_EXT = "js"
 
-const CreateUtf8TextFile = require("../Utils/CreateUtf8TextFile")
+const CreateUtf8TextFile = require("../Utils/CreateUtf8TextFile") as (filePath: string, content: string) => Promise<void>
 
-const CreateServiceJSFile = async ({ servicesDirPath, namespace, params, boundParams }) => {
+const CreateServiceJSFile = async ({ servicesDirPath, namespace, params, boundParams }: { servicesDirPath: string, namespace: string, params: string[], boundParams: string[] }) => {
 
     const fileName = `${namespace}.service.${FILE_EXT}`
     const filePath = resolve(servicesDirPath, fileName)

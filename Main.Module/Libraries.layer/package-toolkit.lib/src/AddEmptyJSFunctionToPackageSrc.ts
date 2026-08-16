@@ -1,11 +1,11 @@
 
-const { resolve } = require("path")
+const { resolve } = require("path") as typeof import("path")
 
 const FILE_EXT = "js"
 
-const CreateUtf8TextFile = require("./Utils/CreateUtf8TextFile")
+const CreateUtf8TextFile = require("./Utils/CreateUtf8TextFile") as (filePath: string, content: string) => Promise<void>
 
-const AddEmptyJSFunctionToPackageSrc = async ({ packagePath, functionName}) => {
+const AddEmptyJSFunctionToPackageSrc = async ({ packagePath, functionName}: { packagePath: string, functionName: string }) => {
 
     const fileName = `${functionName}.${FILE_EXT}`
     const filePath = resolve(packagePath, "src", fileName)

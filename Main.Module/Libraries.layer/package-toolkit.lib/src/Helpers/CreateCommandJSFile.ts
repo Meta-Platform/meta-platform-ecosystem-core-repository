@@ -1,10 +1,10 @@
-const { resolve } = require("path")
+const { resolve } = require("path") as typeof import("path")
 
 const FILE_EXT = "js"
 
-const CreateUtf8TextFile = require("../Utils/CreateUtf8TextFile")
+const CreateUtf8TextFile = require("../Utils/CreateUtf8TextFile") as (filePath: string, content: string) => Promise<void>
 
-const CreateCommandJSFile = async ({ commandsDirPath, namespace}) => {
+const CreateCommandJSFile = async ({ commandsDirPath, namespace}: { commandsDirPath: string, namespace: string }) => {
 
     const fileName = `${namespace}.command.${FILE_EXT}`
     const filePath = resolve(commandsDirPath, fileName)

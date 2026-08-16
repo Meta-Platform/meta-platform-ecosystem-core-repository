@@ -1,6 +1,6 @@
-const fs = require("fs")
+const fs = require("fs") as typeof import("fs")
 
-const ReadJsonFile = (path) => {
+const ReadJsonFile = (path: string): any => {
     try {
         const jsonString = fs.readFileSync(path, {encoding:'utf8'})
         return JSON.parse(jsonString)

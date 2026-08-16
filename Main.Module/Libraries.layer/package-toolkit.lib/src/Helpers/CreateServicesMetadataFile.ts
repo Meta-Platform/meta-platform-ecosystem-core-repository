@@ -1,10 +1,15 @@
-const { resolve } = require("path")
+import type { ServiceDefinition } from "../Types"
 
-const WriteObjectToFile = require("../Utils/WriteObjectToFile")
+const { resolve } = require("path") as typeof import("path")
+
+const WriteObjectToFile = require("../Utils/WriteObjectToFile") as (filepath: string, objectContent: unknown) => Promise<void>
 
 const CreateServicesMetadataFile = async ({
     metadataDirPath,
     servicesDefinition
+}: {
+    metadataDirPath: string
+    servicesDefinition: ServiceDefinition[]
 }) => {
     const filename = "services.json"
     const content = servicesDefinition

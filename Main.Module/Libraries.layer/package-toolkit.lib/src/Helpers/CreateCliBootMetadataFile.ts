@@ -1,10 +1,15 @@
-const { resolve } = require("path")
+import type { ExecutableDefinition } from "../Types"
 
-const WriteObjectToFile = require("../Utils/WriteObjectToFile")
+const { resolve } = require("path") as typeof import("path")
+
+const WriteObjectToFile = require("../Utils/WriteObjectToFile") as (filepath: string, objectContent: unknown) => Promise<void>
 
 const CreateCliBootMetadataFile = async ({
     metadataDirPath,
     executablesDefinition
+}: {
+    metadataDirPath: string
+    executablesDefinition: ExecutableDefinition[]
 }) => {
     const filename = "boot.json"
     const content = {

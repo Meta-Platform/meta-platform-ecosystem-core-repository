@@ -1,10 +1,10 @@
-const { resolve } = require("path")
+const { resolve } = require("path") as typeof import("path")
 const { 
     mkdir
-} = require('node:fs/promises')
+} = require('node:fs/promises') as typeof import('node:fs/promises')
 
-const WriteObjectToFile = require("../Utils/WriteObjectToFile")
-const CreateUtf8TextFile = require("../Utils/CreateUtf8TextFile")
+const WriteObjectToFile = require("../Utils/WriteObjectToFile") as (filepath: string, objectContent: unknown) => Promise<void>
+const CreateUtf8TextFile = require("../Utils/CreateUtf8TextFile") as (filePath: string, content: string) => Promise<void>
 
 const NODEJS_PACKAGE_JSON_FILENAME = "package.json"
 
@@ -18,13 +18,18 @@ const GITIGNORE_FILENAME = ".gitignore"
 const GITIGNORE_CONTENT = `
 node_modules
 `
-const CreateMetadataStruct = require("./CreateMetadataStruct")
+const CreateMetadataStruct = require("./CreateMetadataStruct") as (options: { namespace: string, packageBasePath: string, PKG_CONF_DIRNAME_METADATA: string }) => Promise<string>
 
 const CreateBasePackage = async ({
     basePath,
     namespace,
     author,
     PKG_CONF_DIRNAME_METADATA
+}: {
+    basePath: string
+    namespace: string
+    author?: string
+    PKG_CONF_DIRNAME_METADATA: string
 }) => {
 
     const srcPath = resolve(basePath, "src")

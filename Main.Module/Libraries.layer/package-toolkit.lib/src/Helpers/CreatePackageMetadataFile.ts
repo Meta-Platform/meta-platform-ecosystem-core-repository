@@ -1,10 +1,13 @@
-const { resolve } = require("path")
+const { resolve } = require("path") as typeof import("path")
 
-const WriteObjectToFile = require("../Utils/WriteObjectToFile")
+const WriteObjectToFile = require("../Utils/WriteObjectToFile") as (filepath: string, objectContent: unknown) => Promise<void>
 
 const CreatePackageMetadataFile = async({
     namespace,
     metadataDirPath
+}: {
+    namespace: string
+    metadataDirPath: string
 }) => {
     const filename = "package.json"
     const content = {

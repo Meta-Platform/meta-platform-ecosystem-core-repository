@@ -1,15 +1,20 @@
-const { resolve } = require("path")
+import type { CommandDefinition, ExecutableDefinition } from "../Types"
 
-const WriteObjectToFile = require("../Utils/WriteObjectToFile")
+const { resolve } = require("path") as typeof import("path")
+
+const WriteObjectToFile = require("../Utils/WriteObjectToFile") as (filepath: string, objectContent: unknown) => Promise<void>
 
 const CreateCommandGroupMetadataFile = async ({
     metadataDirPath,
     executablesDefinition
+}: {
+    metadataDirPath: string
+    executablesDefinition: ExecutableDefinition[]
 }) => {
     const filename = "command-group.json"
     const content = {
         "commands": executablesDefinition
-            .reduce((acc, { commands: commandsDef }) => {
+            .reduce((acc: unknown[], { commands: commandsDef }) => {
                 const commands = commandsDef
                     .map(({ namespace, command, description}) => {
                         return { 

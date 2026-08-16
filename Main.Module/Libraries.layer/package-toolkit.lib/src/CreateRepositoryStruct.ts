@@ -1,9 +1,9 @@
-const { mkdir, writeFile, access } = require("node:fs/promises")
-const { resolve } = require("path")
+const { mkdir, writeFile, access } = require("node:fs/promises") as typeof import("node:fs/promises")
+const { resolve } = require("path") as typeof import("path")
 
 // Cria a estrutura de um Repository novo em <basePath>/<name>:
 // metadata/applications.json (marcador) + README + .gitignore + Module/Layer inicial.
-const CreateRepositoryStruct = async ({ basePath, name }) => {
+const CreateRepositoryStruct = async ({ basePath, name }: { basePath: string, name: string }) => {
 
     const repositoryPath = resolve(basePath, name)
 
