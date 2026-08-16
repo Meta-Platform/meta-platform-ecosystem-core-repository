@@ -1,11 +1,11 @@
-const GetIsolateExecutionParameters = (executionParams, executionData) => {
+const GetIsolateExecutionParameters = (executionParams: any[], executionData: any): any[] => {
 
-    const ScanChildren = (executionParam) => executionParam.children
+    const ScanChildren = (executionParam: any) => executionParam.children
         ? {children: ScanExecutionParams(executionParam.children)}
         : {}
 
 
-    const AddExecutionDataToStaticParameters = (executionParam) => {
+    const AddExecutionDataToStaticParameters = (executionParam: any) => {
         return {
             staticParameters:{
                 ...executionParam.staticParameters || {},
@@ -14,7 +14,7 @@ const GetIsolateExecutionParameters = (executionParams, executionData) => {
         }
     }
 
-    const AddExecutionDataToRequeriment = (requeriment) => {
+    const AddExecutionDataToRequeriment = (requeriment: any) => {
         return requeriment["&&"]
         ? {
             "&&": [
@@ -28,7 +28,7 @@ const GetIsolateExecutionParameters = (executionParams, executionData) => {
         : {}
     }
 
-    const AddExecutionDataToActivationRules = (executionParam) => {
+    const AddExecutionDataToActivationRules = (executionParam: any) => {
         return executionParam.activationRules
         ? {
             activationRules: {
@@ -39,12 +39,12 @@ const GetIsolateExecutionParameters = (executionParams, executionData) => {
         : {}
     }
 
-    const AddExecutionDataToAgentLinkRules = (executionParam) => {
+    const AddExecutionDataToAgentLinkRules = (executionParam: any) => {
         return executionParam.agentLinkRules
         ? {
             agentLinkRules: executionParam
                 .agentLinkRules
-                .map(({referenceName, requirement}) => {
+                .map(({referenceName, requirement}: any) => {
                     return {
                         referenceName,
                         requirement: AddExecutionDataToRequeriment(requirement)
@@ -54,8 +54,8 @@ const GetIsolateExecutionParameters = (executionParams, executionData) => {
         : {} 
     }
 
-    const ScanExecutionParams = (executionParams) =>
-        executionParams.map((executionParam) => {
+    const ScanExecutionParams = (executionParams: any[]): any[] =>
+        executionParams.map((executionParam: any) => {
             return {
                 ...executionParam,
                 ...AddExecutionDataToStaticParameters(executionParam),

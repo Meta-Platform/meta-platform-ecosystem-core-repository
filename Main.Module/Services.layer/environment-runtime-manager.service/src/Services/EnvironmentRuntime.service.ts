@@ -1,13 +1,13 @@
-const { join } = require('path')
+const { join } = require('path') as typeof import('path')
 
-const FilterAppplicationTasks = (tasks) => 
-    tasks.filter(({objectLoaderType}) => objectLoaderType ==='application-instance')
+const FilterAppplicationTasks = (tasks: any[]) =>
+    tasks.filter(({objectLoaderType}: any) => objectLoaderType ==='application-instance')
 
-const ExecutionDataState = require("../Helpers/ExecutionDataState")
-const ExecutionStatusTypes = require("../Helpers/ExecutionStatusTypes")
-const GetIsolateExecutionParameters = require("../Helpers/GetIsolateExecutionParameters")
+const ExecutionDataState = require("../Helpers/ExecutionDataState") as () => any
+const ExecutionStatusTypes = require("../Helpers/ExecutionStatusTypes") as Record<string, string>
+const GetIsolateExecutionParameters = require("../Helpers/GetIsolateExecutionParameters") as (executionParams: any[], executionData: any) => any[]
 
-const EnvironmentRuntimeService = (params) => {
+const EnvironmentRuntimeService = (params: any) => {
 
     const executionState = ExecutionDataState()
 
@@ -26,13 +26,13 @@ const EnvironmentRuntimeService = (params) => {
 
     const Init = async () => {
         taskExecutorMachineService
-            .AddTaskStatusListener(({taskId, status, statusReason}) =>
+            .AddTaskStatusListener(({taskId, status, statusReason}: any) =>
                 executionState.NotifyTaskStatusChange(taskId, status, statusReason))
 
         onReady()
     }
 
-    const Execute = async (environmentPath, executionParams) => {
+    const Execute = async (environmentPath: string, executionParams: any[]) => {
         const taskIdList = taskExecutorMachineService
             .CreateTasks(executionParams)
         await WriteObjectToFile(join(environmentPath, "execution-params.json"), executionParams)
@@ -40,7 +40,7 @@ const EnvironmentRuntimeService = (params) => {
         return executionId
     }
 
-    const ExecuteEnvironment = async (environmentPath) => {
+    const ExecuteEnvironment = async (environmentPath: string) => {
         if(!executionState.CheckIfExecutionCanBeRegistered(environmentPath)){
             const metadataHierarchy = await _GetMetadataHierarchy(environmentPath)
             const applicationExecutionParams = TranslateMetadataHierarchyForExecutionParams({
@@ -56,7 +56,7 @@ const EnvironmentRuntimeService = (params) => {
         }
     }
 
-    const StopExecution = (executionId) => {
+    const StopExecution = (executionId: string | number) => {
         const associatedTaskIds = executionState
             .GetAssociatedTaskIds(executionId)
         taskExecutorMachineService
@@ -69,23 +69,23 @@ const EnvironmentRuntimeService = (params) => {
     // application-task cujo rootPath corresponde, descobre a execução ativa que
     // a contém e a encerra. Usado pelos painéis (my-desktop / eco-panel) que
     // conhecem o packagePath, não o executionId.
-    const StopPackage = (packagePath) => {
+    const StopPackage = (packagePath: string) => {
         // Todas as application-tasks com esse rootPath (pode haver tasks antigas
         // já TERMINATED acumuladas no task-executor além da ativa).
         const matchingTaskIds = new Set(
             ListApplicationTask()
-                .filter((task) => task.staticParameters && task.staticParameters.rootPath === packagePath)
-                .map((task) => String(task.taskId)))
+                .filter((task: any) => task.staticParameters && task.staticParameters.rootPath === packagePath)
+                .map((task: any) => String(task.taskId)))
 
         if(matchingTaskIds.size === 0)
             return { stopped: false, reason: "pacote não está em execução" }
 
         // Encontra a execução ATIVA que contém alguma dessas tasks.
         const execution = executionState.ListExecutions()
-            .find((record) => record
+            .find((record: any) => record
                 && record.status !== ExecutionStatusTypes.TERMINATED
                 && record.statusAssociatedTasks
-                && Object.keys(record.statusAssociatedTasks).some((taskId) => matchingTaskIds.has(String(taskId))))
+                && Object.keys(record.statusAssociatedTasks).some((taskId: string) => matchingTaskIds.has(String(taskId))))
 
         if(!execution)
             return { stopped: false, reason: "execução ativa não encontrada" }
@@ -97,7 +97,7 @@ const EnvironmentRuntimeService = (params) => {
     const ListApplicationTask = () => 
         FilterAppplicationTasks(taskExecutorMachineService.ListTasks())
 
-    const _GetMetadataHierarchy = async (environmentPath) => {
+    const _GetMetadataHierarchy = async (environmentPath: string) => {
         return await ReadJsonFile(join(environmentPath, ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA))
     }
 
