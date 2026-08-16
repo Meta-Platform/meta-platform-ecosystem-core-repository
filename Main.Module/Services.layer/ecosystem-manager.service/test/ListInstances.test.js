@@ -4,6 +4,12 @@ const os = require("os")
 const path = require("path")
 const fs = require("fs")
 
+// As dependências npm deste serviço vêm no provisionamento, não no repositório.
+// Para rodar aqui:
+//   NODE_PATH=~/EcosystemData/npm-dependencies/node_modules:\
+//             ../../Libraries.layer/workspace-store.lib/node_modules npm test
+//
+// O `npm test` carrega a resolução de TypeScript antes: a fonte é .ts.
 const EcosystemManager = require("../src/Managers/Ecosystem.manager")
 
 /*

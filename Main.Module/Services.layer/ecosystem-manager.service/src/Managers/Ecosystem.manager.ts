@@ -20,19 +20,19 @@ const INSTANCE_TASK_ENDPOINT = "/task-executor-machine"
 // Chamada HTTP-sobre-Unix-socket enxuta (só http nativo). Falamos direto com os
 // caminhos fixos que a instância publica — sem descoberta via mount-api, para o
 // daemon não depender de nenhuma lib nova (o que quebraria a montagem do grafo).
-const _HttpOverSocket = ({ socketPath, method, path, body }) => new Promise((resolve, reject) => {
+const _HttpOverSocket = ({ socketPath, method, path, body }: any): Promise<any> => new Promise((resolve, reject) => {
     const payload = body !== undefined ? JSON.stringify(body) : undefined
     const req = http.request({
         socketPath,
         path,
         method,
         headers: payload ? { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(payload) } : {}
-    }, (res) => {
+    }, (res: any) => {
         let data = ""
-        res.on("data", (chunk) => { data += chunk })
+        res.on("data", (chunk: any) => { data += chunk })
         res.on("end", () => {
             if(res.statusCode >= 200 && res.statusCode < 300){
-                try { resolve(data ? JSON.parse(data) : undefined) } catch(e){ resolve(data) }
+                try { resolve(data ? JSON.parse(data) : undefined) } catch(e: any){ resolve(data) }
             } else reject(new Error(`HTTP ${res.statusCode}: ${data}`))
         })
     })
@@ -43,16 +43,16 @@ const _HttpOverSocket = ({ socketPath, method, path, body }) => new Promise((res
 
 const colors = require("colors")
 
-const ConvertToHashSHA256 = (token) => 
+const ConvertToHashSHA256 = (token: any) => 
     crypto
         .createHash('sha256')
         .update(token)
         .digest('hex')
 
-const FindApplicationTaskByRootPath = (listaTasks, packagePath) => 
-    listaTasks.find(({staticParameters}) => staticParameters.rootPath === packagePath)
+const FindApplicationTaskByRootPath = (listaTasks: any, packagePath: any) => 
+    listaTasks.find(({staticParameters}: any) => staticParameters.rootPath === packagePath)
 
-const ExtractStateByTask = (task) => {
+const ExtractStateByTask = (task: any) => {
     const {
         taskId,
         objectLoaderType,
@@ -67,7 +67,7 @@ const ExtractStateByTask = (task) => {
     }
 }
 
-const EcosystemManager = (params) => {
+const EcosystemManager = (params: any) => {
 
     const {
         repositoryConfigHandlerLib,
@@ -140,8 +140,8 @@ const EcosystemManager = (params) => {
     const DescribeCollision = (() => {
         try {
             return resourceParamsHandlerLib.require("DetectResourceParamCollisions").DescribeCollision
-        } catch(e) {
-            return ({ parameter }) => `parâmetro '${parameter}' declarado como recurso já tinha outro valor`
+        } catch(e: any) {
+            return ({ parameter }: any) => `parâmetro '${parameter}' declarado como recurso já tinha outro valor`
         }
     })()
 
@@ -165,25 +165,25 @@ const EcosystemManager = (params) => {
     // existiam num Map em memória, perdido a cada restart.
     const instanceStore = InitializeInstanceStore(instanceStoreFilePath)
 
-    const _Log = (action, message) =>
+    const _Log = (action: any, message: any) =>
         Log.info("Ecosystem.manager", `${colors.bgCyan.black("[EcosystemManagerService]")} ${colors.inverse(`[${action}]`)} ${message}`)
 
     // O registro é observabilidade, não caminho crítico: se o SQLite falhar, o
     // lançamento/encerramento continua. Só logamos.
-    const _SafeStore = async (operation) => {
+    const _SafeStore = async (operation: any) => {
         try {
             return await operation()
-        } catch(e) {
+        } catch(e: any) {
             _Log("InstanceStore", `${colors.bgRed("ERROR")} ${e && e.message ? e.message : e}`)
         }
     }
 
     // Um pacote é DESKTOP (Electron) se o boot.json declara a seção "windows".
-    const _IsDesktopPackage = async (packagePath) => {
+    const _IsDesktopPackage = async (packagePath: any) => {
         try {
             const boot = await ReadJsonFile(join(packagePath, PKG_CONF_DIRNAME_METADATA, "boot.json"))
             return Array.isArray(boot && boot.windows) && boot.windows.length > 0
-        } catch(e) {
+        } catch(e: any) {
             return false
         }
     }
@@ -203,7 +203,7 @@ const EcosystemManager = (params) => {
     // Caminho do Unix socket que a instância desktop abre para expor suas tarefas.
     // Fica ao lado do socket do próprio daemon (mesma pasta sockets/), numa
     // subpasta por-instância. O processo filho cria o diretório ao subir.
-    const _CreateInstanceTaskSocketPath = (instanceId) =>
+    const _CreateInstanceTaskSocketPath = (instanceId: any) =>
         join(dirname(socket || join(ECO_DIRPATH_INSTALL_DATA, "sockets", "x")), "instance-tasks", `${instanceId}.sock`)
 
     // Caminho do Unix socket de CONTROLE DE JANELA da instância desktop (quem o
@@ -211,7 +211,7 @@ const EcosystemManager = (params) => {
     // frente em vez de lançar outra instância. O caminho é DERIVADO do
     // instanceId — assim continua resolvível para instâncias readotadas após um
     // restart do daemon, sem precisar guardá-lo no registro.
-    const _CreateInstanceWindowSocketPath = (instanceId) =>
+    const _CreateInstanceWindowSocketPath = (instanceId: any) =>
         join(dirname(socket || join(ECO_DIRPATH_INSTALL_DATA, "sockets", "x")), "instance-windows", `${instanceId}.sock`)
 
     // Log por instância. Fica em <install-data>/logs/instances/<instanceId>.jsonl,
@@ -223,10 +223,10 @@ const EcosystemManager = (params) => {
     // Ver logging-standard.md.
     const LOGS_DIRNAME = "logs"
 
-    const _CreateInstanceLogPath = (instanceId) =>
+    const _CreateInstanceLogPath = (instanceId: any) =>
         join(ECO_DIRPATH_INSTALL_DATA, LOGS_DIRNAME, "instances", `${instanceId}.jsonl`)
 
-    const _EnsureInstanceLogPath = (instanceId) => {
+    const _EnsureInstanceLogPath = (instanceId: any) => {
         const logPath = _CreateInstanceLogPath(instanceId)
         fs.mkdirSync(dirname(logPath), { recursive: true })
         return logPath
@@ -237,7 +237,7 @@ const EcosystemManager = (params) => {
     // `appendFileSync` com carimbo montado à mão que existia aqui.
     const _instanceChannels = new Map()
 
-    const _GetInstanceChannel = (instanceId) => {
+    const _GetInstanceChannel = (instanceId: any) => {
 
         if(_instanceChannels.has(instanceId)) return _instanceChannels.get(instanceId)
 
@@ -255,11 +255,11 @@ const EcosystemManager = (params) => {
 
     // Anexa uma linha ao log da instância. Observabilidade, não caminho crítico:
     // qualquer erro de escrita é engolido para não derrubar um launch/stop.
-    const _AppendInstanceLog = (instanceId, message) => {
+    const _AppendInstanceLog = (instanceId: any, message: any) => {
         try {
             const channel = _GetInstanceChannel(instanceId)
             if(channel) channel.info("Daemon", message)
-        } catch(e) {}
+        } catch(e: any) {}
     }
 
     // ---- Leitura do log da instância -------------------------------------
@@ -275,19 +275,19 @@ const EcosystemManager = (params) => {
     // O arquivo é JSONL, mas quem lê (o painel) espera LINHAS DE TEXTO — o
     // contrato da API não muda com o formato (decisão LOGS-2). Uma linha que não
     // for JSON é devolvida como está: é log gravado antes desta mudança.
-    const _FormatLogLine = (line) => {
+    const _FormatLogLine = (line: any) => {
         if(!line || line[0] !== "{") return line
         try {
             const { ts, level, source, message } = JSON.parse(line)
             if(message === undefined) return line
             return `[${ts}] [${String(level).padEnd(7)}] [${source}] ${message}`
-        } catch(e) { return line }
+        } catch(e: any) { return line }
     }
 
     // Lê um pedaço do fim do arquivo (ou a partir de um offset conhecido) e o
     // devolve em linhas. `offset` volta para o chamador continuar de onde parou —
     // é o que torna o acompanhamento incremental, sem reenviar o log inteiro.
-    const _ReadLogSlice = (logPath, { fromOffset, maxBytes = LOG_READ_MAX_BYTES } = {}) => {
+    const _ReadLogSlice = (logPath: any, { fromOffset, maxBytes = LOG_READ_MAX_BYTES }: any = {}) => {
         const { size } = fs.statSync(logPath)
 
         // Offset maior que o arquivo = ele foi truncado (rotação) desde a última
@@ -305,7 +305,7 @@ const EcosystemManager = (params) => {
 
         const fd = fs.openSync(logPath, "r")
         try { fs.readSync(fd, buffer, 0, length, start) }
-        finally { try { fs.closeSync(fd) } catch(e) {} }
+        finally { try { fs.closeSync(fd) } catch(e: any) {} }
 
         let text = buffer.toString("utf8")
 
@@ -334,14 +334,14 @@ const EcosystemManager = (params) => {
 
     // Lê o log de uma instância. Sem `fromOffset`, devolve as últimas linhas;
     // com ele, só o que foi escrito depois. 2+ params → chegam como objeto.
-    const ReadInstanceLog = async ({ instanceId, tailLines = 500, fromOffset } = {}) => {
+    const ReadInstanceLog = async ({ instanceId, tailLines = 500, fromOffset }: any = {}): Promise<any> => {
         if(!instanceId) throw new Error("ReadInstanceLog: 'instanceId' é obrigatório.")
 
         const logPath = _CreateInstanceLogPath(instanceId)
 
         let slice
         try { slice = _ReadLogSlice(logPath, { fromOffset }) }
-        catch(e) {
+        catch(e: any) {
             // Instância sem log ainda (acabou de subir) não é erro: é log vazio.
             return { instanceId, lines: [], offset: 0, size: 0, exists: false }
         }
@@ -361,16 +361,16 @@ const EcosystemManager = (params) => {
     // escreve é outro processo, pelo fd herdado no spawn. O stat só roda
     // enquanto houver alguém assistindo.
     // 1 parâmetro (instanceId) chega como valor direto.
-    const InstanceLogStream = (ws, instanceId) => {
-        if(!instanceId) { try { ws.close() } catch(e){} ; return }
+    const InstanceLogStream = (ws: any, instanceId: any) => {
+        if(!instanceId) { try { ws.close() } catch(e: any){} ; return }
 
         const logPath = _CreateInstanceLogPath(instanceId)
         let offset = 0
         let closed = false
 
-        const _send = (payload) => { try { ws.send(JSON.stringify(payload)) } catch(e){} }
+        const _send = (payload: any) => { try { ws.send(JSON.stringify(payload)) } catch(e: any){} }
 
-        const _pump = async (type) => {
+        const _pump = async (type: any) => {
             if(closed) return
             const result = await ReadInstanceLog({ instanceId, fromOffset: offset })
             if(!result.exists) return
@@ -388,7 +388,7 @@ const EcosystemManager = (params) => {
             })
             .catch(() => {})
 
-        const onChange = (current, previous) => {
+        const onChange = (current: any, previous: any) => {
             if(current.mtimeMs === previous.mtimeMs && current.size === previous.size) return
             _pump("append").catch(() => {})
         }
@@ -397,7 +397,7 @@ const EcosystemManager = (params) => {
 
         ws.on && ws.on("close", () => {
             closed = true
-            try { fs.unwatchFile(logPath, onChange) } catch(e){}
+            try { fs.unwatchFile(logPath, onChange) } catch(e: any){}
         })
     }
 
@@ -409,18 +409,18 @@ const EcosystemManager = (params) => {
 
         let fileList
         try { fileList = fs.readdirSync(logDir) }
-        catch(e) { return [] }
+        catch(e: any) { return [] }
 
         const instanceList = (await _SafeStore(() => instanceStore.List())) || []
-        const instanceById = new Map(instanceList.map((instance) => [instance.instanceId, instance]))
+        const instanceById = new Map<string, any>(instanceList.map((instance: any) => [instance.instanceId, instance]))
 
         return fileList
-            .filter((fileName) => fileName.endsWith(".jsonl") || fileName.endsWith(".log"))
-            .map((fileName) => {
+            .filter((fileName: any) => fileName.endsWith(".jsonl") || fileName.endsWith(".log"))
+            .map((fileName: any) => {
                 const instanceId = fileName.replace(/\.(jsonl|log)$/, "")
                 let stats
                 try { stats = fs.statSync(join(logDir, fileName)) }
-                catch(e) { return undefined }
+                catch(e: any) { return undefined }
 
                 const instance = instanceById.get(instanceId)
                 return {
@@ -434,20 +434,20 @@ const EcosystemManager = (params) => {
                 }
             })
             .filter(Boolean)
-            .sort((a, b) => b.modifiedAt - a.modifiedAt)
+            .sort((a: any, b: any) => b.modifiedAt - a.modifiedAt)
     }
 
     // Um desktop de sessão longa escreve no log pelo fd herdado, sem limite. Como
     // não controlamos esse fd, o corte é feito por truncamento do arquivo: com
     // O_APPEND o kernel recalcula o offset, então o processo continua escrevendo
     // normalmente a partir do zero.
-    const _TruncateOversizedLog = (instanceId) => {
+    const _TruncateOversizedLog = (instanceId: any) => {
         const logPath = _CreateInstanceLogPath(instanceId)
         try {
             if(fs.statSync(logPath).size <= INSTANCE_LOG_MAX_BYTES) return
             fs.truncateSync(logPath, 0)
             _AppendInstanceLog(instanceId, `[daemon] log truncado ao passar de ${INSTANCE_LOG_MAX_BYTES} bytes`)
-        } catch(e) {}
+        } catch(e: any) {}
     }
 
     // Um arquivo de log por LANÇAMENTO (o instanceId é único por execução), então
@@ -458,11 +458,11 @@ const EcosystemManager = (params) => {
         const limitMs = Date.now() - (INSTANCE_LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000)
         const logDir  = dirname(_CreateInstanceLogPath("x"))
 
-        const removed = logList.filter((log) =>
+        const removed = logList.filter((log: any) =>
             log.status !== instanceStore.STATUS.RUNNING && log.modifiedAt.getTime() < limitMs)
 
-        removed.forEach((log) => {
-            try { fs.unlinkSync(join(logDir, `${log.instanceId}.log`)) } catch(e) {}
+        removed.forEach((log: any) => {
+            try { fs.unlinkSync(join(logDir, `${log.instanceId}.log`)) } catch(e: any) {}
         })
 
         if(removed.length > 0)
@@ -482,7 +482,7 @@ const EcosystemManager = (params) => {
     // e reenvia a lista inteira. Emissor DEDICADO — não dependemos do task-executor.
     const instancesEmitter = new EventEmitter()
     instancesEmitter.setMaxListeners(0)
-    const _EmitInstancesChange = () => { try { instancesEmitter.emit("INSTANCES_CHANGE") } catch(e){} }
+    const _EmitInstancesChange = () => { try { instancesEmitter.emit("INSTANCES_CHANGE") } catch(e: any){} }
     const GetInstancesEmitter  = () => instancesEmitter
 
     // ---- Desempenho por instância ----------------------------------------
@@ -503,7 +503,7 @@ const EcosystemManager = (params) => {
 
     // Último snapshot completo — é o que um cliente recém-conectado recebe antes
     // do primeiro tick, para a tela não abrir vazia.
-    let lastMetricsSnapshot = { at: undefined, system: undefined, instances: [] }
+    let lastMetricsSnapshot: { at: any, system: any, instances: any[] } = { at: undefined, system: undefined, instances: [] }
 
     // pids já amostrados, para descartar a linha de base de quem morreu.
     const sampledPidByInstanceId = new Map()
@@ -511,24 +511,24 @@ const EcosystemManager = (params) => {
     let sampleTickCount = 0
     let metricsTimer
 
-    const _GroupTasksByStatus = (taskList) =>
-        (taskList || []).reduce((acc, task) => ({ ...acc, [task.status]: (acc[task.status] || 0) + 1 }), {})
+    const _GroupTasksByStatus = (taskList: any) =>
+        (taskList || []).reduce((acc: any, task: any) => ({ ...acc, [task.status]: (acc[task.status] || 0) + 1 }), {})
 
     // Subárvore de tarefas de uma instância `app`, recortada da lista global do
     // task-executor do daemon pela task raiz (mesma regra que o painel aplica).
-    const _CollectTaskSubtree = (taskList, rootTaskId) => {
+    const _CollectTaskSubtree = (taskList: any, rootTaskId: any) => {
         const childrenOf = new Map()
-        taskList.forEach((task) => {
+        taskList.forEach((task: any) => {
             if(task.pTaskId === undefined || task.pTaskId === null) return
             childrenOf.set(task.pTaskId, [ ...(childrenOf.get(task.pTaskId) || []), task ])
         })
 
-        const root = taskList.find((task) => task.taskId === rootTaskId)
+        const root = taskList.find((task: any) => task.taskId === rootTaskId)
         if(!root) return []
 
         const seen = new Set()
-        const result = []
-        const _walk = (task) => {
+        const result: any[] = []
+        const _walk = (task: any) => {
             if(seen.has(task.taskId)) return
             seen.add(task.taskId)
             result.push(task)
@@ -541,7 +541,7 @@ const EcosystemManager = (params) => {
     // Quantas tarefas internas a instância tem, e em que estado. Cada kind tem
     // uma fonte diferente: desktop reporta as suas ao daemon (cache), enquanto
     // as de um app vivem no task-executor in-process.
-    const _CountInstanceTasks = (instance) => {
+    const _CountInstanceTasks = (instance: any) => {
         try {
             if(instance.kind !== instanceStore.KIND.APP){
                 const tasks = instanceTasksCache.get(instance.instanceId)
@@ -550,7 +550,7 @@ const EcosystemManager = (params) => {
             if(!taskExecutorMachineService || instance.taskId === undefined || instance.taskId === null)
                 return undefined
             return _GroupTasksByStatus(_CollectTaskSubtree(taskExecutorMachineService.ListTasks(), instance.taskId))
-        } catch(e) { return undefined }
+        } catch(e: any) { return undefined }
     }
 
     // Amostra UMA instância. Para desktop/cli mede o GRUPO de processos: o
@@ -560,7 +560,7 @@ const EcosystemManager = (params) => {
     // `app` roda in-process no daemon, então não existe medição isolada: o que
     // se reporta é o processo do daemon inteiro, marcado `shared: true` para a
     // interface poder dizer isso ao usuário em vez de fingir precisão.
-    const _SampleInstance = (instance, at) => {
+    const _SampleInstance = (instance: any, at: any) => {
         const base = {
             instanceId:  instance.instanceId,
             packagePath: instance.packagePath,
@@ -592,11 +592,11 @@ const EcosystemManager = (params) => {
     // aconteceu para este processo, e a contagem ficaria vazia até a próxima
     // mudança de estado dela — que num app estável pode não vir nunca. Um pull
     // pelo socket da instância preenche o cache uma vez.
-    const _EnsureInstanceTasksCache = async (instanceList) => {
-        const pending = instanceList.filter((instance) =>
+    const _EnsureInstanceTasksCache = async (instanceList: any) => {
+        const pending = instanceList.filter((instance: any) =>
             instance.kind !== instanceStore.KIND.APP && !instanceTasksCache.has(instance.instanceId))
 
-        await Promise.all(pending.map(async (instance) => {
+        await Promise.all(pending.map(async (instance: any) => {
             const tasks = await ListInstanceTasks(instance.instanceId)
             if(tasks && tasks.length > 0) instanceTasksCache.set(instance.instanceId, tasks)
         }))
@@ -608,9 +608,9 @@ const EcosystemManager = (params) => {
         const system = metricsSampler ? { at, ...metricsSampler.SampleSystem() } : undefined
 
         let instanceList = []
-        try { instanceList = await ListInstances() } catch(e) { instanceList = [] }
+        try { instanceList = await ListInstances() } catch(e: any) { instanceList = [] }
 
-        try { await _EnsureInstanceTasksCache(instanceList) } catch(e) {}
+        try { await _EnsureInstanceTasksCache(instanceList) } catch(e: any) {}
 
         const instances = instanceList.map((instance) => _SampleInstance(instance, at))
 
@@ -631,7 +631,7 @@ const EcosystemManager = (params) => {
             })
 
         lastMetricsSnapshot = { at, system, instances }
-        try { metricsEmitter.emit("METRICS_SAMPLE", lastMetricsSnapshot) } catch(e) {}
+        try { metricsEmitter.emit("METRICS_SAMPLE", lastMetricsSnapshot) } catch(e: any) {}
 
         // O log só é conferido de tempos em tempos: statar todo tick seria
         // desperdício para um arquivo que leva horas para chegar ao teto.
@@ -660,7 +660,7 @@ const EcosystemManager = (params) => {
     const ListInstanceMetrics = () => lastMetricsSnapshot
 
     // Série histórica de UMA instância, para o gráfico. 2 params → objeto.
-    const GetInstanceMetrics = ({ instanceId, limit } = {}) => {
+    const GetInstanceMetrics = ({ instanceId, limit }: any = {}) => {
         if(!instanceId) throw new Error("GetInstanceMetrics: 'instanceId' é obrigatório.")
         const history = metricsHistory ? metricsHistory.Get(instanceId, limit) : []
         const current = history.length > 0 ? history[history.length - 1] : undefined
@@ -669,15 +669,15 @@ const EcosystemManager = (params) => {
 
     // Stream (WS) das amostras: manda o último snapshot na conexão e, depois,
     // cada nova amostra. Mesmo contrato dos demais streams do daemon.
-    const MetricsStream = (ws) => {
-        const _send = (snapshot) => { try { ws.send(JSON.stringify(snapshot)) } catch(e){} }
+    const MetricsStream = (ws: any) => {
+        const _send = (snapshot: any) => { try { ws.send(JSON.stringify(snapshot)) } catch(e: any){} }
 
         _send(lastMetricsSnapshot)
 
-        const onSample = (snapshot) => _send(snapshot)
+        const onSample = (snapshot: any) => _send(snapshot)
         metricsEmitter.on("METRICS_SAMPLE", onSample)
         ws.on && ws.on("close", () => {
-            try { metricsEmitter.removeListener("METRICS_SAMPLE", onSample) } catch(e){}
+            try { metricsEmitter.removeListener("METRICS_SAMPLE", onSample) } catch(e: any){}
         })
     }
 
@@ -695,14 +695,14 @@ const EcosystemManager = (params) => {
     // pacote que mandou abrir, não o instanceId (que só nasce aqui), e precisa
     // dos dois para saber a QUAL ícone o progresso pertence e QUAL instância
     // daquele ícone acabou de abrir ou fechar.
-    const _ResolveLaunchPackagePath = (launchId) => {
+    const _ResolveLaunchPackagePath = (launchId: any) => {
         const registered = desktopProcesses.get(launchId)
         if(registered) return registered.packagePath
         const state = launchProgressState.get(launchId)
         return state && state.packagePath
     }
 
-    const _EmitLaunchProgress = ({ launchId, phase, percentage, packagePath }) => {
+    const _EmitLaunchProgress = ({ launchId, phase, percentage, packagePath }: any) => {
         if(!launchId || !phase) return
         const resolvedPath = packagePath || _ResolveLaunchPackagePath(launchId)
         const state = {
@@ -719,7 +719,7 @@ const EcosystemManager = (params) => {
     // Ingest chamado pelo app lançado (electron-main) via POST. `phase` ∈
     // { window-ready | building | ready }; `percentage` só em building/ready.
     // O app só conhece o seu launchId; o packagePath é resolvido aqui.
-    const ReportLaunchProgress = ({ launchId, phase, percentage } = {}) => {
+    const ReportLaunchProgress = ({ launchId, phase, percentage }: any = {}) => {
         _EmitLaunchProgress({ launchId, phase, percentage })
         return {}
     }
@@ -736,7 +736,7 @@ const EcosystemManager = (params) => {
     // Injeta META_LAUNCH_PROGRESS_SOCKET/META_LAUNCH_ID no env: eles fluem pelo
     // `run` → taskLoader → OpenElectronWindow (que faz ...process.env) até o
     // electron-main, que POSTa o progresso de volta neste socket.
-    const _RunDesktopInSeparateProcess = async (packagePath, launchedBy, startupParams) => {
+    const _RunDesktopInSeparateProcess = async (packagePath: any, launchedBy: any, startupParams: any) => {
         const instanceId = _CreateInstanceId()
         const executablesDirPath = join(ECO_DIRPATH_INSTALL_DATA, "executables")
         // O processo separado abre um socket expondo seu task-executor; é por ele
@@ -772,7 +772,7 @@ const EcosystemManager = (params) => {
         let logFd
         try {
             logFd = fs.openSync(_EnsureInstanceLogPath(instanceId), "a")
-        } catch(e) { logFd = undefined }
+        } catch(e: any) { logFd = undefined }
 
         const child = spawn(join(executablesDirPath, "run"), ["package", packagePath], {
             cwd: ECO_DIRPATH_INSTALL_DATA,
@@ -780,7 +780,7 @@ const EcosystemManager = (params) => {
             detached: true,
             stdio: logFd !== undefined ? ["ignore", logFd, logFd] : "ignore"
         })
-        if(logFd !== undefined) { try { fs.closeSync(logFd) } catch(e) {} }
+        if(logFd !== undefined) { try { fs.closeSync(logFd) } catch(e: any) {} }
         desktopProcesses.set(instanceId, { child, packagePath })
         await _SafeStore(() => instanceStore.RegisterLaunch({
             instanceId,
@@ -794,7 +794,7 @@ const EcosystemManager = (params) => {
         // Feedback imediato no ícone enquanto o Electron sobe (antes do window-ready).
         _EmitLaunchProgress({ launchId: instanceId, packagePath, phase: "launching" })
         _EmitInstancesChange()
-        child.on("exit", (code, signal) => {
+        child.on("exit", (code: any, signal: any) => {
             const registered = desktopProcesses.get(instanceId)
             if(registered && registered.child === child)
                 desktopProcesses.delete(instanceId)
@@ -815,27 +815,27 @@ const EcosystemManager = (params) => {
     // Mata o grupo de processos de um pid (o spawn é `detached`, então pgid = pid).
     // Usado quando o daemon reiniciou e perdeu o handle do child, mas o registro
     // guardou o pid da instância readotada.
-    const _KillProcessGroup = (pid) => {
+    const _KillProcessGroup = (pid: any) => {
         if(!pid || !instanceStore.IsProcessAlive(pid)) return false
         try { process.kill(-pid, "SIGTERM"); return true }
-        catch(e) {
-            try { process.kill(pid, "SIGTERM"); return true } catch(_){ return false }
+        catch(e: any) {
+            try { process.kill(pid, "SIGTERM"); return true } catch(_: any){ return false }
         }
     }
 
     // Encerra UMA instância DESKTOP lançada pelo daemon (mata o grupo de processos).
-    const _StopDesktopProcess = (instanceId) => {
+    const _StopDesktopProcess = (instanceId: any) => {
         const registered = desktopProcesses.get(instanceId)
         if(!registered) return false
         const { child } = registered
-        try { process.kill(-child.pid, "SIGTERM") } catch(e) { try { child.kill("SIGTERM") } catch(_){} }
+        try { process.kill(-child.pid, "SIGTERM") } catch(e: any) { try { child.kill("SIGTERM") } catch(_: any){} }
         desktopProcesses.delete(instanceId)
         return true
     }
 
     // Encerra TODAS as instâncias DESKTOP de um pacote. É o comportamento do
     // encerramento por packagePath, que não distingue instâncias.
-    const _StopDesktopProcessesByPackage = (packagePath) => {
+    const _StopDesktopProcessesByPackage = (packagePath: any) => {
         const instanceIdList = Array.from(desktopProcesses.entries())
             .filter(([, registered]) => registered.packagePath === packagePath)
             .map(([instanceId]) => instanceId)
@@ -866,7 +866,7 @@ const EcosystemManager = (params) => {
         onReady()
     }
 
-    const _GetRootNamespace = (metadataHierarchy) => {
+    const _GetRootNamespace = (metadataHierarchy: any) => {
         const dependency = GetMetadataRootNode(metadataHierarchy)
         const { 
             metadata:{
@@ -878,7 +878,7 @@ const EcosystemManager = (params) => {
         return namespace
     }
 
-    const _GetEnvironmentName = (metadataHierarchy, packagePath) => {
+    const _GetEnvironmentName = (metadataHierarchy: any, packagePath: any) => {
         const namespace       = _GetRootNamespace(metadataHierarchy)
         const packageName     = ResolvePackageName(namespace)
         const environmentName = `${packageName}-${ConvertToHashSHA256(packagePath)}`
@@ -891,7 +891,7 @@ const EcosystemManager = (params) => {
         return join(ECO_DIRPATH_INSTALL_DATA, GLOBAL_RT_ENV_DIRNAME)
     }
 
-    const WriteMetadataGraphFile = async (environmentPath, tree) =>
+    const WriteMetadataGraphFile = async (environmentPath: any, tree: any) =>
         await WriteObjectToFile(join(environmentPath, ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA), tree)
 
     // Resolve os recursos que o pacote DECLARA (socket-params/storage-params) e
@@ -902,7 +902,7 @@ const EcosystemManager = (params) => {
     // base e perde para um literal esquecido no startup-params.json — justamente
     // o caminho absoluto que este mecanismo existe para eliminar. Aplicado
     // depois, o recurso declarado é a fonte da verdade.
-    const _ResolveDeclaredResources = (metadataHierarchy) => {
+    const _ResolveDeclaredResources = (metadataHierarchy: any) => {
 
         if(!ApplyResourceParamsToHierarchy) return metadataHierarchy
 
@@ -923,8 +923,8 @@ const EcosystemManager = (params) => {
         EnsureResources(resolved.resources)
 
         resolved.resources
-            .filter(({ owner }) => owner)
-            .forEach(({ kind, parameter, path }) => _Log("Resources", `${kind} ${parameter} → ${path}`))
+            .filter(({ owner }: any) => owner)
+            .forEach(({ kind, parameter, path }: any) => _Log("Resources", `${kind} ${parameter} → ${path}`))
 
         // Colisão de nome (VDRP-233): o recurso declarado acabou de substituir um
         // valor que o parâmetro já tinha. Aqui isso é AVISO, não recusa — o
@@ -932,12 +932,12 @@ const EcosystemManager = (params) => {
         // desvio, só troca um sintoma difícil por uma parada. A recusa mora no
         // provisionamento, que é onde ainda dá para escolher o nome.
         ;(resolved.collisions || [])
-            .forEach((collision) => _Log("Resources", `${colors.bgRed("COLISÃO")} ${DescribeCollision(collision)}`))
+            .forEach((collision: any) => _Log("Resources", `${colors.bgRed("COLISÃO")} ${DescribeCollision(collision)}`))
 
         return resolved.metadataHierarchy
     }
 
-    const RunPackage = async ({ packagePath, startupParams, launchedBy }) => {
+    const RunPackage = async ({ packagePath, startupParams, launchedBy }: any) => {
         try{
             // DESKTOP → processo separado (isola o Electron do daemon).
             // `startupParams` era descartado neste caminho; ele é o que carrega
@@ -986,7 +986,7 @@ const EcosystemManager = (params) => {
             // execução — incluindo o MOTIVO quando uma tarefa falha (ERROR). É o
             // que torna "terminou sem erro" auditável para apps.
             _AppendInstanceLog(instanceId, `[daemon] launching app ${packagePath} (executionId=${executionId})`)
-            environmentRuntimeService.AddExecutionStatusListener(executionId, (status, statusReason) =>
+            environmentRuntimeService.AddExecutionStatusListener(executionId, (status: any, statusReason: any) =>
                 _AppendInstanceLog(instanceId, `execution status: ${status}${statusReason ? ` — ${statusReason}` : ""}`))
 
             await _SafeStore(async () => {
@@ -1005,13 +1005,13 @@ const EcosystemManager = (params) => {
             _EmitInstancesChange()
 
             return { instanceId }
-        }catch(e){
+        }catch(e: any){
 
             Log.error("Ecosystem.manager", e)
 
             const now = new Date()
             const offset = now.getTimezoneOffset() * 60000
-            const localISOTime = (new Date(now - offset)).toISOString()
+            const localISOTime = (new Date(now.getTime() - offset)).toISOString()
             const formattedMessage = `${colors.dim(`[${localISOTime}]`)} ${colors.bgCyan.black("[EcosystemManagerService]")} ${colors.inverse(`[RunPackage]`)} ${colors.bgRed("ERROR")} ${e}`
             Log.debug("Ecosystem.manager", formattedMessage)
         }
@@ -1036,7 +1036,7 @@ const EcosystemManager = (params) => {
             }), {})
 
             const packageStatusPromises = listAllRepositoriesPackage
-                .map(async (packageRepositoryParams) => {
+                .map(async (packageRepositoryParams: any) => {
                     const packagePath = await repositoryManagerService.GetPackagePath(packageRepositoryParams)
                     const applicationTask = FindApplicationTaskByRootPath(applicationTasks, packagePath)
                     const desktopInstances = desktopByPath[packagePath] || []
@@ -1060,7 +1060,7 @@ const EcosystemManager = (params) => {
                     }
                 })
             return await Promise.all(packageStatusPromises)
-        }catch(e){
+        }catch(e: any){
             Log.error("Ecosystem.manager", e)
         }
     }
@@ -1068,7 +1068,7 @@ const EcosystemManager = (params) => {
     // Encerra a execução de um pacote pelo seu caminho — TODAS as instâncias dele.
     // 1 parâmetro (packagePath) chega como valor direto (contrato do server-manager).
     // DESKTOP → mata os processos separados; demais → delega ao runtime in-process.
-    const StopPackage = async (packagePath) => {
+    const StopPackage = async (packagePath: any) => {
         if(_StopDesktopProcessesByPackage(packagePath)){
             await _SafeStore(() => instanceStore.MarkStoppedByPackage({ packagePath }))
             _EmitInstancesChange()
@@ -1089,7 +1089,7 @@ const EcosystemManager = (params) => {
     //
     // O daemon NÃO passa a ser dono do processo: parar/focar continuam sendo de
     // quem o iniciou. O `kind: external` é o que diz isso ao painel.
-    const AttachExternalInstance = async ({ packagePath, pid, launchedBy, identity } = {}) => {
+    const AttachExternalInstance = async ({ packagePath, pid, launchedBy, identity }: any = {}) => {
         if(!packagePath) throw new Error("AttachExternalInstance: 'packagePath' é obrigatório.")
         const instanceId = _CreateInstanceId()
         const registered = await _SafeStore(() => instanceStore.AttachExternal({
@@ -1104,7 +1104,7 @@ const EcosystemManager = (params) => {
     // O processo externo avisando que terminou. Se ele morrer sem avisar, o
     // Reconcile/ListInstances derrubam o registro pelo pid — este caminho só
     // torna o encerramento imediato.
-    const DetachExternalInstance = async (instanceId) => {
+    const DetachExternalInstance = async (instanceId: any) => {
         if(!instanceId) throw new Error("DetachExternalInstance: 'instanceId' é obrigatório.")
         await _SafeStore(() => instanceStore.MarkStopped({ instanceId }))
         _AppendInstanceLog(instanceId, "[daemon] external detach")
@@ -1115,7 +1115,7 @@ const EcosystemManager = (params) => {
     // Encerra UMA instância pelo seu instanceId — é o que permite fechar a janela
     // certa quando o mesmo pacote está aberto várias vezes.
     // 1 parâmetro (instanceId) chega como valor direto (contrato do server-manager).
-    const StopInstance = async (instanceId) => {
+    const StopInstance = async (instanceId: any) => {
         if(_StopDesktopProcess(instanceId)){
             await _SafeStore(() => instanceStore.MarkStopped({ instanceId }))
             _EmitInstancesChange()
@@ -1144,7 +1144,7 @@ const EcosystemManager = (params) => {
     // painel dar FOCO num aplicativo já aberto em vez de abrir outra instância.
     // Fala com o socket de controle de janela publicado pelo electron-main.
     // 1 parâmetro (instanceId) chega como valor direto (contrato do server-manager).
-    const FocusInstance = async (instanceId) => {
+    const FocusInstance = async (instanceId: any) => {
         if(!instanceId) throw new Error("FocusInstance: 'instanceId' é obrigatório")
 
         const instance = await _SafeStore(() => instanceStore.Get({ instanceId }))
@@ -1162,7 +1162,7 @@ const EcosystemManager = (params) => {
                 path: "/focus"
             })
             return { focused: Boolean(result && result.focused), instanceId }
-        } catch(e) {
+        } catch(e: any) {
             // Socket ausente/morto: instância encerrando, ou lançada por uma
             // versão do taskLoader anterior a este canal.
             return { focused: false, instanceId }
@@ -1175,11 +1175,11 @@ const EcosystemManager = (params) => {
     // ausência precisa ser testada contra null/undefined, e não pela falsidade do
     // valor. Instância registrada por uma versão anterior, sem executionId, cai
     // no caminho antigo (sem task, considera parada).
-    const _GetExecutionData = (executionId) => {
+    const _GetExecutionData = (executionId: any) => {
         if(executionId === null || executionId === undefined) return undefined
         try {
             return environmentRuntimeService.GetExecutionData(executionId)
-        } catch(e) {
+        } catch(e: any) {
             return undefined
         }
     }
@@ -1197,7 +1197,7 @@ const EcosystemManager = (params) => {
 
         const applicationTasks = environmentRuntimeService.ListApplicationTask()
 
-        const instanceList = await Promise.all(runningList.map(async (instance) => {
+        const instanceList = await Promise.all(runningList.map(async (instance: any) => {
             if(instance.kind === instanceStore.KIND.APP){
                 const task = FindApplicationTaskByRootPath(applicationTasks, instance.packagePath)
 
@@ -1245,10 +1245,10 @@ const EcosystemManager = (params) => {
     // veio. Diferente do attach externo, aqui quem lê o disco é o daemon, então
     // não faz sentido registrar origem/executável (seriam os DELE, não os da
     // instância); o que interessa e é verdadeiro é a versão e o commit.
-    const _PackageIdentity = (packagePath) => {
+    const _PackageIdentity = (packagePath: any) => {
         if(!packagePath) return undefined
-        const read = (file) => {
-            try { return JSON.parse(fs.readFileSync(file, "utf8")) } catch(e){ return undefined }
+        const read = (file: any) => {
+            try { return JSON.parse(fs.readFileSync(file, "utf8")) } catch(e: any){ return undefined }
         }
         const meta = read(join(packagePath, "metadata", "package.json"))
         const npm = read(join(packagePath, "package.json"))
@@ -1260,10 +1260,10 @@ const EcosystemManager = (params) => {
     // Versão que está NO DISCO agora, para o painel comparar com a que está
     // rodando e dizer "desatualizada" sem obrigar ninguém a conferir número
     // (IEXP-28). Só faz sentido para quem registrou identidade no attach.
-    const _InstalledVersion = (instance) => {
+    const _InstalledVersion = (instance: any) => {
         if(!instance || !instance.identity || !instance.identity.packagePath) return undefined
-        const read = (file) => {
-            try { return JSON.parse(fs.readFileSync(file, "utf8")) } catch(e){ return undefined }
+        const read = (file: any) => {
+            try { return JSON.parse(fs.readFileSync(file, "utf8")) } catch(e: any){ return undefined }
         }
         const meta = read(join(instance.identity.packagePath, "metadata", "package.json"))
         const npm = read(join(instance.identity.packagePath, "package.json"))
@@ -1276,7 +1276,7 @@ const EcosystemManager = (params) => {
     // in-process do daemon e o painel já as recorta da lista global — aqui
     // devolvemos vazio para não duplicar essa fonte.
     // 1 parâmetro (instanceId) chega como valor direto (contrato do server-manager).
-    const ListInstanceTasks = async (instanceId) => {
+    const ListInstanceTasks = async (instanceId: any): Promise<any> => {
         const instance = await _SafeStore(() => instanceStore.Get({ instanceId }))
         if(!instance || !instance.taskSocketPath) return []
         try {
@@ -1286,7 +1286,7 @@ const EcosystemManager = (params) => {
                 path: `${INSTANCE_TASK_ENDPOINT}/list-task`
             })
             return tasks || []
-        } catch(e) {
+        } catch(e: any) {
             return []
         }
     }
@@ -1294,7 +1294,7 @@ const EcosystemManager = (params) => {
     // Ingest de tarefas vindo do processo da instância (POST). Guarda o último
     // estado e emite, para os streams abertos empurrarem ao painel.
     // 2 parâmetros → chegam como objeto.
-    const ReportInstanceTasks = ({ instanceId, tasks } = {}) => {
+    const ReportInstanceTasks = ({ instanceId, tasks }: any = {}) => {
         if(!instanceId) return {}
         instanceTasksCache.set(instanceId, tasks || [])
         instanceTasksEmitter.emit("INSTANCE_TASKS_CHANGE", { instanceId, tasks: tasks || [] })
@@ -1305,22 +1305,22 @@ const EcosystemManager = (params) => {
     // (cache; se vazio, um pull único pelo socket da instância) e, em seguida,
     // cada atualização empurrada pelo processo. Sem polling.
     // 1 parâmetro (instanceId) chega como valor direto (contrato do server-manager).
-    const InstanceTaskStream = (ws, instanceId) => {
-        const _send = (tasks) => { try { ws.send(JSON.stringify(tasks || [])) } catch(e){} }
+    const InstanceTaskStream = (ws: any, instanceId: any) => {
+        const _send = (tasks: any) => { try { ws.send(JSON.stringify(tasks || [])) } catch(e: any){} }
 
         if(instanceTasksCache.has(instanceId)) _send(instanceTasksCache.get(instanceId))
         else ListInstanceTasks(instanceId).then(_send).catch(() => {})
 
-        const onChange = (payload) => { if(payload && payload.instanceId === instanceId) _send(payload.tasks) }
+        const onChange = (payload: any) => { if(payload && payload.instanceId === instanceId) _send(payload.tasks) }
         instanceTasksEmitter.on("INSTANCE_TASKS_CHANGE", onChange)
         ws.on && ws.on("close", () => {
-            try { instanceTasksEmitter.removeListener("INSTANCE_TASKS_CHANGE", onChange) } catch(e){}
+            try { instanceTasksEmitter.removeListener("INSTANCE_TASKS_CHANGE", onChange) } catch(e: any){}
         })
     }
 
     // Encerra tarefas internas de uma instância desktop, delegando ao task-executor
     // do processo dela. 2 parâmetros → chegam como objeto.
-    const StopInstanceTasks = async ({ instanceId, taskIds } = {}) => {
+    const StopInstanceTasks = async ({ instanceId, taskIds }: any = {}) => {
         const instance = await _SafeStore(() => instanceStore.Get({ instanceId }))
         if(!instance || !instance.taskSocketPath) return { stopped: false }
         try {
@@ -1332,7 +1332,7 @@ const EcosystemManager = (params) => {
                 body: { taskIds: ids }
             })
             return result || { stopped: true }
-        } catch(e) {
+        } catch(e: any) {
             return { stopped: false }
         }
     }

@@ -5,5 +5,8 @@
   "license": "BSD-3-Clause",
   "dependencies": {
     "colors": "^1.4.0"
+  },
+  "scripts": {
+    "test": "node --require ../../../../essential-repository/Commons.Module/Libraries.layer/module-resolution.lib/src/register.js --test test/*.test.js"
   }
 }
