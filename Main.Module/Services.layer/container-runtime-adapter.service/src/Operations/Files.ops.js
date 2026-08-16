@@ -25,7 +25,7 @@
 const {
     BuildTarWithSingleFile,
     ExtractFirstFileFromTar,
-    ReadTarEntries
+    ReadTarEntriesFromStream
 } = require("../Helpers/TarSingleFile")
 /*
     Contenção de caminho vive em Helpers/ResolveVolumeEntryPath.js — função
@@ -177,7 +177,7 @@ const CreateFileOperations = ({ docker, StreamToBuffer, ephemeral, RunExec }) =>
                 throw error
             }
 
-            const tar = await StreamToBuffer(stream)
+            const tar = await StreamToBuffer(stream, { descricao: "O arquivo pedido" })
             const arquivo = ExtractFirstFileFromTar(tar)
             if (!arquivo) {
                 const error = new Error("O caminho informado não é um arquivo.")
@@ -345,8 +345,14 @@ const CreateFileOperations = ({ docker, StreamToBuffer, ephemeral, RunExec }) =>
             throw erro
         }
 
-        const tar = await StreamToBuffer(stream)
-        const { entries: cabecalhos } = ReadTarEntries(tar)
+        /*
+            Em FLUXO, não em Buffer: `getArchive` de um diretório traz o
+            conteúdo recursivo inteiro, e este caminho é justamente o do
+            container PARADO, onde não há `stat` para rodar. Juntar tudo para
+            olhar só os cabeçalhos custava o filesystem do container em
+            memória — e era assim que a listagem de `/` derrubava o processo.
+        */
+        const { entries: cabecalhos } = await ReadTarEntriesFromStream(stream)
 
         /*
             O tar de um diretório vem com o próprio diretório como primeira
@@ -398,7 +404,7 @@ const CreateFileOperations = ({ docker, StreamToBuffer, ephemeral, RunExec }) =>
             throw erro
         }
 
-        const tar = await StreamToBuffer(stream)
+        const tar = await StreamToBuffer(stream, { descricao: "O arquivo pedido" })
         const arquivo = ExtractFirstFileFromTar(tar)
 
         if (!arquivo) {

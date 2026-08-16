@@ -6,15 +6,89 @@
     base64 num JSON.
 
     ATENÇÃO ao custo: o conteúdo inteiro passa pela memória, e o base64 ainda o
-    infla ~1,37×. Para exportação de imagem e volume isso já é um limite
-    conhecido — ver CTMG-93 e CTMG-101, que introduzem um teto explícito.
+    infla ~1,37×. É por isso que existe o TETO abaixo (CTMG-93 e CTMG-101).
+
+    ## Por que o teto não é opcional
+
+    Sem teto, um tar grande demais não vira erro: vira `RangeError: Array
+    buffer allocation failed` dentro do `Buffer.concat`. E como esse erro nasce
+    no ouvinte de `end` — fora da cadeia da Promise —, ele NÃO chega ao
+    `reject`: sobe como exceção não tratada e derruba o processo inteiro. No
+    aplicativo de mesa isso aparecia como o diálogo "A JavaScript error
+    occurred in the main process", sem nenhuma pista de qual operação pediu o
+    quê.
+
+    Com o teto, o mesmo caso vira uma resposta 413 com o tamanho no texto, e
+    quem pediu continua de pé. Por isso o `Buffer.concat` também está protegido:
+    memória apertada pode fazê-lo falhar bem abaixo do teto, e o destino desse
+    erro é o `reject`, nunca o processo.
+
+    QUEM SÓ PRECISA DOS CABEÇALHOS de um tar não deveria estar aqui: veja
+    `ReadTarEntriesFromStream` em `TarSingleFile.js`, que lê a listagem em fluxo
+    e não guarda o conteúdo.
 */
-const StreamToBuffer = (stream) =>
+
+const TETO_PADRAO_EM_BYTES = 256 * 1024 * 1024
+
+const EmMegabytes = (bytes) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+
+const StreamToBuffer = (stream, { limiteEmBytes = TETO_PADRAO_EM_BYTES, descricao = "O conteúdo" } = {}) =>
     new Promise((resolve, reject) => {
-        const chunks = []
-        stream.on('data', (chunk) => chunks.push(chunk))
-        stream.on('end', () => resolve(Buffer.concat(chunks)))
-        stream.on('error', reject)
+        let chunks = []
+        let total = 0
+        let encerrado = false
+
+        const UmaVezSo = (Acao) => (valor) => {
+            if (encerrado) return
+            encerrado = true
+            Acao(valor)
+        }
+
+        const Resolver = UmaVezSo(resolve)
+
+        const Rejeitar = UmaVezSo((erro) => {
+            // Solta os pedaços já lidos antes de rejeitar: quem estourou o teto
+            // é justamente quem não pode continuar segurando memória.
+            chunks = []
+            stream.destroy()
+            reject(erro)
+        })
+
+        stream.on("data", (chunk) => {
+            total += chunk.length
+
+            if (limiteEmBytes !== null && total > limiteEmBytes) {
+                const erro = new Error(
+                    `${descricao} excede o limite de ${EmMegabytes(limiteEmBytes)} ` +
+                    `que este serviço carrega em memória.`
+                )
+                erro.code = "CONTENT_TOO_LARGE"
+                erro.httpStatus = 413
+                erro.statusCode = 413
+                Rejeitar(erro)
+                return
+            }
+
+            chunks.push(chunk)
+        })
+
+        stream.on("end", () => {
+            try {
+                Resolver(Buffer.concat(chunks))
+            } catch (falha) {
+                const erro = new Error(
+                    `Não foi possível reunir ${EmMegabytes(total)} em memória: ${falha.message}`
+                )
+                erro.code = "CONTENT_TOO_LARGE"
+                erro.httpStatus = 413
+                erro.statusCode = 413
+                erro.cause = falha
+                Rejeitar(erro)
+            }
+        })
+
+        stream.on("error", Rejeitar)
     })
 
 module.exports = StreamToBuffer
+module.exports.TETO_PADRAO_EM_BYTES = TETO_PADRAO_EM_BYTES

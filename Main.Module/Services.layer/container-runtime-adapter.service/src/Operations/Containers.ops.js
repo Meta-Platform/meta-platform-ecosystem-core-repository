@@ -1082,7 +1082,7 @@ const CreateContainerOperations = ({ docker, StreamToBuffer, SafeFileName }) => 
         try {
             const container = docker.getContainer(containerIdOrName)
             const stream = await container.export()
-            const buffer = await StreamToBuffer(stream)
+            const buffer = await StreamToBuffer(stream, { descricao: "O container exportado" })
             return {
                 isBase64 : true,
                 fileName : `${SafeFileName(containerIdOrName, "container")}.tar`,

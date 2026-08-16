@@ -1,6 +1,6 @@
 {
   "name": "container-runtime-adapter.service",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "author": "Kaio Cezar <kadisk.shark@gmail.com>",
   "scripts": {
     "test": "node --test"

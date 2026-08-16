@@ -24,6 +24,10 @@
 const BLOCK_SIZE = 512
 const MAX_NAME_LENGTH = 100
 
+// Cabeçalho estendido do PAX cabe em poucos bytes; acima disto é anomalia, e
+// anomalia não ganha memória nossa.
+const TETO_DE_METADADO_EM_BYTES = 64 * 1024
+
 const Octal = (value, length) =>
     value.toString(8).padStart(length - 1, "0") + "\0"
 
@@ -76,6 +80,96 @@ const ReadString = (buffer, offset, length) => {
 }
 
 /*
+    Decodifica UM cabeçalho de 512 bytes. Devolve `null` quando o bloco não é
+    um cabeçalho reconhecível — quem chama trata isso como corte, não como
+    entrada vazia.
+
+    Permissão e data de modificação (CTMG-44) só passaram a importar quando o
+    navegador de ARQUIVOS DE CONTAINER chegou: com o container parado não há
+    processo para rodar `stat`, e os cabeçalhos do tar são a única fonte desses
+    campos. Sem eles, a mesma tela mostraria colunas vazias dependendo de o
+    container estar de pé ou não.
+*/
+const ReadHeader = (header) => {
+    const name = ReadString(header, 0, MAX_NAME_LENGTH)
+    const size = parseInt(ReadString(header, 124, 12).trim(), 8)
+    const typeflag = ReadString(header, 156, 1) || "0"
+
+    if (!name || Number.isNaN(size)) return null
+
+    const modeOctal = ReadString(header, 100, 8).trim()
+    const mtimeOctal = ReadString(header, 136, 12).trim()
+    const mode = modeOctal ? parseInt(modeOctal, 8) : null
+    const mtimeSeconds = mtimeOctal ? parseInt(mtimeOctal, 8) : null
+
+    /*
+        O campo `prefix` do USTAR (CTMG-101).
+
+        ESCREVER continua sendo só `name` — a nota no topo do arquivo vale, e
+        nome longo demais é recusado em vez de truncado. Mas LER é outra
+        história: o tar de um filesystem inteiro vem cheio de caminhos que não
+        cabem em 100 bytes, e ignorar o prefixo não devolvia menos entradas —
+        devolvia entradas ERRADAS. `/usr/lib/python3/__pycache__/` chegava aqui
+        como `__pycache__/`, e um filtro de "só o primeiro nível" deixava
+        passar: a listagem de `/` mostrava 18 mil linhas em vez de vinte, com o
+        mesmo nome repetido de pastas fundo adentro.
+    */
+    const prefix = ReadString(header, 345, 155)
+    const caminho = prefix ? `${prefix}/${name}` : name
+
+    return {
+        name: caminho,
+        size,
+        typeflag,
+        isDirectory: typeflag === "5" || caminho.endsWith("/"),
+        mode: Number.isNaN(mode) ? null : mode,
+        mtimeSeconds: Number.isNaN(mtimeSeconds) ? null : mtimeSeconds
+    }
+}
+
+const Preenchimento = (size) => (BLOCK_SIZE - (size % BLOCK_SIZE)) % BLOCK_SIZE
+
+const BlocoZerado = (bloco) => bloco.every((byte) => byte === 0)
+
+/*
+    Entradas que não são arquivo: carregam METADADO da entrada seguinte.
+
+    `x` é o cabeçalho estendido do PAX — que é o que o Go usa (e portanto o
+    Docker) quando nem `prefix` dá conta do caminho —, e `L` é o nome longo do
+    GNU tar. Nos dois casos o nome de verdade está no CONTEÚDO, e o bloco em si
+    não é um arquivo para mostrar na tela. `g` é o global do PAX, que não
+    descreve entrada nenhuma.
+*/
+const EhMetadado = (typeflag) => typeflag === "x" || typeflag === "g" ||
+    typeflag === "L" || typeflag === "K"
+
+/*
+    Extrai o caminho anunciado por um bloco de metadado. PAX guarda registros
+    no formato `TAMANHO chave=valor\n`; o GNU guarda o nome cru, terminado em
+    zero. Metadado que não fala de caminho (data, dono, ACL) devolve `null` e
+    não muda nada.
+*/
+const ReadPathFromMetadata = (typeflag, conteudo) => {
+    if (typeflag === "L" || typeflag === "K") {
+        const texto = conteudo.toString("utf-8")
+        const fim = texto.indexOf("\0")
+        const nome = (fim === -1 ? texto : texto.slice(0, fim)).trim()
+        return nome || null
+    }
+
+    if (typeflag !== "x") return null
+
+    for (const registro of conteudo.toString("utf-8").split("\n")) {
+        const separador = registro.indexOf("=")
+        if (separador === -1) continue
+        const chave = registro.slice(0, separador).split(" ").pop()
+        if (chave === "path") return registro.slice(separador + 1)
+    }
+
+    return null
+}
+
+/*
     Lê as entradas de um TAR. Devolve nome, tamanho e tipo de cada uma, e o
     CONTEÚDO só quando pedido (`withContent`) — o mesmo tar de um diretório
     inteiro pode ser grande, e listar não deveria custar o dobro de memória.
@@ -88,58 +182,154 @@ const ReadTarEntries = (buffer, { withContent = false } = {}) => {
     const entries = []
     let offset = 0
     let truncated = false
+    let caminhoAnunciado = null
 
     while (offset + BLOCK_SIZE <= buffer.length) {
         const header = buffer.subarray(offset, offset + BLOCK_SIZE)
 
         // Bloco zerado = fim do arquivo.
-        if (header.every((byte) => byte === 0)) break
+        if (BlocoZerado(header)) break
 
-        const name = ReadString(header, 0, MAX_NAME_LENGTH)
-        const sizeOctal = ReadString(header, 124, 12).trim()
-        const size = parseInt(sizeOctal, 8)
-        const typeflag = ReadString(header, 156, 1) || "0"
-
-        /*
-            Permissão e data de modificação (CTMG-44).
-
-            Só passaram a importar quando o navegador de ARQUIVOS DE CONTAINER
-            chegou: com o container parado não há processo para rodar `stat`, e
-            os cabeçalhos do tar são a única fonte desses campos. Sem eles, a
-            mesma tela mostraria colunas vazias dependendo de o container estar
-            de pé ou não.
-        */
-        const modeOctal = ReadString(header, 100, 8).trim()
-        const mtimeOctal = ReadString(header, 136, 12).trim()
-        const mode = modeOctal ? parseInt(modeOctal, 8) : null
-        const mtimeSeconds = mtimeOctal ? parseInt(mtimeOctal, 8) : null
-
-        if (!name || Number.isNaN(size)) {
+        const entrada = ReadHeader(header)
+        if (!entrada) {
             truncated = true
             break
         }
 
         const inicio = offset + BLOCK_SIZE
-        const fim = inicio + size
+        const fim = inicio + entrada.size
         if (fim > buffer.length) {
             truncated = true
             break
         }
 
+        const { typeflag, ...campos } = entrada
+        offset = fim + Preenchimento(entrada.size)
+
+        if (EhMetadado(typeflag)) {
+            caminhoAnunciado = ReadPathFromMetadata(typeflag, buffer.subarray(inicio, fim))
+            continue
+        }
+
+        const nome = caminhoAnunciado || campos.name
+        caminhoAnunciado = null
+
         entries.push({
-            name,
-            size,
-            isDirectory: typeflag === "5" || name.endsWith("/"),
-            mode: Number.isNaN(mode) ? null : mode,
-            mtimeSeconds: Number.isNaN(mtimeSeconds) ? null : mtimeSeconds,
+            ...campos,
+            name: nome,
+            isDirectory: typeflag === "5" || nome.endsWith("/"),
             ...(withContent && typeflag !== "5" ? { content: buffer.subarray(inicio, fim) } : {})
         })
-
-        offset = fim + ((BLOCK_SIZE - (size % BLOCK_SIZE)) % BLOCK_SIZE)
     }
 
     return { entries, truncated }
 }
+
+/*
+    A MESMA leitura, porém sobre um fluxo e SEM guardar o conteúdo.
+
+    Existe por causa de um caso que derrubava o processo: listar `/` de um
+    container PARADO. Sem processo de pé não há `stat` para rodar, então a
+    listagem vem do `getArchive` — e `getArchive` de um diretório traz o
+    conteúdo recursivo inteiro. Juntar isso num Buffer para depois olhar só os
+    cabeçalhos custava o filesystem todo em memória; num painel de serviço, GBs.
+
+    Aqui os bytes do conteúdo são CONTADOS e descartados: a memória fica na
+    ordem da lista de nomes, e não do tar. O fluxo ainda é lido até o fim —
+    a API do Docker não oferece profundidade —, mas ler não é guardar.
+*/
+const ReadTarEntriesFromStream = (stream) =>
+    new Promise((resolve, reject) => {
+        const entries = []
+        let pendente = Buffer.alloc(0)
+        let aDescartar = 0
+        let fechado = false
+        let truncated = false
+
+        /*
+            O bloco de metadado (PAX ou GNU) é o ÚNICO cujo conteúdo importa
+            aqui — ele carrega o caminho longo da entrada seguinte. É pequeno
+            por natureza, mas o teto existe mesmo assim: um tar forjado não
+            deveria conseguir crescer a memória por um campo que ninguém lê
+            inteiro.
+        */
+        let metadadoEmCurso = null
+        let caminhoAnunciado = null
+
+        const Consumir = (chunk) => {
+            pendente = pendente.length === 0 ? chunk : Buffer.concat([pendente, chunk])
+
+            while (true) {
+                if (aDescartar > 0) {
+                    const disponivel = Math.min(aDescartar, pendente.length)
+
+                    if (metadadoEmCurso) {
+                        metadadoEmCurso.partes.push(pendente.subarray(0, disponivel))
+                    }
+
+                    pendente = pendente.subarray(disponivel)
+                    aDescartar -= disponivel
+                    if (aDescartar > 0) return
+
+                    if (metadadoEmCurso) {
+                        caminhoAnunciado = ReadPathFromMetadata(
+                            metadadoEmCurso.typeflag,
+                            Buffer.concat(metadadoEmCurso.partes)
+                        )
+                        metadadoEmCurso = null
+                    }
+                }
+
+                if (pendente.length < BLOCK_SIZE) return
+
+                const header = pendente.subarray(0, BLOCK_SIZE)
+                if (BlocoZerado(header)) {
+                    fechado = true
+                    return
+                }
+
+                const entrada = ReadHeader(header)
+                if (!entrada) {
+                    truncated = true
+                    fechado = true
+                    return
+                }
+
+                const { typeflag, ...campos } = entrada
+
+                if (EhMetadado(typeflag) && entrada.size <= TETO_DE_METADADO_EM_BYTES) {
+                    metadadoEmCurso = { typeflag, partes: [] }
+                } else if (!EhMetadado(typeflag)) {
+                    const nome = caminhoAnunciado || campos.name
+                    caminhoAnunciado = null
+                    entries.push({
+                        ...campos,
+                        name: nome,
+                        isDirectory: typeflag === "5" || nome.endsWith("/")
+                    })
+                }
+
+                pendente = pendente.subarray(BLOCK_SIZE)
+                aDescartar = entrada.size + Preenchimento(entrada.size)
+            }
+        }
+
+        stream.on("data", (chunk) => {
+            if (fechado) return
+            try {
+                Consumir(chunk)
+            } catch (falha) {
+                fechado = true
+                truncated = true
+                reject(falha)
+            }
+        })
+
+        // Fim antes do bloco zerado é corte real: dizemos, em vez de fingir
+        // que a lista está completa.
+        stream.on("end", () => resolve({ entries, truncated: truncated || !fechado }))
+        stream.on("error", reject)
+    })
 
 /*
     O primeiro arquivo comum de um tar. É o que `getArchive` de um caminho de
@@ -155,6 +345,7 @@ const ExtractFirstFileFromTar = (buffer) => {
 module.exports = {
     BuildTarWithSingleFile,
     ReadTarEntries,
+    ReadTarEntriesFromStream,
     ExtractFirstFileFromTar,
     BLOCK_SIZE,
     MAX_NAME_LENGTH

@@ -69,7 +69,7 @@ const CreateImageOperations = ({ docker, StreamToBuffer, SafeFileName }) => {
         try {
             const image = docker.getImage(imageIdOrName)
             const stream = await image.get()
-            const buffer = await StreamToBuffer(stream)
+            const buffer = await StreamToBuffer(stream, { descricao: "A imagem exportada" })
             return {
                 isBase64 : true,
                 fileName : `${SafeFileName(imageIdOrName, "image")}.tar`,
