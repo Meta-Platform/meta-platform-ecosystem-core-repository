@@ -1,7 +1,7 @@
 const path = require("path")
 const { readdir } = require("node:fs/promises")
 
-const ConfigurationsController = (params) => {
+const ConfigurationsController = (params: any) => {
 
     const {
         ecosystemdataHandlerService,
@@ -29,11 +29,11 @@ const ConfigurationsController = (params) => {
         const configFilesDirPath = await _GetConfigFilesDirPath()
         const entries = await readdir(configFilesDirPath, { withFileTypes: true })
         return entries
-            .filter((entry) => !entry.isDirectory())
-            .map((entry) => entry.name)
+            .filter((entry: any) => !entry.isDirectory())
+            .map((entry: any) => entry.name)
     }
 
-    const GetConfigFile = async (configFileName) => {
+    const GetConfigFile = async (configFileName: any) => {
         const configFilesDirPath = await _GetConfigFilesDirPath()
         const configFilePath = path.resolve(configFilesDirPath, configFileName)
         const content = await ReadJsonFile(configFilePath)
@@ -45,7 +45,7 @@ const ConfigurationsController = (params) => {
 
     // Escrita de arquivo de configuração. A confirmação do usuário é feita na
     // UI (pode impactar/quebrar o ecossistema); aqui apenas persiste o conteúdo.
-    const SaveConfigFile = async ({ configFileName, content }) => {
+    const SaveConfigFile = async ({ configFileName, content }: any) => {
         const configFilesDirPath = await _GetConfigFilesDirPath()
         const configFilePath = path.resolve(configFilesDirPath, configFileName)
         await WriteObjectToFile(configFilePath, content)

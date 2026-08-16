@@ -13,7 +13,7 @@ const FOLLOW_INTERVAL_MS = 800
 /* Teto de registros por requisição de ingestão — a trava do lado do servidor. */
 const MAX_RECORDS_PER_INGEST = 200
 
-const LogsController = (params) => {
+const LogsController = (params: any) => {
 
     const {
         logReaderService
@@ -23,7 +23,7 @@ const LogsController = (params) => {
     const GetLogTree = async () => logReaderService.GetLogTree()
 
     /* POST /logs/read — 2+ params chegam como objeto. */
-    const ReadLog = async ({ path, fromOffset, maxLines, level, source, text, since, until } = {}) =>
+    const ReadLog = async ({ path, fromOffset, maxLines, level, source, text, since, until }: any = {}) =>
         logReaderService.ReadLog({ path, fromOffset, maxLines, level, source, text, since, until })
 
     /*
@@ -34,15 +34,15 @@ const LogsController = (params) => {
      * painel abre a aba, e quem escreve é outro processo. O stat só roda
      * enquanto houver alguém assistindo.
      */
-    const LogStream = (ws, filePath) => {
+    const LogStream = (ws: any, filePath: any) => {
 
         if (!filePath || !logReaderService.IsPathAllowed(filePath)) {
-            try { ws.send(JSON.stringify({ error : "caminho fora das áreas de log do ecossistema" })) } catch (e) {}
-            try { ws.close() } catch (e) {}
+            try { ws.send(JSON.stringify({ error : "caminho fora das áreas de log do ecossistema" })) } catch(e: any) {}
+            try { ws.close() } catch(e: any) {}
             return
         }
 
-        let offset = undefined
+        let offset: any = undefined
         let lendo  = false
 
         const _Enviar = async () => {
@@ -54,7 +54,7 @@ const LogsController = (params) => {
                 const resultado = await logReaderService.ReadLog({ path : filePath, fromOffset : offset })
                 offset = resultado.offset
                 if (resultado.records.length > 0) ws.send(JSON.stringify(resultado))
-            } catch (e) {
+            } catch(e: any) {
                 /* Follow é best-effort: uma leitura que falha não fecha o canal. */
             } finally {
                 lendo = false
@@ -63,18 +63,18 @@ const LogsController = (params) => {
 
         /* Primeira carga: o fim do arquivo, para a tela não abrir vazia. */
         logReaderService.ReadLog({ path : filePath })
-            .then((resultado) => {
+            .then((resultado: any) => {
                 offset = resultado.offset
-                try { ws.send(JSON.stringify(resultado)) } catch (e) {}
+                try { ws.send(JSON.stringify(resultado)) } catch(e: any) {}
             })
             .catch(() => {})
 
         const observador = () => { _Enviar() }
 
-        try { fs.watchFile(filePath, { interval : FOLLOW_INTERVAL_MS }, observador) } catch (e) {}
+        try { fs.watchFile(filePath, { interval : FOLLOW_INTERVAL_MS }, observador) } catch(e: any) {}
 
         ws.on("close", () => {
-            try { fs.unwatchFile(filePath, observador) } catch (e) {}
+            try { fs.unwatchFile(filePath, observador) } catch(e: any) {}
         })
     }
 
@@ -85,7 +85,7 @@ const LogsController = (params) => {
      * registra no logger deste processo, marcado com `origin: "browser"` para
      * ser filtrável e não se confundir com o log do ecossistema.
      */
-    const IngestBrowserLog = async ({ records } = {}) => {
+    const IngestBrowserLog = async ({ records }: any = {}) => {
 
         if (!Array.isArray(records) || records.length === 0) return { ingested : 0 }
 
@@ -103,10 +103,10 @@ const LogsController = (params) => {
 
         for (const record of aceitos) {
             try {
-                const level = typeof browserLog[record.level] === "function" ? record.level : "info"
-                browserLog[level](record.source || "<browser>", record.message, record.data)
+                const level = typeof (browserLog as any)[record.level] === "function" ? record.level : "info"
+                ;(browserLog as any)[level](record.source || "<browser>", record.message, record.data)
                 ingested++
-            } catch (e) {
+            } catch(e: any) {
                 /* Um registro malformado do navegador não invalida o lote. */
             }
         }
@@ -114,7 +114,7 @@ const LogsController = (params) => {
         if (excedente > 0) {
             try {
                 browserLog.warn("<browser>", `${excedente} registro(s) do navegador recusado(s): lote acima do teto de ${MAX_RECORDS_PER_INGEST}`)
-            } catch (e) {}
+            } catch(e: any) {}
         }
 
         return { ingested, rejected : excedente }

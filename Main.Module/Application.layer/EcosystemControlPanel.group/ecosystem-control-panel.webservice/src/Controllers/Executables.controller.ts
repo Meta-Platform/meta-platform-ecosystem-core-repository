@@ -3,12 +3,12 @@ const { access, readdir, readFile } = require("node:fs/promises")
 
 const PACKAGE_ICON_FILENAMES = ["icon.svg", "icon.png", "icon.jpg", "icon.jpeg", "icon.webp"]
 
-const _ReadShellVariable = (scriptContent, variableName) => {
+const _ReadShellVariable = (scriptContent: any, variableName: any) => {
     const match = scriptContent.match(new RegExp(`^${variableName}="?([^"\\n]+)"?`, "m"))
     return match ? match[1] : undefined
 }
 
-const ParseExecutableScript = (scriptContent) => {
+const ParseExecutableScript = (scriptContent: any) => {
     const packageRepoPath      = _ReadShellVariable(scriptContent, "PACKAGE_REPO_PATH")
     const supervisorSocketPath = _ReadShellVariable(scriptContent, "SUPERVISOR_SOCKET_PATH")
     const repositoryPath       = _ReadShellVariable(scriptContent, "REPOSITORY_PATH")
@@ -22,9 +22,9 @@ const ParseExecutableScript = (scriptContent) => {
     }
 }
 
-const TypeFromApplicationType = (appType) => appType === "CLI" ? "cli" : "application"
+const TypeFromApplicationType = (appType: any) => appType === "CLI" ? "cli" : "application"
 
-const ExecutablesController = (params) => {
+const ExecutablesController = (params: any) => {
 
     const {
         ecosystemdataHandlerService,
@@ -53,26 +53,26 @@ const ExecutablesController = (params) => {
         return ReadJsonFile(repoDataFilePath)
     }
 
-    const _TryReadJsonFile = async (filePath) => {
+    const _TryReadJsonFile = async (filePath: any) => {
         try {
             return await ReadJsonFile(filePath)
-        } catch(e) {
+        } catch(e: any) {
             return undefined
         }
     }
 
-    const _ReadExecutable = async (executableName) => {
+    const _ReadExecutable = async (executableName: any) => {
         const executablesDirPath = await _GetExecutablesDirPath()
         const scriptContent = await readFile(path.resolve(executablesDirPath, executableName), "utf-8")
         return ParseExecutableScript(scriptContent)
     }
 
-    const _GetPackageDirPath = (parsed) =>
+    const _GetPackageDirPath = (parsed: any) =>
         parsed.repositoryPath && parsed.packageRepoPath
             ? path.resolve(parsed.repositoryPath, parsed.packageRepoPath)
             : undefined
 
-    const _FindPackageIconPath = async (packageDirPath) => {
+    const _FindPackageIconPath = async (packageDirPath: any) => {
         if(!packageDirPath) return undefined
 
         for (const iconFilename of PACKAGE_ICON_FILENAMES) {
@@ -80,13 +80,13 @@ const ExecutablesController = (params) => {
             try {
                 await access(iconPath)
                 return iconPath
-            } catch (e) {}
+            } catch(e: any) {}
         }
 
         return undefined
     }
 
-    const _BuildExecutableFromScript = async (executableName) => {
+    const _BuildExecutableFromScript = async (executableName: any) => {
         const parsed = await _ReadExecutable(executableName)
         const packageIconPath = await _FindPackageIconPath(_GetPackageDirPath(parsed))
 
@@ -103,14 +103,14 @@ const ExecutablesController = (params) => {
         const executablesDirPath = await _GetExecutablesDirPath()
         const entries = await readdir(executablesDirPath, { withFileTypes: true })
         const executableNameList = entries
-            .filter((entry) => !entry.isDirectory())
-            .map((entry) => entry.name)
+            .filter((entry: any) => !entry.isDirectory())
+            .map((entry: any) => entry.name)
 
         const executableList = []
         for (const executableName of executableNameList) {
             try {
                 executableList.push(await _BuildExecutableFromScript(executableName))
-            } catch (e) {
+            } catch(e: any) {
                 // ignora arquivos que não são executáveis válidos do ecossistema
             }
         }
@@ -156,12 +156,12 @@ const ExecutablesController = (params) => {
 
     const ListExecutables = async () => {
         const installedExecutableList = await _ListInstalledExecutables()
-        const installedByName = installedExecutableList
-            .reduce((acc, executable) => ({ ...acc, [executable.executableName]: executable }), {})
+        const installedByName: Record<string, any> = installedExecutableList
+            .reduce((acc: Record<string, any>, executable: any) => ({ ...acc, [executable.executableName]: executable }), {})
 
         const declaredExecutableList = await _ListDeclaredExecutables()
-        const declaredByName = declaredExecutableList
-            .reduce((acc, executable) => ({ ...acc, [executable.executableName]: executable }), {})
+        const declaredByName: Record<string, any> = declaredExecutableList
+            .reduce((acc: Record<string, any>, executable: any) => ({ ...acc, [executable.executableName]: executable }), {})
 
         const declaredMergedList = declaredExecutableList.map((declaredExecutable) => ({
             ...declaredExecutable,
@@ -174,7 +174,7 @@ const ExecutablesController = (params) => {
         return [ ...declaredMergedList, ...installedOnlyList ]
     }
 
-    const _ReadExecutableOrDeclared = async (executableName) => {
+    const _ReadExecutableOrDeclared = async (executableName: any) => {
         const declaredExecutableList = await _ListDeclaredExecutables()
         const declaredExecutable = declaredExecutableList.find((executable) => executable.executableName === executableName)
 
@@ -184,14 +184,14 @@ const ExecutablesController = (params) => {
                 isInstalled: true,
                 ...(await _ReadExecutable(executableName))
             }
-        } catch(e) {
+        } catch(e: any) {
             if(declaredExecutable)
                 return declaredExecutable
             throw e
         }
     }
 
-    const GetExecutableInformation = async (executableName) => {
+    const GetExecutableInformation = async (executableName: any) => {
 
         const parsed = await _ReadExecutableOrDeclared(executableName)
         const ecosystemDefaults = await _GetEcosystemDefaults()
@@ -201,10 +201,10 @@ const ExecutablesController = (params) => {
         const metadataDirPath = path.resolve(packageDirPath, metadataDirName)
         const packageIconPath = await _FindPackageIconPath(packageDirPath)
 
-        const _TryReadMetadata = async (fileName) => {
+        const _TryReadMetadata = async (fileName: any) => {
             try {
                 return await ReadJsonFile(path.resolve(metadataDirPath, fileName))
-            } catch (e) {
+            } catch(e: any) {
                 return undefined
             }
         }
@@ -212,8 +212,12 @@ const ExecutablesController = (params) => {
         return {
             executableName,
             isDebug: executableName.endsWith("-dbg"),
-            isInstalled: Boolean(parsed.isInstalled),
             ...parsed,
+            // A coerção estava ANTES do espalhamento e era, por isso, letra
+            // morta: `...parsed` reescrevia o campo logo em seguida, e
+            // `isInstalled` saía cru. O verificador acusou (TS2783); a ordem
+            // agora é a que o código queria dizer.
+            isInstalled: Boolean(parsed.isInstalled),
             packageDirPath,
             hasPackageIcon: Boolean(packageIconPath),
             boot         : await _TryReadMetadata("boot.json"),
@@ -223,7 +227,7 @@ const ExecutablesController = (params) => {
         }
     }
 
-    const GetExecutableIcon = async (executableName) => {
+    const GetExecutableIcon = async (executableName: any) => {
         const parsed = await _ReadExecutableOrDeclared(executableName)
         const packageIconPath = await _FindPackageIconPath(_GetPackageDirPath(parsed))
         if(!packageIconPath)
@@ -240,7 +244,7 @@ const ExecutablesController = (params) => {
     // instável), faz fallback localizando a lib no filesystem via repositories.json.
     const _RequireInstallApplication = async () => {
         if(ecosystemInstallUtilitiesLib) {
-            try { return ecosystemInstallUtilitiesLib.require("Install/InstallApplication") } catch(e) {}
+            try { return ecosystemInstallUtilitiesLib.require("Install/InstallApplication") } catch(e: any) {}
         }
         const repositoriesData = await _GetRepositoriesData()
         for(const repositoryNamespace of Object.keys(repositoriesData)) {
@@ -252,12 +256,12 @@ const ExecutablesController = (params) => {
             const candidate = path.join(installationPath, "Commons.Module", "Libraries.layer", "ecosystem-install-utilities.lib", "src", "Install", "InstallApplication")
             try {
                 return require(candidate)
-            } catch(e) {}
+            } catch(e: any) {}
         }
         throw new Error("ecosystem-install-utilities.lib (Install/InstallApplication) não encontrado em nenhum repositório instalado.")
     }
 
-    const InstallExecutable = async (executableName) => {
+    const InstallExecutable = async (executableName: any) => {
         const declaredExecutableList = await _ListDeclaredExecutables()
         const declared = declaredExecutableList.find((executable) => executable.executableName === executableName)
         if(!declared)

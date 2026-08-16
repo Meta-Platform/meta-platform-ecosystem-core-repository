@@ -1,4 +1,4 @@
-const ListRepositoriesCommand = async ({ startupParams, params }) => {
+const ListRepositoriesCommand = async ({ startupParams, params }: any) => {
 
     const {
         platformApplicationSocketPath,

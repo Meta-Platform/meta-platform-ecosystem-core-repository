@@ -1,4 +1,4 @@
-const ListPackagesCommand = async ({ startupParams, params }) => {
+const ListPackagesCommand = async ({ startupParams, params }: any) => {
 
     const {
         platformApplicationSocketPath,
@@ -9,14 +9,15 @@ const ListPackagesCommand = async ({ startupParams, params }) => {
     
     const CommandExecutor = commandExecutorLib.require("CommandExecutor")
 
-    const CommandFunction = async ({ APIs }) => {
+    const CommandFunction = async ({ APIs }: any) => {
         const API = APIs
         .PlatformMainApplicationInstance
         .RepositoryManager
         const listPackages = await API.ListPackages()
         Log.message("ListPackages", "=========== Registered Packages ===========")
         listPackages
-            .forEach(package => {
+            // `package` é palavra reservada em modo estrito; renomeado.
+            .forEach((packageInfo: any) => {
                 const { 
                     packageName, 
                     parentGroup, 
@@ -24,7 +25,7 @@ const ListPackagesCommand = async ({ startupParams, params }) => {
                     layerName, 
                     moduleName, 
                     namespaceRepo 
-                } = package
+                } = packageInfo
                 Log.message("ListPackages", `\x1b[2m${namespaceRepo}.${moduleName}.${layerName}\x1b[0m${parentGroup ? `.\x1b[3m${parentGroup}\x1b[0m`: ""}.\x1b[1m${packageName}\x1b[0m.${ext}`)
             })
 

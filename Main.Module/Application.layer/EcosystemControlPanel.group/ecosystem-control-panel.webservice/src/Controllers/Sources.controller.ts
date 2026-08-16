@@ -1,13 +1,13 @@
 const path = require("path")
-const ExtractSourceListBySourcesData = (sourcesData) => {
+const ExtractSourceListBySourcesData = (sourcesData: any) => {
 
     const repositoryNamespaceList = Object.keys(sourcesData)
     const sourceList = repositoryNamespaceList
-    .reduce((acc, repositoryNamespace) => {
+    .reduce((acc: any[], repositoryNamespace) => {
         return [
             ...acc,
             ...sourcesData[repositoryNamespace]
-                .map((sourceData) => ({
+                .map((sourceData: any) => ({
                     repositoryNamespace,
                     ...sourceData
                 }))
@@ -18,11 +18,11 @@ const ExtractSourceListBySourcesData = (sourcesData) => {
     
 }
 
-const ExtractActiveSourcesByRepoData = (repositoriesData) => {
+const ExtractActiveSourcesByRepoData = (repositoriesData: any) => {
     const installedRepositoriesList = Object.keys(repositoriesData)
 
     const installedApplicationsList = installedRepositoriesList
-        .reduce((acc, repositoryNamespace) => {
+        .reduce((acc: any[], repositoryNamespace) => {
 
             const { sourceData } = repositoriesData[repositoryNamespace]
 
@@ -39,7 +39,7 @@ const ExtractActiveSourcesByRepoData = (repositoriesData) => {
     return installedApplicationsList
 }
 
-const SourcesController = (params) => {
+const SourcesController = (params: any) => {
  
     const { 
         ecosystemdataHandlerService,
@@ -65,7 +65,7 @@ const SourcesController = (params) => {
     // durante a operação, um ouvinte encaminha cada registro para o hub.
     // Ver a decisão LOGS-32. O ouvinte é global enquanto está registrado, então
     // é removido no `finally`.
-    const _WithLogNotification = async (origin, Executar) => {
+    const _WithLogNotification = async (origin: any, Executar: any) => {
         const RemoverOuvinte = Log.AddSink({
             Write : (record) => NotifyEvent({
                 origin,
@@ -80,22 +80,22 @@ const SourcesController = (params) => {
         }
     }
 
-    const _NotifyStructured = ({ origin, type, title, message, data }) =>
+    const _NotifyStructured = ({ origin, type, title, message, data }: any) =>
         NotifyEvent({
             origin,
             type,
             content: { title, message, ...(data ? { data } : {}) }
         })
 
-    const _ExtractSourceData = ({ repositoryNamespace, sourceType, sourcesData }) => {
+    const _ExtractSourceData = ({ repositoryNamespace, sourceType, sourcesData }: any) => {
         const sourcesList = sourcesData[repositoryNamespace] || []
-        const sourceData = sourcesList.find((source) => source.sourceType === sourceType)
+        const sourceData = sourcesList.find((source: any) => source.sourceType === sourceType)
         if(!sourceData)
             throw `A fonte ${sourceType} não foi encontrada no repositório ${repositoryNamespace}`
         return sourceData
     }
 
-    const _BuildSourceByType = ({ sourceType, localPath, repoName, repoOwner, fileId }) => {
+    const _BuildSourceByType = ({ sourceType, localPath, repoName, repoOwner, fileId }: any) => {
         switch(sourceType){
             case "LOCAL_FS":
                 return { sourceType, path: localPath }
@@ -114,18 +114,18 @@ const SourcesController = (params) => {
         return ecosystemDefaults
     }
 
-    const _ResolvePathWithEcosystemDataPath = async (paramName) => {
+    const _ResolvePathWithEcosystemDataPath = async (paramName: any) => {
         const ecosystemDefaults = await _GetEcosystemDefaults()
         return path.resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaults[paramName])
     }
 
-    const _ReadConfigFile = async (paramName) => {
+    const _ReadConfigFile = async (paramName: any) => {
         const confFilePath = await _ResolvePathWithEcosystemDataPath(paramName)
         const configData = await ReadJsonFile(confFilePath)
         return configData
     }
 
-    const _WriteConfigFile = async (paramName, configData) => {
+    const _WriteConfigFile = async (paramName: any, configData: any) => {
         const confFilePath = await _ResolvePathWithEcosystemDataPath(paramName)
         await WriteObjectToFile(confFilePath, configData)
     }
@@ -142,7 +142,7 @@ const SourcesController = (params) => {
         return activeSourcesList
     }
 
-    const UpdateRepositoryByNamespace = async (repositoryNamespace) => {
+    const UpdateRepositoryByNamespace = async (repositoryNamespace: any) => {
 
         const repositoriesData = await _ReadConfigFile("REPOS_CONF_FILENAME_REPOS_DATA")
         const {sourceData} = repositoriesData[repositoryNamespace]
@@ -165,7 +165,7 @@ const SourcesController = (params) => {
         })
     }
 
-    const CreateNewRepositoryNamespace = async (repositoryNamespace) => {
+    const CreateNewRepositoryNamespace = async (repositoryNamespace: any) => {
 
         const sourceData = await _ReadConfigFile("REPOS_CONF_FILENAME_SOURCE_DATA")
 
@@ -192,7 +192,7 @@ const SourcesController = (params) => {
 
     // Instala um repositório a partir de uma de suas fontes registradas.
     // Equivalente a `repo install [repositoryNamespace] [sourceType]`.
-    const InstallRepository = async ({ repositoryNamespace, sourceType, executables }) => {
+    const InstallRepository = async ({ repositoryNamespace, sourceType, executables }: any) => {
 
         const sourcesData = await _ReadConfigFile("REPOS_CONF_FILENAME_SOURCE_DATA")
         const sourceData = _ExtractSourceData({ repositoryNamespace, sourceType, sourcesData })
@@ -218,7 +218,7 @@ const SourcesController = (params) => {
 
     // Troca a fonte usada por um repositório já instalado.
     // Equivalente a `repo change installed source [repositoryNamespace] [sourceType]`.
-    const ChangeRepositorySource = async ({ repositoryNamespace, sourceType }) => {
+    const ChangeRepositorySource = async ({ repositoryNamespace, sourceType }: any) => {
 
         const sourcesData = await _ReadConfigFile("REPOS_CONF_FILENAME_SOURCE_DATA")
         const sourceData = _ExtractSourceData({ repositoryNamespace, sourceType, sourcesData })
@@ -243,13 +243,13 @@ const SourcesController = (params) => {
 
     // Registra uma nova fonte para um namespace.
     // Equivalente a `repo register source [repositoryNamespace] [sourceType]`.
-    const RegisterNewSource = async (args) => {
+    const RegisterNewSource = async (args: any) => {
 
         const { repositoryNamespace, sourceType } = args
         const sourcesData = await _ReadConfigFile("REPOS_CONF_FILENAME_SOURCE_DATA")
 
         const alreadyRegistered = (sourcesData[repositoryNamespace] || [])
-            .some((source) => source.sourceType === sourceType)
+            .some((source: any) => source.sourceType === sourceType)
 
         if(alreadyRegistered)
             throw `Já existe uma fonte do tipo ${sourceType} para o repositório ${repositoryNamespace}`
@@ -285,12 +285,12 @@ const SourcesController = (params) => {
 
     // Remove uma fonte de um namespace.
     // Equivalente a `repo remove source [repositoryNamespace] [sourceType]`.
-    const RemoveSource = async ({ repositoryNamespace, sourceType }) => {
+    const RemoveSource = async ({ repositoryNamespace, sourceType }: any) => {
 
         const sourcesData = await _ReadConfigFile("REPOS_CONF_FILENAME_SOURCE_DATA")
 
         const registered = (sourcesData[repositoryNamespace] || [])
-            .some((source) => source.sourceType === sourceType)
+            .some((source: any) => source.sourceType === sourceType)
 
         if(!registered)
             throw `A fonte ${sourceType} não foi encontrada no repositório ${repositoryNamespace}`
@@ -298,7 +298,7 @@ const SourcesController = (params) => {
         const newSourcesData = {
             ...sourcesData,
             [repositoryNamespace]: sourcesData[repositoryNamespace]
-                .filter((source) => source.sourceType !== sourceType)
+                .filter((source: any) => source.sourceType !== sourceType)
         }
 
         await _WriteConfigFile("REPOS_CONF_FILENAME_SOURCE_DATA", newSourcesData)

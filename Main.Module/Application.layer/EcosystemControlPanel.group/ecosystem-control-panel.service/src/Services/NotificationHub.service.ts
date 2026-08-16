@@ -3,10 +3,10 @@ const EventEmitter = require('node:events')
 const GetLocalISODateTime = () => {
 	const now = new Date()
 	const offset = now.getTimezoneOffset() * 60000
-	return  (new Date(now - offset)).toISOString()
+	return  (new Date(now.getTime() - offset)).toISOString()
 }
 
-const NotificationHubService = (params) => {
+const NotificationHubService = (params: any) => {
     
     const eventEmitter = new EventEmitter()
     const EVENT_NOTIFICATION = Symbol()
@@ -20,13 +20,13 @@ const NotificationHubService = (params) => {
         onReady()   
     }
 
-    const NotifyEvent = (event) =>
+    const NotifyEvent = (event: any) =>
         eventEmitter.emit(EVENT_NOTIFICATION, {date: GetLocalISODateTime(), ...event})
 
     _Start()
 
-    const RegisterNotificationListener = (f) => 
-        eventEmitter.on(EVENT_NOTIFICATION, (event) => f(event))
+    const RegisterNotificationListener = (f: any) => 
+        eventEmitter.on(EVENT_NOTIFICATION, (event: any) => f(event))
 
     return {
         RegisterNotificationListener,

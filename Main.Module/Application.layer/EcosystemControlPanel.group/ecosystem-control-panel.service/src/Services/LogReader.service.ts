@@ -27,7 +27,7 @@ const DEFAULT_PAGE_LINES = 500
 
 const LEVEL_ORDER = ["trace", "debug", "info", "message", "warn", "error", "fatal"]
 
-const LogReaderService = (params) => {
+const LogReaderService = (params: any) => {
 
     const {
         ecosystemdataHandlerService,
@@ -38,8 +38,8 @@ const LogReaderService = (params) => {
 
     const ReadJsonFile = jsonFileUtilitiesLib.require("ReadJsonFile")
 
-    let logsDirPath          = undefined
-    let environmentsDirPath  = undefined
+    let logsDirPath: any          = undefined
+    let environmentsDirPath: any  = undefined
 
     const _Start = async () => {
         const ecosystemDataPath = ecosystemdataHandlerService.GetEcosystemDataPath()
@@ -51,29 +51,29 @@ const LogReaderService = (params) => {
         onReady()
     }
 
-    const _ListFilesSafe = async (dirPath) => {
+    const _ListFilesSafe = async (dirPath: any) => {
         try {
             return (await readdir(dirPath, { withFileTypes : true }))
-                .filter((entry) => entry.isFile() && entry.name.endsWith(".jsonl"))
-                .map((entry) => entry.name)
+                .filter((entry: any) => entry.isFile() && entry.name.endsWith(".jsonl"))
+                .map((entry: any) => entry.name)
                 .sort()
-        } catch (e) { return [] }
+        } catch(e: any) { return [] }
     }
 
-    const _ListDirsSafe = async (dirPath) => {
+    const _ListDirsSafe = async (dirPath: any) => {
         try {
             return (await readdir(dirPath, { withFileTypes : true }))
-                .filter((entry) => entry.isDirectory())
-                .map((entry) => entry.name)
+                .filter((entry: any) => entry.isDirectory())
+                .map((entry: any) => entry.name)
                 .sort()
-        } catch (e) { return [] }
+        } catch(e: any) { return [] }
     }
 
-    const _DescribeFile = async (filePath, name) => {
+    const _DescribeFile = async (filePath: any, name: any) => {
         try {
             const info = await stat(filePath)
             return { name, path : filePath, size : info.size, modifiedAt : info.mtime.toISOString() }
-        } catch (e) {
+        } catch(e: any) {
             return { name, path : filePath, size : 0, modifiedAt : null }
         }
     }
@@ -94,7 +94,7 @@ const LogReaderService = (params) => {
             const files = await _ListFilesSafe(dirPath)
             applications.push({
                 name  : applicationName,
-                files : await Promise.all(files.map((name) => _DescribeFile(join(dirPath, name), name)))
+                files : await Promise.all(files.map((name: any) => _DescribeFile(join(dirPath, name), name)))
             })
         }
 
@@ -105,14 +105,14 @@ const LogReaderService = (params) => {
             if (files.length === 0) continue
             environments.push({
                 name  : environmentName,
-                files : await Promise.all(files.map((name) => _DescribeFile(join(dirPath, name), name)))
+                files : await Promise.all(files.map((name: any) => _DescribeFile(join(dirPath, name), name)))
             })
         }
 
         return {
-            ecosystem    : await Promise.all(ecosystemFiles.map((name) => _DescribeFile(join(logsDirPath, "ecosystem", name), name))),
+            ecosystem    : await Promise.all(ecosystemFiles.map((name: any) => _DescribeFile(join(logsDirPath, "ecosystem", name), name))),
             applications,
-            instances    : await Promise.all(instanceFiles.map((name) => _DescribeFile(join(logsDirPath, "instances", name), name))),
+            instances    : await Promise.all(instanceFiles.map((name: any) => _DescribeFile(join(logsDirPath, "instances", name), name))),
             environments
         }
     }
@@ -121,13 +121,13 @@ const LogReaderService = (params) => {
      * Um caminho só é aceito se estiver DENTRO das áreas de log conhecidas — o
      * cliente manda o caminho que a árvore devolveu, e nada além disso.
      */
-    const _IsPathAllowed = (filePath) => {
+    const _IsPathAllowed = (filePath: any) => {
         const resolved = resolve(filePath)
         return resolved.startsWith(resolve(logsDirPath)) || resolved.startsWith(resolve(environmentsDirPath))
     }
 
     /* Lê uma fatia do fim do arquivo, ou a partir de `fromOffset`. */
-    const _ReadSlice = (filePath, { fromOffset, maxBytes = READ_MAX_BYTES }) => {
+    const _ReadSlice = (filePath: any, { fromOffset, maxBytes = READ_MAX_BYTES }: any) => {
 
         const { size } = fs.statSync(filePath)
 
@@ -142,7 +142,7 @@ const LogReaderService = (params) => {
 
         const fd = fs.openSync(filePath, "r")
         try { fs.readSync(fd, buffer, 0, length, start) }
-        finally { try { fs.closeSync(fd) } catch (e) {} }
+        finally { try { fs.closeSync(fd) } catch(e: any) {} }
 
         let text = buffer.toString("utf8")
 
@@ -164,7 +164,7 @@ const LogReaderService = (params) => {
      * cru. É o caso do stdout de um processo desktop, que se mistura ao JSONL
      * no arquivo da instância.
      */
-    const _ParseLine = (line) => {
+    const _ParseLine = (line: any) => {
 
         if (!line) return null
 
@@ -175,12 +175,12 @@ const LogReaderService = (params) => {
         try {
             const record = JSON.parse(line)
             return (record && record.message !== undefined) ? record : null
-        } catch (e) {
+        } catch(e: any) {
             return { ts : null, level : "message", source : "<raw>", message : line, data : null, raw : true }
         }
     }
 
-    const _Matches = (record, { level, source, text, since, until }) => {
+    const _Matches = (record: any, { level, source, text, since, until }: any) => {
 
         /*
          * `level` aceita duas formas: uma STRING é piso ("info e acima"), uma
@@ -212,14 +212,14 @@ const LogReaderService = (params) => {
      * Leitura paginada com filtro. `offset` volta ao chamador para continuar de
      * onde parou — é o que torna o acompanhamento incremental.
      */
-    const ReadLog = async ({ path, fromOffset, maxLines = DEFAULT_PAGE_LINES, level, source, text, since, until } = {}) => {
+    const ReadLog = async ({ path, fromOffset, maxLines = DEFAULT_PAGE_LINES, level, source, text, since, until }: any = {}) => {
 
         if (!path) throw new Error("ReadLog: 'path' é obrigatório.")
         if (!_IsPathAllowed(path)) throw new Error("ReadLog: caminho fora das áreas de log do ecossistema.")
 
         let slice
         try { slice = _ReadSlice(path, { fromOffset }) }
-        catch (e) { return { path, exists : false, records : [], offset : 0, size : 0 } }
+        catch(e: any) { return { path, exists : false, records : [], offset : 0, size : 0 } }
 
         const filtro = { level, source, text, since, until }
 

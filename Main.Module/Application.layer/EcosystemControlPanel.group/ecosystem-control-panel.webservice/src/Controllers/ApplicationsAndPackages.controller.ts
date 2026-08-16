@@ -1,19 +1,19 @@
 const path = require("path")
 
-const ExtractInstalledRepositoriesByRepoData = (repositoriesData) => Object.keys(repositoriesData)
+const ExtractInstalledRepositoriesByRepoData = (repositoriesData: any) => Object.keys(repositoriesData)
 
-const ExtractInstalledAplicationByRepoData = (repositoriesData) => {
+const ExtractInstalledAplicationByRepoData = (repositoriesData: any) => {
     const installedRepositoriesList = ExtractInstalledRepositoriesByRepoData(repositoriesData)
 
     const installedApplicationsList = installedRepositoriesList
-        .reduce((acc, repositoryNamespace) => {
+        .reduce((acc: any[], repositoryNamespace) => {
 
             const { installedApplications } = repositoriesData[repositoryNamespace]
 
             return [
                 ...acc,
                 ...installedApplications
-                    .map((appData) => ({
+                    .map((appData: any) => ({
                         repositoryNamespace,
                         ...appData
                     }))
@@ -24,7 +24,7 @@ const ExtractInstalledAplicationByRepoData = (repositoriesData) => {
     return installedApplicationsList
 }
 
-const BuildPackageDataFromNamespace = ({ repositoryNamespace, packageNamespace }) => {
+const BuildPackageDataFromNamespace = ({ repositoryNamespace, packageNamespace }: any) => {
     const chunks = (packageNamespace || "").split("/")
     const moduleName = (chunks[0] || "").replace(/\.Module$/, "")
     const layerName = (chunks[1] || "").replace(/\.layer$/, "")
@@ -43,7 +43,7 @@ const BuildPackageDataFromNamespace = ({ repositoryNamespace, packageNamespace }
     }
 }
 
-const ApplicationsAndPackagesController = (params) => {
+const ApplicationsAndPackagesController = (params: any) => {
 
     const { 
         ecosystemdataHandlerService,
@@ -64,7 +64,7 @@ const ApplicationsAndPackagesController = (params) => {
 
     const ListPackages = async () => {
         const packageList = await repositoryManagerService.ListPackages()
-        return Promise.all(packageList.map(async (packageData) => ({
+        return Promise.all(packageList.map(async (packageData: any) => ({
             ...packageData,
             hasPackageIcon: await repositoryManagerService.CheckPackageHasIcon(packageData)
         })))
@@ -73,7 +73,7 @@ const ApplicationsAndPackagesController = (params) => {
     const ListApplications = async () => {
         const repositoriesData = await _GetRepositoriesData()
         const installedApplicationsList = ExtractInstalledAplicationByRepoData(repositoriesData)
-        return Promise.all(installedApplicationsList.map(async (applicationData) => {
+        return Promise.all(installedApplicationsList.map(async (applicationData: any) => {
             const packageData = BuildPackageDataFromNamespace(applicationData)
             return {
                 ...applicationData,
@@ -85,7 +85,7 @@ const ApplicationsAndPackagesController = (params) => {
         }))
     }
 
-    const GetPackageIcon = (params) => repositoryManagerService.GetPackageIconPath(params)
+    const GetPackageIcon = (params: any) => repositoryManagerService.GetPackageIconPath(params)
 
     return {
         controllerName : "ApplicationsAndPackagesController",

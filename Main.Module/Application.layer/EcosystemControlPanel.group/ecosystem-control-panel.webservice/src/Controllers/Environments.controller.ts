@@ -1,6 +1,6 @@
 const path = require("path")
 
-const EnvironmentsController = (params) => {
+const EnvironmentsController = (params: any) => {
 
     const {
         ecosystemdataHandlerService,
@@ -18,7 +18,7 @@ const EnvironmentsController = (params) => {
         return ecosystemDefaults
     }
 
-    const GetMetadataHierarchy = async (environmentName) => {
+    const GetMetadataHierarchy = async (environmentName: any) => {
 
         const ecosystemDefaults = await _GetEcosystemDefaults()
 
@@ -29,7 +29,7 @@ const EnvironmentsController = (params) => {
         return metadataHierarchy
     }
 
-    const GetExecutionParams = async (environmentName) => {
+    const GetExecutionParams = async (environmentName: any) => {
         
         const ecosystemDefaults = await _GetEcosystemDefaults()
 
@@ -43,7 +43,7 @@ const EnvironmentsController = (params) => {
     // Altera os detalhes das tasks: sobrescreve o execution-params.json (o plano
     // de execução) do environment. A confirmação é feita na UI — afeta a próxima
     // execução deste environment (não a instância já em execução).
-    const SaveExecutionParams = async ({ environmentName, executionParams }) => {
+    const SaveExecutionParams = async ({ environmentName, executionParams }: any) => {
 
         const ecosystemDefaults = await _GetEcosystemDefaults()
 

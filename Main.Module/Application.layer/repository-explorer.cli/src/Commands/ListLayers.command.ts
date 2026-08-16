@@ -1,4 +1,4 @@
-const ListLayersCommand = async ({ startupParams, params }) => {
+const ListLayersCommand = async ({ startupParams, params }: any) => {
     
     const {
         platformApplicationSocketPath,
@@ -9,14 +9,14 @@ const ListLayersCommand = async ({ startupParams, params }) => {
     
     const CommandExecutor = commandExecutorLib.require("CommandExecutor")
 
-    const CommandFunction = async ({ APIs }) => {
+    const CommandFunction = async ({ APIs }: any) => {
         const API = APIs
         .PlatformMainApplicationInstance
         .RepositoryManager
         const listLayers = await API.ListLayers()
         Log.message("ListLayers", "=========== Registered Layers ===========")
         listLayers
-            .forEach(module => {
+            .forEach((module: any) => {
                 const { moduleName, namespaceRepo, layerName } = module
                 Log.message("ListLayers", `\x1b[2m${namespaceRepo}.${moduleName}.\x1b[0m\x1b[1m${layerName}\x1b[0m`)
             })

@@ -3,7 +3,7 @@ const { spawn } = require("node:child_process")
 // Ações de host do eco-panel: abrir editor/terminal no host a partir de um
 // caminho. NÃO executa pacotes — quem executa (e mostra o terminal de execução)
 // é o Instance Executor Panel, que fala direto com o daemon executor-manager.
-const HostActionsController = (params) => {
+const HostActionsController = (params: any) => {
 
     const {
         notificationHubService
@@ -11,33 +11,33 @@ const HostActionsController = (params) => {
 
     const { NotifyEvent } = notificationHubService
 
-    const _Notify = (origin, type, message) =>
+    const _Notify = (origin: any, type: any, message: any) =>
         NotifyEvent({ origin, type: "log", content: { sourceName: origin, type, message } })
 
     // spawn desacoplado — usado APENAS para abrir editor/terminal no host.
-    const _SpawnDetached = (command, args, options = {}) =>
-        new Promise((resolve, reject) => {
+    const _SpawnDetached = (command: any, args: any, options = {}) =>
+        new Promise<void>((resolve, reject) => {
             try {
                 const child = spawn(command, args, { detached: true, stdio: "ignore", ...options })
-                child.on("error", (err) => reject(err))
+                child.on("error", (err: any) => reject(err))
                 setTimeout(() => { child.unref(); resolve() }, 150)
-            } catch (e) {
+            } catch(e: any) {
                 reject(e)
             }
         })
 
-    const OpenVSCode = async ({ targetPath }) => {
+    const OpenVSCode = async ({ targetPath }: any) => {
         try {
             await _SpawnDetached("code", [targetPath], { env: process.env })
             _Notify("HostActions.OpenVSCode", "info", `Abrindo VSCode em ${targetPath}`)
             return { opened: true }
-        } catch (e) {
+        } catch(e: any) {
             _Notify("HostActions.OpenVSCode", "error", `Não foi possível abrir o VSCode (comando 'code' disponível no PATH?): ${e.message || e}`)
             throw e
         }
     }
 
-    const OpenTerminal = async ({ targetPath }) => {
+    const OpenTerminal = async ({ targetPath }: any) => {
         const candidates = [
             ["x-terminal-emulator", [`--working-directory=${targetPath}`]],
             ["gnome-terminal", [`--working-directory=${targetPath}`]],
@@ -50,7 +50,7 @@ const HostActionsController = (params) => {
                 await _SpawnDetached(command, args, { env: process.env })
                 _Notify("HostActions.OpenTerminal", "info", `Abrindo terminal em ${targetPath} (${command})`)
                 return { opened: true, emulator: command }
-            } catch (e) {
+            } catch(e: any) {
                 // tenta o próximo emulador
             }
         }

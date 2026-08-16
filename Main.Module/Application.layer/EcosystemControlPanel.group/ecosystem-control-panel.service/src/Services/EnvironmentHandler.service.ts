@@ -1,13 +1,13 @@
 const { readdir } = require('node:fs/promises')
 const { resolve } = require("path")
 
-const ListDirectories = async (path) => {
+const ListDirectories = async (path: any) => {
     const listItems = await readdir(path, { withFileTypes: true })
-    const listDir =  listItems.filter((file) => file.isDirectory() )
+    const listDir =  listItems.filter((file: any) => file.isDirectory() )
     return listDir
 }
 
-const EnvironmentHandlerService = (params) => {
+const EnvironmentHandlerService = (params: any) => {
 
     const {
         ecosystemdataHandlerService,
@@ -19,7 +19,7 @@ const EnvironmentHandlerService = (params) => {
     const ReadJsonFile = jsonFileUtilitiesLib.require("ReadJsonFile")
 
     const ecosystemDefaultFilePath = resolve(ecosystemdataHandlerService.GetEcosystemDataPath(), ecosystemDefaultsFileRelativePath)
-    let executionDataDirPath = undefined
+    let executionDataDirPath: any = undefined
 
     const _Start = async () => {
         const ecosystemDefaults = await ReadJsonFile(ecosystemDefaultFilePath)
@@ -30,7 +30,7 @@ const EnvironmentHandlerService = (params) => {
     _Start()
 
     return {
-        ListEnvironments: async () => (await ListDirectories(executionDataDirPath)).map(({name}) => name)
+        ListEnvironments: async () => (await ListDirectories(executionDataDirPath)).map(({name}: any) => name)
     }
 
 }

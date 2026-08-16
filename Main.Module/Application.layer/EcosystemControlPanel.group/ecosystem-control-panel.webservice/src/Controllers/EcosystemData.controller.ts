@@ -1,4 +1,4 @@
-const EcosystemDataController = (params) => {
+const EcosystemDataController = (params: any) => {
 
     const { 
         ecosystemdataHandlerService
@@ -7,7 +7,7 @@ const EcosystemDataController = (params) => {
     return {
         controllerName : "EcosystemDataController",
         GetEcosystemDataPath: ecosystemdataHandlerService.GetEcosystemDataPath,
-        SetEcosystemDataPath: (path) => ecosystemdataHandlerService.SetEcosystemDataPath(path)
+        SetEcosystemDataPath: (path: any) => ecosystemdataHandlerService.SetEcosystemDataPath(path)
     }
 }
 

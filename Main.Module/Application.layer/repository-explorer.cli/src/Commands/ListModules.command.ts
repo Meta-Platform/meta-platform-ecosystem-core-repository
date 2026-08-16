@@ -1,4 +1,4 @@
-const ListModulesCommand = async ({ startupParams, params }) => {
+const ListModulesCommand = async ({ startupParams, params }: any) => {
 
     const {
         platformApplicationSocketPath,
@@ -9,14 +9,14 @@ const ListModulesCommand = async ({ startupParams, params }) => {
     
     const CommandExecutor = commandExecutorLib.require("CommandExecutor")
 
-    const CommandFunction = async ({ APIs }) => {
+    const CommandFunction = async ({ APIs }: any) => {
         const API = APIs
         .PlatformMainApplicationInstance
         .RepositoryManager
         const listModules = await API.ListModules()
         Log.message("ListModules", "=========== Registered Modules ===========")
         listModules
-            .forEach(module => {
+            .forEach((module: any) => {
                 const { moduleName, namespaceRepo } = module
                 Log.message("ListModules", `\x1b[2m${namespaceRepo}.\x1b[0m\x1b[1m${moduleName}\x1b[0m`)
             })

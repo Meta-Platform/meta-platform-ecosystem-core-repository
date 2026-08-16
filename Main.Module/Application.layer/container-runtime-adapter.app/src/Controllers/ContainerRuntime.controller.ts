@@ -1,4 +1,4 @@
-const ContainerRuntimeController = (params) => {
+const ContainerRuntimeController = (params: any) => {
 
     const {
         containerRuntimeAdapterService

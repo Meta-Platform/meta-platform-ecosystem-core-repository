@@ -10,7 +10,7 @@
 // (wsShim, mesma API do `ws` do express-ws) e o entrega ao método WS do
 // controller — espelhando o contrato do servidor HTTP.
 
-const CONTROLLER_MODULES = {
+const CONTROLLER_MODULES: Record<string, { controller: string, api: string }> = {
     InstancesSupervisor:      { controller: "Controllers/InstancesSupervisor.controller",      api: "APIs/InstancesSupervisor.api.json" },
     ApplicationsAndPackages:  { controller: "Controllers/ApplicationsAndPackages.controller",  api: "APIs/ApplicationsAndPackages.api.json" },
     Executables:              { controller: "Controllers/Executables.controller",              api: "APIs/Executables.api.json" },
@@ -23,12 +23,12 @@ const CONTROLLER_MODULES = {
 }
 
 // Endpoints de ícone (typeResponse:file) → servidos pelo protocolo metaicon://.
-const ICON_MAP = {
+const ICON_MAP: Record<string, { serviceName: string, method: string }> = {
     package:    { serviceName: "ApplicationsAndPackages", method: "GetPackageIcon" },
     executable: { serviceName: "Executables",             method: "GetExecutableIcon" }
 }
 
-const EcosystemControlPanelGuiService = (params) => {
+const EcosystemControlPanelGuiService = (params: any) => {
 
     const {
         ecosystemdataHandlerService,
@@ -56,9 +56,9 @@ const EcosystemControlPanelGuiService = (params) => {
         ecosystemDefaultsFileRelativePath
     }
 
-    const registry = {}
-    const manifest = {}
-    const parametersBySummary = {}
+    const registry: Record<string, any> = {}
+    const manifest: Record<string, any> = {}
+    const parametersBySummary: Record<string, any> = {}
     Object.keys(CONTROLLER_MODULES).forEach((apiName) => {
         const { controller, api } = CONTROLLER_MODULES[apiName]
         const ControllerFactory = ecosystemControlPanelWebservice.require(controller)
@@ -69,17 +69,17 @@ const EcosystemControlPanelGuiService = (params) => {
         // o renderer reconstruir a MESMA superfície de API — inclusive saber quais
         // endpoints são WS (streaming) vs HTTP (invoke).
         manifest[apiName] = apiTemplate
-        parametersBySummary[apiName] = (apiTemplate.endpoints || []).reduce((acc, { summary, parameters }) => {
+        parametersBySummary[apiName] = (apiTemplate.endpoints || []).reduce((acc: any, { summary, parameters }: any) => {
             acc[summary] = parameters || []
             return acc
         }, {})
     })
 
-    const _Parameters = (serviceName, method) => (parametersBySummary[serviceName] || {})[method] || []
+    const _Parameters = (serviceName: any, method: any) => (parametersBySummary[serviceName] || {})[method] || []
 
     // Request/response. Espelha o contrato HTTP do server-manager:
     //   0 params → method(); 1 → method(valor); 2+ → method(objeto).
-    const Invoke = async (serviceName, method, data) => {
+    const Invoke = async (serviceName: any, method: any, data: any) => {
         const controller = registry[serviceName]
         if(!controller || typeof controller[method] !== "function")
             throw new Error(`Método desconhecido: ${serviceName}.${method}`)
@@ -93,7 +93,7 @@ const EcosystemControlPanelGuiService = (params) => {
     // Streaming (WebSocket). Espelha o contrato WS do server-manager:
     //   0 params → method(ws); 1 → method(ws, valor); 2+ → method(ws, objeto).
     // wsShim tem a mesma API do `ws` (send / on / close), fornecida pelo host.
-    const InvokeStream = (serviceName, method, data, wsShim) => {
+    const InvokeStream = (serviceName: any, method: any, data: any, wsShim: any) => {
         const controller = registry[serviceName]
         if(!controller || typeof controller[method] !== "function")
             throw new Error(`Stream desconhecido: ${serviceName}.${method}`)
@@ -108,7 +108,7 @@ const EcosystemControlPanelGuiService = (params) => {
 
     // Caminho de arquivo do ícone (usado pelo protocolo metaicon://). Reusa o
     // contrato de Invoke para respeitar o formato de args de cada endpoint.
-    const GetIcon = ({ kind, args }) => {
+    const GetIcon = ({ kind, args }: any) => {
         const target = ICON_MAP[kind] || ICON_MAP.package
         return Invoke(target.serviceName, target.method, args)
     }

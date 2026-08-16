@@ -3,12 +3,12 @@ const path = require("path")
 const os = require('os')
 const fs = require("fs")
 
-const ConvertPathToAbsolutPath = (_path) => path
+const ConvertPathToAbsolutPath = (_path: any) => path
     .join(_path)
     .replace('~', os.homedir())
 
 
-const EcosystemDataHandlerService = (params) => {
+const EcosystemDataHandlerService = (params: any) => {
 
     const {
         installDataDirPath,
@@ -33,18 +33,18 @@ const EcosystemDataHandlerService = (params) => {
                 if(data && data.ecosystemDataPath)
                     return data.ecosystemDataPath
             }
-        } catch(e) {
+        } catch(e: any) {
             Log.error("EcosystemDataHandler", e)
         }
         return undefined
     }
 
-    const _PersistPath = (newPath) => {
+    const _PersistPath = (newPath: any) => {
         if(!stateFilePath) return
         try {
             fs.mkdirSync(path.dirname(stateFilePath), { recursive: true })
             fs.writeFileSync(stateFilePath, JSON.stringify({ ecosystemDataPath: newPath }, null, 2))
-        } catch(e) {
+        } catch(e: any) {
             Log.error("EcosystemDataHandler", e)
         }
     }
@@ -57,7 +57,7 @@ const EcosystemDataHandlerService = (params) => {
 
     return {
         GetEcosystemDataPath: () => ConvertPathToAbsolutPath(currentPath),
-        SetEcosystemDataPath: (newPath) => {
+        SetEcosystemDataPath: (newPath: any) => {
             currentPath = newPath
             _PersistPath(newPath)
             return ConvertPathToAbsolutPath(currentPath)
