@@ -4,14 +4,14 @@ const LEVEL_BY_TYPE = { info : "info", success : "message", warning : "warn", er
 // CommandChannelEventTypes, SmartRequire, ComputeObjectHash, WebInterfaceBuilder).
 // Assim este loader não usa require relativo até o essential/core e pode viver em
 // qualquer repositório (destino: ecosystem-core).
-const EndpointInstanceTaskLoader = (runtimeDeps) => {
+const EndpointInstanceTaskLoader = (runtimeDeps: any) => {
 
     const { TaskStatusTypes, CommandChannelEventTypes } = runtimeDeps
 
     const StartControllerService              = require("./StartControllerService")(runtimeDeps)
     const StartWebGraphicUserInterfaceService = require("./StartWebGraphicUserInterfaceService")(runtimeDeps)
 
-    return (loaderParams, executorChannel) => {
+    return (loaderParams: any, executorChannel: any) => {
 
         // Carimba a execução: tudo que este loader registrar sai identificado
         // pela instância e pelo ambiente. Ver logging-standard.md.
@@ -27,7 +27,7 @@ const EndpointInstanceTaskLoader = (runtimeDeps) => {
         // Handle do build da interface. Enquanto ele existir, existe um compilador
         // webpack (e possivelmente um watcher) vivo neste processo — encerrá-lo é o
         // que devolve essa memória ao sistema quando a task termina.
-        let webInterfaceHandle
+        let webInterfaceHandle: { Close: () => Promise<void> } | undefined
 
         const { type } = loaderParams
 
@@ -64,7 +64,7 @@ const EndpointInstanceTaskLoader = (runtimeDeps) => {
                     }
                 } else throw `Tipo de endpoint "${type}" não encontrado`
 
-            }catch(e){
+            }catch(e: any){
                 await CloseWebInterface()
                 const reason = (e && (e.message || e.toString())) || String(e)
                 executorChannel.emit(CommandChannelEventTypes.CHANGE_TASK_STATUS, TaskStatusTypes.FAILURE, reason)
@@ -85,7 +85,7 @@ const EndpointInstanceTaskLoader = (runtimeDeps) => {
                 executorChannel.emit(CommandChannelEventTypes.CHANGE_TASK_STATUS, TaskStatusTypes.FAILURE)
         }
 
-        const handleChangeStatus = (status) => {
+        const handleChangeStatus = (status: string) => {
             if(status === TaskStatusTypes.STOPPING) wasStopped=true
             if(status === TaskStatusTypes.ACTIVE) isActive=true
         }

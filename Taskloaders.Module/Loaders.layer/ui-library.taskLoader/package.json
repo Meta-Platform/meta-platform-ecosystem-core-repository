@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Carrega pacotes .uilib como bibliotecas de interface.",
   "scripts": {
-    "test": "node --test"
+    "test": "node --require ../../../../essential-repository/Commons.Module/Libraries.layer/module-resolution.lib/src/register.js --test"
   },
   "license": "BSD-3-Clause"
 }

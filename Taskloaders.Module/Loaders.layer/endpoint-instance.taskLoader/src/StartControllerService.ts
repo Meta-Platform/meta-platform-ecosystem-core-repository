@@ -1,11 +1,11 @@
 // Fábrica: recebe runtimeDeps (injetadas pelo taskloader-registry) e devolve o
 // StartControllerService — sem require relativo até o essential (permite este loader
 // viver em outro repositório).
-const CreateStartControllerService = (runtimeDeps) => {
+const CreateStartControllerService = (runtimeDeps: any) => {
 
     const { TaskStatusTypes, CommandChannelEventTypes } = runtimeDeps
 
-    const StartControllerService = (loaderParams, executorChannel) => {
+    const StartControllerService = (loaderParams: any, executorChannel: any) => {
         const {
             serverService,
             url,

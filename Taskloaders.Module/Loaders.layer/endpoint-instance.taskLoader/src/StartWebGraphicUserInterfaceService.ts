@@ -1,11 +1,15 @@
-const { join } = require("path")
+const { join } = require("path") as typeof import("path")
 
 const DIR_SUFFIX = "webInterfaceAssets"
 
-const MountOutputDirPath = ({environmentPath, outputDirName, RT_ENV_GENERATED_DIR_NAME}) =>
+const MountOutputDirPath = ({environmentPath, outputDirName, RT_ENV_GENERATED_DIR_NAME}: {
+    environmentPath: string
+    outputDirName: string
+    RT_ENV_GENERATED_DIR_NAME: string
+}) =>
     join(environmentPath, RT_ENV_GENERATED_DIR_NAME, `${outputDirName}.${DIR_SUFFIX}`)
 
-const SerializeComponentLibraries = (componentLibraries = {}) =>
+const SerializeComponentLibraries = (componentLibraries: Record<string, any> = {}) =>
     Object.keys(componentLibraries).map((requestedAlias) => {
         const handle = componentLibraries[requestedAlias]
         const manifest = handle.getManifest()
@@ -24,7 +28,7 @@ const SerializeComponentLibraries = (componentLibraries = {}) =>
 // Fábrica: recebe runtimeDeps (ComputeObjectHash + WebInterfaceBuilder injetados pelo
 // registry) e devolve o StartWebGraphicUserInterfaceService — sem require relativo até
 // o essential nem até o WebInterfaceBuilder (que agora vive no ecosystem-core).
-const CreateStartWebGraphicUserInterfaceService = (runtimeDeps) => {
+const CreateStartWebGraphicUserInterfaceService = (runtimeDeps: any) => {
 
     const { ComputeObjectHash, WebInterfaceBuilder } = runtimeDeps
 
@@ -39,7 +43,7 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps) => {
 
     const StartWebGraphicUserInterfaceService = async ({
         loaderParams
-    }) => {
+    }: { loaderParams: any }) => {
         const {
             nodejsPackageHandler,
             url,
@@ -94,7 +98,7 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps) => {
             isWatch,
             environmentPath,
             generatedDirName: RT_ENV_GENERATED_DIR_NAME,
-            onChangeProgress : (percentage) => {
+            onChangeProgress : (percentage: number) => {
                 if(percentage < 100){
                         Log.info("WebUserInterfacePackager", `BUILDING ${percentage}%`)
                 }

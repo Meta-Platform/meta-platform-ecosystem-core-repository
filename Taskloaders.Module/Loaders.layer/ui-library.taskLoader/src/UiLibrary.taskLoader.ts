@@ -1,11 +1,11 @@
-const fs = require("fs")
-const { join } = require("path")
+const fs = require("fs") as typeof import("fs")
+const { join } = require("path") as typeof import("path")
 
 // O nome do manifesto acompanha o nome do tipo de pacote: `.uilib` traz
 // `metadata/uilib.json`.
 const MANIFEST_PATH = join("metadata", "uilib.json")
 
-const ReadManifest = (rootPath) => {
+const ReadManifest = (rootPath: string): any => {
     const manifestPath = join(rootPath, MANIFEST_PATH)
     if (!fs.existsSync(manifestPath))
         throw new Error(`Biblioteca de UI sem ${MANIFEST_PATH}: ${rootPath}`)
@@ -16,9 +16,9 @@ const ReadManifest = (rootPath) => {
     return manifest
 }
 
-const UiLibraryTaskLoader = ({ TaskStatusTypes, CommandChannelEventTypes }) =>
-    (params, executorChannel) => {
-        let libraryHandle
+const UiLibraryTaskLoader = ({ TaskStatusTypes, CommandChannelEventTypes }: any) =>
+    (params: any, executorChannel: any) => {
+        let libraryHandle: any
 
         const Start = () => {
             executorChannel.emit(CommandChannelEventTypes.CHANGE_TASK_STATUS, TaskStatusTypes.STARTING)
@@ -59,7 +59,7 @@ const UiLibraryTaskLoader = ({ TaskStatusTypes, CommandChannelEventTypes }) =>
                     getManifest: () => ({ ...manifest })
                 })
                 executorChannel.emit(CommandChannelEventTypes.CHANGE_TASK_STATUS, TaskStatusTypes.ACTIVE)
-            } catch (error) {
+            } catch (error: any) {
                 libraryHandle = undefined
                 executorChannel.emit(
                     CommandChannelEventTypes.CHANGE_TASK_STATUS,
