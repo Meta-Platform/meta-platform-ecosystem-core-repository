@@ -1,4 +1,6 @@
-const RunGit = require("./RunGit")
+import type { CommitDetail, CommitFile } from "./Types"
+
+const RunGit = require("./RunGit") as (args: string[], cwd: string, options?: { timeoutMs?: number, maxBuffer?: number }) => Promise<string>
 
 const US = "\x1f"
 const HEADER = ["%H", "%h", "%an", "%ae", "%aI", "%s", "%b"].join(US)
@@ -18,21 +20,19 @@ const HEADER = ["%H", "%h", "%an", "%ae", "%aI", "%s", "%b"].join(US)
  *
  * Nunca lança: hash inexistente resolve `null`.
  *
- * @returns {Promise<{hash,shortHash,authorName,authorEmail,authorDate,subject,body,
- *                    files:Array<{path,added,deleted,status,fromPath}>,insertions,deletions}|null>}
  */
-const GetCommitDetail = async ({ repositoryPath, hash } = {}) => {
+const GetCommitDetail = async ({ repositoryPath, hash }: { repositoryPath?: string, hash?: string } = {}): Promise<CommitDetail | null> => {
     if(!hash) return null
 
-    let cabecalho
-    try { cabecalho = await RunGit(["show", "--no-patch", `--pretty=format:${HEADER}`, hash], repositoryPath) }
+    let cabecalho: string
+    try { cabecalho = await RunGit(["show", "--no-patch", `--pretty=format:${HEADER}`, hash], repositoryPath!) }
     catch(e){ return null }
 
     const [h, shortHash, authorName, authorEmail, authorDate, subject, body] = cabecalho.split(US)
 
-    const numeros = new Map()
+    const numeros = new Map<string, { added: number | null, deleted: number | null }>()
     try {
-        const saida = await RunGit(["show", "--numstat", "--format=", hash], repositoryPath)
+        const saida = await RunGit(["show", "--numstat", "--format=", hash], repositoryPath!)
         for(const linha of saida.split("\n")){
             if(!linha.trim()) continue
             const [added, deleted, caminho] = linha.split("\t")
@@ -44,9 +44,9 @@ const GetCommitDetail = async ({ repositoryPath, hash } = {}) => {
         }
     } catch(e){ /* sem numstat: os arquivos ainda saem pelo name-status */ }
 
-    const arquivos = []
+    const arquivos: CommitFile[] = []
     try {
-        const saida = await RunGit(["show", "--name-status", "--format=", hash], repositoryPath)
+        const saida = await RunGit(["show", "--name-status", "--format=", hash], repositoryPath!)
         for(const linha of saida.split("\n")){
             if(!linha.trim()) continue
             const partes = linha.split("\t")
@@ -55,7 +55,7 @@ const GetCommitDetail = async ({ repositoryPath, hash } = {}) => {
             const origem  = partes.length > 2 ? partes[1] : undefined
             const caminho = partes.length > 2 ? partes[2] : partes[1]
             if(!caminho) continue
-            const n = numeros.get(caminho) || numeros.get(origem) || {}
+            const n = numeros.get(caminho) || numeros.get(origem!) || {} as Partial<{ added: number | null, deleted: number | null }>
             arquivos.push({
                 path: caminho,
                 status: status[0],
@@ -66,7 +66,7 @@ const GetCommitDetail = async ({ repositoryPath, hash } = {}) => {
         }
     } catch(e){ /* mantém a lista vazia */ }
 
-    const soma = (campo) => arquivos.reduce((total, a) => total + (typeof a[campo] === "number" ? a[campo] : 0), 0)
+    const soma = (campo: "added" | "deleted") => arquivos.reduce((total, a) => total + (typeof a[campo] === "number" ? a[campo]! : 0), 0)
 
     return {
         hash: h, shortHash, authorName, authorEmail,

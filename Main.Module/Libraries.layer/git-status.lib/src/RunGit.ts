@@ -1,4 +1,4 @@
-const { execFile } = require("child_process")
+const { execFile } = require("child_process") as typeof import("child_process")
 
 /**
  * Executa `git` num repositório e resolve o stdout (ou rejeita).
@@ -9,11 +9,12 @@ const { execFile } = require("child_process")
  * default de 1 MB) e agora com timeout, porque um `git` que trava num repo com
  * problema não pode segurar quem chamou para sempre.
  *
- * @param {string[]} args     argumentos do git (sem o "git")
- * @param {string}   cwd      raiz do repositório
- * @param {object}   options  { timeoutMs = 20000, maxBuffer = 64MB }
  */
-const RunGit = (args, cwd, { timeoutMs = 20000, maxBuffer = 64 * 1024 * 1024 } = {}) =>
+const RunGit = (
+    args: string[],
+    cwd: string,
+    { timeoutMs = 20000, maxBuffer = 64 * 1024 * 1024 }: { timeoutMs?: number, maxBuffer?: number } = {}
+): Promise<string> =>
     new Promise((resolve, reject) => {
         execFile("git", args, { cwd, maxBuffer, timeout: timeoutMs }, (error, stdout) => {
             if(error) return reject(error)

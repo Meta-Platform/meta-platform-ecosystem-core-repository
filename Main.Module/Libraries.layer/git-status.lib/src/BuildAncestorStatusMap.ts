@@ -1,4 +1,6 @@
-const path = require("path")
+import type { AncestorStatusMap, DirtyFile } from "./Types"
+
+const path = require("path") as typeof import("path")
 
 const MAX_FILES_PER_NODE = 50   // limite de amostra por nó (tooltip)
 
@@ -11,15 +13,12 @@ const MAX_FILES_PER_NODE = 50   // limite de amostra por nó (tooltip)
  *
  * A contagem (`count`) é o total de arquivos sujos sob aquele diretório.
  *
- * @param {string} repositoryPath                        raiz do repositório
- * @param {Array<{path:string,state:string}>} files      arquivos sujos (paths relativos à raiz)
- * @returns {{[absPath:string]: {dirty:true, count:number, states:string[], files:string[]}}}
  */
-const BuildAncestorStatusMap = (repositoryPath, files) => {
+const BuildAncestorStatusMap = (repositoryPath: string, files: DirtyFile[]): AncestorStatusMap => {
     const root = repositoryPath.replace(/[\\/]+$/, "")
-    const acc = {}   // absPath -> { count, states:Set, files:[] }
+    const acc: Record<string, { count: number, states: Record<string, true>, files: string[] }> = {}
 
-    const mark = (dir, state, relFile) => {
+    const mark = (dir: string, state: string, relFile: string) => {
         const node = acc[dir] || (acc[dir] = { count: 0, states: {}, files: [] })
         node.count++
         if(state) node.states[state] = true
@@ -39,7 +38,7 @@ const BuildAncestorStatusMap = (repositoryPath, files) => {
         }
     }
 
-    const out = {}
+    const out: AncestorStatusMap = {}
     for(const dir of Object.keys(acc))
         out[dir] = {
             dirty: true,

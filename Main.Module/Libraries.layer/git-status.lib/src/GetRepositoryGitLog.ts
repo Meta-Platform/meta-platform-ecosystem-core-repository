@@ -1,4 +1,6 @@
-const RunGit = require("./RunGit")
+import type { CommitSummary } from "./Types"
+
+const RunGit = require("./RunGit") as (args: string[], cwd: string, options?: { timeoutMs?: number, maxBuffer?: number }) => Promise<string>
 
 // Campos separados por US (0x1f) e registros por RS (0x1e): a mensagem do commit
 // pode conter quebra de linha, tabulação e praticamente qualquer coisa — separar
@@ -19,18 +21,20 @@ const FORMAT = ["%H", "%h", "%an", "%ae", "%aI", "%s", "%b"].join(US) + RS
  *
  * Nunca lança: diretório sem git, ou intervalo sem commits, resolve `[]`.
  *
- * @param {object} options
- *   repositoryPath  raiz do repositório
- *   grep            texto literal a procurar na mensagem (ex.: a chave do item)
- *   since / until   janela de tempo (Date ou string ISO)
- *   author          filtro por autor
- *   paths           limita a commits que tocaram estes caminhos
- *   maxCount        teto de commits (padrão 200)
- * @returns {Promise<Array<{hash,shortHash,authorName,authorEmail,authorDate,subject,body}>>}
+ * `since`/`until` aceitam Date ou string ISO; `paths` limita a commits que
+ * tocaram aqueles caminhos; `maxCount` é o teto de commits.
  */
 const GetRepositoryGitLog = async ({
     repositoryPath, grep, since, until, author, paths, maxCount = 200
-} = {}) => {
+}: {
+    repositoryPath?: string
+    grep?: string
+    since?: Date | string
+    until?: Date | string
+    author?: string
+    paths?: string[]
+    maxCount?: number
+} = {}): Promise<CommitSummary[]> => {
     const args = ["log", "--no-color", `--pretty=format:${FORMAT}`, `--max-count=${Number(maxCount) || 200}`]
     if(grep){
         args.push("--fixed-strings", `--grep=${grep}`)
@@ -42,8 +46,8 @@ const GetRepositoryGitLog = async ({
     if(author) args.push(`--author=${author}`)
     if(Array.isArray(paths) && paths.length) args.push("--", ...paths)
 
-    let stdout
-    try { stdout = await RunGit(args, repositoryPath) }
+    let stdout: string
+    try { stdout = await RunGit(args, repositoryPath!) }
     catch(e){ return [] }
 
     return stdout.split(RS)
@@ -60,6 +64,6 @@ const GetRepositoryGitLog = async ({
         })
 }
 
-const _iso = (v) => v instanceof Date ? v.toISOString() : String(v)
+const _iso = (v: Date | string) => v instanceof Date ? v.toISOString() : String(v)
 
 module.exports = GetRepositoryGitLog

@@ -1,8 +1,10 @@
-const path     = require("path")
-const chokidar = require("chokidar")
+import type { AncestorStatusMap, ComputedStatus, DirtyFile, RepositoryStatus, WatchedRepository } from "./Types"
 
-const GetRepositoryGitStatus = require("./GetRepositoryGitStatus")
-const BuildAncestorStatusMap = require("./BuildAncestorStatusMap")
+const path     = require("path") as typeof import("path")
+const chokidar = require("chokidar") as any
+
+const GetRepositoryGitStatus = require("./GetRepositoryGitStatus") as (repositoryPath: string) => Promise<RepositoryStatus>
+const BuildAncestorStatusMap = require("./BuildAncestorStatusMap") as (repositoryPath: string, files: DirtyFile[]) => AncestorStatusMap
 
 const SEP = path.sep
 const DEBOUNCE_MS = 300
@@ -10,7 +12,7 @@ const DEBOUNCE_MS = 300
 // Não observamos node_modules (ruído + estoura o limite de inotify) nem o
 // interior do .git — EXCETO index, HEAD e refs, que mudam em commit/checkout/
 // branch (feitos por fora da IDE) e precisam refletir na árvore.
-const IsIgnored = (fullPath) => {
+const IsIgnored = (fullPath: string): boolean => {
     if(fullPath.includes(`${SEP}node_modules${SEP}`) || fullPath.endsWith(`${SEP}node_modules`)) return true
     if(fullPath.endsWith(`${SEP}.git`)) return false   // permite descer no .git
     const marker = `${SEP}.git${SEP}`
@@ -37,14 +39,21 @@ const IsIgnored = (fullPath) => {
  */
 const InitializeGitStatusManager = () => {
 
-    // repoPath -> { watcher, refCount, listeners:Set<fn>, cache, timer }
-    const repos = new Map()
+    type RepoEntry = {
+        watcher: any
+        refCount: number
+        listeners: Set<() => void>
+        cache: ComputedStatus | null
+        timer: NodeJS.Timeout | null
+    }
 
-    const _ensureWatcher = (repoPath) => {
+    const repos = new Map<string, RepoEntry>()
+
+    const _ensureWatcher = (repoPath: string): RepoEntry => {
         const existing = repos.get(repoPath)
         if(existing){ existing.refCount++; return existing }
 
-        const entry = { watcher: null, refCount: 1, listeners: new Set(), cache: null, timer: null }
+        const entry: RepoEntry = { watcher: null, refCount: 1, listeners: new Set(), cache: null, timer: null }
         repos.set(repoPath, entry)
 
         try {
@@ -68,7 +77,7 @@ const InitializeGitStatusManager = () => {
         return entry
     }
 
-    const _release = (repoPath) => {
+    const _release = (repoPath: string) => {
         const entry = repos.get(repoPath)
         if(!entry) return
         entry.refCount--
@@ -78,7 +87,7 @@ const InitializeGitStatusManager = () => {
         repos.delete(repoPath)
     }
 
-    const _compute = async (repoPath) => {
+    const _compute = async (repoPath: string): Promise<ComputedStatus> => {
         const entry = repos.get(repoPath)
         if(entry && entry.cache) return entry.cache
         const { isRepo, branch, remote, files } = await GetRepositoryGitStatus(repoPath)
@@ -98,14 +107,12 @@ const InitializeGitStatusManager = () => {
     }
 
     /**
-     * Cria uma assinatura sobre uma lista de repositórios.
-     * @param {Array<{name:string, path:string}>} repoList
-     * @param {Function} onChange  chamado (debounced) quando qualquer repo muda em disco
-     * @returns {{ GetStatus: () => Promise<object>, dispose: () => void }}
+     * Cria uma assinatura sobre uma lista de repositórios. `onChange` é chamado
+     * (com debounce) quando qualquer um deles muda em disco.
      */
-    const Subscribe = (repoList, onChange) => {
-        const list = []
-        const seen = {}
+    const Subscribe = (repoList: WatchedRepository[], onChange: () => void) => {
+        const list: WatchedRepository[] = []
+        const seen: Record<string, true> = {}
         for(const repo of (repoList || [])){
             if(repo && repo.path && !seen[repo.path]){ seen[repo.path] = true; list.push(repo) }
         }
@@ -118,8 +125,8 @@ const InitializeGitStatusManager = () => {
         // Estado completo (não deltas) dos repos assinados: mapa por caminho
         // (para os nós da árvore) + resumo por nome (para o painel de repositórios).
         const GetStatus = async () => {
-            const statusByPath = {}
-            const repositories = {}
+            const statusByPath: AncestorStatusMap = {}
+            const repositories: Record<string, unknown> = {}
             for(const { name, path: repoPath } of list){
                 const r = await _compute(repoPath)
                 Object.assign(statusByPath, r.statusByPath)

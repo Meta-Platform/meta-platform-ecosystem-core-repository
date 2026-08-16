@@ -1,10 +1,12 @@
 // O runner saiu daqui para src/RunGit.js quando a leitura de histórico entrou na
 // lib — os três leitores (status, log, detalhe de commit) usam o mesmo.
-const RunGit = require("./RunGit")
+import type { DirtyFile, FileState, RepositoryStatus } from "./Types"
+
+const RunGit = require("./RunGit") as (args: string[], cwd: string, options?: { timeoutMs?: number, maxBuffer?: number }) => Promise<string>
 
 // Traduz os dois caracteres de estado do porcelain (XY: X=index, Y=working tree)
 // para um rótulo simples usado na UI (tooltip/cores).
-const Classify = (xy) => {
+const Classify = (xy: string): FileState => {
     if(xy === "??")                                   return "untracked"
     if(xy[0] === "U" || xy[1] === "U" || xy === "AA" || xy === "DD") return "conflicted"
     if(xy[1] !== " ")                                 return "modified"   // alteração no working tree
@@ -15,9 +17,9 @@ const Classify = (xy) => {
 // Parseia a saída de `git status --porcelain=v1 -z`. Com -z cada entrada é
 // terminada por NUL; renomeações/cópias trazem o caminho de origem num token
 // extra (consumido a seguir).
-const ParsePorcelainZ = (stdout) => {
+const ParsePorcelainZ = (stdout: string): DirtyFile[] => {
     const tokens = stdout.split("\0")
-    const files = []
+    const files: DirtyFile[] = []
     for(let i = 0; i < tokens.length; i++){
         const entry = tokens[i]
         if(!entry || entry.length < 3) continue
@@ -38,29 +40,27 @@ const ParsePorcelainZ = (stdout) => {
  * Nunca lança: um diretório sem git resolve
  * `{ isRepo:false, branch:null, remote:null, files:[] }`.
  *
- * @param {string} repositoryPath  raiz do repositório
- * @returns {Promise<{isRepo:boolean, branch:(string|null), remote:(string|null), files:Array<{path:string,state:string}>}>}
  */
-const GetRepositoryGitStatus = async (repositoryPath) => {
+const GetRepositoryGitStatus = async (repositoryPath: string): Promise<RepositoryStatus> => {
     try {
         await RunGit(["rev-parse", "--is-inside-work-tree"], repositoryPath)
     } catch(e) {
         return { isRepo: false, branch: null, remote: null, files: [] }
     }
 
-    let branch = null
+    let branch: string | null = null
     try {
         const raw = (await RunGit(["rev-parse", "--abbrev-ref", "HEAD"], repositoryPath)).trim()
         branch = raw === "HEAD" ? "(detached)" : raw
     } catch(e) { branch = null }
 
     // URL do remote de origem — repositório local (sem remote) resolve null.
-    let remote = null
+    let remote: string | null = null
     try {
         remote = (await RunGit(["remote", "get-url", "origin"], repositoryPath)).trim() || null
     } catch(e) { remote = null }
 
-    let files = []
+    let files: DirtyFile[] = []
     try {
         files = ParsePorcelainZ(await RunGit(["status", "--porcelain=v1", "-z", "-uall"], repositoryPath))
     } catch(e) { files = [] }
