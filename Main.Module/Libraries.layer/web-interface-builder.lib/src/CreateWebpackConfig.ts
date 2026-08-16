@@ -1,7 +1,9 @@
-const path = require("path")
+import type { BuildProfile, ComponentLibrary, WasmModule } from "./Types"
 
-const NormalizeComponentLibraries = (componentLibraries = []) =>
-    componentLibraries.map((library) => {
+const path = require("path") as typeof import("path")
+
+const NormalizeComponentLibraries = (componentLibraries: ComponentLibrary[] = []) =>
+    componentLibraries.map((library: any) => {
         if (!library || !library.alias || !library.sourcePath)
             throw new Error("Biblioteca de UI inválida: alias e sourcePath são obrigatórios")
         return {
@@ -29,7 +31,7 @@ const NormalizeComponentLibraries = (componentLibraries = []) =>
 //
 // O MESMO binário que o task loader instancia no host é o que chega aqui — não
 // há uma build para o servidor e outra para o cliente.
-const NormalizeWasmModules = (wasmModules = []) =>
+const NormalizeWasmModules = (wasmModules: WasmModule[] = []) =>
     wasmModules.map((wasmModule) => {
         if (!wasmModule || !wasmModule.alias || !wasmModule.binaryPath)
             throw new Error("Módulo WebAssembly inválido: alias e binaryPath são obrigatórios")
@@ -50,7 +52,12 @@ const CreateWebpackConfig = ({
     HtmlWebpackPlugin,
     params,
     profile
-}) => {
+}: {
+    webpack: any
+    HtmlWebpackPlugin: any
+    params: any
+    profile: BuildProfile
+}): any => {
 
     const {
         context,
@@ -68,14 +75,14 @@ const CreateWebpackConfig = ({
     } = params
 
     const libraries = NormalizeComponentLibraries(componentLibraries)
-    const wasmAliases = NormalizeWasmModules(wasmModules).reduce((result, { alias, binaryPath }) => {
+    const wasmAliases = NormalizeWasmModules(wasmModules).reduce((result: Record<string, string>, { alias, binaryPath }) => {
         result[alias] = binaryPath
         return result
     }, {})
     const libraryNodeModules = libraries
         .map(({ nodeModulesPath }) => nodeModulesPath)
         .filter(Boolean)
-    const aliases = libraries.reduce((result, { alias, sourcePath }) => {
+    const aliases = libraries.reduce((result: Record<string, string>, { alias, sourcePath }) => {
         result[alias] = sourcePath
         return result
     }, {})
@@ -110,13 +117,13 @@ const CreateWebpackConfig = ({
 
     // O alias do webpack resolve o bundle, mas o ts-loader também precisa
     // conhecer a mesma topologia para typecheck de imports externos.
-    const libraryTypeScriptPaths = libraries.reduce((result, { alias, sourcePath }) => {
+    const libraryTypeScriptPaths = libraries.reduce((result: Record<string, string[]>, { alias, sourcePath }) => {
         result[alias] = [sourcePath]
         result[`${alias}/*`] = [`${sourcePath}/*`]
         return result
     }, {})
 
-    const rules = [
+    const rules: any[] = [
         {
             test: /\.tsx?$/,
             use: {
@@ -210,7 +217,7 @@ const CreateWebpackConfig = ({
     // interface esperando a barra, é custo sem destino.
     if(onProgress) plugins.push(new webpack.ProgressPlugin(onProgress))
 
-    const config = {
+    const config: any = {
         mode: profile.mode,
         context,
         entry: path.resolve(context, entrypoint),
