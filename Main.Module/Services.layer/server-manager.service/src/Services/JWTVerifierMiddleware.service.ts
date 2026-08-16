@@ -1,6 +1,6 @@
-const jwt = require("jsonwebtoken")
+const jwt = require("jsonwebtoken") as any
 
-const ExtractTokenByRequest = (request) => {
+const ExtractTokenByRequest = (request: any): string | null => {
     const {
         cookies,
         headers
@@ -50,7 +50,7 @@ const DEFAULT_REVOCATION_RECHECK_INTERVAL_MS = 60 * 1000
 /* Faixa 4000-4999 é a reservada à aplicação pelo protocolo. */
 const WS_CLOSE_CODE_SESSION_ENDED = 4401
 
-const JWTVerifierMiddlewareService = (params) => {
+const JWTVerifierMiddlewareService = (params: any) => {
 
     const {
         secretKey,
@@ -59,7 +59,7 @@ const JWTVerifierMiddlewareService = (params) => {
         onReady
     } = params
 
-    const Unauthorized = (response) => response.status(401).json({
+    const Unauthorized = (response: any) => response.status(401).json({
         error: 'Unauthorized'
     })
 
@@ -75,17 +75,17 @@ const JWTVerifierMiddlewareService = (params) => {
         A falha é registrada. Silenciá-la faria a proteção sumir sem que
         ninguém percebesse, que é o pior dos dois mundos.
     */
-    const _IsRevoked = async (authenticationData) => {
+    const _IsRevoked = async (authenticationData: any): Promise<boolean> => {
         if (!tokenRevocationCheckerService) return false
         try {
             return await tokenRevocationCheckerService.IsTokenRevoked(authenticationData) === true
-        } catch(e) {
+        } catch(e: any) {
             console.error(`[jwt-verifier] falha ao consultar a revogação — token aceito pela assinatura: ${e && e.message ? e.message : e}`)
             return false
         }
     }
 
-    const GetMiddleware = () => async (request, response, next) => {
+    const GetMiddleware = () => async (request: any, response: any, next: any) => {
         try{
             const token = ExtractTokenByRequest(request)
             const authenticationData = jwt.verify(token, secretKey)
@@ -116,7 +116,7 @@ const JWTVerifierMiddlewareService = (params) => {
         Fecha também quando o token EXPIRA: um socket que sobrevive ao próprio
         `exp` é a mesma falha, só que sem ninguém ter precisado deslogar.
     */
-    const _WatchSessionOnOpenSocket = (ws, authenticationData) => {
+    const _WatchSessionOnOpenSocket = (ws: any, authenticationData: any) => {
 
         const _EndSession = () => {
             try {
@@ -155,7 +155,7 @@ const JWTVerifierMiddlewareService = (params) => {
         ws.on("error", _StopWatching)
     }
 
-    const GetWebSocketMiddleware = () => async (ws, request, next) => {
+    const GetWebSocketMiddleware = () => async (ws: any, request: any, next: any) => {
         try{
             const token = ExtractTokenByRequest(request)
             const authenticationData = jwt.verify(token, secretKey)

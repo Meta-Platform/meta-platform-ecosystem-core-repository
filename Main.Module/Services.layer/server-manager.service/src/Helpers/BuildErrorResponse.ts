@@ -19,10 +19,10 @@ const DEFAULT_STATUS = 500
 const DEFAULT_CODE = "INTERNAL_ERROR"
 const DEFAULT_MESSAGE = "Erro interno ao processar a requisição."
 
-const IsValidStatus = (value) =>
+const IsValidStatus = (value: any): value is number =>
     Number.isInteger(value) && value >= 400 && value <= 599
 
-const BuildErrorResponse = (error) => {
+const BuildErrorResponse = (error: any): { status: number, body: { code: string, message: string } } => {
 
     // Uma string lançada (`throw "..."`, que este código-base ainda usa em
     // alguns pontos) é uma mensagem, não um erro sem mensagem.
