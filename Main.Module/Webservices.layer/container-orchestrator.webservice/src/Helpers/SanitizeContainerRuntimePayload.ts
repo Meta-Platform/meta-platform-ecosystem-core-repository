@@ -51,10 +51,10 @@ const HOST_PATH_KEYS = Object.freeze([
 // Internos de runtime que não têm uso no painel e identificam o host.
 const DROPPED_KEYS = Object.freeze(["Pid"])
 
-const IsPlainObject = (value) =>
+const IsPlainObject = (value: any) =>
     value !== null && typeof value === "object" && !Array.isArray(value)
 
-const MaskEnvEntry = (entry) => {
+const MaskEnvEntry = (entry: any) => {
     if (typeof entry !== "string") return entry
     const separator = entry.indexOf("=")
     if (separator === -1) {
@@ -67,14 +67,14 @@ const MaskEnvEntry = (entry) => {
     return SECRET_NAME_PATTERN.test(name) ? `${name}=${REDACTED}` : entry
 }
 
-const MaskEnvList = (envList) =>
+const MaskEnvList = (envList: any) =>
     Array.isArray(envList) ? envList.map(MaskEnvEntry) : envList
 
 // Labels e Options são mapa nome→valor e já foram usados para carregar
 // credencial de driver de volume.
-const MaskNamedValues = (map) => {
+const MaskNamedValues = (map: any) => {
     if (!IsPlainObject(map)) return map
-    const masked = {}
+    const masked: Record<string, unknown> = {}
     for (const [name, value] of Object.entries(map)) {
         masked[name] = SECRET_NAME_PATTERN.test(name) && value !== null && value !== undefined && value !== ""
             ? REDACTED
@@ -83,7 +83,7 @@ const MaskNamedValues = (map) => {
     return masked
 }
 
-const SanitizeMount = (mount) => {
+const SanitizeMount = (mount: any) => {
     if (!IsPlainObject(mount)) return mount
     const { Source, ...rest } = mount
     const sanitized = Sanitize(rest)
@@ -100,11 +100,11 @@ const SanitizeMount = (mount) => {
     duas formas do inspect (container tem Config.Env, imagem tem Config.Env e
     ContainerConfig.Env) sem precisar de um sanitizador por shape.
 */
-const Sanitize = (node) => {
+const Sanitize = (node: any): any => {
     if (Array.isArray(node)) return node.map(Sanitize)
     if (!IsPlainObject(node)) return node
 
-    const output = {}
+    const output: Record<string, unknown> = {}
     for (const [key, value] of Object.entries(node)) {
         if (DROPPED_KEYS.includes(key)) {
             continue
@@ -132,7 +132,7 @@ const Sanitize = (node) => {
     return output
 }
 
-const SanitizeContainerRuntimePayload = (payload) => Sanitize(payload)
+const SanitizeContainerRuntimePayload = (payload: any) => Sanitize(payload)
 
 module.exports = SanitizeContainerRuntimePayload
 module.exports.REDACTED = REDACTED

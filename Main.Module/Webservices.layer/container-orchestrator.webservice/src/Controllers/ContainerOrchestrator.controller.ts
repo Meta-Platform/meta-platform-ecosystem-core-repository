@@ -7,7 +7,7 @@ const CONTAINER_RUNTIME_API_NAME = "ContainerRuntime"
 
 const IAM_SERVER_NAME = "IAMAppInstance"
 
-const IsUsablePath = (value) =>
+const IsUsablePath = (value: any) =>
     typeof value === "string" && value.length > 0 && !value.startsWith("{{")
 
 /*
@@ -20,7 +20,13 @@ const IsUsablePath = (value) =>
     espírito de `CreateExportAuthorizationGuard.Unauthenticated`.
 */
 class MutationRefusedError extends Error {
-    constructor(message) {
+    // Declarados porque são atribuídos aqui e LIDOS pelo servidor, que decide o
+    // status da resposta a partir deles.
+    code: string
+    httpStatus: number
+    statusCode: number
+
+    constructor(message: any) {
         super(message)
         this.name = "MutationRefusedError"
         this.code = "UNAUTHENTICATED"
@@ -47,7 +53,7 @@ class MutationRefusedError extends Error {
 */
 const SOCKET_ERROR_CODES = new Set(["ECONNREFUSED", "ENOENT", "EACCES", "ECONNRESET", "EPIPE"])
 
-const DescribesSocketFailure = (error) => {
+const DescribesSocketFailure = (error: any) => {
     if (!error) return false
     if (SOCKET_ERROR_CODES.has(error.code)) return true
     const texto = `${error.message ?? ""}`
@@ -55,7 +61,13 @@ const DescribesSocketFailure = (error) => {
 }
 
 class ContainerRuntimeUnavailableError extends Error {
-    constructor(causa) {
+    // Declarados porque são atribuídos aqui e LIDOS pelo servidor, que decide o
+    // status da resposta a partir deles.
+    code: string
+    httpStatus: number
+    statusCode: number
+
+    constructor(causa: any) {
         super(
             "O adaptador de runtime de containers não está respondendo no socket. " +
             "O serviço pode estar parado, ou o arquivo de socket ficou órfão depois de um " +
@@ -69,7 +81,7 @@ class ContainerRuntimeUnavailableError extends Error {
     }
 }
 
-const TranslateRuntimeUnavailability = (error) =>
+const TranslateRuntimeUnavailability = (error: any) =>
     DescribesSocketFailure(error) ? new ContainerRuntimeUnavailableError(error) : error
 
 // Cliente do container-runtime-adapter construído AQUI, no controller (lazy, por
@@ -81,7 +93,7 @@ const TranslateRuntimeUnavailability = (error) =>
 // endpoint de montar e o painel de listar containers ("Nenhum container
 // encontrado"). Montando o cliente dentro do controller via commandExecutorLib, o
 // endpoint deixa de depender daquele service-instance e sobe normalmente.
-const ContainerOrchestratorController = (params) => {
+const ContainerOrchestratorController = (params: any) => {
 
     const {
         commandExecutorLib,
@@ -95,8 +107,8 @@ const ContainerOrchestratorController = (params) => {
 
     const CommandExecutor = commandExecutorLib.require("CommandExecutor")
 
-    const ContainerRuntimeCommand = async (CommandFunction) => {
-        const APICommandFunction = async ({ APIs }) => {
+    const ContainerRuntimeCommand = async (CommandFunction: any) => {
+        const APICommandFunction = async ({ APIs }: any) => {
             const API = APIs[CONTAINER_RUNTIME_SERVER_NAME][CONTAINER_RUNTIME_API_NAME]
             return await CommandFunction(API)
         }
@@ -107,7 +119,7 @@ const ContainerOrchestratorController = (params) => {
                 mainApplicationSocketPath: containerRuntimeSocketPath,
                 CommandFunction: APICommandFunction
             })
-        } catch (error) {
+        } catch(error: any) {
             throw TranslateRuntimeUnavailability(error)
         }
     }
@@ -119,7 +131,7 @@ const ContainerOrchestratorController = (params) => {
         sanitizar caso a caso) garante que endpoint novo de leitura nasça
         protegido.
     */
-    const SanitizedContainerRuntimeCommand = async (CommandFunction) =>
+    const SanitizedContainerRuntimeCommand = async (CommandFunction: any) =>
         SanitizeContainerRuntimePayload(await ContainerRuntimeCommand(CommandFunction))
 
     /*
@@ -132,10 +144,10 @@ const ContainerOrchestratorController = (params) => {
     */
     const MountEvaluateFunction = () => {
         if (!IsUsablePath(iamManagerSocketPath)) return undefined
-        return async (request) => CommandExecutor({
+        return async (request: any) => CommandExecutor({
             serverResourceEndpointPath: iamManagerServerManagerUrl,
             mainApplicationSocketPath: iamManagerSocketPath,
-            CommandFunction: async ({ APIs }) =>
+            CommandFunction: async ({ APIs }: any) =>
                 APIs[IAM_SERVER_NAME].AuthorizationManagement.Evaluate(request)
         })
     }
@@ -175,8 +187,8 @@ const ContainerOrchestratorController = (params) => {
         usuário autenticado interrompe, espelhando o mesmo cuidado defensivo
         do ExportGuard.
     */
-    const AuditedMutation = (action, resourcePrefix, ExtractTarget, CommandFunction) =>
-        async (rawParams, { authenticationData } = {}) => {
+    const AuditedMutation = (action: any, resourcePrefix: any, ExtractTarget: any, CommandFunction: any) =>
+        async (rawParams: any, { authenticationData }: any = {}) => {
             const target = ExtractTarget(rawParams)
             const resource = `${resourcePrefix}/${target ?? ""}`
 
@@ -195,7 +207,7 @@ const ContainerOrchestratorController = (params) => {
                     action, resource, decision: "allow", reason: null
                 })
                 return result
-            } catch (error) {
+            } catch(error: any) {
                 AuditRecorder.RecordDecision({
                     authenticationData, eventType: "container_runtime.mutation",
                     action, resource, decision: "error", reason: error.message
@@ -222,8 +234,8 @@ const ContainerOrchestratorController = (params) => {
         inutilizável. Corrigido em VDRP-196, que verificou o contrato no fonte
         do framework.
     */
-    const AuthorizedExport = (resourcePrefix, ExtractTarget, CommandFunction) =>
-        async (params = {}, { authenticationData } = {}) => {
+    const AuthorizedExport = (resourcePrefix: any, ExtractTarget: any, CommandFunction: any) =>
+        async (params: any = {}, { authenticationData }: any = {}) => {
             const { reason, ...rest } = params
             const target = ExtractTarget(rest)
             await ExportGuard.AssertCanExport({
@@ -236,63 +248,63 @@ const ContainerOrchestratorController = (params) => {
 
     const controllerServiceObject = {
         controllerName                 : "ContainerOrchestratorController",
-        ListContainers                 : () => SanitizedContainerRuntimeCommand((API) => API.ListAllContainers()),
-        ListImages                     : () => SanitizedContainerRuntimeCommand((API) => API.ListAllImages()),
-        ListNetworks                   : () => SanitizedContainerRuntimeCommand((API) => API.ListAllNetworks()),
-        ListVolumes                    : () => SanitizedContainerRuntimeCommand((API) => API.ListAllVolumes()),
+        ListContainers                 : () => SanitizedContainerRuntimeCommand((API: any) => API.ListAllContainers()),
+        ListImages                     : () => SanitizedContainerRuntimeCommand((API: any) => API.ListAllImages()),
+        ListNetworks                   : () => SanitizedContainerRuntimeCommand((API: any) => API.ListAllNetworks()),
+        ListVolumes                    : () => SanitizedContainerRuntimeCommand((API: any) => API.ListAllVolumes()),
         // VDRP-199: as mutações abaixo (remove/start/stop/restart/kill de
         // container, rede e volume; conexão de rede; remoção de imagem) passam
         // por AuditedMutation — sem gate de autorização (fora de escopo aqui),
         // só trilha de quem fez o quê, com allow/error e nunca o payload.
         RemoveContainer                : AuditedMutation("container:remove", "container",
-                                            (containerIdOrName) => containerIdOrName,
-                                            (containerIdOrName) => ContainerRuntimeCommand((API) => API.RemoveContainer({ containerIdOrName }))),
+                                            (containerIdOrName: any) => containerIdOrName,
+                                            (containerIdOrName: any) => ContainerRuntimeCommand((API: any) => API.RemoveContainer({ containerIdOrName }))),
         StartContainer                 : AuditedMutation("container:start", "container",
-                                            (containerIdOrName) => containerIdOrName,
-                                            (containerIdOrName) => ContainerRuntimeCommand((API) => API.StartContainer({ containerIdOrName }))),
+                                            (containerIdOrName: any) => containerIdOrName,
+                                            (containerIdOrName: any) => ContainerRuntimeCommand((API: any) => API.StartContainer({ containerIdOrName }))),
         StopContainer                  : AuditedMutation("container:stop", "container",
-                                            (containerIdOrName) => containerIdOrName,
-                                            (containerIdOrName) => ContainerRuntimeCommand((API) => API.StopContainer({ containerIdOrName }))),
+                                            (containerIdOrName: any) => containerIdOrName,
+                                            (containerIdOrName: any) => ContainerRuntimeCommand((API: any) => API.StopContainer({ containerIdOrName }))),
         RestartContainer               : AuditedMutation("container:restart", "container",
-                                            (containerIdOrName) => containerIdOrName,
-                                            (containerIdOrName) => ContainerRuntimeCommand((API) => API.RestartContainer({ containerIdOrName }))),
+                                            (containerIdOrName: any) => containerIdOrName,
+                                            (containerIdOrName: any) => ContainerRuntimeCommand((API: any) => API.RestartContainer({ containerIdOrName }))),
         KillContainer                  : AuditedMutation("container:kill", "container",
-                                            (containerIdOrName) => containerIdOrName,
-                                            (containerIdOrName) => ContainerRuntimeCommand((API) => API.KillContainer({ containerIdOrName }))),
-        InspectContainer               : (containerIdOrName) => SanitizedContainerRuntimeCommand((API) => API.InspectContainer({ containerIdOrName })),
-        GetContainerLogHistory         : (containerIdOrName) => ContainerRuntimeCommand((API) => API.GetContainerLogHistory({ containerIdOrName })),
-        InspectNetwork                 : (networkIdOrName) => SanitizedContainerRuntimeCommand((API) => API.InspectNetwork({ networkIdOrName })),
+                                            (containerIdOrName: any) => containerIdOrName,
+                                            (containerIdOrName: any) => ContainerRuntimeCommand((API: any) => API.KillContainer({ containerIdOrName }))),
+        InspectContainer               : (containerIdOrName: any) => SanitizedContainerRuntimeCommand((API: any) => API.InspectContainer({ containerIdOrName })),
+        GetContainerLogHistory         : (containerIdOrName: any) => ContainerRuntimeCommand((API: any) => API.GetContainerLogHistory({ containerIdOrName })),
+        InspectNetwork                 : (networkIdOrName: any) => SanitizedContainerRuntimeCommand((API: any) => API.InspectNetwork({ networkIdOrName })),
         CreateNewNetwork               : AuditedMutation("network:create", "network",
-                                            (options) => options?.Name ?? null,
-                                            (options) => ContainerRuntimeCommand((API) => API.CreateNewNetwork({ options }))),
+                                            (options: any) => options?.Name ?? null,
+                                            (options: any) => ContainerRuntimeCommand((API: any) => API.CreateNewNetwork({ options }))),
         RemoveNetwork                  : AuditedMutation("network:remove", "network",
-                                            (networkIdOrName) => networkIdOrName,
-                                            (networkIdOrName) => ContainerRuntimeCommand((API) => API.RemoveNetwork({ networkIdOrName }))),
+                                            (networkIdOrName: any) => networkIdOrName,
+                                            (networkIdOrName: any) => ContainerRuntimeCommand((API: any) => API.RemoveNetwork({ networkIdOrName }))),
         ConnectContainerToNetwork      : AuditedMutation("network:connect", "network-connection",
-                                            (options) => `${options?.networkIdOrName ?? "?"}:${options?.containerIdOrName ?? "?"}`,
-                                            (options) => ContainerRuntimeCommand((API) => API.ConnectContainerToNetwork({ options }))),
+                                            (options: any) => `${options?.networkIdOrName ?? "?"}:${options?.containerIdOrName ?? "?"}`,
+                                            (options: any) => ContainerRuntimeCommand((API: any) => API.ConnectContainerToNetwork({ options }))),
         DisconnectContainerFromNetwork : AuditedMutation("network:disconnect", "network-connection",
-                                            (options) => `${options?.networkIdOrName ?? "?"}:${options?.containerIdOrName ?? "?"}`,
-                                            (options) => ContainerRuntimeCommand((API) => API.DisconnectContainerFromNetwork({ options }))),
-        InspectVolume                  : (volumeName) => SanitizedContainerRuntimeCommand((API) => API.InspectVolume({ volumeName })),
+                                            (options: any) => `${options?.networkIdOrName ?? "?"}:${options?.containerIdOrName ?? "?"}`,
+                                            (options: any) => ContainerRuntimeCommand((API: any) => API.DisconnectContainerFromNetwork({ options }))),
+        InspectVolume                  : (volumeName: any) => SanitizedContainerRuntimeCommand((API: any) => API.InspectVolume({ volumeName })),
         CreateNewVolume                : AuditedMutation("volume:create", "volume",
-                                            (options) => options?.Name ?? null,
-                                            (options) => SanitizedContainerRuntimeCommand((API) => API.CreateNewVolume({ options }))),
+                                            (options: any) => options?.Name ?? null,
+                                            (options: any) => SanitizedContainerRuntimeCommand((API: any) => API.CreateNewVolume({ options }))),
         RemoveVolume                   : AuditedMutation("volume:remove", "volume",
-                                            (volumeName) => volumeName,
-                                            (volumeName) => ContainerRuntimeCommand((API) => API.RemoveVolume({ volumeName }))),
-        InspectImage                   : (imageIdOrName) => SanitizedContainerRuntimeCommand((API) => API.InspectImage({ imageIdOrName })),
+                                            (volumeName: any) => volumeName,
+                                            (volumeName: any) => ContainerRuntimeCommand((API: any) => API.RemoveVolume({ volumeName }))),
+        InspectImage                   : (imageIdOrName: any) => SanitizedContainerRuntimeCommand((API: any) => API.InspectImage({ imageIdOrName })),
         RemoveImage                    : AuditedMutation("image:remove", "image",
-                                            (options) => options?.imageIdOrName ?? null,
-                                            (options) => ContainerRuntimeCommand((API) => API.RemoveImage({ options }))),
+                                            (options: any) => options?.imageIdOrName ?? null,
+                                            (options: any) => ContainerRuntimeCommand((API: any) => API.RemoveImage({ options }))),
         // Export só depois do gate: sem usuário → 401; sem permissão ou sem
         // como avaliar → 403. Em nenhum dos dois casos o base64 é produzido.
-        ExportImage                    : AuthorizedExport("image", ({ imageIdOrName }) => imageIdOrName,
-                                            (imageIdOrName) => ContainerRuntimeCommand((API) => API.ExportImage({ imageIdOrName }))),
-        ExportContainer                : AuthorizedExport("container", ({ containerIdOrName }) => containerIdOrName,
-                                            (containerIdOrName) => ContainerRuntimeCommand((API) => API.ExportContainer({ containerIdOrName }))),
-        ExportVolume                   : AuthorizedExport("volume", ({ volumeName }) => volumeName,
-                                            (volumeName) => ContainerRuntimeCommand((API) => API.ExportVolume({ volumeName }))),
+        ExportImage                    : AuthorizedExport("image", ({ imageIdOrName }: any) => imageIdOrName,
+                                            (imageIdOrName: any) => ContainerRuntimeCommand((API: any) => API.ExportImage({ imageIdOrName }))),
+        ExportContainer                : AuthorizedExport("container", ({ containerIdOrName }: any) => containerIdOrName,
+                                            (containerIdOrName: any) => ContainerRuntimeCommand((API: any) => API.ExportContainer({ containerIdOrName }))),
+        ExportVolume                   : AuthorizedExport("volume", ({ volumeName }: any) => volumeName,
+                                            (volumeName: any) => ContainerRuntimeCommand((API: any) => API.ExportVolume({ volumeName }))),
         GetExportGuardState            : () => ExportGuard.GetGuardState()
     }
 

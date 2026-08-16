@@ -27,7 +27,7 @@
 
 const IAM_SERVER_NAME = "IAMAppInstance"
 
-const IsUsablePath = (value) =>
+const IsUsablePath = (value: any) =>
     typeof value === "string" && value.length > 0 && !value.startsWith("{{")
 
 const CreateAuditRecorder = ({
@@ -36,7 +36,7 @@ const CreateAuditRecorder = ({
     iamManagerSocketPath,
     iamManagerServerManagerUrl,
     logPrefix = "audit"
-} = {}) => {
+}: any = {}) => {
 
     const MountRecordEventFunction = () => {
         if (typeof auditManagerService?.RecordEvent === "function") {
@@ -44,10 +44,10 @@ const CreateAuditRecorder = ({
         }
         if (!commandExecutorLib || !IsUsablePath(iamManagerSocketPath)) return undefined
         const CommandExecutor = commandExecutorLib.require("CommandExecutor")
-        return (event) => CommandExecutor({
+        return (event: any) => CommandExecutor({
             serverResourceEndpointPath: iamManagerServerManagerUrl,
             mainApplicationSocketPath: iamManagerSocketPath,
-            CommandFunction: async ({ APIs }) => APIs[IAM_SERVER_NAME].AuditManagement.RecordEvent(event)
+            CommandFunction: async ({ APIs }: any) => APIs[IAM_SERVER_NAME].AuditManagement.RecordEvent(event)
         })
     }
 
@@ -55,14 +55,14 @@ const CreateAuditRecorder = ({
 
     // Sink "cru", no formato que CreateExportAuthorizationGuard/
     // CreateHostActionsAuthorizationGuard já esperam receber em `Audit`.
-    const RecordEvent = (event) => {
+    const RecordEvent = (event: any) => {
         if (typeof RecordEventFunction !== "function") return
         try {
             const result = RecordEventFunction(event)
             if (result && typeof result.catch === "function") {
-                result.catch((error) => console.error(`[${logPrefix}] falha ao auditar: ${error.message}`))
+                result.catch((error: any) => console.error(`[${logPrefix}] falha ao auditar: ${error.message}`))
             }
-        } catch (error) {
+        } catch(error: any) {
             console.error(`[${logPrefix}] falha ao auditar: ${error.message}`)
         }
     }
@@ -70,7 +70,7 @@ const CreateAuditRecorder = ({
     // Conveniência para quem só tem authenticationData + ação/recurso/decisão à
     // mão (as mutações auditadas deste controller) — monta o ator e delega em
     // RecordEvent.
-    const RecordDecision = ({ authenticationData, eventType, action, resource, decision, reason, requestId }) => {
+    const RecordDecision = ({ authenticationData, eventType, action, resource, decision, reason, requestId }: any) => {
         RecordEvent({
             eventType,
             actorType: authenticationData ? "user" : "anonymous",

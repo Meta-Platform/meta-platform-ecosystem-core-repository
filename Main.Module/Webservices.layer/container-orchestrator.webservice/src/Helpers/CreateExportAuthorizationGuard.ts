@@ -22,7 +22,14 @@
 const EXPORT_PERMISSION = "container:export"
 
 class ExportRefusedError extends Error {
-    constructor({ code, httpStatus, message, detail }) {
+    // Declarados porque são atribuídos aqui e LIDOS pelo servidor, que decide o
+    // status da resposta a partir deles.
+    code: string
+    httpStatus: number
+    statusCode: number
+    detail: unknown
+
+    constructor({ code, httpStatus, message, detail }: any) {
         super(message)
         this.name = "ExportRefusedError"
         this.code = code
@@ -40,14 +47,14 @@ const Unauthenticated = () => new ExportRefusedError({
     message: "Export exige usuário autenticado."
 })
 
-const PermissionDenied = (detail) => new ExportRefusedError({
+const PermissionDenied = (detail: any) => new ExportRefusedError({
     code: "PERMISSION_DENIED",
     httpStatus: 403,
     message: `Export exige a permissão ${EXPORT_PERMISSION}.`,
     detail
 })
 
-const AuthorizationUnavailable = (detail) => new ExportRefusedError({
+const AuthorizationUnavailable = (detail: any) => new ExportRefusedError({
     code: "AUTHORIZATION_UNAVAILABLE",
     httpStatus: 403,
     message: "Export negado: não foi possível avaliar a autorização.",
@@ -64,7 +71,7 @@ const CreateExportAuthorizationGuard = ({
     CreateAuthorizationClientFunction,
     EvaluateFunction,
     Audit
-} = {}) => {
+}: any = {}) => {
 
     const client = (typeof CreateAuthorizationClientFunction === "function" && typeof EvaluateFunction === "function")
         ? CreateAuthorizationClientFunction({
@@ -74,7 +81,7 @@ const CreateExportAuthorizationGuard = ({
         })
         : null
 
-    const RecordDecision = ({ authenticationData, action, resource, decision, reason, requestId }) => {
+    const RecordDecision = ({ authenticationData, action, resource, decision, reason, requestId }: any) => {
         if (typeof Audit !== "function") return
         try {
             Audit({
@@ -89,7 +96,7 @@ const CreateExportAuthorizationGuard = ({
                 reason,
                 requestId: requestId ?? null
             })
-        } catch (error) {
+        } catch(error: any) {
             // Auditoria nunca derruba o fluxo auditado.
             console.error(`[container-export] falha ao auditar: ${error.message}`)
         }
@@ -99,7 +106,7 @@ const CreateExportAuthorizationGuard = ({
         Devolve o resultado da avaliação ou LANÇA. Quem chama só prossegue se
         esta função retornar.
     */
-    const AssertCanExport = async ({ authenticationData, resource, reason, requestId }) => {
+    const AssertCanExport = async ({ authenticationData, resource, reason, requestId }: any) => {
 
         if (!authenticationData || (!authenticationData.username && !authenticationData.userId)) {
             RecordDecision({ authenticationData, action: EXPORT_PERMISSION, resource, decision: "deny", reason: "UNAUTHENTICATED", requestId })
@@ -125,7 +132,7 @@ const CreateExportAuthorizationGuard = ({
                 action: EXPORT_PERMISSION,
                 resource
             })
-        } catch (error) {
+        } catch(error: any) {
             RecordDecision({ authenticationData, action: EXPORT_PERMISSION, resource, decision: "error", reason: error.message, requestId })
             throw AuthorizationUnavailable(error.message)
         }
