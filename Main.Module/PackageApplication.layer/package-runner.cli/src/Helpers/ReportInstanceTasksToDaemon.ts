@@ -4,7 +4,7 @@ const http = require("http")
 // (socket do daemon) que o report-launch-progress usa. É o lado de PUSH do
 // monitoramento de tarefas por instância: o daemon cacheia e faz stream ao painel
 // por WebSocket, sem polling. Falha em silêncio — é só observabilidade.
-const ReportInstanceTasksToDaemon = ({ daemonSocketPath, instanceId, tasks }) => new Promise((resolve) => {
+const ReportInstanceTasksToDaemon = ({ daemonSocketPath, instanceId, tasks }: any) => new Promise<void>((resolve) => {
     if(!daemonSocketPath || !instanceId){ resolve(); return }
     const payload = JSON.stringify({ instanceId, tasks: tasks || [] })
     const req = http.request({
@@ -12,7 +12,7 @@ const ReportInstanceTasksToDaemon = ({ daemonSocketPath, instanceId, tasks }) =>
         path: "/ecosystem-manager/report-instance-tasks",
         method: "POST",
         headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(payload) }
-    }, (res) => { res.on("data", () => {}); res.on("end", resolve) })
+    }, (res: any) => { res.on("data", () => {}); res.on("end", resolve) })
     req.on("error", () => resolve())
     req.write(payload)
     req.end()

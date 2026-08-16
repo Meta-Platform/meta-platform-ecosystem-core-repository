@@ -1,6 +1,6 @@
 // Cria um Repository do zero (scaffold) no diretório atual (compartilha o scaffold
 // com o Package Developer via package-toolkit.lib).
-const CreateRepositoryCommand = async ({ args, params }) => {
+const CreateRepositoryCommand = async ({ args, params }: any) => {
     const { name } = args
     if(name === undefined) throw "O nome do repositório é obrigatório"
 

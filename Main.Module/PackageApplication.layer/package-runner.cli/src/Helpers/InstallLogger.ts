@@ -26,7 +26,7 @@ const InstallLogger = ({
     ecosystemDefaults,
     installDataDirPath,
     packagePath
-}) => {
+}: any) => {
 
     try {
 
@@ -58,7 +58,7 @@ const InstallLogger = ({
             retentionDays : LOG_CONF_RETENTION_DAYS
         })
 
-    } catch (error) {
+    } catch(error: any) {
         /* A lib canônica não pôde ser carregada (essential anterior à
            `logger.lib`, caminho que não resolve, instalação a meio caminho).
            O mínimo local mantém o contrato do global de pé. */

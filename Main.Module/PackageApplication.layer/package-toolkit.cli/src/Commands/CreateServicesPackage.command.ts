@@ -3,11 +3,11 @@ const inquirer = require('inquirer').default
 const AUTHOR = "Kaio Cezar <kadisk.shark@gmail.com>"
 
 
-const IsCamelCase = (str) => {
+const IsCamelCase = (str: any) => {
     return /^[A-Z][A-Za-z0-9]*$/.test(str)
 }
 
-const CreateServicesPackageCommand = async ({ args, startupParams, params }) => {
+const CreateServicesPackageCommand = async ({ args, startupParams, params }: any) => {
    
     const { PKG_CONF_DIRNAME_METADATA } = startupParams
     
@@ -40,7 +40,7 @@ const CreateServicesPackageCommand = async ({ args, startupParams, params }) => 
                         type: 'input',
                         name: 'newServiceNamespace',
                         message: `Digite o namespace do serviço (CamelCase):`,
-                        validate: (input) => {
+                        validate: (input: any) => {
                             if (!IsCamelCase(input)) {
                                 return 'O namespace do serviço deve estar em CamelCase  (ex: DatabaseManager, ServerMgt, etc...).'
                             }
@@ -66,7 +66,7 @@ const CreateServicesPackageCommand = async ({ args, startupParams, params }) => 
                                 type: 'input',
                                 name: 'newParam',
                                 message: `[${newServiceNamespace}] Digite o nome do parâmetro:`,
-                                validate: (input) => {
+                                validate: (input: any) => {
                                     if (!input || input==="") {
                                         return 'O nome do parâmetro não poder vazio.'
                                     }
@@ -108,7 +108,7 @@ const CreateServicesPackageCommand = async ({ args, startupParams, params }) => 
                                 type: 'input',
                                 name: 'newBoundParam',
                                 message: `[${newServiceNamespace}] Digite o nome do parâmetro-vinculado:`,
-                                validate: (input) => {
+                                validate: (input: any) => {
                                     if (!input || input==="") {
                                         return 'O nome do parâmetro-vinculado não poder vazio.'
                                     }
@@ -161,7 +161,7 @@ const CreateServicesPackageCommand = async ({ args, startupParams, params }) => 
             PKG_CONF_DIRNAME_METADATA
         })
 
-    } catch (error) {
+    } catch(error: any) {
         throw error
     }
 }

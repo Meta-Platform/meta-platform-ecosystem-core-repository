@@ -2,15 +2,15 @@ const inquirer = require('inquirer').default
 
 const AUTHOR = "Kaio Cezar <kadisk.shark@gmail.com>"
 
-const IsValidExecutableName = (str) => {
+const IsValidExecutableName = (str: any) => {
     return /^[a-z0-9-_]+$/.test(str)
 }
 
-const IsCamelCase = (str) => {
+const IsCamelCase = (str: any) => {
     return /^[A-Z][A-Za-z0-9]*$/.test(str)
 }
 
-const CreateCommandlinePackageCommand = async ({ args, startupParams, params }) => {
+const CreateCommandlinePackageCommand = async ({ args, startupParams, params }: any) => {
    
     const { PKG_CONF_DIRNAME_METADATA } = startupParams
     
@@ -30,7 +30,7 @@ const CreateCommandlinePackageCommand = async ({ args, startupParams, params }) 
                     type: 'input',
                     name: 'newExecutableName',
                     message: 'Digite o nome do executável (ex: my-cli, tool, pacote):',
-                    validate: (input) => {
+                    validate: (input: any) => {
                         if (!IsValidExecutableName(input)) {
                             return 'O nome do executável deve estar em minúsculo e conter apenas letras, números, "-" ou "_".'
                         }
@@ -39,7 +39,7 @@ const CreateCommandlinePackageCommand = async ({ args, startupParams, params }) 
                 }
             ])
 
-        const executablesDefinitionForCreate = [
+        const executablesDefinitionForCreate: { executableName: any, commands: any[] }[] = [
             {
                 executableName: newExecutableName,
                 commands: []
@@ -64,7 +64,7 @@ const CreateCommandlinePackageCommand = async ({ args, startupParams, params }) 
                         type: 'input',
                         name: 'newCommandNamespace',
                         message: `[${executablesDefinitionForCreate[0].executableName}] Digite o namespace (padrão CamelCase) do comando:`,
-                        validate: (input) => {
+                        validate: (input: any) => {
                             if (!IsCamelCase(input)) {
                                 return 'O namespace do comando deve estar em CamelCase (ex: ListDirectory, DoSomething, CreateFile, Execute, etc...).'
                             }
@@ -78,7 +78,7 @@ const CreateCommandlinePackageCommand = async ({ args, startupParams, params }) 
                         type: 'input',
                         name: 'newComand',
                         message: `[${executablesDefinitionForCreate[0].executableName}][${newCommandNamespace}] Digite o comando:`,
-                        validate: (input) => {
+                        validate: (input: any) => {
                             if (!input || input==="") {
                                 return 'O comando não poder vazio.'
                             }
@@ -92,7 +92,7 @@ const CreateCommandlinePackageCommand = async ({ args, startupParams, params }) 
                         type: 'input',
                         name: 'newDescription',
                         message: `[${executablesDefinitionForCreate[0].executableName}][${newCommandNamespace}][${newComand}] Digite uma breve descrição do comando:`,
-                        validate: (input) => {
+                        validate: (input: any) => {
                             if (!input || input==="") {
                                 return 'A descrição do comando não poder vazio.'
                             }
@@ -129,7 +129,7 @@ const CreateCommandlinePackageCommand = async ({ args, startupParams, params }) 
         })
        
 
-    } catch (error) {
+    } catch(error: any) {
         throw error
     }
 }

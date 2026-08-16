@@ -23,9 +23,9 @@ const NIVEIS = ["trace", "debug", "info", "message", "warn", "error", "fatal"]
 const GLOBAL_KEY  = "Log"
 const GLOBAL_MARK = Symbol.for("meta-platform.logger.globalLogger")
 
-const Escrever = (nivel, origem, argumentos) => {
+const Escrever = (nivel: any, origem: any, argumentos: any) => {
 
-    const partes = argumentos.map((a) =>
+    const partes = argumentos.map((a: any) =>
         (a && a.stack) ? a.stack : (typeof a === "object" ? JSON.stringify(a) : String(a)))
 
     try {
@@ -36,7 +36,7 @@ const Escrever = (nivel, origem, argumentos) => {
             : process.stdout
 
         stream.write(`[${origem}] ${partes.join(" ")}\n`)
-    } catch (error) {
+    } catch(error: any) {
         /* sem stream não há para onde ir */
     }
 }
@@ -47,16 +47,16 @@ const EnsureMinimalLogger = () => {
         return globalThis[GLOBAL_KEY]
     }
 
-    const logger = {}
+    const logger: any = {}
 
     NIVEIS.forEach((nivel) => {
-        logger[nivel] = (origem, ...argumentos) => Escrever(nivel, origem, argumentos)
+        logger[nivel] = (origem: any, ...argumentos: any[]) => Escrever(nivel, origem, argumentos)
     })
 
     logger.minimal         = true
     logger.FlushSync       = () => {}
     logger.OpenFileChannel = () => {
-        const canal = {}
+        const canal: any = {}
         NIVEIS.forEach((nivel) => { canal[nivel] = () => {} })
         canal.Close = async () => {}
         return canal
@@ -77,7 +77,7 @@ const EnsureMinimalLogger = () => {
             enumerable   : false,
             writable     : false
         })
-    } catch (error) {
+    } catch(error: any) {
         /* marca já definida por outro caminho — o logger acima já está válido */
     }
 

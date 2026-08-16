@@ -1,4 +1,4 @@
-const ListWorkspacesCommand = async ({ startupParams, params }) => {
+const ListWorkspacesCommand = async ({ startupParams, params }: any) => {
 
     const { WORKSPACE_STORAGE_FILE_PATH } = startupParams
     const { workspaceStoreLib } = params
@@ -15,7 +15,7 @@ const ListWorkspacesCommand = async ({ startupParams, params }) => {
         return
     }
 
-    workspaces.forEach(({ name, path }) => Log.message("ListWorkspaces", `- ${name}\n    ${path}`))
+    workspaces.forEach(({ name, path }: any) => Log.message("ListWorkspaces", `- ${name}\n    ${path}`))
 }
 
 module.exports = ListWorkspacesCommand

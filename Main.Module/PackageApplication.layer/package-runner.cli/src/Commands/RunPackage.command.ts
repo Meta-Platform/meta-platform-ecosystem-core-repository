@@ -2,7 +2,7 @@ const { join } = require("path")
 const crypto = require('crypto')
 const os = require('os')
 const colors = require("colors")
-const ConvertToHashSHA256 = (token) => 
+const ConvertToHashSHA256 = (token: any) => 
     crypto
         .createHash('sha256')
         .update(token)
@@ -15,14 +15,14 @@ const StartInstanceTaskSocketServer = require("../Helpers/StartInstanceTaskSocke
 const ReportInstanceTasksToDaemon = require("../Helpers/ReportInstanceTasksToDaemon")
 const InstallLogger = require("../Helpers/InstallLogger")
 
- const GetFormattedMessage = (taskId, status, objectLoaderType) => {
+ const GetFormattedMessage = (taskId: any, status: any, objectLoaderType: any) => {
     return `[${taskId}] [${objectLoaderType}] ${colors[GetColorLogByStatus(status)](status)}`
 }
 
-const ConvertPathToAbsolutPath = (_path) => join(_path)
+const ConvertPathToAbsolutPath = (_path: any) => join(_path)
     .replace('~', os.homedir())
 
-const RunPackageCommand = async ({ args, startupParams, params }) => {
+const RunPackageCommand = async ({ args, startupParams, params }: any) => {
 
     const executionState = ExecutionDataState()
 
@@ -85,7 +85,7 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
     })
 
     taskExecutor
-        .AddTaskStatusListener(({taskId, status, objectLoaderType}) => {
+        .AddTaskStatusListener(({taskId, status, objectLoaderType}: any) => {
             Log.info("TaskExecutor", GetFormattedMessage(taskId, status, objectLoaderType))
         })
 
@@ -103,9 +103,9 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
         // O socket server-manager segue servindo o StopTasks (daemon → filho).
         const taskExecutorMachineService = {
             controllerName : "TaskExecutorMachineController",
-            ListTasks : () => taskExecutor.ListTasks().map((task) => FormatTaskForOutput(task)),
-            GetTask   : (taskId) => GetTaskInformation(taskExecutor.GetTask(taskId)),
-            StopTasks : (taskIds) => taskExecutor.StopTasks(taskIds)
+            ListTasks : () => taskExecutor.ListTasks().map((task: any) => FormatTaskForOutput(task)),
+            GetTask   : (taskId: any) => GetTaskInformation(taskExecutor.GetTask(taskId)),
+            StopTasks : (taskIds: any) => taskExecutor.StopTasks(taskIds)
         }
 
         StartInstanceTaskSocketServer({
@@ -114,7 +114,7 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
             taskExecutorMachineService,
             serverManagerServiceLib,
             serverManagerWebserviceLib
-        }).catch((e) =>
+        }).catch((e: any) =>
             Log.error("RunPackage", `${colors.bgRed("[InstanceTaskSocket]")} falha ao abrir socket de tarefas: ${e.message}`))
 
         // PUSH: reporta a lista de tarefas ao daemon a cada mudança de status (com
@@ -124,11 +124,11 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
         const daemonSocketPath = process.env.META_LAUNCH_PROGRESS_SOCKET
         const instanceId       = process.env.META_LAUNCH_ID
         if(daemonSocketPath && instanceId){
-            let reportTimer
+            let reportTimer: NodeJS.Timeout | undefined
             const _reportTasks = () => {
                 clearTimeout(reportTimer)
                 reportTimer = setTimeout(() => {
-                    const tasks = taskExecutor.ListTasks().map((task) => FormatTaskForOutput(task))
+                    const tasks = taskExecutor.ListTasks().map((task: any) => FormatTaskForOutput(task))
                     ReportInstanceTasksToDaemon({ daemonSocketPath, instanceId, tasks })
                 }, 120)
             }
@@ -138,7 +138,7 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
 
         // Remove o arquivo de socket ao encerrar (o processo é morto por SIGTERM
         // quando o daemon fecha a instância).
-        const _cleanupSocket = () => { try { require("fs").unlinkSync(instanceTaskSocketPath) } catch(_){} }
+        const _cleanupSocket = () => { try { require("fs").unlinkSync(instanceTaskSocketPath) } catch(_: any){} }
         process.on("exit", _cleanupSocket)
         process.on("SIGTERM", () => { _cleanupSocket(); process.exit(0) })
         process.on("SIGINT",  () => { _cleanupSocket(); process.exit(0) })
@@ -156,7 +156,7 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
         packagePath
     })
 
-    const _GetRootNamespace = (metadataHierarchy) => {
+    const _GetRootNamespace = (metadataHierarchy: any) => {
         const dependency = GetMetadataRootNode(metadataHierarchy)
         const { 
             metadata:{
@@ -168,7 +168,7 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
         return namespace
     }
 
-    const _GetEnvironmentName = (metadataHierarchy, packagePath) => {
+    const _GetEnvironmentName = (metadataHierarchy: any, packagePath: any) => {
         const namespace       = _GetRootNamespace(metadataHierarchy)
         const packageName     = ResolvePackageName(namespace)
         const environmentName = `${packageName}-${ConvertToHashSHA256(packagePath)}`
@@ -181,7 +181,7 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
         return join(absolutInstallDataDirPath, GLOBAL_RT_ENV_DIRNAME)
     }
 
-    const _Execute = async (environmentPath, executionParams) => {
+    const _Execute = async (environmentPath: any, executionParams: any) => {
         const taskIdList = taskExecutor.CreateTasks(executionParams)
         await WriteObjectToFile(join(environmentPath, "execution-params.json"), executionParams)
         const executionId = executionState.RegisterExecution(environmentPath, taskIdList)
@@ -215,9 +215,9 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
             REPOS_CONF_FILENAME_REPOS_DATA
         })
 
-        const _GetMetadataHierarchy = async (environmentPath) =>
+        const _GetMetadataHierarchy = async (environmentPath: any) =>
             await ReadJsonFile(join(environmentPath, ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA))
-        const _WriteMetadataGraphFile = async (environmentPath, tree) =>
+        const _WriteMetadataGraphFile = async (environmentPath: any, tree: any) =>
             await WriteObjectToFile(join(environmentPath, ECOSYSTEMDATA_CONF_FILENAME_PKG_GRAPH_DATA), tree)
 
         await PrepareRepositoriesFileJson({
@@ -236,7 +236,7 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
         // build: o merge por-nó de lá faz o startup-params.json do pacote sobrepor
         // a base, então o recurso só vence um literal esquecido se for aplicado
         // por último. Materializa as pastas antes de executar.
-        const _ResolveDeclaredResources = (metadataHierarchy) => {
+        const _ResolveDeclaredResources = (metadataHierarchy: any) => {
 
             if(!ApplyResourceParamsToHierarchy) return metadataHierarchy
 
@@ -251,8 +251,8 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
             EnsureResources(resolved.resources)
 
             resolved.resources
-                .filter(({ owner }) => owner)
-                .forEach(({ kind, parameter, path }) => Log.info("RunPackage", `${kind} ${parameter} → ${path}`))
+                .filter(({ owner }: any) => owner)
+                .forEach(({ kind, parameter, path }: any) => Log.info("RunPackage", `${kind} ${parameter} → ${path}`))
 
             return resolved.metadataHierarchy
         }
@@ -289,13 +289,13 @@ const RunPackageCommand = async ({ args, startupParams, params }) => {
             throw `O ambiente ${environmentPath} já esta em execução`
         }
 
-    }catch(e){
+    }catch(e: any){
 
         Log.error("RunPackage", e)
 
         const now = new Date()
         const offset = now.getTimezoneOffset() * 60000
-        const localISOTime = (new Date(now - offset)).toISOString()
+        const localISOTime = (new Date(now.getTime() - offset)).toISOString()
         const formattedMessage = `${colors.dim(`[${localISOTime}]`)} ${colors.bgCyan.black("[EcosystemManagerService]")} ${colors.inverse(`[RunPackage]`)} ${colors.bgRed("ERROR")} ${e}`
         Log.debug("RunPackage", formattedMessage)
     }

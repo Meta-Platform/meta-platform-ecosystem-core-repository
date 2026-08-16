@@ -4,7 +4,7 @@ const TaskStatusTypes = require("./TaskStatusTypes")
 
 const EXECUTION_STATUS_CHANGE = Symbol()
 
-const CheckIfExecutionCanBeActivated = (statusAssociatedTasks) => {
+const CheckIfExecutionCanBeActivated = (statusAssociatedTasks: any) => {
     return Object
         .values(statusAssociatedTasks)
         .reduce((acc, status) => {
@@ -21,7 +21,7 @@ const CheckIfExecutionCanBeActivated = (statusAssociatedTasks) => {
         }, true)
 }
 
-const CheckIfExecutionCanBeTerminated = (statusAssociatedTasks) => {
+const CheckIfExecutionCanBeTerminated = (statusAssociatedTasks: any) => {
     return Object
     .values(statusAssociatedTasks)
     .reduce((acc, status) => {
@@ -39,41 +39,41 @@ const CheckIfExecutionCanBeTerminated = (statusAssociatedTasks) => {
 
 const ExecutionDataState = () => {
 
-    const executionRecords = []
+    const executionRecords: any[] = []
     const eventEmitter  = new EventEmitter()
 
     const _CreateEmptyRecord = () => executionRecords.push({}) - 1
 
-    const _CompleteRegistration = (executionId, { environmentPath, associatedTaskIds }) => 
+    const _CompleteRegistration = (executionId: any, { environmentPath, associatedTaskIds }: any) => 
         executionRecords[executionId] = {
             executionId,
             status: ExecutionStatusTypes.STARTING,
             environmentPath,
-            statusAssociatedTasks: associatedTaskIds.reduce((acc, taskId) => ({...acc, [taskId]: undefined}), {})
+            statusAssociatedTasks: associatedTaskIds.reduce((acc: any, taskId: any) => ({...acc, [taskId]: undefined}), {})
         }
 
-    const RegisterExecution = (environmentPath, associatedTaskIds) => {
+    const RegisterExecution = (environmentPath: any, associatedTaskIds: any) => {
         const executionId = _CreateEmptyRecord()
         _CompleteRegistration(executionId, { environmentPath, associatedTaskIds })
         return executionId
     }
 
-    const CheckIfExecutionCanBeRegistered = (environmentPath) => 
+    const CheckIfExecutionCanBeRegistered = (environmentPath: any) => 
         executionRecords
             .filter((execution) => execution.environmentPath === environmentPath && execution.status !== ExecutionStatusTypes.TERMINATED)
             .length > 0
 
-    const GetExecutionData = (executionId) => executionRecords[parseInt(executionId)]
+    const GetExecutionData = (executionId: any) => executionRecords[parseInt(executionId)]
 
     const GetActiveExecutions = () => executionRecords
         .filter(executionRecord => executionRecord.status !== ExecutionStatusTypes.TERMINATED)
 
-    const ForEachActiveExecution = (f) => 
+    const ForEachActiveExecution = (f: any) => 
         GetActiveExecutions()
         .forEach(f)
 
-    const UpdateTaskStatus = (taskId, status) => {
-        ForEachActiveExecution((execution) => {
+    const UpdateTaskStatus = (taskId: any, status: any) => {
+        ForEachActiveExecution((execution: any) => {
             const { statusAssociatedTasks } = execution
             if(statusAssociatedTasks.hasOwnProperty(taskId)){
                 statusAssociatedTasks[taskId] = status
@@ -82,15 +82,15 @@ const ExecutionDataState = () => {
         _RefreshAllExecutionStatus(status)
     }
 
-    const _ChangeExecutionStatus = (execution, nextStatus) => {
+    const _ChangeExecutionStatus = (execution: any, nextStatus: any) => {
         const { executionId } = execution
         execution.status = nextStatus
         eventEmitter.emit(EXECUTION_STATUS_CHANGE, {executionId, status: nextStatus})
     }
 
-    const _RefreshAllExecutionStatus = (statusSource) => {
+    const _RefreshAllExecutionStatus = (statusSource: any) => {
         
-        ForEachActiveExecution((execution) => {
+        ForEachActiveExecution((execution: any) => {
             const { statusAssociatedTasks } = execution
             switch(statusSource){
                 case TaskStatusTypes.ACTIVE:
@@ -111,7 +111,7 @@ const ExecutionDataState = () => {
         })
     }
 
-    const NotifyTaskStatusChange = (taskId, status) => {
+    const NotifyTaskStatusChange = (taskId: any, status: any) => {
         if(status === TaskStatusTypes.ACTIVE
             || status === TaskStatusTypes.FINISHED
             || status === TaskStatusTypes.FAILURE
@@ -120,13 +120,13 @@ const ExecutionDataState = () => {
         }
     }
 
-    const GetAssociatedTaskIds = (executionId) => {
+    const GetAssociatedTaskIds = (executionId: any) => {
         const { statusAssociatedTasks } = GetExecutionData(executionId)
         return Object.keys(statusAssociatedTasks).map((taskId) => parseInt(taskId))
     }
 
-    const AddExecutionStatusListener = (executionId, f) => 
-        eventEmitter.on(EXECUTION_STATUS_CHANGE, (eventData) => {
+    const AddExecutionStatusListener = (executionId: any, f: any) => 
+        eventEmitter.on(EXECUTION_STATUS_CHANGE, (eventData: any) => {
             if(eventData.executionId === parseInt(executionId)){
                 f(eventData.status)
             }

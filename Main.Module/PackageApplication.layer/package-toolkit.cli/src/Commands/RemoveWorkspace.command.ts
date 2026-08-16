@@ -1,4 +1,4 @@
-const RemoveWorkspaceCommand = async ({ args, startupParams, params }) => {
+const RemoveWorkspaceCommand = async ({ args, startupParams, params }: any) => {
 
     const { WORKSPACE_STORAGE_FILE_PATH } = startupParams
     const { workspaceStoreLib } = params

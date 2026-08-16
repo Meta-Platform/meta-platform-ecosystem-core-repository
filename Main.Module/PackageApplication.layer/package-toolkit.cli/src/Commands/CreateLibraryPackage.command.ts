@@ -2,11 +2,11 @@ const inquirer = require('inquirer').default
 
 const AUTHOR = "Kaio Cezar <kadisk.shark@gmail.com>"
 
-const IsCamelCase = (str) => {
+const IsCamelCase = (str: any) => {
     return /^[A-Z][A-Za-z0-9]*$/.test(str)
 }
 
-const CreateLibraryPackageCommand = async ({ args, startupParams, params }) => {
+const CreateLibraryPackageCommand = async ({ args, startupParams, params }: any) => {
    
     const { PKG_CONF_DIRNAME_METADATA } = startupParams
     
@@ -46,7 +46,7 @@ const CreateLibraryPackageCommand = async ({ args, startupParams, params }) => {
                     type: 'input',
                     name: 'newFunctionName',
                     message: 'Digite o nome da função (CamelCase):',
-                    validate: (input) => {
+                    validate: (input: any) => {
                         if (!IsCamelCase(input)) {
                             return 'O nome da função deve estar em CamelCase (ex: MyFunction, DoSomething).'
                         }
@@ -69,7 +69,7 @@ const CreateLibraryPackageCommand = async ({ args, startupParams, params }) => {
 
         }
 
-    } catch (error) {
+    } catch(error: any) {
         throw error
     }
 }

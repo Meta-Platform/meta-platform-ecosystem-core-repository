@@ -17,7 +17,7 @@ const StartInstanceTaskSocketServer = ({
     taskExecutorMachineService,
     serverManagerServiceLib,
     serverManagerWebserviceLib
-}) => {
+}: any) => {
 
     const HTTPServerService              = serverManagerServiceLib.require("Services/HTTPServer.service")
     const HTTPServersController          = serverManagerWebserviceLib.require("Controllers/HTTPServers.controller")
@@ -48,7 +48,7 @@ const StartInstanceTaskSocketServer = ({
                     resolve(serverService)
                 }
             })
-        } catch(e) {
+        } catch(e: any) {
             reject(e)
         }
     })
