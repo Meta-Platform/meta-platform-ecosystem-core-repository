@@ -97,6 +97,37 @@ describe("CreateBuildWorkerClient — escolha do runtime", () => {
             assert.equal(CreateBuildWorkerClient.FindNodeInPath({}), undefined)
         })
     })
+
+    // O teto do perfil foi pensado para o desktop, onde o filho tem a máquina.
+    // Dentro de um container ele divide o cgroup com o pai — e um teto acima da
+    // cota faz o V8 crescer despreocupado até o kernel matar o container, o que
+    // não deixa mensagem de erro de build nenhuma.
+    describe("teto de heap do worker sob cota de container", () => {
+
+        const RELEASE = BuildProfiles.ResolveBuildProfile({ profileName: "release" })
+
+        it("sem cota, vale o perfil", () => {
+            assert.equal(CreateBuildWorkerClient.ResolveMaxOldSpaceMb(RELEASE, undefined), RELEASE.maxOldSpaceMb)
+        })
+
+        it("com cota folgada, continua valendo o perfil", () => {
+            assert.equal(CreateBuildWorkerClient.ResolveMaxOldSpaceMb(RELEASE, 16384), RELEASE.maxOldSpaceMb)
+        })
+
+        it("com cota apertada, o teto cai para a fração da cota", () => {
+            // 2 GiB de cota: metade é o que sobra com folga para o que o
+            // --max-old-space-size não governa e para o processo pai.
+            assert.equal(CreateBuildWorkerClient.ResolveMaxOldSpaceMb(RELEASE, 2048), 1024)
+        })
+
+        it("nunca desce abaixo do mínimo, ou nem o build pequeno cabe", () => {
+            assert.equal(CreateBuildWorkerClient.ResolveMaxOldSpaceMb(RELEASE, 64), 128)
+        })
+
+        it("perfil sem teto declarado não ganha um", () => {
+            assert.equal(CreateBuildWorkerClient.ResolveMaxOldSpaceMb({} as any, 2048), undefined)
+        })
+    })
 })
 
 describe("CreateBuildWorkerClient — o build acontece FORA deste processo", { skip: !HAS_WEBPACK && "webpack não instalado neste checkout" }, () => {

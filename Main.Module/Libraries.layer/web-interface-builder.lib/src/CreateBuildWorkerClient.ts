@@ -20,6 +20,49 @@ const DEFAULT_TIMEOUT_MS   = 600000  // 10 min: um build grande (3d-viewer) leva
 const READY_TIMEOUT_MS     = 120000  // sem "ready" nem progresso, algo está errado
 const CLOSE_GRACE_MS       = 5000
 
+// Teto de heap do worker, limitado pela cota do container.
+//
+// O perfil pede 2048 MB (release) pensando no desktop, onde o filho tem a
+// máquina inteira. Num cgroup de 2 GiB, com o serviço já ocupando ~150 MiB, um
+// teto de 2048 significa que o V8 só se sente pressionado DEPOIS do ponto em
+// que o kernel já matou o container — e um OOM kill não deixa mensagem de build.
+//
+// A fração deixa espaço para o que `--max-old-space-size` NÃO governa: new
+// space, code space, buffers externos e o próprio processo pai.
+const CGROUP_MEMORY_MAX  = "/sys/fs/cgroup/memory.max"
+const CGROUP_HEAP_SHARE  = 0.5
+const MIN_MAX_OLD_SPACE_MB = 128
+
+const _ReadCgroupLimitMb = (): number | undefined => {
+    try {
+        const raw = fs.readFileSync(CGROUP_MEMORY_MAX, "utf8").trim()
+        // "max" é o valor quando não há cota — fora de container, ou sem limite.
+        if(!raw || raw === "max") return undefined
+        const bytes = Number(raw)
+        if(!Number.isFinite(bytes) || bytes <= 0) return undefined
+        return Math.floor(bytes / 1048576)
+    } catch(e) {
+        // Sem cgroup v2 legível não há cota a respeitar: vale o perfil.
+        return undefined
+    }
+}
+
+const ResolveMaxOldSpaceMb = (
+    profile?: BuildProfile,
+    // Injetável para teste: a cota real é do cgroup do processo, e não há como
+    // forjá-la de dentro.
+    cgroupLimitMb: number | undefined = _ReadCgroupLimitMb()
+): number | undefined => {
+
+    const fromProfile = profile && (profile as any).maxOldSpaceMb
+    if(!fromProfile) return undefined
+
+    if(!cgroupLimitMb) return fromProfile
+
+    const teto = Math.max(MIN_MAX_OLD_SPACE_MB, Math.floor(cgroupLimitMb * CGROUP_HEAP_SHARE))
+    return Math.min(fromProfile, teto)
+}
+
 // Procura um executável `node` nas entradas do PATH, sem lançar processo nenhum
 // (um `which` aqui seria um spawn a mais só para descobrir se vale a pena
 // spawnar).
@@ -108,12 +151,22 @@ const CreateBuildWorkerClient = ({ smartRequire }: { smartRequire?: (moduleName:
     const _Spawn = ({ runtime, profile, onLog }: { runtime: any, profile?: BuildProfile, onLog?: (level: string, text: string) => void }) => {
         const args: string[] = []
         // O teto de heap é do FILHO: ele pode ser generoso porque a memória
-        // volta inteira ao sistema quando o processo termina.
-        if(profile && profile.maxOldSpaceMb) args.push(`--max-old-space-size=${profile.maxOldSpaceMb}`)
+        // volta inteira ao sistema quando o processo termina. "Generoso" tem
+        // limite, porém — dentro de um container o filho divide o cgroup com o
+        // pai, e um teto acima da cota faz o V8 crescer despreocupado até o
+        // kernel matar o container inteiro, em vez de coletar.
+        const maxOldSpaceMb = ResolveMaxOldSpaceMb(profile)
+        if(maxOldSpaceMb) args.push(`--max-old-space-size=${maxOldSpaceMb}`)
         args.push(WORKER_ENTRY)
 
+        // PKG_EXECPATH sai do ambiente herdado: dentro do binário empacotado ela
+        // está setada e PROPAGA para os netos, fazendo qualquer processo que o
+        // worker lance se comportar como o executor. Quem precisa dela é o caso
+        // "pkg-self", e esse a repõe por runtime.env.
+        const { PKG_EXECPATH, ...inheritedEnv } = process.env
+
         const child = spawn(runtime.command, args, {
-            env: { ...process.env, ...runtime.env },
+            env: { ...inheritedEnv, ...runtime.env },
             // O canal "ipc" no descritor 4 é o que dá process.send dos dois lados.
             // stdout/stderr são canalizados, nunca herdados: herdar poluiria o
             // terminal do daemon com a saída de compilação.
@@ -297,6 +350,7 @@ const CreateBuildWorkerClient = ({ smartRequire }: { smartRequire?: (moduleName:
 
 CreateBuildWorkerClient.ResolveWorkerRuntime = ResolveWorkerRuntime
 CreateBuildWorkerClient.FindNodeInPath        = _FindNodeInPath
+CreateBuildWorkerClient.ResolveMaxOldSpaceMb  = ResolveMaxOldSpaceMb
 CreateBuildWorkerClient.WORKER_ENTRY         = WORKER_ENTRY
 CreateBuildWorkerClient.READY_TIMEOUT_MS     = READY_TIMEOUT_MS
 

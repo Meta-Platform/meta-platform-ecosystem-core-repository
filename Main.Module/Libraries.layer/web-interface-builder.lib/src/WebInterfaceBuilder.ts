@@ -335,21 +335,42 @@ const CreateWebInterfaceBuilder = (SmartRequire: (moduleName: string) => any) =>
                 // O build inteiro — grafo de módulos, cache de arquivos lidos,
                 // minificação — acontece e desaparece com o processo filho. Este
                 // processo nunca chega a alocar nada disso.
-                const summary = await workerClient.RunBuildInWorker({
-                    job: _MountJob(),
-                    profile,
-                    onProgress: onChangeProgress,
-                    onLog: _WorkerLog
-                })
+                //
+                // Duas famílias de falha, e elas NÃO podem ter o mesmo destino:
+                //
+                // - o worker não subiu (runtime velho demais para o `.ts` do
+                //   entry, `job` incompleto, IPC que nunca ficou pronto). É
+                //   problema do MEIO, não do código do painel: compilar aqui
+                //   ainda entrega a interface, gastando memória. Degradar é
+                //   estritamente melhor do que deixar a interface em 404.
+                // - o worker subiu e o webpack recusou o código. Aí o build
+                //   falhou de verdade, e repetir no processo daria o mesmo erro
+                //   gastando o dobro. Esse sobe.
+                let isolatedSummary
+                try {
+                    isolatedSummary = await workerClient.RunBuildInWorker({
+                        job: _MountJob(),
+                        profile,
+                        onProgress: onChangeProgress,
+                        onLog: _WorkerLog
+                    })
+                } catch(error: any){
+                    Log.warn("WebInterfaceBuilder",
+                        `o worker de build de ${serverAppName} não completou (${error.message}); ` +
+                        `compilando no próprio processo — a interface sobe, mas o pico fica neste heap`)
+                }
 
-                if(!summary.ok)
-                    throw new Error(
-                        `A interface ${serverAppName} não compilou (${summary.errorCount} erro(s)):\n${FormatErrors(summary.errors)}`
-                    )
+                if(isolatedSummary){
 
-                Log.info("WebInterfaceBuilder", `A interface ${serverAppName} foi construida com sucesso (processo isolado, pico de ${Math.round((summary.peakRssBytes || 0) / 1048576)} MB)`)
-                _AfterBuild(fingerprint)
-                return { output, summary, fromCache: false, isolated: true, profileName: profile.name }
+                    if(!isolatedSummary.ok)
+                        throw new Error(
+                            `A interface ${serverAppName} não compilou (${isolatedSummary.errorCount} erro(s)):\n${FormatErrors(isolatedSummary.errors)}`
+                        )
+
+                    Log.info("WebInterfaceBuilder", `A interface ${serverAppName} foi construida com sucesso (processo isolado, pico de ${Math.round((isolatedSummary.peakRssBytes || 0) / 1048576)} MB)`)
+                    _AfterBuild(fingerprint)
+                    return { output, summary: isolatedSummary, fromCache: false, isolated: true, profileName: profile.name }
+                }
             }
 
             try {

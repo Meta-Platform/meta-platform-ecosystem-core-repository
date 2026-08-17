@@ -105,6 +105,29 @@ describe("WebInterfaceBuilder — ciclo de vida", () => {
         assert.equal(fake.calls.compilerCount, 0)
     })
 
+    // O build isolado NÃO tem retorno automático para o caminho em processo: se
+    // o worker falha, o erro sobe e a interface fica 404 — 148 bytes de nada, sem
+    // preservar a anterior. Como o worker depende de um `job` completo e de um
+    // runtime capaz de carregar `.ts`, sobram formas de ele não subir num
+    // ambiente que o desenvolvedor não previu. Degradar é sempre melhor: a
+    // interface sobe, e o custo é só a memória que se queria economizar.
+    it("worker que não sobe degrada para o build no próprio processo", async () => {
+        const fake = CreateFakeWebpack()
+        const builder = await CreateBuilderWith(fake)({
+            ...BASE_PARAMS,
+            isolateBuild:  true,
+            buildIsolated: "on"
+            // `paths` AUSENTE de propósito: é exatamente o defeito que faria o
+            // filho morrer em `require(undefined)` antes de compilar.
+        })
+
+        const result = await builder.Run()
+
+        assert.equal(result.summary.ok, true, "a interface precisa subir mesmo assim")
+        assert.notEqual(result.isolated, true)
+        assert.equal(fake.calls.runCount, 1, "o build aconteceu neste processo")
+    })
+
     it("carrega o webpack só no primeiro build, e uma vez só", async () => {
         const fake = CreateFakeWebpack()
         const WebInterfaceBuilder = CreateBuilderWith(fake, { requireLog })

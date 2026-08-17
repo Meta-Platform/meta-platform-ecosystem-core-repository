@@ -42,7 +42,7 @@ const SerializeWasmModules = (wasmModules: Record<string, any> = {}) =>
 // o essential nem até o WebInterfaceBuilder (que agora vive no ecosystem-core).
 const CreateStartWebGraphicUserInterfaceService = (runtimeDeps: any) => {
 
-    const { ComputeObjectHash, WebInterfaceBuilder } = runtimeDeps
+    const { ComputeObjectHash, WebInterfaceBuilder, paths } = runtimeDeps
 
     // Os perfis vêm anexados ao builder injetado — esta lib vive noutro pacote e
     // não pode alcançá-los por require relativo. O objeto vazio cobre um
@@ -131,6 +131,13 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps: any) => {
             buildIsolated: webguiBuildIsolated !== undefined
                 ? webguiBuildIsolated
                 : RT_WEBGUI_BUILD_ISOLATED,
+            // OBRIGATÓRIO junto do isolamento, e a omissão não perdoa: o worker
+            // é um processo NOVO, e a primeira coisa que ele faz é
+            // `require(job.smartRequirePath)`. Sem estes caminhos o job cai nas
+            // variáveis META_*, que não existem no container, e o filho morre
+            // antes de compilar — e o build isolado NÃO tem retorno ao caminho
+            // em processo, então o erro sobe e a interface fica 404.
+            paths,
             onChangeProgress : (percentage: number) => {
                 if(percentage < 100){
                         Log.info("WebUserInterfacePackager", `BUILDING ${percentage}%`)
