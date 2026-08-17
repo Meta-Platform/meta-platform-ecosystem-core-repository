@@ -20,6 +20,35 @@ const DEFAULT_TIMEOUT_MS   = 600000  // 10 min: um build grande (3d-viewer) leva
 const READY_TIMEOUT_MS     = 120000  // sem "ready" nem progresso, algo está errado
 const CLOSE_GRACE_MS       = 5000
 
+// Procura um executável `node` nas entradas do PATH, sem lançar processo nenhum
+// (um `which` aqui seria um spawn a mais só para descobrir se vale a pena
+// spawnar).
+const _FindNodeInPath = (env: NodeJS.ProcessEnv): string | undefined => {
+
+    if(!env.PATH) return undefined
+
+    for(const directory of env.PATH.split(path.delimiter)){
+
+        if(!directory) continue
+
+        const candidate = path.join(directory, "node")
+
+        try {
+            // X_OK, e não existsSync: um arquivo `node` sem bit de execução
+            // falharia só no spawn, como ENOENT, longe da causa.
+            fs.accessSync(candidate, fs.constants.X_OK)
+        } catch(e) { continue }
+
+        // O próprio binário empacotado pode estar no PATH sob esse nome —
+        // relançá-lo devolveria exatamente o processo que se quer evitar.
+        if(path.resolve(candidate) === path.resolve(process.execPath)) continue
+
+        return candidate
+    }
+
+    return undefined
+}
+
 // Onde arranjar um "node" para rodar o worker.
 //
 // spawn, NUNCA fork: fork herda o execArgv do pai (um --inspect no processo
@@ -45,11 +74,7 @@ const ResolveWorkerRuntime = ({ env = process.env, smartRequire }: {
     if(!(process as any).pkg && !(process.versions && (process.versions as any).pkg))
         return { command: process.execPath, env: {}, kind: "node" }
 
-    // 4. Binário empacotado: ele reconhece PKG_INVOKE_NODEJS, mas isso depende
-    //    da versão do binário instalado e a variável PROPAGA para os netos (é o
-    //    motivo do `unset PKG_EXECPATH` nos wrappers). Fora do escopo desta
-    //    entrega, que isola só o caminho Electron — o daemon segue compilando
-    //    no próprio processo, onde o perfil release já derrubou o custo.
+    // 4. Electron instalado como dependência npm, sob binário empacotado.
     if(smartRequire){
         try {
             const electronPath = smartRequire("electron")
@@ -58,7 +83,24 @@ const ResolveWorkerRuntime = ({ env = process.env, smartRequire }: {
         } catch(e) { /* sem electron instalado */ }
     }
 
-    return undefined
+    // 5. Um `node` de verdade no PATH. É o caso do CONTAINER, e o que faz este
+    //    recurso finalmente valer para os painéis: a imagem base é `node:22` e
+    //    traz /usr/local/bin/node, mas quem hospeda o painel é o binário
+    //    empacotado — então até aqui o build voltava para dentro dele, deixando
+    //    o grafo de módulos do webpack no heap pelo resto da vida do processo.
+    const nodeFromPath = _FindNodeInPath(env)
+    if(nodeFromPath)
+        return { command: nodeFromPath, env: {}, kind: "node-path" }
+
+    // 6. Último recurso: o próprio binário empacotado sabe agir como node puro
+    //    sob PKG_EXECPATH=PKG_INVOKE_NODEJS (verificado no binário instalado).
+    //    Vem depois do PATH de propósito, por duas ressalvas que um `node` de
+    //    verdade não tem: a variável PROPAGA para os netos — é o motivo do
+    //    `unset PKG_EXECPATH` nos wrappers, e por isso o worker precisa limpá-la
+    //    antes de lançar qualquer coisa —, e a versão do Node embutida é a do
+    //    binário, que pode ser anterior ao apagamento de tipos que o
+    //    BuildWorkerEntry.ts exige.
+    return { command: process.execPath, env: { PKG_EXECPATH: "PKG_INVOKE_NODEJS" }, kind: "pkg-self" }
 }
 
 const CreateBuildWorkerClient = ({ smartRequire }: { smartRequire?: (moduleName: string) => any } = {}) => {
@@ -254,6 +296,7 @@ const CreateBuildWorkerClient = ({ smartRequire }: { smartRequire?: (moduleName:
 }
 
 CreateBuildWorkerClient.ResolveWorkerRuntime = ResolveWorkerRuntime
+CreateBuildWorkerClient.FindNodeInPath        = _FindNodeInPath
 CreateBuildWorkerClient.WORKER_ENTRY         = WORKER_ENTRY
 CreateBuildWorkerClient.READY_TIMEOUT_MS     = READY_TIMEOUT_MS
 

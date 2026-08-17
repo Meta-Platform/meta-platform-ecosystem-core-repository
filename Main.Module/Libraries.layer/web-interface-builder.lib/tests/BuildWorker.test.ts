@@ -58,6 +58,45 @@ describe("CreateBuildWorkerClient — escolha do runtime", () => {
     it("o script do worker existe e é carregável", () => {
         assert.ok(fs.existsSync(CreateBuildWorkerClient.WORKER_ENTRY))
     })
+
+    // O `node` do PATH é o que faz o isolamento valer DENTRO DO CONTAINER: lá o
+    // processo é o binário empacotado, mas a imagem base traz um node de
+    // verdade. Sem este caminho o build voltava para dentro do processo que
+    // serve o painel — e o pico do webpack ficava no heap para sempre.
+    describe("um node de verdade no PATH", () => {
+
+        const _MakeFakeNode = ({ executable }: { executable: boolean }) => {
+            const dir = fs.mkdtempSync(path.join(os.tmpdir(), "wib-path-"))
+            const binary = path.join(dir, "node")
+            fs.writeFileSync(binary, "#!/bin/sh\nexit 0\n")
+            fs.chmodSync(binary, executable ? 0o755 : 0o644)
+            return { dir, binary }
+        }
+
+        it("acha o executável na primeira entrada que o tiver", () => {
+            const { dir, binary } = _MakeFakeNode({ executable: true })
+            assert.equal(
+                CreateBuildWorkerClient.FindNodeInPath({ PATH: `/nao-existe-aqui${path.delimiter}${dir}` }),
+                binary
+            )
+        })
+
+        it("ignora um arquivo sem bit de execução", () => {
+            const { dir } = _MakeFakeNode({ executable: false })
+            assert.equal(CreateBuildWorkerClient.FindNodeInPath({ PATH: dir }), undefined)
+        })
+
+        it("ignora o próprio executável, que relançado daria o mesmo processo", () => {
+            assert.equal(
+                CreateBuildWorkerClient.FindNodeInPath({ PATH: path.dirname(process.execPath) }),
+                undefined
+            )
+        })
+
+        it("sem PATH não há o que procurar", () => {
+            assert.equal(CreateBuildWorkerClient.FindNodeInPath({}), undefined)
+        })
+    })
 })
 
 describe("CreateBuildWorkerClient — o build acontece FORA deste processo", { skip: !HAS_WEBPACK && "webpack não instalado neste checkout" }, () => {

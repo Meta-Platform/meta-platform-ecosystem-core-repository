@@ -69,6 +69,12 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps: any) => {
             // .webgui precisa declarar nada para herdar o padrão do ecossistema.
             webguiBuildProfile,
             RT_WEBGUI_BUILD_PROFILE,
+            // Isolamento do build. Mesmo caminho do perfil: `RT_WEBGUI_BUILD_ISOLATED`
+            // vem do ecosystem-defaults e o pacote pode sobrepor por
+            // `webguiBuildIsolated`. Quem tem a última palavra é a variável de
+            // ambiente META_WEBGUI_BUILD_ISOLATED, dentro do ResolveIsolationFlag.
+            webguiBuildIsolated,
+            RT_WEBGUI_BUILD_ISOLATED,
             // Parâmetro legado dos 14 .webgui existentes; vira "debug-watch".
             isWatch,
             componentLibraries,
@@ -112,6 +118,19 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps: any) => {
             isWatch,
             environmentPath,
             generatedDirName: RT_ENV_GENERATED_DIR_NAME,
+            // O endpoint HTTP é hospedeiro de vida longa tanto quanto a janela
+            // desktop: compilar dentro dele deixa o grafo de módulos do webpack
+            // no heap do processo que depois serve o painel, e o V8 não devolve
+            // esse pico ao sistema. Medido nos containers: um .webapp com
+            // interface parava em ~273 MiB contra ~104 MiB de um .app sem ela.
+            //
+            // Pedir o isolamento não o impõe: o ResolveIsolationFlag ainda pode
+            // desligá-lo (META_WEBGUI_BUILD_ISOLATED / RT_WEBGUI_BUILD_ISOLATED)
+            // e, sem runtime para o filho, o builder avisa e compila aqui mesmo.
+            isolateBuild: true,
+            buildIsolated: webguiBuildIsolated !== undefined
+                ? webguiBuildIsolated
+                : RT_WEBGUI_BUILD_ISOLATED,
             onChangeProgress : (percentage: number) => {
                 if(percentage < 100){
                         Log.info("WebUserInterfacePackager", `BUILDING ${percentage}%`)
