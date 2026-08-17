@@ -137,7 +137,7 @@ sem isso, os objetos de commits abortados acumulam para sempre.
 ## Testes
 
 ```
-npm test        # node --test test/*.test.js
+npm test        # node --require <module-resolution.lib>/src/register.js --test test/*.test.ts
 ```
 
 Os testes usam repositórios bare **de verdade** em diretório temporário, e a

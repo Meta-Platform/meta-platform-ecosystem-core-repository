@@ -23,12 +23,12 @@ pacote-alvo, e não as desta lib.
 
 | Módulo | Responsabilidade |
 |---|---|
-| `WebInterfaceBuilder.js` | Fábrica do builder. Resolve o perfil, consulta o cache, decide entre compilar aqui ou num processo filho, e garante que nada fique aberto ao final. |
-| `BuildProfiles.js` | Os perfis (`release`, `debug`, `debug-watch`) e a ordem de precedência entre eles. |
-| `CreateWebpackConfig.js` | Monta a configuração do webpack a partir dos parâmetros e do perfil. **Função pura** — não instancia compilador nem toca no disco, então dá para testá-la sem ter o webpack instalado. |
-| `BuildCache.js` | Assinatura das entradas do build, manifesto e faxina de assets órfãos. |
-| `CreateBuildWorkerClient.js` | Lança e conversa com o processo filho que compila. |
-| `BuildWorkerEntry.js` | O processo filho. Compila e morre. |
+| `WebInterfaceBuilder.ts` | Fábrica do builder. Resolve o perfil, consulta o cache, decide entre compilar aqui ou num processo filho, e garante que nada fique aberto ao final. |
+| `BuildProfiles.ts` | Os perfis (`release`, `debug`, `debug-watch`) e a ordem de precedência entre eles. |
+| `CreateWebpackConfig.ts` | Monta a configuração do webpack a partir dos parâmetros e do perfil. **Função pura** — não instancia compilador nem toca no disco, então dá para testá-la sem ter o webpack instalado. |
+| `BuildCache.ts` | Assinatura das entradas do build, manifesto e faxina de assets órfãos. |
+| `CreateBuildWorkerClient.ts` | Lança e conversa com o processo filho que compila. |
+| `BuildWorkerEntry.ts` | O processo filho. Compila e morre. |
 
 ## Como usar
 
@@ -186,7 +186,7 @@ Ambos ficam no `maintenance-toolkit.cli`.
 ## Testes
 
 ```bash
-NODE_PATH=~/EcosystemData/npm-dependencies/node_modules node --test tests/*.test.js
+NODE_PATH=~/EcosystemData/npm-dependencies/node_modules npm test
 ```
 
 Os testes de ciclo de vida e de configuração usam um dublê de webpack e não

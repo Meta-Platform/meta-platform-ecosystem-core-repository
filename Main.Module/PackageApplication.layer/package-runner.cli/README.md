@@ -40,7 +40,7 @@ Reúne as libs de runtime e de metadados necessárias para executar um pacote:
 > referência resolve para `null` — mesmo com a lib provisionada e registrada — e
 > a montagem de parâmetros da task quebra com
 > `TypeError: Cannot convert undefined or null to object`
-> (`AssembleLinkedTaskParameters.js`), matando o processo logo no lançamento.
+> (`AssembleLinkedTaskParameters.ts`), matando o processo logo no lançamento.
 > Como o daemon lança toda aplicação via `run package`, essa falha derruba o
 > launch de **todos** os apps (ex.: ícones do MyDesktop que "carregam e fecham").
 > Ao adicionar/remover uma lib aqui, altere `boot.json` **e**

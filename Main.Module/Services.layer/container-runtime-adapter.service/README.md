@@ -27,11 +27,11 @@ chave do runtime**.
 
 ### O manifesto de superfície
 
-`src/RuntimeSurface.js` declara, uma vez, tudo o que este pacote expõe: o nome,
+`src/RuntimeSurface.ts` declara, uma vez, tudo o que este pacote expõe: o nome,
 a natureza (`call`, `stream`, `session`, `local`), se o cliente por socket deve
 implementar e, quando não deve, **por quê**.
 
-`test/RuntimeSurfaceParity.test.js` compara o manifesto com as duas
+`test/RuntimeSurfaceParity.test.ts` compara o manifesto com as duas
 implementações e falha quando elas se afastam — operação no adaptador e ausente
 do manifesto, do manifesto e ausente do adaptador, ou marcada como suportada e
 ausente do cliente.
@@ -164,7 +164,7 @@ montado, executa a operação e o descarta. Por isso essas chamadas custam mais
 que as demais, e por isso `ExportVolume` precisa da imagem `alpine:latest`.
 
 Os caminhos pedidos passam por `RequireSafeVolumePath` / `RequireSafeFileName`
-(em `src/Helpers/ResolveVolumeEntryPath.js`): funções puras, testáveis sem
+(em `src/Helpers/ResolveVolumeEntryPath.ts`): funções puras, testáveis sem
 runtime nenhum, que impedem escapar do ponto de montagem.
 
 ## Dependências
@@ -198,7 +198,7 @@ falha, com `RUNTIME_CLIENT_UNAVAILABLE` em vez de um erro de resolução de mód
 ## Testes
 
 ```bash
-node --test          # helpers puros, resolução de endpoint, descoberta e conexões
+npm test             # helpers puros, resolução de endpoint, descoberta e conexões
 node scripts/test-volume-files.js   # operações de arquivo em volume (exige runtime)
 ```
 
