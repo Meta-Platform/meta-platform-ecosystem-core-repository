@@ -9,6 +9,7 @@ const BuildProfiles           = require("./BuildProfiles")
 const CreateWebpackConfig     = require("./CreateWebpackConfig")
 const CreateBuildWorkerClient = require("./CreateBuildWorkerClient")
 const BuildCache              = require("./BuildCache")
+const ResolveBuildEngine      = require("./ResolveBuildEngine")
 
 const CheckPackageDirExist = (path: string) => exists(`${path}`)
 
@@ -45,47 +46,6 @@ const _Debounce = (func: (...args: any[]) => void, delay: number) => {
     return debounced
 }
 
-// Reduz o `stats` do webpack a um resumo transportável.
-//
-// Por que isto existe: o objeto `stats` referencia a `Compilation` inteira —
-// module graph, source maps, o conteúdo de todo arquivo lido. Devolvê-lo ao
-// chamador (era o que `Run()` fazia) transforma qualquer variável que o guarde
-// num âncora que impede a coleta do build inteiro. O resumo é `structuredClone`-
-// able de propósito: é o mesmo formato que atravessa o IPC quando o build passa
-// a rodar em processo separado.
-const MAX_MESSAGES = 200
-
-const SummarizeStats = (stats: any) => {
-    if(!stats) return { ok: false, errorCount: 0, warningCount: 0, errors: [], warnings: [] }
-
-    const compilation = stats.compilation
-    const errors      = (compilation && compilation.errors)   || []
-    const warnings    = (compilation && compilation.warnings) || []
-
-    const _Message = (entry: any): string =>
-        typeof entry === "string" ? entry : (entry && (entry.message || String(entry))) || ""
-
-    const assets = (compilation && compilation.assets) || {}
-    const assetNames = Object.keys(assets)
-
-    return {
-        ok:           errors.length === 0,
-        errorCount:   errors.length,
-        warningCount: warnings.length,
-        errors:       errors.slice(0, MAX_MESSAGES).map(_Message),
-        warnings:     warnings.slice(0, MAX_MESSAGES).map(_Message),
-        assetCount:   assetNames.length,
-        outputBytes:  assetNames.reduce((total: number, name: string) => {
-            const asset = assets[name]
-            const size  = asset && typeof asset.size === "function" ? asset.size() : 0
-            return total + (Number.isFinite(size) ? size : 0)
-        }, 0),
-        elapsedMs:    (compilation && compilation.endTime && compilation.startTime)
-            ? compilation.endTime - compilation.startTime
-            : undefined
-    }
-}
-
 const FormatErrors = (errors: any[] = []): string =>
     errors.slice(0, 5).join("\n") + (errors.length > 5 ? `\n… e mais ${errors.length - 5} erro(s)` : "")
 
@@ -94,31 +54,20 @@ const FormatErrors = (errors: any[] = []): string =>
 // do essential — o registry injeta SmartRequire (ver taskloader-registry.lib).
 const CreateWebInterfaceBuilder = (SmartRequire: (moduleName: string) => any) => {
 
-    // O webpack é carregado SOB DEMANDA, não na montagem da fábrica.
+    // O MOTOR é resolvido por build — ele depende do que o pacote declara, e
+    // fixá-lo na fábrica daria um motor só para o processo inteiro —, mas a
+    // INSTÂNCIA é memoizada por nome.
     //
-    // Antes, `SmartRequire("webpack")` rodava aqui, no corpo da fábrica. Como o
-    // taskloader-registry monta o mapa de loaders no boot de TODO host de
-    // TaskExecutor (o daemon, cada `run package`, o processo do Electron), o
-    // grafo de módulos do webpack — dezenas de MB — entrava no heap desses
-    // processos mesmo quando nenhuma interface seria compilada. Um `.app` sem
-    // webgui pagava o custo de um builder que nunca usaria.
-    let webpackModule: any
-    let htmlWebpackPluginModule: any
+    // O motivo é o mesmo que fez o webpack sair do corpo da fábrica: um motor
+    // guarda o bundler carregado, e recriá-lo a cada build refaria essa carga.
+    // O `SmartRequire` é fixo por fábrica, então a instância pode ser
+    // compartilhada sem que dois pacotes interfiram um no outro — o que é por
+    // pacote é a SESSÃO, criada em cada build.
+    const engines: Record<string, any> = {}
 
-    const _LoadWebpack = () => {
-        if(!webpackModule){
-            webpackModule          = SmartRequire("webpack")
-            htmlWebpackPluginModule = SmartRequire("html-webpack-plugin")
-        }
-        return { webpack: webpackModule, HtmlWebpackPlugin: htmlWebpackPluginModule }
-    }
-
-    // Constrói o compilador para um build concreto. A configuração em si vive
-    // em CreateWebpackConfig (função pura, testável sem webpack); aqui só
-    // juntamos os módulos carregados sob demanda com os parâmetros e o perfil.
-    const GetCompiler = (params: any, profile: BuildProfile) => {
-        const { webpack, HtmlWebpackPlugin } = _LoadWebpack()
-        return webpack(CreateWebpackConfig({ webpack, HtmlWebpackPlugin, params, profile }))
+    const _GetEngine = (engineName: string) => {
+        if(!engines[engineName]) engines[engineName] = ResolveBuildEngine({ engineName, SmartRequire })
+        return engines[engineName]
     }
 
     const WebInterfaceBuilder = async (params: any): Promise<any> => {
@@ -138,6 +87,9 @@ const CreateWebInterfaceBuilder = (SmartRequire: (moduleName: string) => any) =>
             // ecossistema e continua funcionando: mapeia para "debug-watch".
             buildProfile,
             isWatch,
+            // Qual motor compila a interface. O webpack é o padrão e deixou de
+            // ser a única opção — ver ResolveBuildEngine.
+            buildEngine,
             buildOverrides,
             environmentPath,
             generatedDirName,
@@ -152,6 +104,11 @@ const CreateWebInterfaceBuilder = (SmartRequire: (moduleName: string) => any) =>
             isWatch,
             overrides: buildOverrides
         })
+
+        // O NOME do motor é resolvido cedo — custa nada e não carrega módulo
+        // nenhum — porque ele entra na assinatura do cache e viaja para o
+        // worker. Nome desconhecido falha aqui, antes de qualquer trabalho.
+        const engineName = ResolveBuildEngine.ResolveBuildEngineName({ engineName: buildEngine })
 
         const workerClient = CreateBuildWorkerClient({ smartRequire: SmartRequire })
 
@@ -171,6 +128,10 @@ const CreateWebInterfaceBuilder = (SmartRequire: (moduleName: string) => any) =>
         // atravessam o canal, por construção.
         const _MountJob = () => ({
             buildProfile: profile.name,
+            // O filho compila com o MESMO motor do pai. Deixar o worker resolver
+            // por conta própria faria o build isolado e o build em processo
+            // divergirem sem que nada acusasse.
+            buildEngine: engineName,
             buildOverrides,
             reportProgress: !!onChangeProgress,
             smartRequirePath: (paths && paths.smartRequire) || process.env.META_SMART_REQUIRE_PATH,
@@ -203,6 +164,7 @@ const CreateWebInterfaceBuilder = (SmartRequire: (moduleName: string) => any) =>
                     componentLibraries,
                     wasmModules,
                     buildProfile: profile.name,
+                    buildEngine: engineName,
                     entrypoint,
                     htmlTemplate
                 })
@@ -237,68 +199,43 @@ const CreateWebInterfaceBuilder = (SmartRequire: (moduleName: string) => any) =>
             onChangeProgress && onChangeProgress(percentage)
         }, 10)
 
-        // O compiler nasce sob demanda, junto com o primeiro Run/Watch. Construí-lo
-        // aqui faria toda instanciação do builder alocar um compiler — inclusive as
-        // que terminam em cache hit e nunca compilam nada.
-        let compiler: any
-        let watching: any
-        let isClosed = false
+        // A SESSÃO do motor nasce sob demanda, junto com o primeiro Run/Watch.
+        // Criá-la aqui faria toda instanciação do builder resolver um motor —
+        // inclusive as que terminam em acerto de cache e nunca compilam nada.
+        let session: any
 
-        const _EnsureCompiler = () => {
-            if(!compiler)
-                compiler = GetCompiler({
-                    context,
-                    entrypoint,
-                    output,
-                    nodeModulesPath,
-                    htmlTemplate,
-                    serverAppName,
-                    url,
-                    onProgress: onChangeProgress ? handleChangeProgress : undefined,
-                    componentLibraries,
-                    wasmModules,
-                    cacheDirectory: MountCacheDirectory({ environmentPath, generatedDirName, serverAppName }),
-                    // Em release a data é estável para que o bundle seja
-                    // reproduzível — pré-requisito de qualquer cache de conteúdo.
-                    buildDate: profile.stableBuildDate ? "" : new Date().toISOString()
-                }, profile)
-            return compiler
+        const _EnsureSession = () => {
+            if(!session)
+                session = _GetEngine(engineName).CreateSession({
+                    params: {
+                        context,
+                        entrypoint,
+                        output,
+                        nodeModulesPath,
+                        htmlTemplate,
+                        serverAppName,
+                        url,
+                        onProgress: onChangeProgress ? handleChangeProgress : undefined,
+                        componentLibraries,
+                        wasmModules,
+                        cacheDirectory: MountCacheDirectory({ environmentPath, generatedDirName, serverAppName }),
+                        // Em release a data é estável para que o bundle seja
+                        // reproduzível — pré-requisito de qualquer cache de conteúdo.
+                        buildDate: profile.stableBuildDate ? "" : new Date().toISOString()
+                    },
+                    profile
+                })
+            return session
         }
-
-        const _CloseWatching = () => new Promise<void>((resolve) => {
-            if(!watching) return resolve()
-            const current = watching
-            watching = undefined
-            try { current.close(() => resolve()) }
-            catch(error){
-                Log.error("WebInterfaceBuilder", `falha ao encerrar o watcher de ${serverAppName}`, error)
-                resolve()
-            }
-        })
-
-        // `compiler.close()` é o que libera o CachedInputFileSystem — a estrutura
-        // onde o webpack 5 guarda o conteúdo de CADA arquivo lido durante o build,
-        // incluindo a árvore de node_modules. Sem esta chamada, um build num
-        // processo de vida longa nunca devolve essa memória.
-        const _CloseCompiler = () => new Promise<void>((resolve) => {
-            if(!compiler) return resolve()
-            const current = compiler
-            compiler = undefined
-            try { current.close(() => resolve()) }
-            catch(error){
-                Log.error("WebInterfaceBuilder", `falha ao encerrar o compilador de ${serverAppName}`, error)
-                resolve()
-            }
-        })
 
         // Idempotente: pode ser chamado pelo `finally` de um build, pelo Stop da
         // task e por um encerramento de processo sem que a segunda chamada faça mal.
         const Close = async () => {
-            if(isClosed) return
-            isClosed = true
             handleChangeProgress.Cancel()
-            await _CloseWatching()
-            await _CloseCompiler()
+            if(!session) return
+            const current = session
+            session = undefined
+            await current.Close()
         }
 
         const _AssertContextExists = async () => {
@@ -374,31 +311,20 @@ const CreateWebInterfaceBuilder = (SmartRequire: (moduleName: string) => any) =>
             }
 
             try {
-                const summary = await new Promise((resolve, reject) => {
-                    // Toda saída do callback ASSENTA a promise. A versão anterior
-                    // logava a exceção e não chamava resolve nem reject: a promise
-                    // ficava pendente para sempre, a instância parava em STARTING e
-                    // a closure segurava o compiler inteiro no heap.
-                    _EnsureCompiler().run((error: any, stats: any) => {
-                        if(error) return reject(error instanceof Error ? error : new Error(String(error)))
+                const summary = await _EnsureSession().RunOnce()
 
-                        const result = SummarizeStats(stats)
-                        if(!result.ok)
-                            return reject(new Error(
-                                `A interface ${serverAppName} não compilou (${result.errorCount} erro(s)):\n${FormatErrors(result.errors)}`
-                            ))
-
-                        resolve(result)
-                    })
-                })
+                if(!summary.ok)
+                    throw new Error(
+                        `A interface ${serverAppName} não compilou (${summary.errorCount} erro(s)):\n${FormatErrors(summary.errors)}`
+                    )
 
                 Log.info("WebInterfaceBuilder", `A interface ${serverAppName} foi construida com sucesso`)
                 _AfterBuild(fingerprint)
                 return { output, summary, fromCache: false, profileName: profile.name }
 
             } finally {
-                // Build de uma vez só: o compiler não serve para mais nada depois
-                // daqui. Fechá-lo no `finally` cobre também o caminho de erro, que
+                // Build de uma vez só: a sessão não serve para mais nada depois
+                // daqui. Fechá-la no `finally` cobre também o caminho de erro, que
                 // é justamente quando o resíduo passava despercebido.
                 await Close()
             }
@@ -427,60 +353,23 @@ const CreateWebInterfaceBuilder = (SmartRequire: (moduleName: string) => any) =>
             return _WatchInProcess()
         }
 
-        const _WatchInProcess = () => new Promise<any>((resolve, reject) => {
-            const watchOptions = {
-                ignored: /node_modules/,
-                aggregateTimeout: 300,
-                // O polling custa um stat de toda a árvore por ciclo. Fica
-                // desligado por padrão (o inotify dá conta) e só liga onde ele
-                // não funciona: volume montado, NFS, container.
-                poll: profile.watchPoll
-            }
+        const _WatchInProcess = async () => {
+            await _AssertContextExists()
 
-            let hasSettled = false
+            const { summary } = await _EnsureSession().StartWatch({
+                onCycle: ({ summary: cycleSummary, error }: any) => {
+                    if(error) return Log.error("WebInterfaceBuilder", error)
+                    if(!cycleSummary.ok)
+                        Log.error("WebInterfaceBuilder", `A interface ${serverAppName} tem erros de compilação:\n${FormatErrors(cycleSummary.errors)}`)
+                    else
+                        Log.info("WebInterfaceBuilder", `A interface ${serverAppName} foi atualizada com sucesso`)
+                }
+            })
 
-            _AssertContextExists()
-                .then(() => {
-                    // O objeto `Watching` é o ÚNICO handle capaz de parar o watcher.
-                    // Antes ele era descartado, e o watcher (com polling de 1s sobre
-                    // a árvore do pacote) ficava vivo até o processo morrer — mesmo
-                    // depois do Stop da task.
-                    watching = _EnsureCompiler().watch(watchOptions, (error: any, stats: any) => {
-                        if(error){
-                            Log.error("WebInterfaceBuilder", error)
-                            // Erro de infraestrutura no primeiro ciclo é fatal: não há
-                            // bundle para servir e o watcher não vai se recuperar.
-                            if(!hasSettled){
-                                hasSettled = true
-                                Close().finally(() => reject(error instanceof Error ? error : new Error(String(error))))
-                            }
-                            return
-                        }
-
-                        const summary = SummarizeStats(stats)
-
-                        if(!summary.ok)
-                            Log.error("WebInterfaceBuilder", `A interface ${serverAppName} tem erros de compilação:\n${FormatErrors(summary.errors)}`)
-                        else
-                            Log.info("WebInterfaceBuilder", `A interface ${serverAppName} foi atualizada com sucesso`)
-
-                        // Resolve no PRIMEIRO ciclo, com ou sem erro de compilação:
-                        // em watch, erro de código é transitório — o desenvolvedor
-                        // corrige e o próximo ciclo conserta. Antes, `Watch()` não
-                        // devolvia promise alguma e quem chamava registrava o
-                        // diretório estático antes de existir qualquer bundle nele.
-                        if(!hasSettled){
-                            hasSettled = true
-                            resolve({ output, summary, Close, pid: null })
-                        }
-                    })
-                })
-                .catch((error: any) => {
-                    if(hasSettled) return
-                    hasSettled = true
-                    Close().finally(() => reject(error))
-                })
-        })
+            // O `Close` devolvido é o do builder, não o da sessão: só ele também
+            // cancela o debounce do progresso.
+            return { output, summary, Close, pid: null }
+        }
 
         // `Build` deixa a escolha entre compilar uma vez e ficar observando com o
         // PERFIL, não com quem chama. Run/Watch continuam expostos para quem
@@ -499,7 +388,7 @@ const CreateWebInterfaceBuilder = (SmartRequire: (moduleName: string) => any) =>
 }
 
 CreateWebInterfaceBuilder.NormalizeComponentLibraries = NormalizeComponentLibraries
-CreateWebInterfaceBuilder.SummarizeStats = SummarizeStats
+CreateWebInterfaceBuilder.SummarizeStats = require("./BuildEngines/WebpackEngine").SummarizeStats
 CreateWebInterfaceBuilder.BuildProfiles  = BuildProfiles
 
 module.exports = CreateWebInterfaceBuilder

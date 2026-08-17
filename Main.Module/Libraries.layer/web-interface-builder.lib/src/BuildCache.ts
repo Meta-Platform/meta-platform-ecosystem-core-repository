@@ -95,6 +95,7 @@ const ComputeWebInterfaceFingerprint = ({
     componentLibraries = [],
     wasmModules = [],
     buildProfile,
+    buildEngine,
     entrypoint,
     htmlTemplate
 }: {
@@ -103,6 +104,7 @@ const ComputeWebInterfaceFingerprint = ({
     componentLibraries?: ComponentLibrary[]
     wasmModules?: WasmModule[]
     buildProfile?: string
+    buildEngine?: string
     entrypoint?: string
     htmlTemplate?: string
 }): string => {
@@ -112,6 +114,11 @@ const ComputeWebInterfaceFingerprint = ({
     // diferentes. Sem o perfil aqui, trocar de perfil serviria o bundle do
     // perfil anterior como se estivesse atualizado.
     hash.update("[profile]" + (buildProfile || "default") + "\n")
+    // Pelo mesmo motivo, o MOTOR entra na assinatura: webpack e rspack produzem
+    // bundles diferentes da mesma fonte. Sem isto, trocar de motor serviria o
+    // artefato do motor anterior como se estivesse atualizado — e o build novo
+    // pareceria não ter efeito nenhum.
+    hash.update("[engine]" + (buildEngine || "default") + "\n")
     // Entrada e template mudam o resultado sem mudar byte nenhum da árvore.
     hash.update("[entry]" + (entrypoint || "") + "|" + (htmlTemplate || "") + "\n")
     hash.update("[context]\n")

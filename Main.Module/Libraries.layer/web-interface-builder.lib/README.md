@@ -6,9 +6,13 @@
 
 ## Propósito
 
-Constrói e empacota, com webpack, a interface web de um pacote `.webgui`. É esta
-lib que faz um `.webgui` deixar de ser código-fonte e virar um bundle servido em
-runtime — por isso nenhum `.webgui` roda sozinho.
+Constrói e empacota a interface web de um pacote `.webgui`. É esta lib que faz um
+`.webgui` deixar de ser código-fonte e virar um bundle servido em runtime — por
+isso nenhum `.webgui` roda sozinho.
+
+Quem compila é um **motor** selecionável. O webpack é o padrão e continua sendo o
+único implementado, mas deixou de ser a única estratégia possível: ver
+[Motores de build](#motores-de-build).
 
 Vive no `ecosystem-core` porque é ali que mora a capacidade web da plataforma, e
 é injetada nos *task loaders* pelo registry: `endpoint-instance` (core) a usa
@@ -29,6 +33,75 @@ pacote-alvo, e não as desta lib.
 | `BuildCache.ts` | Assinatura das entradas do build, manifesto e faxina de assets órfãos. |
 | `CreateBuildWorkerClient.ts` | Lança e conversa com o processo filho que compila. |
 | `BuildWorkerEntry.ts` | O processo filho. Compila e morre. |
+| `ResolveBuildEngine.ts` | Registro dos motores. Escolhe qual compila, com a mesma precedência do perfil. |
+| `BuildEngines/WebpackEngine.ts` | O motor webpack: carrega o bundler, monta o compilador e resume o resultado. |
+
+## Motores de build
+
+Até pouco tempo o webpack não era uma escolha: a configuração e o ciclo de vida
+do compilador estavam espalhados pelo builder **e duplicados** no worker. Trocar
+de estratégia significaria mexer nos dois lugares, e o `stats` do webpack vazava
+para o resto do código.
+
+Hoje há um contrato. Um motor é uma fábrica `(SmartRequire) => motor`, e o motor
+oferece:
+
+| Membro | Contrato |
+|---|---|
+| `name` | O nome pelo qual o motor é escolhido. Entra na assinatura do cache. |
+| `CreateSession({ params, profile })` | Devolve a sessão de um build concreto. |
+
+E a sessão:
+
+| Membro | Contrato |
+|---|---|
+| `RunOnce()` | Compila uma vez. Resolve com o **resumo**. Rejeita SÓ em falha de infraestrutura — código que não compila volta como `summary.ok === false`, porque quem decide o que fazer com isso é o chamador. |
+| `StartWatch({ onCycle })` | Observa. Resolve no primeiro ciclo, com ou sem erro de compilação. `onCycle` recebe todo ciclo, como `{ summary }` ou `{ error }`. |
+| `Close()` | Libera tudo. Idempotente. |
+
+O contrato é deliberadamente de **alto nível** — "compile isto e me diga como
+foi". Um contrato em torno do objeto `compiler` admitiria só bundlers com a API
+do webpack e fecharia a porta para estratégias de outra forma.
+
+O **resumo** é `structuredClone`-able de propósito: é o mesmo formato que
+atravessa o IPC quando o build roda em processo separado. Nenhum objeto do
+bundler cruza essa fronteira — o `stats` do webpack referencia a `Compilation`
+inteira, e devolvê-lo ao chamador ancoraria o build todo no heap.
+
+### Como escolher
+
+Precedência, igual à do perfil:
+
+1. `META_WEBGUI_BUILD_ENGINE` (variável de ambiente) — para forçar numa
+   instalação inteira sem reprovisionar todo mundo.
+2. `webguiBuildEngine` no metadado do pacote, ou `RT_WEBGUI_BUILD_ENGINE` do
+   `ecosystem-defaults`.
+3. O padrão: `webpack`.
+
+Nome desconhecido **falha**, e falha cedo. Cair no padrão em silêncio faria um
+erro de digitação virar "o motor novo não mudou nada", e a investigação começaria
+no lugar errado.
+
+O nome escolhido entra na assinatura do `BuildCache` **e** no nome do diretório
+de assets. Sem isso, trocar de motor serviria o artefato do motor anterior como
+se estivesse atualizado — e o build novo pareceria não ter efeito nenhum.
+
+### Como acrescentar um motor
+
+Um módulo em `BuildEngines/` que cumpra o contrato acima, mais uma linha em
+`ENGINE_FILES` no `ResolveBuildEngine.ts`. Nada mais: o builder, o worker e o
+cache já falam com o motor pelo contrato.
+
+Dois candidatos previstos, e por que nesta ordem:
+
+- **rspack** — webpack reescrito em Rust, com API e configuração compatíveis. É a
+  troca de maior retorno com menor risco: mantém a semântica dos webguis
+  existentes e tira o trabalho de dentro do heap do V8.
+- **esbuild** — para interfaces que não dependem de loaders específicos. A API
+  Node dele já executa o compilador como processo filho, então o build nunca
+  infla o heap do serviço. Em troca **não faz checagem de tipos** e **não emite
+  ES5**, o que exige subir o `target` dos `tsconfig.json` das webguis. É mudança
+  de comportamento — precisa ser decidida, não descoberta.
 
 ## Como usar
 

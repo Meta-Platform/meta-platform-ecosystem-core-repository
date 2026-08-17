@@ -29,9 +29,7 @@ const _RequireSibling = (name: string): any => {
 }
 
 const BuildProfiles       = _RequireSibling("BuildProfiles")
-const CreateWebpackConfig = _RequireSibling("CreateWebpackConfig")
-
-const MAX_MESSAGES = 200
+const ResolveBuildEngine  = _RequireSibling("ResolveBuildEngine")
 
 const _Send = (message: any) => {
     if(process.send) process.send(message)
@@ -41,31 +39,6 @@ const _Send = (message: any) => {
 const _Message = (entry: any): string =>
     typeof entry === "string" ? entry : (entry && (entry.message || String(entry))) || ""
 
-const _Summarize = (stats: any, startedAtMs: number) => {
-    const compilation = (stats && stats.compilation) || {}
-    const errors      = compilation.errors   || []
-    const warnings    = compilation.warnings || []
-    const assets      = compilation.assets   || {}
-    const assetNames: string[]  = Object.keys(assets)
-
-    return {
-        ok:           errors.length === 0,
-        errorCount:   errors.length,
-        warningCount: warnings.length,
-        errors:       errors.slice(0, MAX_MESSAGES).map(_Message),
-        warnings:     warnings.slice(0, MAX_MESSAGES).map(_Message),
-        assetCount:   assetNames.length,
-        outputBytes:  assetNames.reduce((total: number, name: string) => {
-            const asset = assets[name]
-            const size  = asset && typeof asset.size === "function" ? asset.size() : 0
-            return total + (Number.isFinite(size) ? size : 0)
-        }, 0),
-        elapsedMs:    Date.now() - startedAtMs,
-        // O pico de memória DESTE processo é a medida honesta do custo do build:
-        // é exatamente o que o processo pai deixou de pagar.
-        peakRssBytes: process.memoryUsage ? process.memoryUsage().rss : undefined
-    }
-}
 
 // A resolução de TypeScript também é instalada por conta própria, e ANTES de
 // qualquer require por caminho: o hook vive no processo, e este é um processo
@@ -95,13 +68,14 @@ const _InstallLogger = (job: any) => {
     globalThis.Log = { info: _noop, warn: _noop, error: _noop, message: _noop, child: () => globalThis.Log, source: () => globalThis.Log } as any
 }
 
-const _LoadWebpack = (job: any) => {
-    const SmartRequire = require(job.smartRequirePath)
-    return {
-        webpack:           SmartRequire("webpack"),
-        HtmlWebpackPlugin: SmartRequire("html-webpack-plugin")
-    }
-}
+// O pico de RSS do FILHO é a prova de que o build saiu daqui: é o número que o
+// pai registra no log ("processo isolado, pico de N MB"). Medido no envio, e não
+// dentro do resumo, porque o resumo agora é do motor — e o motor não sabe (nem
+// precisa saber) que está rodando num processo separado.
+const _WithPeakRss = (summary: any) => ({
+    ...summary,
+    peakRssBytes: process.memoryUsage ? process.memoryUsage().rss : undefined
+})
 
 const RunJob = async (job: any): Promise<{ exitAfterSend: boolean }> => {
     // Ordem obrigatória: a resolução primeiro, porque o logger é TypeScript.
@@ -114,7 +88,13 @@ const RunJob = async (job: any): Promise<{ exitAfterSend: boolean }> => {
         overrides:   job.buildOverrides
     })
 
-    const { webpack, HtmlWebpackPlugin } = _LoadWebpack(job)
+    // O MOTOR vem do job: o pai já resolveu qual é, e o filho não pode escolher
+    // sozinho — divergir aqui faria o build isolado produzir um artefato
+    // diferente do que o build em processo produziria, sem nada acusar.
+    const engine = ResolveBuildEngine({
+        engineName:   job.buildEngine,
+        SmartRequire: require(job.smartRequirePath)
+    })
 
     let lastReported = -1
     const onProgress = (percentage: number) => {
@@ -127,54 +107,34 @@ const RunJob = async (job: any): Promise<{ exitAfterSend: boolean }> => {
         }
     }
 
-    const config = CreateWebpackConfig({
-        webpack,
-        HtmlWebpackPlugin,
-        params: { ...job.params, onProgress: job.reportProgress ? onProgress : undefined },
+    const session = engine.CreateSession({
+        params:  { ...job.params, onProgress: job.reportProgress ? onProgress : undefined },
         profile
     })
 
-    const compiler = webpack(config)
-    const startedAtMs = Date.now()
-
-    const _CloseCompiler = () => new Promise<void>((resolve) => {
-        try { compiler.close(() => resolve()) } catch(e) { resolve() }
-    })
-
     if(!profile.watch){
-        // Build de uma vez: compila, responde e o processo acaba. O `close()`
+        // Build de uma vez: compila, responde e o processo acaba. O `Close()`
         // aqui é por higiene — o que realmente libera tudo é o exit logo abaixo.
-        const summary = await new Promise((resolve, reject) => {
-            compiler.run((error: any, stats: any) => {
-                if(error) return reject(error instanceof Error ? error : new Error(String(error)))
-                resolve(_Summarize(stats, startedAtMs))
-            })
-        })
-
-        await _CloseCompiler()
-        _Send({ type: "done", summary })
+        const summary = await session.RunOnce()
+        await session.Close()
+        _Send({ type: "done", summary: _WithPeakRss(summary) })
         return { exitAfterSend: true }
     }
 
     // Watch: o processo fica vivo, dono do watcher, até o pai pedir para fechar.
     // Toda a memória do watch mora aqui — nenhuma parte dela toca o processo pai.
     let hasSentFirst = false
-    const watching = compiler.watch(
-        { ignored: /node_modules/, aggregateTimeout: 300, poll: profile.watchPoll },
-        (error: any, stats: any) => {
-            if(error){
-                _Send({ type: "error", message: _Message(error), stack: error && error.stack })
-                return
-            }
-            const summary = _Summarize(stats, startedAtMs)
-            _Send({ type: hasSentFirst ? "rebuilt" : "done", summary })
+    await session.StartWatch({
+        onCycle: ({ summary, error }: any) => {
+            if(error) return _Send({ type: "error", message: _Message(error), stack: error && error.stack })
+            _Send({ type: hasSentFirst ? "rebuilt" : "done", summary: _WithPeakRss(summary) })
             hasSentFirst = true
         }
-    )
+    })
 
     process.on("message", (message: any) => {
         if(!message || message.type !== "close") return
-        watching.close(() => _CloseCompiler().then(() => process.exit(0)))
+        session.Close().then(() => process.exit(0))
     })
 
     return { exitAfterSend: false }

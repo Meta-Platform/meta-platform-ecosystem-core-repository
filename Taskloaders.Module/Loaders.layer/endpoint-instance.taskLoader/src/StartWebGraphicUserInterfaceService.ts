@@ -75,6 +75,11 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps: any) => {
             // ambiente META_WEBGUI_BUILD_ISOLATED, dentro do ResolveIsolationFlag.
             webguiBuildIsolated,
             RT_WEBGUI_BUILD_ISOLATED,
+            // Qual motor compila a interface. Mesma precedência do perfil, e o
+            // padrão continua sendo o webpack — o pacote só declara quando quer
+            // outro. Nome desconhecido falha no builder, e falha alto.
+            webguiBuildEngine,
+            RT_WEBGUI_BUILD_ENGINE,
             // Parâmetro legado dos 14 .webgui existentes; vira "debug-watch".
             isWatch,
             componentLibraries,
@@ -86,6 +91,7 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps: any) => {
         const nodeModulesPath = nodejsPackageHandler.getNodeModulesPath()
 
         const buildProfile = webguiBuildProfile || RT_WEBGUI_BUILD_PROFILE
+        const buildEngine  = webguiBuildEngine  || RT_WEBGUI_BUILD_ENGINE
 
         // O perfil entra no nome do diretório: assets de `release` e de `debug`
         // são artefatos diferentes e não podem se sobrescrever.
@@ -93,9 +99,12 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps: any) => {
             BuildProfiles.ResolveBuildProfile({ profileName: buildProfile, isWatch })
         )
 
+        // O perfil e o MOTOR entram no nome do diretório pelo mesmo motivo:
+        // assets de `release` e de `debug`, ou de motores diferentes, são
+        // artefatos distintos e não podem se sobrescrever.
         const outputDirName = ComputeObjectHash({
             url, entrypoint, htmlTemplate, serverEndpointStatus, serverName,
-            context, environmentPath, nodeModulesPath, profileKey
+            context, environmentPath, nodeModulesPath, profileKey, buildEngine
         })
 
         const output = MountOutputDirPath({
@@ -115,6 +124,7 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps: any) => {
             componentLibraries: SerializeComponentLibraries(componentLibraries),
             wasmModules: SerializeWasmModules(wasmModules),
             buildProfile,
+            buildEngine,
             isWatch,
             environmentPath,
             generatedDirName: RT_ENV_GENERATED_DIR_NAME,
