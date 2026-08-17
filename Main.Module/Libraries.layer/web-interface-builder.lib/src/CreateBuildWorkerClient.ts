@@ -117,16 +117,7 @@ const ResolveWorkerRuntime = ({ env = process.env, smartRequire }: {
     if(!(process as any).pkg && !(process.versions && (process.versions as any).pkg))
         return { command: process.execPath, env: {}, kind: "node" }
 
-    // 4. Electron instalado como dependência npm, sob binário empacotado.
-    if(smartRequire){
-        try {
-            const electronPath = smartRequire("electron")
-            if(typeof electronPath === "string")
-                return { command: electronPath, env: { ELECTRON_RUN_AS_NODE: "1" }, kind: "electron-npm" }
-        } catch(e) { /* sem electron instalado */ }
-    }
-
-    // 5. Um `node` de verdade no PATH. É o caso do CONTAINER, e o que faz este
+    // 4. Um `node` de verdade no PATH. É o caso do CONTAINER, e o que faz este
     //    recurso finalmente valer para os painéis: a imagem base é `node:22` e
     //    traz /usr/local/bin/node, mas quem hospeda o painel é o binário
     //    empacotado — então até aqui o build voltava para dentro dele, deixando
@@ -134,6 +125,20 @@ const ResolveWorkerRuntime = ({ env = process.env, smartRequire }: {
     const nodeFromPath = _FindNodeInPath(env)
     if(nodeFromPath)
         return { command: nodeFromPath, env: {}, kind: "node-path" }
+
+    // 5. Electron instalado como dependência npm, sob binário empacotado.
+    //    Vem DEPOIS do PATH de propósito: num container não há electron, e
+    //    tentá-lo primeiro fazia o SmartRequire imprimir "Erro ao tentar carregar
+    //    o electron" no boot de todo painel — um erro que não é erro, no log de
+    //    quem opera. Um node de verdade também é a escolha melhor quando os dois
+    //    existem.
+    if(smartRequire){
+        try {
+            const electronPath = smartRequire("electron")
+            if(typeof electronPath === "string")
+                return { command: electronPath, env: { ELECTRON_RUN_AS_NODE: "1" }, kind: "electron-npm" }
+        } catch(e) { /* sem electron instalado */ }
+    }
 
     // 6. Último recurso: o próprio binário empacotado sabe agir como node puro
     //    sob PKG_EXECPATH=PKG_INVOKE_NODEJS (verificado no binário instalado).
