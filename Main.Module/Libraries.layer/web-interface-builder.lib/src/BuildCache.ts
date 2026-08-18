@@ -192,12 +192,31 @@ const IsWebInterfaceFresh = ({ output, fingerprint }: { output: string, fingerpr
     return true
 }
 
+// Mesma checagem de presença de `IsWebInterfaceFresh`, SEM o fingerprint: só
+// manifesto da versão certa + `index.html` + `bundle.js` no disco. Existe para
+// o modo "confiar no manifesto" (`trustPrebuiltAssets` — ver
+// `endpoint-instance.taskLoader`): computar o fingerprint varre o
+// `node_modules` inteiro por `stat`, e dentro de uma imagem imutável esse
+// custo de arranque não compra nada — o artefato já foi validado uma vez, no
+// momento em que foi construído, e a imagem não muda depois disso. Confiar é
+// o certo ali; é o desenvolvimento, onde a árvore muda a cada `git checkout`,
+// que precisa da revalidação por fingerprint.
+const HasPrebuiltWebInterfaceArtifacts = ({ output }: { output: string }): boolean => {
+    const manifest = ReadBuildManifest(output)
+    if(!manifest) return false
+    if(manifest.cacheVersion !== CACHE_VERSION) return false
+    if(!fs.existsSync(join(output, "index.html"))) return false
+    if(!fs.existsSync(join(output, "bundle.js"))) return false
+    return true
+}
+
 // Remove diretórios de assets órfãos.
 //
-// O nome do diretório do caminho HTTP deriva de um hash da configuração (porta,
-// URL, perfil, caminhos). Qualquer mudança nesses valores gera um diretório
-// NOVO e abandona o anterior — e não havia nada que limpasse os antigos. Num
-// ambiente que muda de porta algumas vezes, `.generated_data` só cresce.
+// O nome do diretório deriva de um hash do app, entrada, template, perfil e
+// motor (ver `OutputDirectory.ts`). Qualquer mudança nesses valores gera um
+// diretório NOVO e abandona o anterior — e não havia nada que limpasse os
+// antigos. Num ambiente que reprovisiona ou troca de perfil algumas vezes,
+// `.generated_data` só cresce.
 //
 // Conservador de propósito: só apaga o que tem cara de assets de interface,
 // nunca o que está em uso nesta execução, e nunca o que foi tocado
@@ -251,5 +270,6 @@ module.exports = {
     ReadBuildManifest,
     WriteBuildManifest,
     IsWebInterfaceFresh,
+    HasPrebuiltWebInterfaceArtifacts,
     PurgeStaleWebInterfaceAssets
 }

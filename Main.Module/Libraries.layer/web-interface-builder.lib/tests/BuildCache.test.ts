@@ -164,6 +164,52 @@ describe("BuildCache — quando o bundle serve", () => {
     })
 })
 
+describe("BuildCache — presença de artefato pré-construído, sem fingerprint", () => {
+
+    // `HasPrebuiltWebInterfaceArtifacts` existe para o modo `trustPrebuiltAssets`:
+    // ele NUNCA recebe um fingerprint (a assinatura nem é calculada — é
+    // justamente a varredura de node_modules que esse modo evita), só confere
+    // manifesto e arquivos no disco.
+
+    it("serve com manifesto da versão certa e os dois artefatos no disco", () => {
+        const generated = fs.mkdtempSync(path.join(os.tmpdir(), "wib-trust-"))
+        const output = path.join(generated, "app.webInterfaceAssets")
+        fs.mkdirSync(output)
+        fs.writeFileSync(path.join(output, "index.html"), "<html></html>")
+        fs.writeFileSync(path.join(output, "bundle.js"), "1")
+
+        assert.equal(BuildCache.HasPrebuiltWebInterfaceArtifacts({ output }), false, "sem manifesto não serve")
+
+        BuildCache.WriteBuildManifest(output, { fingerprint: "não importa aqui", serverAppName: "app", profileName: "release" })
+        assert.equal(BuildCache.HasPrebuiltWebInterfaceArtifacts({ output }), true)
+    })
+
+    it("manifesto de versão antiga não serve", () => {
+        const output = fs.mkdtempSync(path.join(os.tmpdir(), "wib-trust-old-"))
+        fs.writeFileSync(path.join(output, "index.html"), "<html></html>")
+        fs.writeFileSync(path.join(output, "bundle.js"), "1")
+        fs.writeFileSync(path.join(output, ".meta-build-manifest.json"), JSON.stringify({ cacheVersion: 1 }))
+
+        assert.equal(BuildCache.HasPrebuiltWebInterfaceArtifacts({ output }), false)
+    })
+
+    it("artefato ausente não serve, mesmo com manifesto presente", () => {
+        const output = fs.mkdtempSync(path.join(os.tmpdir(), "wib-trust-missing-"))
+        BuildCache.WriteBuildManifest(output, { fingerprint: "x" })
+        fs.writeFileSync(path.join(output, "index.html"), "<html></html>")
+        // sem bundle.js
+
+        assert.equal(BuildCache.HasPrebuiltWebInterfaceArtifacts({ output }), false)
+    })
+
+    it("diretório inexistente não é erro", () => {
+        assert.equal(
+            BuildCache.HasPrebuiltWebInterfaceArtifacts({ output: path.join(os.tmpdir(), "wib-trust-nao-existe") }),
+            false
+        )
+    })
+})
+
 describe("BuildCache — faxina de assets órfãos", () => {
 
     let generated: string

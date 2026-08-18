@@ -1,13 +1,6 @@
-const { join } = require("path") as typeof import("path")
-
-const DIR_SUFFIX = "webInterfaceAssets"
-
-const MountOutputDirPath = ({environmentPath, outputDirName, RT_ENV_GENERATED_DIR_NAME}: {
-    environmentPath: string
-    outputDirName: string
-    RT_ENV_GENERATED_DIR_NAME: string
-}) =>
-    join(environmentPath, RT_ENV_GENERATED_DIR_NAME, `${outputDirName}.${DIR_SUFFIX}`)
+// O nome e a montagem do diretório de saída vêm de `WebInterfaceBuilder.OutputDirectory`
+// (injetado por runtimeDeps) — não são mais calculados aqui. Ver o comentário
+// sobre portabilidade em `OutputDirectory.ts`, no web-interface-builder.lib.
 
 const SerializeComponentLibraries = (componentLibraries: Record<string, any> = {}) =>
     Object.keys(componentLibraries).map((requestedAlias) => {
@@ -37,12 +30,12 @@ const SerializeWasmModules = (wasmModules: Record<string, any> = {}) =>
         }
     })
 
-// Fábrica: recebe runtimeDeps (ComputeObjectHash + WebInterfaceBuilder injetados pelo
-// registry) e devolve o StartWebGraphicUserInterfaceService — sem require relativo até
-// o essential nem até o WebInterfaceBuilder (que agora vive no ecosystem-core).
+// Fábrica: recebe runtimeDeps (WebInterfaceBuilder injetado pelo registry) e
+// devolve o StartWebGraphicUserInterfaceService — sem require relativo até o
+// essential nem até o WebInterfaceBuilder (que agora vive no ecosystem-core).
 const CreateStartWebGraphicUserInterfaceService = (runtimeDeps: any) => {
 
-    const { ComputeObjectHash, WebInterfaceBuilder, paths } = runtimeDeps
+    const { WebInterfaceBuilder, paths } = runtimeDeps
 
     // Os perfis vêm anexados ao builder injetado — esta lib vive noutro pacote e
     // não pode alcançá-los por require relativo. O objeto vazio cobre um
@@ -53,12 +46,83 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps: any) => {
         ResolveBuildProfile: () => ({})
     }
 
+    // Nomeia e monta o diretório de saída — a MESMA conta que um pré-build
+    // (`PrebuildWebInterface.ts`, no web-interface-builder.lib) usa, para que
+    // um artefato construído fora do ciclo de vida do serviço seja achado
+    // aqui. Ao contrário de `BuildProfiles`/`BuildCache` logo abaixo, este NÃO
+    // tem fallback: os dois módulos vivem no mesmo pacote e sempre viajam
+    // juntos — não existe um "ecosystem-core anterior" que tenha um sem o outro.
+    const { OutputDirectory } = WebInterfaceBuilder
+
+    // BuildCache e a resolução do NOME do motor cobrem o modo "servir artefato
+    // pronto" (ver `_TryServePrebuiltAssets`). Opcionais de propósito: um
+    // ecosystem-core anterior a este recurso não os anexa ao builder injetado,
+    // e sem eles o comportamento cai para o de sempre — compila toda vez que
+    // o endpoint sobe.
+    const { BuildCache, ResolveBuildEngineName } = WebInterfaceBuilder
+
+    // Decide se o que já está em `output` pode ser servido sem compilar de
+    // novo. Só entra em jogo fora de watch (watch sempre observa a partir do
+    // zero) e quando BuildCache está disponível.
+    //
+    // Dois modos, com o padrão sendo o mais cauteloso:
+    //
+    // - revalidando (padrão): recalcula o fingerprint das entradas — a MESMA
+    //   conta que um build de verdade faria — e só serve se bater com o
+    //   manifesto gravado. É o certo em desenvolvimento, onde a árvore muda a
+    //   cada `git checkout` e o fingerprint é a única forma de perceber isso.
+    // - confiando (`trustPrebuiltAssets` / `META_WEBGUI_TRUST_PREBUILT`): pula
+    //   o fingerprint por completo. Calculá-lo varre o node_modules INTEIRO
+    //   por `stat` — custo de arranque que uma imagem imutável não recupera:
+    //   o artefato já foi validado uma vez, no momento em que foi construído,
+    //   e a imagem não muda depois disso. Só confere manifesto + arquivos.
+    //
+    // Em qualquer um dos dois, achar o artefato pronto pula o build INTEIRO:
+    // nem o builder é instanciado, nem o motor é CARREGADO — só o NOME é
+    // validado, e `ResolveBuildEngineName` não faz `require` de bundler nenhum.
+    const _TryServePrebuiltAssets = ({
+        output, context, nodeModulesPath, entrypoint, htmlTemplate,
+        profile, buildEngine, componentLibraries, wasmModules, trustPrebuiltAssets, serverName
+    }: any) => {
+
+        if(!BuildCache || !ResolveBuildEngineName) return undefined
+        if(profile.watch) return undefined
+
+        const trust = BuildProfiles.ResolveTrustPrebuiltFlag
+            ? BuildProfiles.ResolveTrustPrebuiltFlag({ value: trustPrebuiltAssets })
+            : false
+
+        if(trust){
+            if(!BuildCache.HasPrebuiltWebInterfaceArtifacts({ output })) return undefined
+        } else {
+            const engineName = ResolveBuildEngineName({ engineName: buildEngine })
+            const fingerprint = BuildCache.ComputeWebInterfaceFingerprint({
+                context,
+                nodeModules: nodeModulesPath,
+                componentLibraries: SerializeComponentLibraries(componentLibraries),
+                wasmModules: SerializeWasmModules(wasmModules),
+                buildProfile: profile.name,
+                buildEngine: engineName,
+                entrypoint,
+                htmlTemplate
+            })
+            if(!BuildCache.IsWebInterfaceFresh({ output, fingerprint })) return undefined
+        }
+
+        const manifest = BuildCache.ReadBuildManifest(output)
+        const builtAt = (manifest && manifest.builtAt) || "data desconhecida"
+        Log.info("WebUserInterfacePackager",
+            `servindo interface pré-construída para ${serverName} — construída em ${builtAt}` +
+            (trust ? " (sem revalidar a assinatura)" : "")
+        )
+        return { output, Close: async () => {} }
+    }
+
     const StartWebGraphicUserInterfaceService = async ({
         loaderParams
     }: { loaderParams: any }) => {
         const {
             nodejsPackageHandler,
-            url,
             entrypoint,
             htmlTemplate,
             serverEndpointStatus,
@@ -83,7 +147,12 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps: any) => {
             // Parâmetro legado dos 14 .webgui existentes; vira "debug-watch".
             isWatch,
             componentLibraries,
-            wasmModules
+            wasmModules,
+            // Serve o artefato já construído sem revalidar o fingerprint — ver
+            // `_TryServePrebuiltAssets`. Padrão: revalidar (o comportamento de
+            // sempre). "on"/"true" liga; qualquer outra coisa mantém o padrão —
+            // e `META_WEBGUI_TRUST_PREBUILT` no ambiente vence os dois.
+            trustPrebuiltAssets
         } = loaderParams
 
         const context = nodejsPackageHandler.getSourcePath()
@@ -93,25 +162,53 @@ const CreateStartWebGraphicUserInterfaceService = (runtimeDeps: any) => {
         const buildProfile = webguiBuildProfile || RT_WEBGUI_BUILD_PROFILE
         const buildEngine  = webguiBuildEngine  || RT_WEBGUI_BUILD_ENGINE
 
+        const profile = BuildProfiles.ResolveBuildProfile({ profileName: buildProfile, isWatch })
+
         // O perfil entra no nome do diretório: assets de `release` e de `debug`
         // são artefatos diferentes e não podem se sobrescrever.
-        const profileKey = BuildProfiles.GetProfileFingerprintKey(
-            BuildProfiles.ResolveBuildProfile({ profileName: buildProfile, isWatch })
-        )
+        const profileKey = BuildProfiles.GetProfileFingerprintKey(profile)
 
-        // O perfil e o MOTOR entram no nome do diretório pelo mesmo motivo:
-        // assets de `release` e de `debug`, ou de motores diferentes, são
-        // artefatos distintos e não podem se sobrescrever.
-        const outputDirName = ComputeObjectHash({
-            url, entrypoint, htmlTemplate, serverEndpointStatus, serverName,
-            context, environmentPath, nodeModulesPath, profileKey, buildEngine
+        // Nome PORTÁVEL: só o que descreve O QUE está sendo construído — app,
+        // entrada, template, perfil, motor. `context`, `environmentPath` e
+        // `nodeModulesPath` (caminhos ABSOLUTOS do host) ficaram de fora — ver
+        // o comentário em `OutputDirectory.ts` (web-interface-builder.lib)
+        // sobre o efeito colateral aceito: um build anterior, gravado sob o
+        // hash antigo, fica órfão e o primeiro build depois desta mudança
+        // acontece de novo, uma vez só. Dali em diante o mesmo pacote, em
+        // qualquer máquina, aponta para o mesmo diretório — é o que permite
+        // construir num lugar (uma imagem, outro módulo) e servir noutro.
+        //
+        // `url` e `serverEndpointStatus` também ficaram de fora — mesmo sem
+        // amarrar a máquina (são portáveis: rota lógica e "localhost:PORTA"
+        // fixos no metadado do pacote, não algo descoberto do socket real).
+        // Achado, não corrigido aqui: `serverEndpointStatus` é baked no bundle
+        // (vira `process.env.HTTP_SERVER_MANAGER_ENDPOINT` — ver
+        // CreateWebpackConfig.ts) mas NUNCA entrou no fingerprint do
+        // BuildCache, só no nome do diretório antigo. Antes, mudar a porta
+        // criava um diretório novo e escondia essa lacuna; agora que o nome
+        // não depende mais disso, um pacote que muda só de porta reaproveita o
+        // diretório anterior e o cache o considera fresco — servindo um bundle
+        // com o endereço do server-manager errado embutido. A correção certa é
+        // acrescentar `serverEndpointStatus` ao fingerprint do BuildCache, não
+        // devolvê-lo ao nome do diretório.
+        const outputDirName = OutputDirectory.ComputeOutputDirName({
+            serverAppName: serverName, entrypoint, htmlTemplate, profileKey, buildEngine
         })
 
-        const output = MountOutputDirPath({
+        const output = OutputDirectory.MountOutputDirPath({
             environmentPath,
             outputDirName,
-            RT_ENV_GENERATED_DIR_NAME
+            generatedDirName: RT_ENV_GENERATED_DIR_NAME
         })
+
+        // Artefato pronto? Serve e pula o build inteiro — nem o builder é
+        // instanciado, nem o motor é carregado.
+        const prebuilt = _TryServePrebuiltAssets({
+            output, context, nodeModulesPath, entrypoint, htmlTemplate,
+            profile, buildEngine, componentLibraries, wasmModules,
+            trustPrebuiltAssets, serverName
+        })
+        if(prebuilt) return prebuilt
 
         const builder = await WebInterfaceBuilder({
             entrypoint,

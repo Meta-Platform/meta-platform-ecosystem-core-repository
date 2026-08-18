@@ -7,6 +7,7 @@ const CreateWebpackConfig = require("../src/CreateWebpackConfig")
 const {
     ResolveBuildProfile,
     ResolveIsolationFlag,
+    ResolveTrustPrebuiltFlag,
     GetProfileFingerprintKey,
     MapLegacyIsWatch,
     RELEASE,
@@ -133,6 +134,30 @@ describe("BuildProfiles — bandeiras que precisam poder ser DESLIGADAS", () => 
 
     it("o ambiente também desliga", () => {
         assert.equal(ResolveIsolationFlag({ value: "on", env: { META_WEBGUI_BUILD_ISOLATED: "off" } }), false)
+    })
+
+    it("ausência mantém DESLIGADO — polaridade oposta à do isolamento", () => {
+        // Aqui o padrão é revalidar. Diferente de `ResolveIsolationFlag`
+        // (padrão ligado, "off" desliga), a polaridade certa para esta
+        // bandeira é a oposta: padrão desligado, só "on"/"true" liga.
+        assert.equal(ResolveTrustPrebuiltFlag({ env: {} }), false)
+        assert.equal(ResolveTrustPrebuiltFlag({ value: "on",   env: {} }), true)
+        assert.equal(ResolveTrustPrebuiltFlag({ value: "true", env: {} }), true)
+        assert.equal(ResolveTrustPrebuiltFlag({ value: "ON",   env: {} }), true)
+        assert.equal(ResolveTrustPrebuiltFlag({ value: "off",  env: {} }), false)
+    })
+
+    it("a armadilha do topo do arquivo é inofensiva com esta polaridade", () => {
+        // `trustPrebuiltAssets: false` no metadado chega aqui como a STRING do
+        // nome do parâmetro (truthy, mas nem "on" nem "true") — e cai no
+        // mesmo `false` que já seria o padrão. Não há como essa armadilha
+        // ligar o modo de confiança sem querer.
+        assert.equal(ResolveTrustPrebuiltFlag({ value: "trustPrebuiltAssets", env: {} }), false)
+    })
+
+    it("o ambiente vence o parâmetro do pacote, nos dois sentidos", () => {
+        assert.equal(ResolveTrustPrebuiltFlag({ value: "off", env: { META_WEBGUI_TRUST_PREBUILT: "on" } }), true)
+        assert.equal(ResolveTrustPrebuiltFlag({ value: "on",  env: { META_WEBGUI_TRUST_PREBUILT: "off" } }), false)
     })
 
     it("o polling do watch é religável por variável de ambiente", () => {

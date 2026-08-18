@@ -10,6 +10,7 @@ const CreateWebpackConfig     = require("./CreateWebpackConfig")
 const CreateBuildWorkerClient = require("./CreateBuildWorkerClient")
 const BuildCache              = require("./BuildCache")
 const ResolveBuildEngine      = require("./ResolveBuildEngine")
+const OutputDirectory         = require("./OutputDirectory")
 
 const CheckPackageDirExist = (path: string) => exists(`${path}`)
 
@@ -384,11 +385,28 @@ const CreateWebInterfaceBuilder = (SmartRequire: (moduleName: string) => any) =>
     // relativo até esta lib.
     WebInterfaceBuilder.BuildProfiles = BuildProfiles
 
+    // BuildCache, OutputDirectory e o nome do motor viajam pelo mesmo motivo,
+    // e por um adicional: o `endpoint-instance.taskLoader` precisa decidir se
+    // já existe artefato pronto para servir ANTES de chamar `WebInterfaceBuilder`
+    // — e "antes de chamar" é justamente o momento em que ele só tem a fábrica,
+    // não uma instância. Sem isto, servir um artefato pré-construído exigiria
+    // instanciar o builder (e resolver o motor) só para descobrir que não havia
+    // nada para compilar.
+    WebInterfaceBuilder.BuildCache = BuildCache
+    WebInterfaceBuilder.OutputDirectory = OutputDirectory
+    // Só o NOME resolvido — não o motor carregado. `ResolveBuildEngineName` é
+    // pura validação de string (ver ResolveBuildEngine.ts): não faz `require`
+    // de nenhum bundler, então consultá-la aqui não paga o custo que o modo de
+    // artefato pronto existe para evitar.
+    WebInterfaceBuilder.ResolveBuildEngineName = ResolveBuildEngine.ResolveBuildEngineName
+
     return WebInterfaceBuilder
 }
 
 CreateWebInterfaceBuilder.NormalizeComponentLibraries = NormalizeComponentLibraries
 CreateWebInterfaceBuilder.SummarizeStats = require("./BuildEngines/WebpackEngine").SummarizeStats
 CreateWebInterfaceBuilder.BuildProfiles  = BuildProfiles
+CreateWebInterfaceBuilder.BuildCache     = BuildCache
+CreateWebInterfaceBuilder.OutputDirectory = OutputDirectory
 
 module.exports = CreateWebInterfaceBuilder

@@ -31,8 +31,10 @@ pacote-alvo, e não as desta lib.
 | `BuildProfiles.ts` | Os perfis (`release`, `debug`, `debug-watch`) e a ordem de precedência entre eles. |
 | `CreateWebpackConfig.ts` | Monta a configuração do webpack a partir dos parâmetros e do perfil. **Função pura** — não instancia compilador nem toca no disco, então dá para testá-la sem ter o webpack instalado. |
 | `BuildCache.ts` | Assinatura das entradas do build, manifesto e faxina de assets órfãos. |
+| `OutputDirectory.ts` | Nome PORTÁVEL do diretório de saída e onde ele é montado. |
 | `CreateBuildWorkerClient.ts` | Lança e conversa com o processo filho que compila. |
 | `BuildWorkerEntry.ts` | O processo filho. Compila e morre. |
+| `PrebuildWebInterface.ts` | Caminho de entrada para construir a webgui de um pacote FORA do ciclo de vida do serviço — ver [Pré-build](#pré-build-fora-do-ciclo-de-vida-do-serviço). |
 | `ResolveBuildEngine.ts` | Registro dos motores. Escolhe qual compila, com a mesma precedência do perfil. |
 | `BuildEngines/WebpackEngine.ts` | O motor webpack: carrega o bundler, monta o compilador e resume o resultado. |
 
@@ -238,10 +240,77 @@ cache que erra sempre e um cache que não existe produzem exatamente o mesmo
 sintoma.
 
 `PurgeStaleWebInterfaceAssets` remove diretórios de assets abandonados — o nome
-do diretório deriva de um hash da configuração, então mudar porta, URL ou perfil
-abandona o anterior. A faxina é conservadora: só mexe no que tem manifesto
-nosso, nunca no que está em uso, nunca no que foi tocado recentemente, e nunca
-durante um watch.
+do diretório deriva de um hash da configuração, então mudar o app, a entrada, o
+template, o perfil ou o motor abandona o anterior. A faxina é conservadora: só
+mexe no que tem manifesto nosso, nunca no que está em uso, nunca no que foi
+tocado recentemente, e nunca durante um watch.
+
+## Nome do diretório de saída é PORTÁVEL
+
+`OutputDirectory.ComputeOutputDirName` — usada tanto pelo `endpoint-instance.taskLoader`
+quanto por `PrebuildWebInterface.ts` — depende só de `serverAppName`,
+`entrypoint`, `htmlTemplate`, o perfil e o motor. **Nunca** de `context`,
+`environmentPath` ou `nodeModulesPath`: são caminhos ABSOLUTOS do host, e um
+hash que os incluísse nomearia o mesmo pacote de um jeito diferente em cada
+máquina — um artefato construído numa imagem nunca seria achado pelo container
+que a roda.
+
+Efeito colateral aceito: um build feito ANTES desta portabilidade, sob o hash
+antigo, fica órfão (a faxina acima eventualmente o remove) e recompila uma
+vez. Dali em diante o mesmo pacote, em qualquer máquina, aponta para o mesmo
+diretório.
+
+`url` (a rota HTTP) e `serverEndpointStatus` (o endereço do server-manager,
+baked no bundle) também ficam de fora — não por amarrarem a máquina, mas
+porque nunca entraram no FINGERPRINT do `BuildCache`, só no nome antigo do
+diretório. Isso é uma lacuna pré-existente, não introduzida aqui: um pacote que
+muda só de porta ou de rota reaproveita o diretório anterior, e o cache o
+considera fresco mesmo com o endereço errado embutido no bundle. A correção
+certa é acrescentar `serverEndpointStatus` à assinatura do `BuildCache`.
+
+## Servir sem compilar: `trustPrebuiltAssets`
+
+Antes de instanciar o builder, o `endpoint-instance.taskLoader` confere se o
+diretório de saída já tem um artefato válido (`BuildCache.HasPrebuiltWebInterfaceArtifacts`
+ou, revalidando, `IsWebInterfaceFresh`) e, se tiver, serve direto — sem
+carregar o builder nem resolver o motor.
+
+Dois modos:
+
+| | `trustPrebuiltAssets` **desligado** (padrão) | `trustPrebuiltAssets: "on"` (ou `META_WEBGUI_TRUST_PREBUILT=on`) |
+|---|---|---|
+| confere | manifesto + `index.html` + `bundle.js` + FINGERPRINT batendo | só manifesto + `index.html` + `bundle.js` |
+| custo | varre `node_modules` inteiro por `stat` para calcular o fingerprint | nenhuma varredura |
+| onde é o certo | desenvolvimento — a árvore muda a cada `git checkout` | imagem imutável — o artefato já foi validado quando foi construído, e nada na imagem muda depois |
+
+Mesma armadilha de todo parâmetro booleano desta lib (ver acima): declare
+`"on"`/`"off"`, nunca `true`/`false`.
+
+## Pré-build fora do ciclo de vida do serviço
+
+`PrebuildWebInterface.ts` constrói a webgui de um pacote sem subir nenhum
+endpoint — para uma etapa de build de imagem, ou para outro módulo que
+pré-constrói vários painéis de uma vez. Não é o `BuildWorkerEntry.ts` (aquele é
+o processo filho do build ISOLADO, uma via de medição); é uma interface pensada
+para receber os mesmos dados que o `endpoint-instance.taskLoader` monta.
+
+```bash
+node PrebuildWebInterface.ts config.json
+```
+
+O `config.json` só tem entradas com nome/formato reconhecíveis a partir de
+`loaderParams`. Obrigatórias: `context`, `entrypoint`, `htmlTemplate`,
+`nodeModulesPath`, `serverName`, `environmentPath`, `generatedDirName`,
+`smartRequirePath` (caminho do `SmartRequire` do essential — só existe dentro
+de um ecossistema instalado, por isso é argumento, nunca um padrão inventado).
+Opcionais: `url`, `serverEndpointStatus`, `buildProfile`, `buildEngine`,
+`componentLibraries`, `wasmModules`, `installTypeScriptResolutionPath`,
+`installGlobalLoggerPath`. Recusa perfil de watch — um pré-build produz UM
+artefato e para.
+
+O diretório de saída é calculado pela MESMA `OutputDirectory.ComputeOutputDirName`
+que o taskLoader usa em runtime — é o que garante que o artefato construído
+aqui seja achado lá, sem precisar coordenar caminho nenhum entre os dois.
 
 ## Diagnóstico
 

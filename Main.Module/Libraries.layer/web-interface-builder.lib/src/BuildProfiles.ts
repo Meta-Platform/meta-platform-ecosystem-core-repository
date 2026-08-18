@@ -97,6 +97,7 @@ const ENV_PROFILE   = "META_WEBGUI_BUILD_PROFILE"
 const ENV_WATCH_POLL = "META_WEBGUI_BUILD_WATCH_POLL_MS"
 const ENV_ISOLATED  = "META_WEBGUI_BUILD_ISOLATED"
 const ENV_MAX_OLD_SPACE = "META_WEBGUI_BUILD_MAX_OLD_SPACE_MB"
+const ENV_TRUST_PREBUILT = "META_WEBGUI_TRUST_PREBUILT"
 
 const _Warn = (message: string) => {
     if(globalThis.Log && globalThis.Log.warn) globalThis.Log.warn("BuildProfiles", message)
@@ -177,6 +178,32 @@ const ResolveIsolationFlag = ({
     return true
 }
 
+// Bandeira de três estados, com a polaridade OPOSTA à de `ResolveIsolationFlag`:
+// aqui o padrão é REVALIDAR (recalcular o fingerprint e comparar), e só
+// "on"/"true" liga o modo que confia cego no manifesto. A armadilha do topo do
+// arquivo ("um parâmetro booleano só liga, nunca desliga") é inofensiva com
+// essa polaridade: um `trustPrebuiltAssets: false` mal declarado chega aqui
+// como a string do PRÓPRIO nome do parâmetro (truthy, mas não é "on" nem
+// "true"), então cai no mesmo `false` que já seria o padrão. Se a polaridade
+// fosse a outra (padrão confiando, "off" para revalidar), essa mesma armadilha
+// deixaria o "off" sem efeito — exatamente o defeito que este desenho evita.
+//
+// Confiar é mais rápido e é o certo dentro de uma imagem imutável: o artefato
+// já foi validado quando foi construído, e nada na imagem muda depois.
+// Revalidar (o padrão) é o certo em desenvolvimento, onde a árvore muda a
+// cada `git checkout` e o fingerprint é a única forma de perceber isso.
+const ResolveTrustPrebuiltFlag = ({
+    value,
+    env = (typeof process !== "undefined" ? process.env : {}) || {}
+}: {
+    value?: unknown
+    env?: Record<string, string | undefined>
+} = {}): boolean => {
+    const raw = env[ENV_TRUST_PREBUILT] !== undefined ? env[ENV_TRUST_PREBUILT] : value
+    if(typeof raw === "string") return raw.toLowerCase() === "on" || raw.toLowerCase() === "true"
+    return raw === true
+}
+
 // Assinatura do perfil, para entrar no fingerprint do cache: trocar de perfil
 // precisa invalidar o bundle, senão um `release` reaproveitaria o artefato
 // gordo de um `debug` anterior.
@@ -198,5 +225,6 @@ module.exports = {
     MapLegacyIsWatch,
     ResolveBuildProfile,
     ResolveIsolationFlag,
+    ResolveTrustPrebuiltFlag,
     GetProfileFingerprintKey
 }
