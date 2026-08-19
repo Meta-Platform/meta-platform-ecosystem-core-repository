@@ -31,6 +31,7 @@ const CreateSocketMonitoringState = ({
     let communicationClient: any = undefined
     let healthTimer: NodeJS.Timeout | undefined    = undefined
     let reconnectTimer: NodeJS.Timeout | undefined = undefined
+    let destruido: boolean = false
 
     const _ChangeStatus = (newStatus: string) => {
         if(communicationStatus === newStatus) return
@@ -40,6 +41,32 @@ const CreateSocketMonitoringState = ({
 
     const _StopHealthCheck = () => {
         if(healthTimer){ clearInterval(healthTimer); healthTimer = undefined }
+    }
+
+    const _StopReconnect = () => {
+        if(reconnectTimer){ clearTimeout(reconnectTimer); reconnectTimer = undefined }
+    }
+
+    /*
+        Descartar o cliente é FECHAR o cliente, não apenas soltar a variável.
+
+        Cada cliente carrega um canal gRPC, e o canal se mantém vivo por conta
+        própria: resolver, load balancer, subcanal e um temporizador de backoff
+        que continua tentando reconectar mesmo depois que ninguém mais o
+        referencia. Enquanto ele não for fechado, nada disso é coletado.
+
+        Aqui isso importava mais do que em qualquer outro lugar, porque este
+        arquivo é o único que abre cliente EM LAÇO: a reconexão roda a cada 4 s
+        enquanto a instância não responder, e o diretório de sockets guarda
+        arquivos de instâncias que já morreram. Cada tentativa contra um desses
+        deixava um canal imortal; o `host-agent.app`, que monitora todos os
+        sockets do host, crescia ~100 MiB/h parado por causa disso.
+    */
+    const _DescartarCliente = () => {
+        if(!communicationClient) return
+        const clienteAntigo = communicationClient
+        communicationClient = undefined
+        if(typeof clienteAntigo.Close === "function") clienteAntigo.Close()
     }
 
     // Enquanto CONNECTED, um GetStatus periódico (RPC leve). Se falhar, o processo
@@ -52,7 +79,7 @@ const CreateSocketMonitoringState = ({
                 await communicationClient.GetStatus()
             } catch(e) {
                 _StopHealthCheck()
-                communicationClient = undefined
+                _DescartarCliente()
                 _ChangeStatus(MonitoringStateTypes.UNAVAILABLE)
                 _ScheduleReconnect()
             }
@@ -74,13 +101,23 @@ const CreateSocketMonitoringState = ({
             if(communicationStatus === MonitoringStateTypes.CREATED)
                 _ChangeStatus(MonitoringStateTypes.CONNECTING)
             const instanceCommunicationClient = await CreateCommunicationInterface(socketFilePath)
+            // Um cliente anterior que tenha sobrado sai daqui fechado: sem isto,
+            // toda reconexão bem-sucedida deixaria o canal antigo para trás.
+            _DescartarCliente()
+            if(destruido){
+                // O monitoramento foi encerrado enquanto a conexão subia. O
+                // cliente recém-aberto não tem mais dono — fechar agora, senão
+                // ele sobrevive ao próprio estado que o pediu.
+                if(typeof instanceCommunicationClient.Close === "function") instanceCommunicationClient.Close()
+                return
+            }
             communicationClient = instanceCommunicationClient
             _ChangeStatus(MonitoringStateTypes.CONNECTED)
             _StartHealthCheck()
         }catch(e){
-            communicationClient = undefined
+            _DescartarCliente()
             _ChangeStatus(MonitoringStateTypes.UNAVAILABLE)
-            _ScheduleReconnect()
+            if(!destruido) _ScheduleReconnect()
         }
 
     }
@@ -88,13 +125,29 @@ const CreateSocketMonitoringState = ({
     const ConnectionStatusListener = (f: (status: string) => void) =>
         eventEmitter.on(CONNECTION_STATUS_CHANGE, f)
 
+    /*
+        Encerra o monitoramento deste socket: para os dois temporizadores, fecha
+        o canal e desliga os ouvintes. Sem isto, deixar de monitorar um socket
+        não parava nada — o health check e a reconexão continuavam batendo, e o
+        canal continuava aberto, num estado que ninguém mais consultava.
+    */
+    const Destroy = () => {
+        if(destruido) return
+        destruido = true
+        _StopHealthCheck()
+        _StopReconnect()
+        _DescartarCliente()
+        eventEmitter.removeAllListeners()
+    }
+
     _ConnectInstance()
 
     return {
         GetSocketFilePath: () => socketFilePath,
         GetCommunicationClient: () => communicationClient,
         GetCommunicationStatus: () => communicationStatus,
-        ConnectionStatusListener
+        ConnectionStatusListener,
+        Destroy
     }
 }
 

@@ -31,6 +31,7 @@ const InstanceMonitoringManager = (params: any) => {
         Overview,
         TryInitializeSocketMonitoring,
         InitializeSocketMonitoring,
+        RemoveSocketMonitoring,
         GetMonitoringKeysReady,
         GetSocketMonitoringState,
         AddEventListener
@@ -78,7 +79,14 @@ const InstanceMonitoringManager = (params: any) => {
 
         const __HandlerSocketDirectoryChange = (newSocketFileNameList: string[]) => {
             if(!AreArraysEqual(newSocketFileNameList, socketFileNameList)){
+                // A lista de removidos já era calculada e anunciada; o que faltava
+                // era AGIR sobre ela. Sem esta linha o socket saía da lista, o
+                // painel recebia o aviso de removido, e o monitoramento continuava
+                // batendo no arquivo que não existe mais — a cada 4 s, para sempre.
+                const removidos = socketFileNameList.filter((socketFileName) => !newSocketFileNameList.includes(socketFileName))
                 __ChangeList(newSocketFileNameList)
+                removidos
+                .forEach((socketFileName: string) => RemoveSocketMonitoring(_GetSocketFilePath(socketFileName)))
                 newSocketFileNameList
                 .forEach((socketFileName: string) => TryInitializeSocketMonitoring(_GetSocketFilePath(socketFileName)))
             }

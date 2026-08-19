@@ -40,6 +40,24 @@ const CreateInstanceSocketHandlerManager = ({
         }
     }
 
+    /*
+        Deixar de monitorar tem de DESLIGAR o que estava ligado.
+
+        Só apagar a entrada do mapa não bastaria: o estado de monitoramento tem
+        temporizador de health check, temporizador de reconexão e um canal gRPC
+        aberto, e todos os três seguem vivos por conta própria. Sem `Destroy`, um
+        socket removido continuaria batendo a cada 4 s para sempre, invisível
+        para quem olha o overview.
+    */
+    const RemoveSocketMonitoring = (socketFilePath: string) => {
+        const monitoringStateKey = CreateMonitoringStateKey(socketFilePath)
+        const monitoringState = allMonitoringState[monitoringStateKey]
+        if(!monitoringState) return
+        delete allMonitoringState[monitoringStateKey]
+        if(typeof monitoringState.Destroy === "function") monitoringState.Destroy()
+        eventEmitter.emit(NEW_EVENT)
+    }
+
     const _GetMonitoringStateByKey = (monitoringStateKey: string) => allMonitoringState[monitoringStateKey]
     const _GetMonitoringKeys = () => Object.keys(allMonitoringState)
 
@@ -74,6 +92,7 @@ const CreateInstanceSocketHandlerManager = ({
     return {
         InitializeSocketMonitoring,
         TryInitializeSocketMonitoring,
+        RemoveSocketMonitoring,
         IsSocketBeingMonitored,
         Overview,
         GetMonitoringKeysReady,
