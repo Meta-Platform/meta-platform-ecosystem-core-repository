@@ -63,6 +63,19 @@ const CreateInstanceSocketHandlerManager = ({
 
     const IsSocketBeingMonitored = (monitoringStateKey: string) => !!_GetMonitoringStateByKey(monitoringStateKey)
 
+    /*
+        "Existe conversa acontecendo com a instância deste arquivo AGORA?"
+
+        É o veto que a reconciliação de órfãos consulta antes de cogitar apagar
+        qualquer coisa: enquanto o supervisor fala com a instância, o arquivo é
+        dela, ponto final.
+    */
+    const IsSocketConnected = (socketFilePath: string) => {
+        const monitoringState = _GetMonitoringStateByKey(CreateMonitoringStateKey(socketFilePath))
+        if(!monitoringState) return false
+        return monitoringState.GetCommunicationStatus() === "CONNECTED"
+    }
+
     const Overview = () => {
         return _GetMonitoringKeys()
         .reduce((acc: Record<string, unknown>, monitoringStateKey: string) => {
@@ -94,6 +107,7 @@ const CreateInstanceSocketHandlerManager = ({
         TryInitializeSocketMonitoring,
         RemoveSocketMonitoring,
         IsSocketBeingMonitored,
+        IsSocketConnected,
         Overview,
         GetMonitoringKeysReady,
         AddEventListener,
