@@ -41,6 +41,45 @@ const GetParametersWithData = (parameters: ApiParameter[] | undefined, data: any
 
 }
 
+/*
+    O ERRO DO OUTRO LADO CHEGA INTEIRO, OU NÃO CHEGA.
+
+    Isto aqui montava `new Error("HTTP status 403: " + data)` — o corpo JSON
+    virava texto dentro da mensagem, e `code`, `httpStatus` e `statusCode`
+    sumiam. Quem chama testa exatamente esses campos para separar "o outro lado
+    RECUSOU, e disse por quê" de "o outro lado não respondeu"; sem eles, toda
+    recusa vira indisponibilidade.
+
+    O custo disso foi medido em 19/08/2026: o Platform Manager devolvia
+    `403 {"code":"PERMISSION_DENIED","message":"Operação recusada em 3
+    camada(s): ring-policy, service-identity-permission,
+    package-declared-permission."}` — uma resposta que diz precisamente o que
+    conferir — e o painel exibia "O Platform Manager não respondeu", mandando
+    quem depura procurar socket órfão e processo caído. A interface tem entrada
+    de catálogo para PERMISSION_DENIED, com as três camadas explicadas; ela
+    nunca era alcançada, porque a informação morria nesta linha.
+
+    O `Error` continua sendo um `Error` (nada que dependia de `.message` quebra),
+    só que agora carrega os campos estruturados quando o corpo é JSON com
+    `code`. Corpo não-JSON ou sem `code` mantém exatamente o comportamento
+    anterior, mais o `statusCode`.
+*/
+const BuildResponseError = (statusCode: number, rawBody: string): Error => {
+    let corpo: any = undefined
+    try { corpo = JSON.parse(rawBody) } catch { /* corpo não-JSON: segue como texto */ }
+
+    const mensagem = corpo && typeof corpo.message === "string"
+        ? corpo.message
+        : `HTTP status ${statusCode}: ${rawBody}`
+
+    const erro: any = new Error(mensagem)
+    erro.statusCode = statusCode
+    erro.httpStatus = statusCode
+    erro.responseBody = rawBody
+    if (corpo && typeof corpo.code === "string") erro.code = corpo.code
+    return erro
+}
+
 const GetRequest = ({
     socketPath,
     method,
@@ -88,7 +127,7 @@ const GetRequest = ({
                             resolve(data)
                         }
                     else
-                        reject(new Error(`HTTP status ${res.statusCode}: ${data}`))
+                        reject(BuildResponseError(res.statusCode!, data))
                 })
             })
 
