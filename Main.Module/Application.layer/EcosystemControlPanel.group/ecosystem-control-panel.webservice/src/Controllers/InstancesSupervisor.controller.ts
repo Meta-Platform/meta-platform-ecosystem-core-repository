@@ -31,16 +31,51 @@ const InstancesSupervisorController = (params: any) => {
 
     instanceMonitoringManager.OverviewChangeListener(() => eventEmitter.emit(INSTANCE_OVERVIEW_CHANGE_EVENT))
 
+    /*
+        Um ouvinte por conexão — e ele TEM de sair quando a conexão sai.
+
+        Ficava. O `LogStreaming`, logo abaixo, sempre desligou o seu no "close";
+        este nunca desligou, e é o mais caro dos dois: o ouvinte chama
+        `GetOverview()`, que MONTA um retrato novo a cada disparo. Com N ouvintes
+        mortos acumulados, todo evento de mudança montava N retratos e tentava
+        `send` em N sockets fechados.
+
+        E o evento não é raro: ele sai a cada mudança de status de conexão de
+        instância, e o health check de cada socket roda a cada 4 s, com reconexão
+        também a cada 4 s. Basta uma aba recarregada algumas vezes para o custo
+        virar permanente.
+
+        Foi o que levou o `host-agent.app` — que serve o inventário do host a
+        todos os painéis, e por isso é quem mais recebe conexão — a 1,87 GiB em
+        16h45, crescendo com a ATIVIDADE e parado em repouso. O registro em
+        `docs/incongruencias/host-agent-app--heap-cresce-sem-parar.md` levantava
+        duas hipóteses (retenção real x V8 sem pressão) e dizia que só um heap
+        snapshot decidiria. É a primeira: retenção real, e está aqui.
+
+        Ouve "close" e "error": socket que morre por erro nem sempre emite
+        "close" depois.
+    */
     const InstanceOverviewChange = (ws: any) => {
-        eventEmitter
-        .on(INSTANCE_OVERVIEW_CHANGE_EVENT, () => {
+
+        const Emitir = () => {
             try{
                 const overviewData = instanceMonitoringManager.GetOverview()
                 ws.send(JSON.stringify(overviewData))
             }catch(e: any){
                 Log.error("InstancesSupervisor", e)
             }
-        })
+        }
+
+        eventEmitter.on(INSTANCE_OVERVIEW_CHANGE_EVENT, Emitir)
+
+        let encerrado = false
+        const Encerrar = () => {
+            if(encerrado) return
+            encerrado = true
+            eventEmitter.off(INSTANCE_OVERVIEW_CHANGE_EVENT, Emitir)
+        }
+        ws.on && ws.on("close", Encerrar)
+        ws.on && ws.on("error", Encerrar)
     }
 
     // Streaming de log do processo via socket: conecta no LogStreaming do
