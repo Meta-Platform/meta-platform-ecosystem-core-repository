@@ -5,6 +5,7 @@ const colors = require("colors") as any
 const AreArraysEqual = require("../Utils/AreArraysEqual") as (array1: any[], array2: any[]) => boolean
 
 const CreateInstanceSocketHandlerManager = require("../Helpers/CreateInstanceSocketHandlerManager") as (options: { helpers: any }) => any
+const CreateOrphanSocketReconciler       = require("../Helpers/CreateOrphanSocketReconciler") as (options: any) => any
 
 const InstanceMonitoringManager = (params: any) => {
 
@@ -19,6 +20,7 @@ const InstanceMonitoringManager = (params: any) => {
 
     const WatchSocketDirectory         = supervisorLib.require("WatchSocketDirectory")
     const ListSocketFilesName          = supervisorLib.require("ListSocketFilesName")
+    const InspectSocketFile            = supervisorLib.require("InspectSocketFile")
     const CreateCommunicationInterface = supervisorLib.require("CreateCommunicationInterface")
     const ReadJsonFile                 = jsonFileUtilitiesLib.require("ReadJsonFile")
 
@@ -34,6 +36,7 @@ const InstanceMonitoringManager = (params: any) => {
         RemoveSocketMonitoring,
         GetMonitoringKeysReady,
         GetSocketMonitoringState,
+        IsSocketConnected,
         AddEventListener
     } = CreateInstanceSocketHandlerManager({
         helpers:{
@@ -42,13 +45,50 @@ const InstanceMonitoringManager = (params: any) => {
         }
     })
 
-    const _CreateHandlerSocketDirectoryChange = () => {
-        
-        let socketFileNameList: string[] = []
+    /*
+        O arquivo de socket sobrevive ao processo que o criou. O executor apaga
+        o próprio arquivo quando consegue encerrar; quando é morto sem chance de
+        limpar — SIGKILL, OOM, container derrubado, máquina desligada —, o
+        arquivo fica no diretório e ninguém mais tem o dever de removê-lo. Quem
+        supervisiona o diretório é este serviço, então a faxina é dele.
+    */
+    const orphanSocketReconciler = CreateOrphanSocketReconciler({
+        GetSocketsDirPath   : () => supervisorSocketsDirPath,
+        IsInstanceConnected : IsSocketConnected,
+        helpers             : { ListSocketFilesName, InspectSocketFile },
+        OnOrphanRemoved     : ({ socketFileName, socketFilePath, evidence }: { socketFileName: string, socketFilePath: string, evidence: string }) => {
+            // O registro precisa dizer POR QUE o arquivo foi apagado. Remoção de
+            // arquivo sem evidência no log é indistinguível de perda de dado.
+            Log.info("InstanceMonitoring.manager",
+                `Socket órfão removido: ${socketFilePath} — a instância que o criou não existe mais (${evidence}).`)
+            NotifyEvent({
+                origin  : "InstanceMonitoringManager",
+                type    : "socket",
+                content : {
+                    event   : "removed",
+                    title   : "Socket órfão removido",
+                    message : `O socket ${socketFileName} pertencia a uma instância que não existe mais e foi removido (${evidence}).`,
+                    socketFileName
+                }
+            })
+        }
+    })
 
-        const __ChangeList = (newList: string[]) => {
-            const addedSockets = newList.filter((socketFileName) => !socketFileNameList.includes(socketFileName))
-            const removedSockets = socketFileNameList.filter((socketFileName) => !newList.includes(socketFileName))
+    /*
+        O handler NASCE sabendo o que a varredura inicial já monitorou.
+
+        Ele começava com a lista vazia, e isso tinha duas consequências, ambas
+        visíveis em produção: na primeira mudança do diretório, todo socket que
+        a partida já havia monitorado aparecia como "novo" e caía no `throw` de
+        "já está sendo monitorado" (registrado como erro), e nenhum socket
+        anterior podia ser detectado como REMOVIDO, porque não constava da lista
+        de onde a remoção é calculada.
+    */
+    const _CreateHandlerSocketDirectoryChange = (socketFileNamesIniciais: string[]) => {
+
+        let socketFileNameList: string[] = [...socketFileNamesIniciais]
+
+        const __ChangeList = (newList: string[], addedSockets: string[], removedSockets: string[]) => {
             socketFileNameList = newList
             NotifyEvent({
                 origin: "InstanceMonitoringManager",
@@ -84,10 +124,21 @@ const InstanceMonitoringManager = (params: any) => {
                 // painel recebia o aviso de removido, e o monitoramento continuava
                 // batendo no arquivo que não existe mais — a cada 4 s, para sempre.
                 const removidos = socketFileNameList.filter((socketFileName) => !newSocketFileNameList.includes(socketFileName))
-                __ChangeList(newSocketFileNameList)
+                /*
+                    Só os que ENTRARAM entram em monitoramento.
+
+                    Antes, cada mudança no diretório mandava monitorar a lista
+                    INTEIRA de novo, e todos os que já estavam monitorados caíam
+                    no `throw` de "já está sendo monitorado", registrado como
+                    erro. Com 13 sockets, um único socket criado produzia 12
+                    linhas de erro sobre coisa nenhuma: 15 MB de log de ruído no
+                    host-agent, e um `Log.error` que treinava quem lê a ignorá-lo.
+                */
+                const adicionados = newSocketFileNameList.filter((socketFileName) => !socketFileNameList.includes(socketFileName))
+                __ChangeList(newSocketFileNameList, adicionados, removidos)
                 removidos
                 .forEach((socketFileName: string) => RemoveSocketMonitoring(_GetSocketFilePath(socketFileName)))
-                newSocketFileNameList
+                adicionados
                 .forEach((socketFileName: string) => TryInitializeSocketMonitoring(_GetSocketFilePath(socketFileName)))
             }
         }
@@ -145,12 +196,18 @@ const InstanceMonitoringManager = (params: any) => {
         const socketFileNames = await ListSocketFilesName(socketsDirPath)
         socketFileNames.forEach((socketFileName: string) => InitializeSocketMonitoring(_GetSocketFilePath(socketFileName)))
 
-        const __HandlerSocketDirectoryChange = _CreateHandlerSocketDirectoryChange()
+        const __HandlerSocketDirectoryChange = _CreateHandlerSocketDirectoryChange(socketFileNames)
 
         WatchSocketDirectory({
             directoryPath: supervisorSocketsDirPath,
             onChangeSocketFileList: __HandlerSocketDirectoryChange
         }).catch(_ObservacaoInterrompida)
+
+        // A reconciliação sobe DEPOIS da varredura inicial: assim todo socket
+        // com instância viva já entrou no monitoramento e o veto de conexão vale
+        // desde a primeira rodada.
+        orphanSocketReconciler.Start()
+
         _SinalizarPronto()
 
     }
@@ -234,7 +291,10 @@ const InstanceMonitoringManager = (params: any) => {
         GetStartupArguments,
         GetProcessInformation,
         GetLogStreaming,
-        KillInstance
+        KillInstance,
+        // Mesma faxina que roda sozinha, disponível sob demanda para quem quiser
+        // reconciliar o diretório sem esperar o próximo ciclo.
+        ReconcileOrphanSockets: orphanSocketReconciler.RunOnce
     }
         
     _Start().catch(_PartidaFalhou)
