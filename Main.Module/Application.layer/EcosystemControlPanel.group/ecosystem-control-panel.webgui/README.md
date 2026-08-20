@@ -30,4 +30,14 @@ Sobe um `@@/server-service` (`@/server-manager.service`) e expõe seu
 `@/server-manager.webservice`. Parâmetros: `port`, `serverName`,
 `serverManagerUrl`, `RT_ENV_GENERATED_DIR_NAME`, `isWatch`.
 
+## Estilo
+
+O guia de estilo é do kit de UI da plataforma, na
+[`i-components.uilib`](../../../../UserInterface.Module/Libraries.layer/i-components.uilib/docs/ui-style-guide.md).
+
+Deste painel são apenas: `src/Styles/control-panel.css` (CSS de produto, prefixo
+`.ecp-`, escrito sobre os tokens do kit — não redefine nenhuma classe dele) e os
+componentes finos em cima do kit (`Breadcrumbs`, `CopyValue`, `PackageIcon`,
+`ToastContainer`).
+
 > Veja o [README do repositório](../../../../README.md).

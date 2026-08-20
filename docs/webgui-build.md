@@ -170,5 +170,5 @@ NFS ou container, onde o inotify não propaga) e `META_WEBGUI_BUILD_NODE_PATH`
 ## Ver também
 
 - [`web-interface-builder.lib`](../Main.Module/Libraries.layer/web-interface-builder.lib/README.md) — a implementação
-- [`webgui-component-libraries.md`](./webgui-component-libraries.md) — como as bibliotecas de componentes entram no bundle
+- [`webgui-component-libraries.md`](./ui-libraries.md) — como as bibliotecas de componentes entram no bundle
 - [`instance-lifecycle.md`](./instance-lifecycle.md) — o ciclo de vida em que o build se encaixa

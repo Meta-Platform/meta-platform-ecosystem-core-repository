@@ -99,9 +99,21 @@ Documentação dedicada em [`docs/`](./docs/):
 
 ### Main.Module / Libraries.layer
 
+- [api-authoring.lib](./Main.Module/Libraries.layer/api-authoring.lib/README.md)
+- [bare-git-writer.lib](./Main.Module/Libraries.layer/bare-git-writer.lib/README.md)
 - [command-executor.lib](./Main.Module/Libraries.layer/command-executor.lib/README.md)
+- [execution-identity.lib](./Main.Module/Libraries.layer/execution-identity.lib/README.md)
+- [git-status.lib](./Main.Module/Libraries.layer/git-status.lib/README.md)
+- [instance-manager-client.lib](./Main.Module/Libraries.layer/instance-manager-client.lib/README.md)
+- [instance-store.lib](./Main.Module/Libraries.layer/instance-store.lib/README.md)
 - [mount-api.lib](./Main.Module/Libraries.layer/mount-api.lib/README.md)
+- [package-metadata-schema.lib](./Main.Module/Libraries.layer/package-metadata-schema.lib/README.md)
+- [package-process-manager.lib](./Main.Module/Libraries.layer/package-process-manager.lib/README.md)
 - [package-toolkit.lib](./Main.Module/Libraries.layer/package-toolkit.lib/README.md)
+- [process-metrics.lib](./Main.Module/Libraries.layer/process-metrics.lib/README.md)
+- [process-supervisor.lib](./Main.Module/Libraries.layer/process-supervisor.lib/README.md)
+- [web-interface-builder.lib](./Main.Module/Libraries.layer/web-interface-builder.lib/README.md)
+- [workspace-store.lib](./Main.Module/Libraries.layer/workspace-store.lib/README.md)
 
 ### Main.Module / Services.layer
 
@@ -117,6 +129,19 @@ Documentação dedicada em [`docs/`](./docs/):
 
 - [container-orchestrator.webservice](./Main.Module/Webservices.layer/container-orchestrator.webservice/README.md)
 - [server-manager.webservice](./Main.Module/Webservices.layer/server-manager.webservice/README.md)
+
+### UserInterface.Module / Libraries.layer
+
+O kit de componentes de interface usado pelas aplicações da plataforma.
+
+- [i-components.uilib](./UserInterface.Module/Libraries.layer/i-components.uilib/README.md)
+
+### Taskloaders.Module / Loaders.layer
+
+Os *object loaders* publicados por este repositório.
+
+- [endpoint-instance.taskLoader](./Taskloaders.Module/Loaders.layer/endpoint-instance.taskLoader/README.md)
+- [ui-library.taskLoader](./Taskloaders.Module/Loaders.layer/ui-library.taskLoader/README.md)
 
 ## Exemplos
 

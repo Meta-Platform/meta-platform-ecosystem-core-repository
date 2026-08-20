@@ -73,7 +73,7 @@
                     "namespace": "StopEnvironment",
                     "path": "Commands/StopEnvironment.command",
                     "command": "env [executionId]",
-                    "description": "Listar tarefas carregadas no task executor principal",
+                    "description": "Para um ambiente de execução",
                     "parameters": [
                         {
                             "key": "executionId",
